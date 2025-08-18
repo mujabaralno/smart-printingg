@@ -1,0 +1,565 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Eye, Pencil, Calendar, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
+import { getQuotes } from "@/lib/dummy-data";
+import Link from "next/link";
+import StatusBadge from "@/components/shared/StatusBadge";
+import { quotes as QUOTES, users as USERS } from "@/constants";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+
+
+type Status = "Approved" | "Pending" | "Rejected";
+type StatusFilter = "all" | Status;
+type UserFilter = "all" | string;
+
+
+type Row = (typeof QUOTES)[number] & {
+  productName?: string;
+  quantity?: number;
+};
+
+const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" });
+
+const PAGE_SIZE = 20; // Increased from 7 to 20 as per requirements
+
+export default function QuoteManagementPage() {
+  const [rows, setRows] = React.useState<Row[]>(QUOTES as Row[]);
+
+  // ===== filter & paging =====
+  const [search, setSearch] = React.useState("");
+  const [from, setFrom] = React.useState<string>("");
+  const [to, setTo] = React.useState<string>("");
+  const [status, setStatus] = React.useState<StatusFilter>("all");
+  const [user, setUser] = React.useState<UserFilter>("all");
+  const [minAmount, setMinAmount] = React.useState<string>("");
+  const [page, setPage] = React.useState(1);
+  const [showAll, setShowAll] = React.useState(false); // New state for show more option
+
+  React.useEffect(() => setPage(1), [search, from, to, status, user, minAmount]);
+
+  const filtered = React.useMemo(() => {
+    return rows.filter((q) => {
+      const s = search.trim().toLowerCase();
+      // Enhanced search to include quote number, client name, and person name as per requirements
+      const hitSearch =
+        s === "" || 
+        q.id.toLowerCase().includes(s) || 
+        q.clientName.toLowerCase().includes(s) ||
+        q.contactPerson.toLowerCase().includes(s);
+
+      const hitStatus = status === "all" || q.status === status;
+      const hitUser = user === "all" || q.userId === user;
+      const hitAmount = minAmount === "" || q.amount >= Number(minAmount);
+
+      const hitFrom = from === "" || q.date >= from;
+      const hitTo = to === "" || q.date <= to;
+
+      return hitSearch && hitStatus && hitUser && hitAmount && hitFrom && hitTo;
+    });
+  }, [rows, search, from, to, status, user, minAmount]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const start = (page - 1) * PAGE_SIZE;
+  const current = showAll ? filtered : filtered.slice(start, start + PAGE_SIZE);
+
+
+  const [openEdit, setOpenEdit] = React.useState(false);
+  const [draft, setDraft] = React.useState<{
+    id: string;
+    clientName: string;
+    contactPerson: string;
+    date: string; // YYYY-MM-DD
+    amount: number | "";
+    status: Status;
+    userId: string;
+    productName?: string;
+    quantity?: number | "";
+  }>({
+    id: "",
+    clientName: "",
+    contactPerson: "",
+    date: "",
+    amount: "",
+    status: "Approved",
+    userId: USERS[0]?.id ?? "",
+    productName: "",
+    quantity: "",
+  });
+
+  const onEdit = (id: string) => {
+    const q = rows.find((r) => r.id === id);
+    if (!q) return;
+    setDraft({
+      id: q.id,
+      clientName: q.clientName,
+      contactPerson: q.contactPerson,
+      date: q.date,
+      amount: q.amount,
+      status: q.status,
+      userId: q.userId,
+      productName: q.productName ?? "",
+      quantity: typeof q.quantity === "number" ? q.quantity : "",
+    });
+    setOpenEdit(true);
+  };
+
+  const onSubmitEdit = () => {
+    if (!draft.id || !draft.clientName || !draft.contactPerson || !draft.date || draft.amount === "") {
+      alert("Please complete all required fields.");
+      return;
+    }
+    setRows((prev): Row[] =>
+      prev.map((r) =>
+        r.id === draft.id
+          ? {
+              ...r,
+              clientName: draft.clientName,
+              contactPerson: draft.contactPerson,
+              date: draft.date,
+              amount: Number(draft.amount),
+              status: draft.status,
+              userId: draft.userId,
+              productName: draft.productName?.trim() || r.productName,
+              quantity:
+                draft.quantity === "" ? r.quantity : Number(draft.quantity),
+            }
+          : r
+      )
+    );
+    setOpenEdit(false);
+  };
+
+  // ===== modal VIEW (Eye) =====
+  const [openView, setOpenView] = React.useState(false);
+  const [viewRow, setViewRow] = React.useState<Row | null>(null);
+
+  const onView = (row: Row) => {
+    setViewRow(row);
+    setOpenView(true);
+  };
+
+  const viewTotal = (row: Row | null) => (row ? currency.format(row.amount) : "—");
+
+  return (
+    <div className="space-y-12">
+      {/* Welcome Header */}
+      <div className="text-center space-y-3">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          Quote Management
+        </h1>
+        <p className="text-lg text-slate-600">Manage and track all your printing quotes. View, edit, and monitor the status of customer quotations.</p>
+      </div>
+      
+      {/* Main Content Card */}
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-10 space-y-8">
+          {/* Search and Create Button */}
+          <div className="flex items-center gap-6">
+            <Input
+              placeholder="Search by quote number, client name, or person name"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+            />
+
+            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+              <Link href="/create-quote" className="gap-2 flex items-center">
+                <Plus className="h-4 w-4" />
+                Create a New Quote
+              </Link>
+            </Button>
+          </div>
+
+          {/* Filters with proper titles as per requirements */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-8 border border-slate-200 rounded-2xl bg-slate-50/50">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">From</label>
+              <Input 
+                type="date" 
+                value={from} 
+                onChange={(e) => setFrom(e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">To</label>
+              <Input 
+                type="date" 
+                value={to} 
+                onChange={(e) => setTo(e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Status</label>
+              <Select value={status} onValueChange={(v: StatusFilter) => setStatus(v)}>
+                <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">User</label>
+              <Select value={user} onValueChange={(v: UserFilter) => setUser(v)}>
+                <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                  <SelectValue placeholder="All Users" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Users</SelectItem>
+                  {USERS.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Minimum Amount</label>
+              <Input
+                type="number"
+                placeholder="$0.00"
+                value={minAmount}
+                onChange={(e) => setMinAmount(e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+              />
+            </div>
+          </div>
+
+          {/* Results Summary */}
+          <div className="flex items-center justify-between text-sm text-slate-600">
+            <span>Showing {current.length} of {filtered.length} quotes</span>
+            {filtered.length > PAGE_SIZE && (
+              <Button
+                variant="ghost"
+                onClick={() => setShowAll(!showAll)}
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
+                {showAll ? (
+                  <>
+                    <ChevronUp className="h-4 w-4 mr-2" />
+                    Show Less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                    Show All ({filtered.length})
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+
+          {/* Table */}
+          <div className="overflow-hidden border border-slate-200 rounded-2xl">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow className="border-slate-200">
+                  <TableHead className="text-slate-700 font-semibold p-6">Quote ID</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6">Client Name</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6">Contact Person</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6">Date</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6">Amount</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {current.map((q) => (
+                  <TableRow key={q.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
+                    <TableCell className="font-medium text-slate-900 p-6">{q.id}</TableCell>
+                    <TableCell className="text-slate-700 p-6">{q.clientName}</TableCell>
+                    <TableCell className="text-slate-700 p-6">{q.contactPerson}</TableCell>
+                    <TableCell className="text-slate-700 p-6">{fmtDate(q.date)}</TableCell>
+                    <TableCell className="tabular-nums font-semibold text-slate-900 p-6">{currency.format(q.amount)}</TableCell>
+                    <TableCell className="p-6"><StatusBadge value={q.status} /></TableCell>
+                    <TableCell className="p-6">
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          title="View Details" 
+                          onClick={() => onView(q)}
+                          className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          title="Edit Quote" 
+                          onClick={() => onEdit(q.id)}
+                          className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {current.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-16 text-slate-500">
+                      No quotes found with current filters.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination - Only show when not showing all */}
+          {!showAll && pageCount > 1 && (
+            <div className="flex items-center justify-center gap-2 pb-6">
+              <Button
+                variant="ghost"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="w-10 h-10 rounded-xl hover:bg-slate-100"
+              >
+                ‹
+              </Button>
+
+              {Array.from({ length: pageCount }).slice(0, 5).map((_, i) => {
+                const n = i + 1;
+                if (pageCount > 5 && n === 4) {
+                  return (
+                    <React.Fragment key="dots">
+                      <span className="px-3 text-slate-500">…</span>
+                      <Button
+                        variant={page === pageCount ? "default" : "ghost"}
+                        onClick={() => setPage(pageCount)}
+                        className="w-10 h-10 rounded-xl"
+                      >
+                        {pageCount}
+                      </Button>
+                    </React.Fragment>
+                  );
+                }
+                if (pageCount > 5 && n > 3) return null;
+                return (
+                  <Button
+                    key={n}
+                    variant={page === n ? "default" : "ghost"}
+                    onClick={() => setPage(n)}
+                    className="w-10 h-10 rounded-xl"
+                  >
+                    {n}
+                  </Button>
+                );
+              })}
+
+              <Button
+                variant="ghost"
+                disabled={page >= pageCount}
+                onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                className="w-10 h-10 rounded-xl hover:bg-slate-100"
+              >
+                ›
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ===== Modal View (Eye) ===== */}
+      <Dialog open={openView} onOpenChange={setOpenView}>
+        <DialogContent className="sm:max-w-[560px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900">
+              {viewRow ? `Details for ${viewRow.id}` : "Details"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="rounded-xl border border-slate-200 overflow-hidden">
+            <div className="grid grid-cols-3 gap-0 text-sm">
+              <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Client:</div>
+              <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">{viewRow?.clientName ?? "—"}</div>
+
+              <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Date:</div>
+              <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                {viewRow ? fmtDate(viewRow.date) : "—"}
+              </div>
+
+              <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Product:</div>
+              <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                {viewRow?.productName ?? "—"}
+              </div>
+
+              <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Quantity:</div>
+              <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                {typeof viewRow?.quantity === "number" ? viewRow?.quantity : "—"}
+              </div>
+
+              <div className="col-span-1 px-4 py-3 text-slate-500 bg-slate-50">Total:</div>
+              <div className="col-span-2 px-4 py-3 font-semibold text-slate-900">
+                {viewTotal(viewRow)}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              onClick={() => setOpenView(false)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== Modal Edit ===== */}
+      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+        <DialogContent className="sm:max-w-[640px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900">Edit Quote</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right text-sm text-slate-600 font-medium">Quote ID</label>
+              <Input className="col-span-3 bg-slate-100 border-slate-300 rounded-xl" readOnly value={draft.id} />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right text-sm font-medium text-slate-700">Client Name</label>
+              <Input
+                className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                value={draft.clientName}
+                onChange={(e) => setDraft((d) => ({ ...d, clientName: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right text-sm font-medium text-slate-700">Contact Person</label>
+              <Input
+                className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                value={draft.contactPerson}
+                onChange={(e) => setDraft((d) => ({ ...d, contactPerson: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right text-sm font-medium text-slate-700">Date</label>
+              <Input
+                className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                type="date"
+                value={draft.date}
+                onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right text-sm font-medium text-slate-700">Amount</label>
+              <Input
+                className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                type="number"
+                min={0}
+                step="0.01"
+                value={draft.amount}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, amount: e.target.value === "" ? "" : Number(e.target.value) }))
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right text-sm font-medium text-slate-700">Status</label>
+              <Select
+                value={draft.status}
+                onValueChange={(v: Status) => setDraft((d) => ({ ...d, status: v }))}
+              >
+                <SelectTrigger className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right text-sm font-medium text-slate-700">User</label>
+              <Select
+                value={draft.userId}
+                onValueChange={(v) => setDraft((d) => ({ ...d, userId: v }))}
+              >
+                <SelectTrigger className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {USERS.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Optional fields agar View modal punya data */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right text-sm font-medium text-slate-700">Product</label>
+              <Input
+                className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                value={draft.productName ?? ""}
+                onChange={(e) => setDraft((d) => ({ ...d, productName: e.target.value }))}
+                placeholder="e.g. Business Card"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right text-sm font-medium text-slate-700">Quantity</label>
+              <Input
+                className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                type="number"
+                min={0}
+                value={draft.quantity ?? ""}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, quantity: e.target.value === "" ? "" : Number(e.target.value) }))
+                }
+                placeholder="e.g. 1000"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="ghost" 
+              onClick={() => setOpenEdit(false)}
+              className="border-slate-300 hover:border-slate-400 hover:bg-slate-50 px-6 py-2 rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={onSubmitEdit}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

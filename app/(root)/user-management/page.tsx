@@ -1,0 +1,528 @@
+"use client";
+
+import * as React from "react";
+import {
+  seedUsers,
+  type AppUser,
+  type AppUserRole,
+} from "@/constants/dummyusers";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Plus, Edit3, Crown, User, Calculator, ChevronDown, ChevronUp } from "lucide-react";
+import RoleBadge from "@/components/shared/RoleBadge";
+import StatusChip from "@/components/shared/StatusChip";
+import { Card, CardContent } from "@/components/ui/card";
+
+const fmt = (iso: string) =>
+  new Date(iso).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+export default function UserManagementPage() {
+  const [users, setUsers] = React.useState<AppUser[]>(seedUsers);
+
+  // ===== filter & paging =====
+  const [search, setSearch] = React.useState("");
+  const [from, setFrom] = React.useState<string>("");
+  const [to, setTo] = React.useState<string>("");
+  const [roleFilter, setRoleFilter] = React.useState<"all" | AppUserRole>("all");
+  const [statusFilter, setStatusFilter] = React.useState<"all" | "Active" | "Inactive">("all");
+  const [page, setPage] = React.useState(1);
+  const [showAll, setShowAll] = React.useState(false);
+
+  const PAGE_SIZE = 20;
+
+  React.useEffect(() => setPage(1), [search, from, to, roleFilter, statusFilter]);
+
+  const filtered = React.useMemo(() => {
+    return users.filter((u) => {
+      const s = search.trim().toLowerCase();
+      const hitSearch =
+        s === "" || 
+        u.name.toLowerCase().includes(s) || 
+        u.email.toLowerCase().includes(s) ||
+        u.id.toLowerCase().includes(s);
+
+      const hitRole = roleFilter === "all" || u.role === roleFilter;
+      const hitStatus = statusFilter === "all" || u.status === statusFilter;
+
+      const hitFrom = from === "" || u.joined >= from;
+      const hitTo = to === "" || u.joined <= to;
+
+      return hitSearch && hitRole && hitStatus && hitFrom && hitTo;
+    });
+  }, [users, search, from, to, roleFilter, statusFilter]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const start = (page - 1) * PAGE_SIZE;
+  const current = showAll ? filtered : filtered.slice(start, start + PAGE_SIZE);
+
+  const [open, setOpen] = React.useState(false);
+  const [name, setName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [role, setRole] = React.useState<AppUserRole>("user");
+  const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [error, setError] = React.useState("");
+  const [active, setActive] = React.useState(true);
+  const [editingUserId, setEditingUserId] = React.useState<string | null>(null);
+
+  const resetForm = () => {
+    setName("");
+    setEmail("");
+    setRole("user");
+    setActive(true);
+    setPassword("");
+    setConfirmPassword("");
+    setEditingUserId(null);
+    setError("");
+  };
+
+  const addUser = () => {
+    if (!name.trim() || !email.trim()) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+    
+    // Password is required for new users, optional for editing
+    if (!editingUserId && !password.trim()) {
+      setError("Password is required for new users.");
+      return;
+    }
+    
+    if (password.trim() && password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (editingUserId) {
+      // Editing existing user
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === editingUserId
+            ? {
+                ...u,
+                name: name.trim(),
+                email: email.trim(),
+                role,
+                status: active ? "Active" : "Inactive",
+                // Only update password if a new one is provided
+                password: password.trim() || u.password,
+              }
+            : u
+        )
+      );
+    } else {
+      // Adding new user
+      const newId = `EMP${(Math.random() * 1000 + 1)
+        .toFixed(0)
+        .padStart(3, "0")}`;
+      const joined = new Date().toISOString().slice(0, 10);
+      const user: AppUser = {
+        id: newId,
+        name: name.trim(),
+        email: email.trim(),
+        joined,
+        role,
+        status: "Active", // Default to Active as per feedback
+        // password ini untuk dummy saja, jangan simpan plain text di produksi
+        password: password.trim(),
+      };
+      setUsers((prev) => [user, ...prev]);
+    }
+    
+    setOpen(false);
+    resetForm();
+  };
+
+  const toggleStatus = (id: string) => {
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === id
+          ? { ...u, status: u.status === "Active" ? "Inactive" : "Active" }
+          : u
+      )
+    );
+  };
+
+  const editUser = (user: AppUser) => {
+    setName(user.name);
+    setEmail(user.email);
+    setRole(user.role);
+    setActive(user.status === "Active");
+    setPassword(""); // Clear password for security
+    setConfirmPassword("");
+    setError("");
+    setOpen(true);
+    // Store the user being edited
+    setEditingUserId(user.id);
+  };
+
+  const getRoleIcon = (role: AppUserRole) => {
+    switch (role) {
+      case "admin":
+        return <Crown className="h-4 w-4 text-yellow-600" />;
+      case "estimator":
+        return <Calculator className="h-4 w-4 text-blue-600" />;
+      default:
+        return <User className="h-4 w-4 text-blue-600" />;
+    }
+  };
+
+  return (
+    <div className="space-y-12">
+      {/* Welcome Header */}
+      <div className="text-center space-y-3">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          User Management
+        </h1>
+        <p className="text-lg text-slate-600">Manage system users, roles, and permissions. Add new users, modify roles, and control access to the Smart Printing System.</p>
+      </div>
+      
+      {/* Main Content Card */}
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-10 space-y-8">
+          {/* Search and Create Button */}
+          <div className="flex items-center gap-6">
+            <Input
+              placeholder="Search by user name, email, or ID"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+            />
+
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300" 
+              onClick={() => setOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add New User
+            </Button>
+          </div>
+
+          {/* Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-8 border border-slate-200 rounded-2xl bg-slate-50/50">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Joined From</label>
+              <Input 
+                type="date" 
+                value={from} 
+                onChange={(e) => setFrom(e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Joined To</label>
+              <Input 
+                type="date" 
+                value={to} 
+                onChange={(e) => setTo(e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Role</label>
+              <Select value={roleFilter} onValueChange={(v: "all" | AppUserRole) => setRoleFilter(v)}>
+                <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                  <SelectValue placeholder="All Roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="estimator">Estimator</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Status</label>
+              <Select value={statusFilter} onValueChange={(v: "all" | "Active" | "Inactive") => setStatusFilter(v)}>
+                <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Results Summary */}
+          <div className="flex items-center justify-between text-sm text-slate-600">
+            <span>Showing {current.length} of {filtered.length} users</span>
+            {filtered.length > PAGE_SIZE && (
+              <Button
+                variant="ghost"
+                onClick={() => setShowAll(!showAll)}
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
+                {showAll ? (
+                  <>
+                    <ChevronUp className="h-4 w-4 mr-2" />
+                    Show Less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                    Show All ({filtered.length})
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+
+          {/* Table */}
+          <div className="overflow-hidden border border-slate-200 rounded-2xl">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow className="border-slate-200">
+                  <TableHead className="w-[15%] text-slate-700 font-semibold p-6">ID</TableHead>
+                  <TableHead className="w-[30%] text-slate-700 font-semibold p-6">User</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6">Joined</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6">Role</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
+                  <TableHead className="text-center text-slate-700 font-semibold p-6">Edit</TableHead>
+                  <TableHead className="text-right pr-8 text-slate-700 font-semibold p-6">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {current.map((u) => (
+                  <TableRow key={u.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
+                    {/* ID */}
+                    <TableCell className="p-6">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                        {u.id}
+                      </span>
+                    </TableCell>
+                    
+                    {/* User (nama + email) */}
+                    <TableCell className="p-6">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-1 h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                          <span className="text-white text-xs font-medium">
+                            {u.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-medium text-slate-900">{u.name}</div>
+                          <div className="text-xs text-slate-500">
+                            {u.email}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Joined */}
+                    <TableCell className="text-sm text-slate-700 p-6">{fmt(u.joined)}</TableCell>
+
+                    {/* Role badge with icon */}
+                    <TableCell className="p-6">
+                      <div className="flex items-center gap-2">
+                        {getRoleIcon(u.role)}
+                        <RoleBadge role={u.role} />
+                      </div>
+                    </TableCell>
+
+                    {/* Status text */}
+                    <TableCell className="p-6">
+                      <StatusChip value={u.status} />
+                    </TableCell>
+
+                    {/* Edit button */}
+                    <TableCell className="text-center p-6">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => editUser(u)}
+                        className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:border-blue-600 rounded-xl px-4 py-2 transition-all duration-200"
+                      >
+                        <Edit3 className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                    </TableCell>
+
+                    {/* Action switch */}
+                    <TableCell className="text-right pr-8 p-6">
+                      <Switch
+                        checked={u.status === "Active"}
+                        onCheckedChange={() => toggleStatus(u.id)}
+                        className="data-[state=checked]:bg-purple-600"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {current.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="text-center py-16 text-slate-500"
+                    >
+                      {filtered.length === 0 ? "No users found matching your filters." : "No users to display."}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ===== Modal Add New User ===== */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[520px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900">
+              {editingUserId ? "Edit User" : "Add New User"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">Full Name</label>
+                <Input
+                  placeholder="e.g. EMP004"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">Email</label>
+                <Input
+                  type="email"
+                  placeholder="user@mail.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">
+                  Password {editingUserId && <span className="text-slate-400 font-normal">(leave blank to keep current)</span>}
+                </label>
+                <Input
+                  type="password"
+                  placeholder={editingUserId ? "Leave blank to keep current" : "********"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">
+                  Confirm Password {editingUserId && <span className="text-slate-400 font-normal">(leave blank to keep current)</span>}
+                </label>
+                <Input
+                  type="password"
+                  placeholder={editingUserId ? "Leave blank to keep current" : "********"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">Role</label>
+                <Select
+                  value={role}
+                  onValueChange={(v) => setRole(v as AppUserRole)}
+                >
+                  <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">
+                      <div className="flex items-center gap-2">
+                        <Crown className="h-4 w-4 text-yellow-600" />
+                        Admin
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="user">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-blue-600" />
+                        User
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="estimator">
+                      <div className="flex items-center gap-2">
+                        <Calculator className="h-4 w-4 text-blue-600" />
+                        Estimator
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4 bg-slate-50/50">
+                <div>
+                  <div className="text-sm text-slate-600">Status</div>
+                  <div className="text-sm font-medium text-slate-900">
+                    {active ? "Active" : "Inactive"}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    {editingUserId ? "Toggle user status" : "New users are Active by default"}
+                  </div>
+                </div>
+                <Switch 
+                  checked={active} 
+                  onCheckedChange={setActive}
+                  className="data-[state=checked]:bg-purple-600"
+                />
+              </div>
+              {error && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg border border-red-200">{error}</p>}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="ghost" 
+              onClick={() => {
+                setOpen(false);
+                resetForm();
+              }}
+              className="border-slate-300 hover:border-slate-400 hover:bg-slate-50 px-6 py-2 rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={addUser}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
+            >
+              {editingUserId ? "Update User" : "Add User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
