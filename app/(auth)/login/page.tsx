@@ -156,7 +156,7 @@ export default function LoginPage() {
     if (locationError) {
       // Only block if it's a strict access denied error
       if (locationError.includes("Access denied") || locationError.includes("Access is restricted")) {
-        showMessage("Access denied. Please ensure you're accessing from an allowed location.", "error");
+        showMessage("Access denied. Please ensure you&apos;re accessing from an allowed location.", "error");
         return;
       }
       // For other location errors, just show a warning but allow login
@@ -585,10 +585,8 @@ export default function LoginPage() {
             )}
 
             <div className="text-center">
-              <p className="text-gray-600 mb-6">
-                We've sent a 6-digit verification code to your phone number
-                <br />
-                <span className="font-semibold text-gray-900">{phoneNumber}</span>
+              <p className="text-sm text-gray-600 mb-6">
+                We&apos;ll send a verification code to your phone.
               </p>
               
               <div className="mb-6">
@@ -609,7 +607,7 @@ export default function LoginPage() {
               </div>
               
               <p className="text-sm text-gray-500 mb-6">
-                Didn't receive the code? 
+                Didn&apos;t receive the code? 
                 <button 
                   onClick={resendOtp}
                   disabled={isLoading}
