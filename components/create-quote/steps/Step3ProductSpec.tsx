@@ -99,9 +99,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
       [dimension]: value !== "" ? parseFloat(value) : null,
     };
     updateProduct(idx, { [sizeType]: newSize } as Partial<Product>);
-    if (sizeType === "flatSize" && p.useSameAsFlat) {
-      updateProduct(idx, { closeSize: newSize } as Partial<Product>);
-    }
+    // Removed automatic syncing - flat size changes no longer affect close size
   };
 
   // paper
@@ -239,17 +237,6 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                 </div>
               </div>
               <div className="flex items-center space-x-3">
-                <Dialog open={supplierDialogOpen} onOpenChange={setSupplierDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 hover:from-purple-600 hover:to-purple-700 px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      View Supplier Products
-                    </Button>
-                  </DialogTrigger>
-                </Dialog>
                 {formData.products.length > 1 && (
                   <Button
                     variant="ghost"
@@ -415,6 +402,8 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                 Size Details (cm)
               </h4>
               
+
+              
               {/* Flat Size (Open) */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-slate-700">Flat Size (Open)</Label>
@@ -490,9 +479,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                       onCheckedChange={(checked) =>
                         updateProduct(idx, {
                           useSameAsFlat: Boolean(checked),
-                          closeSize: Boolean(checked)
-                            ? product.flatSize
-                            : product.closeSize,
+                          // Don't change closeSize when checkbox is checked - keep existing values
                         })
                       }
                       className="border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 h-4 w-4"
@@ -501,6 +488,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                       Use same dimensions as Flat Size
                     </Label>
                   </div>
+
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
@@ -508,7 +496,9 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     <Input
                       type="number"
                       placeholder="Width"
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                      className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl ${
+                        product.useSameAsFlat ? 'bg-gray-50' : ''
+                      }`}
                       min={0}
                       step="0.1"
                       value={product.closeSize.width ?? ""}
@@ -528,7 +518,9 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     <Input
                       type="number"
                       placeholder="Height"
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                      className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl ${
+                        product.useSameAsFlat ? 'bg-gray-50' : ''
+                      }`}
                       min={0}
                       step="0.1"
                       value={product.closeSize.height ?? ""}
@@ -548,7 +540,9 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     <Input
                       type="number"
                       placeholder="Spine"
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                      className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl ${
+                        product.useSameAsFlat ? 'bg-gray-50' : ''
+                      }`}
                       value={product.closeSize.spine ?? ""}
                       min={0}
                       step="0.1"
@@ -564,6 +558,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     />
                   </div>
                 </div>
+
               </div>
             </div>
 
@@ -574,14 +569,27 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                   <Package className="w-5 h-5 mr-2 text-blue-600" />
                   Paper Details
                 </h4>
-                <Button
-                  variant="outline"
-                  className="border-blue-500 text-blue-600 hover:bg-blue-50 rounded-xl"
-                  size="sm"
-                  onClick={() => addPaper(idx)}
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Add Paper
-                </Button>
+                <div className="flex items-center space-x-3">
+                  <Dialog open={supplierDialogOpen} onOpenChange={setSupplierDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 hover:from-purple-600 hover:to-purple-700 px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Paper Details
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
+                  <Button
+                    variant="outline"
+                    className="border-blue-500 text-blue-600 hover:bg-blue-50 rounded-xl"
+                    size="sm"
+                    onClick={() => addPaper(idx)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Add Paper
+                  </Button>
+                </div>
               </div>
               
               <div className="space-y-4">

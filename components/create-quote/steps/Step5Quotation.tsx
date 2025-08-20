@@ -152,12 +152,21 @@ const Step5Quotation: FC<Step5Props> = ({
     if (availableProducts.length === 0) return;
 
     const selectedProduct = availableProducts[0];
+    const initialQuantity = 250;
+    
+    // Calculate initial price
+    const initialPrices = calculateOtherQtyPrice({
+      productName: selectedProduct.productName,
+      quantity: initialQuantity,
+      price: 0
+    });
+    
     setOtherQuantities((prev) => [
       ...prev,
       {
         productName: selectedProduct.productName,
-        quantity: 250,
-        price: 0, // Will be calculated based on base product
+        quantity: initialQuantity,
+        price: initialPrices.base, // Set calculated price
       },
     ]);
   };
@@ -171,6 +180,14 @@ const Step5Quotation: FC<Step5Props> = ({
     setOtherQuantities((prev) => {
       const next = [...prev];
       next[idx] = { ...next[idx], ...patch };
+      
+      // Auto-calculate price when quantity changes
+      if (patch.quantity !== undefined || patch.productName !== undefined) {
+        const updatedQty = next[idx];
+        const prices = calculateOtherQtyPrice(updatedQty);
+        next[idx] = { ...updatedQty, price: prices.base };
+      }
+      
       return next;
     });
 

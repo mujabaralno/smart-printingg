@@ -302,7 +302,7 @@ class TwilioService {
 }
 
 // Export the appropriate service based on configuration
-export const twilioService = config.features.twilioIntegration && config.twilio.accountSid && config.twilio.authToken && config.twilio.verifyServiceId
+export const twilioService = config.twilio.accountSid && config.twilio.authToken && config.twilio.verifyServiceId
   ? new TwilioService(config.twilio)
   : new MockTwilioService();
 

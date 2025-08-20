@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Eye, Pencil, Calendar, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Eye, Pencil, Calendar, DollarSign, ChevronDown, ChevronUp, Download, ChevronDown as ChevronDownIcon } from "lucide-react";
 import { getQuotes } from "@/lib/dummy-data";
 import Link from "next/link";
 import StatusBadge from "@/components/shared/StatusBadge";
@@ -16,6 +16,10 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { downloadCustomerPdf, downloadOpsPdf } from "@/lib/quote-pdf";
 
 
 type Status = "Approved" | "Pending" | "Rejected";
@@ -36,6 +40,9 @@ const PAGE_SIZE = 20; // Increased from 7 to 20 as per requirements
 
 export default function QuoteManagementPage() {
   const [rows, setRows] = React.useState<Row[]>(QUOTES as Row[]);
+  const [showNewQuoteNotification, setShowNewQuoteNotification] = React.useState(false);
+  const [newQuoteCount, setNewQuoteCount] = React.useState(0);
+  const [downloadingPDF, setDownloadingPDF] = React.useState<string | null>(null);
 
   // ===== filter & paging =====
   const [search, setSearch] = React.useState("");
@@ -48,6 +55,42 @@ export default function QuoteManagementPage() {
   const [showAll, setShowAll] = React.useState(false); // New state for show more option
 
   React.useEffect(() => setPage(1), [search, from, to, status, user, minAmount]);
+
+  // Listen for new quotes from localStorage or other sources
+  React.useEffect(() => {
+    const checkForNewQuotes = () => {
+      const newQuotes = localStorage.getItem('newQuotes');
+      if (newQuotes) {
+        try {
+          const parsedQuotes = JSON.parse(newQuotes);
+          if (Array.isArray(parsedQuotes) && parsedQuotes.length > 0) {
+            // Add new quotes to the existing list
+            setRows(prevRows => {
+              const existingIds = new Set(prevRows.map(q => q.id));
+              const uniqueNewQuotes = parsedQuotes.filter(q => !existingIds.has(q.id));
+              if (uniqueNewQuotes.length > 0) {
+                return [...prevRows, ...uniqueNewQuotes];
+              }
+              return prevRows;
+            });
+            // Clear the localStorage
+            localStorage.removeItem('newQuotes');
+          }
+        } catch (error) {
+          console.error('Error parsing new quotes:', error);
+          localStorage.removeItem('newQuotes');
+        }
+      }
+    };
+
+    // Check immediately
+    checkForNewQuotes();
+
+    // Set up interval to check for new quotes
+    const interval = setInterval(checkForNewQuotes, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const filtered = React.useMemo(() => {
     return rows.filter((q) => {
@@ -152,14 +195,100 @@ export default function QuoteManagementPage() {
 
   const viewTotal = (row: Row | null) => (row ? currency.format(row.amount) : "—");
 
+  // Function to handle PDF download for approved quotes
+  const handleDownloadPDF = async (quote: Row, type: 'customer' | 'operations') => {
+    const downloadId = `${quote.id}-${type}`;
+    setDownloadingPDF(downloadId);
+    
+    try {
+      // Create a mock QuoteFormData structure for PDF generation
+      const mockFormData = {
+        client: {
+          clientType: "Company" as const,
+          companyName: quote.clientName,
+          contactPerson: quote.contactPerson,
+          email: "customer@example.com", // Default email
+          phone: "123456789", // Default phone
+          countryCode: "+971",
+          role: "Customer"
+        },
+        products: [{
+          productName: quote.productName || "Printing Product",
+          paperName: "Standard Paper",
+          quantity: quote.quantity || 0,
+          sides: "1" as const,
+          printingSelection: "Digital" as const,
+          flatSize: { width: 10, height: 15, spine: 0 },
+          closeSize: { width: 10, height: 15, spine: 0 },
+          useSameAsFlat: true,
+          papers: [{ name: "Standard", gsm: "150" }],
+          finishing: []
+        }],
+        operational: {
+          papers: [],
+          finishing: [],
+          plates: null,
+          units: null
+        },
+        calculation: {
+          basePrice: quote.amount,
+          marginAmount: 0,
+          subtotal: quote.amount,
+          vatAmount: 0,
+          totalPrice: quote.amount
+        }
+      };
+
+      if (type === 'customer') {
+        await downloadCustomerPdf(mockFormData, []);
+      } else {
+        await downloadOpsPdf(mockFormData, []);
+      }
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Failed to download PDF. Please try again.');
+    } finally {
+      setDownloadingPDF(null);
+    }
+  };
+
   return (
     <div className="space-y-12">
+      {/* New Quote Notification */}
+      {showNewQuoteNotification && (
+        <div className="fixed top-4 right-4 bg-green-50 border border-green-200 rounded-xl p-4 shadow-lg z-50 max-w-sm">
+          <div className="flex items-start gap-3">
+            <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+            <div className="text-sm text-green-800">
+              <p className="font-medium mb-1">New Quote Added!</p>
+              <p className="text-green-700">
+                {newQuoteCount} new quote{newQuoteCount > 1 ? 's' : ''} {newQuoteCount > 1 ? 'have' : 'has'} been added to your quote list.
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowNewQuoteNotification(false)}
+              className="w-6 h-6 h-auto p-1 text-green-600 hover:bg-green-100"
+            >
+              ×
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Welcome Header */}
       <div className="text-center space-y-3">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           Quote Management
         </h1>
         <p className="text-lg text-slate-600">Manage and track all your printing quotes. View, edit, and monitor the status of customer quotations.</p>
+        <div className="flex items-center justify-center gap-6 text-sm text-slate-500">
+          <span>Total Quotes: <span className="font-semibold text-slate-700">{rows.length}</span></span>
+          <span>Approved: <span className="font-semibold text-green-600">{rows.filter(q => q.status === "Approved").length}</span></span>
+          <span>Pending: <span className="font-semibold text-yellow-600">{rows.filter(q => q.status === "Pending").length}</span></span>
+          <span>Rejected: <span className="font-semibold text-red-600">{rows.filter(q => q.status === "Rejected").length}</span></span>
+        </div>
       </div>
       
       {/* Main Content Card */}
@@ -167,14 +296,17 @@ export default function QuoteManagementPage() {
         <CardContent className="p-10 space-y-8">
           {/* Search and Create Button */}
           <div className="flex items-center gap-6">
-            <Input
-              placeholder="Search by quote number, client name, or person name"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-            />
+            <div className="flex flex-col gap-2 flex-1">
+              <label className="text-sm font-medium text-slate-700">Search</label>
+              <Input
+                placeholder="Search by quote number, client name, or person name"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full"
+              />
+            </div>
 
-            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-10">
               <Link href="/create-quote" className="gap-2 flex items-center">
                 <Plus className="h-4 w-4" />
                 Create a New Quote
@@ -246,29 +378,57 @@ export default function QuoteManagementPage() {
             </div>
           </div>
 
-          {/* Results Summary */}
-          <div className="flex items-center justify-between text-sm text-slate-600">
-            <span>Showing {current.length} of {filtered.length} quotes</span>
-            {filtered.length > PAGE_SIZE && (
-              <Button
-                variant="ghost"
-                onClick={() => setShowAll(!showAll)}
-                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-              >
-                {showAll ? (
-                  <>
-                    <ChevronUp className="h-4 w-4 mr-2" />
-                    Show Less
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4 mr-2" />
-                    Show All ({filtered.length})
-                  </>
-                )}
-              </Button>
-            )}
+          {/* Item Counts Summary */}
+          <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <div className="flex items-center gap-4 text-sm text-slate-600">
+              <span>Showing {current.length} of {filtered.length} quotes</span>
+              {filtered.length > PAGE_SIZE && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowAll(!showAll)}
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 px-3 text-xs"
+                >
+                  {showAll ? (
+                    <>
+                      <ChevronUp className="h-3 w-3 mr-1" />
+                      Show Less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3 w-3 mr-1" />
+                      Show All ({filtered.length})
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-slate-600">
+                  Approved: <span className="font-semibold text-slate-900">{filtered.filter(q => q.status === "Approved").length}</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <span className="text-sm text-slate-600">
+                  Pending: <span className="font-semibold text-slate-900">{filtered.filter(q => q.status === "Pending").length}</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <span className="text-sm text-slate-600">
+                  Rejected: <span className="font-semibold text-slate-900">{filtered.filter(q => q.status === "Rejected").length}</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <span>Total Items:</span>
+                <span className="font-semibold text-slate-900">{filtered.length}</span>
+              </div>
+            </div>
           </div>
+
+
 
           {/* Table */}
           <div className="overflow-hidden border border-slate-200 rounded-2xl">
@@ -313,6 +473,43 @@ export default function QuoteManagementPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {q.status === "Approved" && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                title="Download PDF" 
+                                disabled={downloadingPDF?.startsWith(q.id)}
+                                className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 border border-blue-200 text-blue-700 disabled:opacity-50"
+                              >
+                                {downloadingPDF?.startsWith(q.id) ? (
+                                  <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Download className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem 
+                                onClick={() => handleDownloadPDF(q, 'customer')}
+                                disabled={downloadingPDF === `${q.id}-customer`}
+                                className="text-green-700 hover:text-green-800 hover:bg-green-50"
+                              >
+                                <Download className="h-3 w-3 mr-2" />
+                                Customer PDF
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDownloadPDF(q, 'operations')}
+                                disabled={downloadingPDF === `${q.id}-operations`}
+                                className="text-orange-700 hover:text-orange-800 hover:bg-orange-50"
+                              >
+                                <Download className="h-3 w-3 mr-2" />
+                                Operations PDF
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

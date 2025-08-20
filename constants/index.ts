@@ -200,46 +200,58 @@ export const quotes: QuoteRow[] = [
 
 export interface ClientRow {
   id: string;
+  clientType: 'Individual' | 'Company';
   companyName: string;
   contactPerson: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone: string;
+  countryCode?: string;
+  role?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  additionalInfo?: string;
   status: "Active" | "Inactive";
 }
 
 export const clients: ClientRow[] = [
-  { id: "C-001", companyName: "Eagan Inc.",      contactPerson: "John Eagan",  email: "john.e@eagan.com",     phone: "+971 50 123 4567", status: "Active" },
-  { id: "C-002", companyName: "Maxtion Dev",     contactPerson: "Liam Park",   email: "liam@maxtion.dev",     phone: "+971 50 222 3344", status: "Active" },
-  { id: "C-003", companyName: "Candor Ltd",      contactPerson: "Alice Tan",   email: "alice@candor.co",      phone: "+971 50 333 7788", status: "Active" },
-  { id: "C-004", companyName: "Delta Co.",       contactPerson: "Jin Woo",     email: "jin@delta.co",         phone: "+971 50 994 1100", status: "Active" },
-  { id: "C-005", companyName: "Echo GmbH",       contactPerson: "Lena Meyer",  email: "lena@echo.de",         phone: "+49 160 111 2223", status: "Active" },
-  { id: "C-006", companyName: "Foxtrot BV",      contactPerson: "Tariq Aziz",  email: "tariq@foxtrot.nl",     phone: "+31 6 1234 5678", status: "Active" },
-  { id: "C-007", companyName: "Gamma LLC",       contactPerson: "Sara Gomez",  email: "sara@gammallc.com",    phone: "+1 415 555 1212", status: "Active" },
-  { id: "C-008", companyName: "Helios Pte",      contactPerson: "Mei Lin",     email: "mei@helios.sg",        phone: "+65 8123 4567", status: "Active" },
-  { id: "C-009", companyName: "Iris Studio",     contactPerson: "Rani Putri",  email: "rani@iris.studio",     phone: "+62 812 3456 7890", status: "Active" },
-  { id: "C-010", companyName: "Juno Sdn Bhd",    contactPerson: "Farid Shah",  email: "farid@juno.my",        phone: "+60 12 345 6789", status: "Active" },
+  { id: "C-001", clientType: "Company", companyName: "Eagan Inc.",      contactPerson: "John Eagan",  firstName: "John", lastName: "Eagan", email: "john.e@eagan.com",     phone: "50 123 4567", countryCode: "+971", role: "CEO", status: "Active" },
+  { id: "C-002", clientType: "Company", companyName: "Maxtion Dev",     contactPerson: "Liam Park",   firstName: "Liam", lastName: "Park", email: "liam@maxtion.dev",     phone: "50 222 3344", countryCode: "+971", role: "CTO", status: "Active" },
+  { id: "C-003", clientType: "Company", companyName: "Candor Ltd",      contactPerson: "Alice Tan",   firstName: "Alice", lastName: "Tan", email: "alice@candor.co",      phone: "50 333 7788", countryCode: "+971", role: "Manager", status: "Active" },
+  { id: "C-004", clientType: "Company", companyName: "Delta Co.",       contactPerson: "Jin Woo",     firstName: "Jin", lastName: "Woo", email: "jin@delta.co",         phone: "50 994 1100", countryCode: "+971", role: "Director", status: "Active" },
+  { id: "C-005", clientType: "Company", companyName: "Echo GmbH",       contactPerson: "Lena Meyer",  firstName: "Lena", lastName: "Meyer", email: "lena@echo.de",         phone: "160 111 2223", countryCode: "+49", role: "Manager", status: "Active" },
+  { id: "C-006", clientType: "Company", companyName: "Foxtrot BV",      contactPerson: "Tariq Aziz",  firstName: "Tariq", lastName: "Aziz", email: "tariq@foxtrot.nl",     phone: "6 1234 5678", countryCode: "+31", role: "CEO", status: "Active" },
+  { id: "C-007", clientType: "Company", companyName: "Gamma LLC",       contactPerson: "Sara Gomez",  firstName: "Sara", lastName: "Gomez", email: "sara@gammallc.com",    phone: "415 555 1212", countryCode: "+1", role: "Manager", status: "Active" },
+  { id: "C-008", clientType: "Company", companyName: "Helios Pte",      contactPerson: "Mei Lin",     firstName: "Mei", lastName: "Lin", email: "mei@helios.sg",        phone: "8123 4567", countryCode: "+65", role: "Director", status: "Active" },
+  { id: "C-009", clientType: "Company", companyName: "Iris Studio",     contactPerson: "Rani Putri",  firstName: "Rani", lastName: "Putri", email: "rani@iris.studio",     phone: "812 3456 7890", countryCode: "+62", role: "Owner", status: "Active" },
+  { id: "C-010", clientType: "Company", companyName: "Juno Sdn Bhd",    contactPerson: "Farid Shah",  firstName: "Farid", lastName: "Shah", email: "farid@juno.my",        phone: "12 345 6789", countryCode: "+60", role: "Manager", status: "Active" },
 
-  { id: "C-011", companyName: "Kappa Inc",       contactPerson: "Becky Lee",   email: "becky@kappa.com",      phone: "+852 6123 4567", status: "Active" },
-  { id: "C-012", companyName: "Lumen Labs",      contactPerson: "Jorge Ruiz",  email: "jorge@lumenlabs.io",   phone: "+34 655 111 222", status: "Active" },
-  { id: "C-013", companyName: "Mango Corp",      contactPerson: "Dani So",     email: "dani@mango.com",       phone: "+82 10 2345 6789", status: "Active" },
-  { id: "C-014", companyName: "Nexus Ltd",       contactPerson: "Ken Wong",    email: "ken@nexus.hk",         phone: "+852 5123 9876", status: "Active" },
-  { id: "C-015", companyName: "Orion SA",        contactPerson: "Pierre Lac",  email: "pierre@orion.fr",      phone: "+33 6 12 34 56 78", status: "Active" },
-  { id: "C-016", companyName: "Pluto LLP",       contactPerson: "Wira Adi",    email: "wira@pluto.com",      phone: "+62 813 7777 1212", status: "Active" },
-  { id: "C-017", companyName: "Quark AB",        contactPerson: "Anders B",    email: "anders@quark.se",      phone: "+46 70 123 4567", status: "Active" },
-  { id: "C-018", companyName: "Radian BV",       contactPerson: "Ivo K",       email: "ivo@radian.eu",        phone: "+31 6 8765 4321", status: "Active" },
-  { id: "C-019", companyName: "Sigma Oy",        contactPerson: "Tiina K",     email: "tiina@sigma.fi",       phone: "+358 40 123 4567", status: "Active" },
-  { id: "C-020", companyName: "Titan Pty",       contactPerson: "Noah Reed",   email: "noah@titan.au",        phone: "+61 412 345 678", status: "Active" },
+  { id: "C-011", clientType: "Company", companyName: "Kappa Inc",       contactPerson: "Becky Lee",   firstName: "Becky", lastName: "Lee", email: "becky@kappa.com",      phone: "6123 4567", countryCode: "+852", role: "CEO", status: "Active" },
+  { id: "C-012", clientType: "Company", companyName: "Lumen Labs",      contactPerson: "Jorge Ruiz",  firstName: "Jorge", lastName: "Ruiz", email: "jorge@lumenlabs.io",   phone: "655 111 222", countryCode: "+34", role: "CTO", status: "Active" },
+  { id: "C-013", clientType: "Company", companyName: "Mango Corp",      contactPerson: "Dani So",     firstName: "Dani", lastName: "So", email: "dani@mango.com",       phone: "10 2345 6789", countryCode: "+82", role: "Manager", status: "Active" },
+  { id: "C-014", clientType: "Company", companyName: "Nexus Ltd",       contactPerson: "Ken Wong",    firstName: "Ken", lastName: "Wong", email: "ken@nexus.hk",         phone: "5123 9876", countryCode: "+852", role: "Director", status: "Active" },
+  { id: "C-015", clientType: "Company", companyName: "Orion SA",        contactPerson: "Pierre Lac",  firstName: "Pierre", lastName: "Lac", email: "pierre@orion.fr",      phone: "6 12 34 56 78", countryCode: "+33", role: "Manager", status: "Active" },
+  { id: "C-016", clientType: "Company", companyName: "Pluto LLP",       contactPerson: "Wira Adi",    firstName: "Wira", lastName: "Adi", email: "wira@pluto.com",      phone: "813 7777 1212", countryCode: "+62", role: "Owner", status: "Active" },
+  { id: "C-017", clientType: "Company", companyName: "Quark AB",        contactPerson: "Anders B",    firstName: "Anders", lastName: "B", email: "anders@quark.se",      phone: "70 123 4567", countryCode: "+46", role: "CEO", status: "Active" },
+  { id: "C-018", clientType: "Company", companyName: "Radian BV",       contactPerson: "Ivo K",       firstName: "Ivo", lastName: "K", email: "ivo@radian.eu",        phone: "6 8765 4321", countryCode: "+31", role: "Manager", status: "Active" },
+  { id: "C-019", clientType: "Company", companyName: "Sigma Oy",        contactPerson: "Tiina K",     firstName: "Tiina", lastName: "K", email: "tiina@sigma.fi",       phone: "40 123 4567", countryCode: "+358", role: "Director", status: "Active" },
+  { id: "C-020", clientType: "Company", companyName: "Titan Pty",       contactPerson: "Noah Reed",   firstName: "Noah", lastName: "Reed", email: "noah@titan.au",        phone: "412 345 678", countryCode: "+61", role: "Owner", status: "Active" },
 
-  { id: "C-021", companyName: "Umbra SAS",       contactPerson: "Luc Martin",  email: "luc@umbra.fr",         phone: "+33 6 99 88 77 66", status: "Active" },
-  { id: "C-022", companyName: "Vega NV",         contactPerson: "Eva Jans",    email: "eva@vega.be",          phone: "+32 470 12 34 56", status: "Active" },
-  { id: "C-023", companyName: "Wave GmbH",       contactPerson: "Jonas K",     email: "jonas@wave.de",        phone: "+49 171 234 5678", status: "Active" },
-  { id: "C-024", companyName: "Xenon KK",        contactPerson: "Akira Mori",  email: "akira@xenon.co.jp",    phone: "+81 90 1234 5678", status: "Active" },
-  { id: "C-025", companyName: "Yonder PLC",      contactPerson: "Holly B",     email: "holly@yonder.uk",      phone: "+44 7700 900123", status: "Active" },
-  { id: "C-026", companyName: "Zephyr Ltd",      contactPerson: "Owen Hale",   email: "owen@zephyr.co",       phone: "+353 85 123 4567", status: "Active" },
-  { id: "C-027", companyName: "Artemis LLC",     contactPerson: "Mia Chen",    email: "mia@artemis.com",      phone: "+1 650 555 9988", status: "Active" },
-  { id: "C-028", companyName: "Basil AG",        contactPerson: "Felix H",     email: "felix@basil.ch",       phone: "+41 79 123 45 67", status: "Active" },
-  { id: "C-029", companyName: "Corex Inc.",      contactPerson: "Ravi Patel",  email: "ravi@corex.com",       phone: "+1 408 555 4321", status: "Active" },
-  { id: "C-030", companyName: "Dorian SpA",      contactPerson: "Marco Rossi", email: "marco@dorian.it",      phone: "+39 347 123 4567", status: "Active" },
+  { id: "C-021", clientType: "Company", companyName: "Umbra SAS",       contactPerson: "Luc Martin",  firstName: "Luc", lastName: "Martin", email: "luc@umbra.fr",         phone: "6 99 88 77 66", countryCode: "+33", role: "Manager", status: "Active" },
+  { id: "C-022", clientType: "Company", companyName: "Vega NV",         contactPerson: "Eva Jans",    firstName: "Eva", lastName: "Jans", email: "eva@vega.be",          phone: "470 12 34 56", countryCode: "+32", role: "CEO", status: "Active" },
+  { id: "C-023", clientType: "Company", companyName: "Wave GmbH",       contactPerson: "Jonas K",     firstName: "Jonas", lastName: "K", email: "jonas@wave.de",        phone: "171 234 5678", countryCode: "+49", role: "CTO", status: "Active" },
+  { id: "C-024", clientType: "Company", companyName: "Xenon KK",        contactPerson: "Akira Mori",  firstName: "Akira", lastName: "Mori", email: "akira@xenon.co.jp",    phone: "90 1234 5678", countryCode: "+81", role: "Manager", status: "Active" },
+  { id: "C-025", clientType: "Individual", companyName: "",             contactPerson: "Holly Brown", firstName: "Holly", lastName: "Brown", email: "holly@yonder.uk",      phone: "7700 900123", countryCode: "+44", role: "", status: "Active" },
+  { id: "C-026", clientType: "Individual", companyName: "",             contactPerson: "Owen Hale",   firstName: "Owen", lastName: "Hale", email: "owen@zephyr.co",       phone: "85 123 4567", countryCode: "+353", role: "", status: "Active" },
+  { id: "C-027", clientType: "Company", companyName: "Artemis LLC",     contactPerson: "Mia Chen",    firstName: "Mia", lastName: "Chen", email: "mia@artemis.com",      phone: "650 555 9988", countryCode: "+1", role: "Manager", status: "Active" },
+  { id: "C-028", clientType: "Company", companyName: "Basil AG",        contactPerson: "Felix H",     firstName: "Felix", lastName: "H", email: "felix@basil.ch",       phone: "79 123 45 67", countryCode: "+41", role: "CEO", status: "Active" },
+  { id: "C-029", clientType: "Company", companyName: "Corex Inc.",      contactPerson: "Ravi Patel",  firstName: "Ravi", lastName: "Patel", email: "ravi@corex.com",       phone: "408 555 4321", countryCode: "+1", role: "Director", status: "Active" },
+  { id: "C-030", clientType: "Company", companyName: "Dorian SpA",      contactPerson: "Marco Rossi", firstName: "Marco", lastName: "Rossi", email: "marco@dorian.it",      phone: "347 123 4567", countryCode: "+39", role: "Manager", status: "Active" },
 ];
 
 export type CostUnit = "per_sheet" | "per_packet" | "per_kg";

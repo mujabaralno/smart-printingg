@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Search, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
 import { cn } from "@/lib/utils";
+import GlobalSearch from "./GlobalSearch";
 
 interface AppHeaderProps {
   className?: string;
@@ -11,7 +11,6 @@ interface AppHeaderProps {
 
 export default function AppHeader({ className = "" }: AppHeaderProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -34,12 +33,6 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
       second: '2-digit', 
       hour12: false 
     });
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle search functionality
-    console.log('Searching for:', searchQuery);
   };
 
   return (
@@ -80,56 +73,10 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
         </div>
       </div>
 
-      {/* Right Section - Search Bar and Timestamp */}
+      {/* Right Section - Global Search and Timestamp */}
       <div className="flex items-center space-x-6">
-        {/* Enhanced Search Bar */}
-        <form onSubmit={handleSearch} className="relative">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            <Input
-              type="text"
-              placeholder="Search quotes, clients, suppliers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-80 pl-10 pr-4 py-2.5 bg-gray-50 border-gray-200 text-gray-900 rounded-xl 
-                         focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 
-                         transition-all duration-200 hover:bg-gray-100 hover:border-gray-300
-                         placeholder:text-gray-500 placeholder:text-sm"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 
-                           hover:text-gray-600 transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-          
-          {/* Search Suggestions (appears on focus) */}
-          {searchQuery && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-              <div className="p-2">
-                <div className="text-xs text-gray-500 px-2 py-1">Quick Search</div>
-                <div className="space-y-1">
-                  <button className="w-full text-left px-2 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded-md transition-colors">
-                    📄 Quotes
-                  </button>
-                  <button className="w-full text-left px-2 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded-md transition-colors">
-                    👥 Clients
-                  </button>
-                  <button className="w-full text-left px-2 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded-md transition-colors">
-                    🏢 Suppliers
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </form>
+        {/* Global Search Component */}
+        <GlobalSearch />
 
         {/* Timestamp with Vertical Separator */}
         <div className="flex items-center space-x-3 text-gray-600">

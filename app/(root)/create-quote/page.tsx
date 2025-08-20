@@ -310,6 +310,28 @@ export default function CreateQuotePage() {
   };
 
   const handleSaveQuote = () => {
+    // Generate a unique quote ID
+    const quoteId = `QT-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+    
+    // Create a new quote object
+    const newQuote = {
+      id: quoteId,
+      clientName: formData.client.companyName || formData.client.contactPerson,
+      contactPerson: formData.client.contactPerson,
+      date: new Date().toISOString().split('T')[0],
+      amount: formData.calculation.totalPrice || 0,
+      status: "Pending" as const,
+      userId: "u1", // Default user ID
+      productName: formData.products[0]?.productName || "Printing Product",
+      quantity: formData.products[0]?.quantity || 0
+    };
+
+    // Save to localStorage for quote management page to pick up
+    const existingQuotes = localStorage.getItem('newQuotes');
+    const quotesArray = existingQuotes ? JSON.parse(existingQuotes) : [];
+    quotesArray.push(newQuote);
+    localStorage.setItem('newQuotes', JSON.stringify(quotesArray));
+
     setSaveModalOpen(true);
   };
 
@@ -508,8 +530,8 @@ export default function CreateQuotePage() {
       {saveModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">Quote Saved!</h3>
-            <p className="text-slate-600 mb-8">What do you want to do next?</p>
+            <h3 className="text-2xl font-bold text-slate-900 mb-3">Quote Saved Successfully!</h3>
+            <p className="text-slate-600 mb-6">Your quote has been saved and will appear in the Quote Management page.</p>
             <div className="space-y-4">
               <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
                 <Link href={`mailto:${formData.client.email}`}>
@@ -527,6 +549,15 @@ export default function CreateQuotePage() {
                 onClick={handleDownloadOpsFromModal}
               >
                 Download Operations Copy
+              </Button>
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={() => {
+                  setSaveModalOpen(false);
+                  router.push("/quote-management");
+                }}
+              >
+                View in Quote Management
               </Button>
               <Button
                 variant="outline"

@@ -28,11 +28,27 @@ export interface OperationalPaper {
   inputWidth: number | null;
   inputHeight: number | null;
   pricePerPacket: number | null;
+  pricePerSheet?: number | null;  // Price per sheet
   sheetsPerPacket: number | null;
   recommendedSheets: number;
   enteredSheets: number | null;
   outputWidth: number | null;
   outputHeight: number | null;
+}
+
+// Calculation result interface for operational calculations
+export interface OperationalCalculation {
+  layout: {
+    usableW: number;
+    usableH: number;
+    itemsPerSheet: number;
+    efficiency: number;
+    orientation: "normal" | "rotated";
+    itemsPerRow: number;
+    itemsPerCol: number;
+  };
+  recommendedSheets: number;
+  pricePerSheet: number | null;
 }
 
 // === Product (kanonik untuk Step 3) ===
@@ -49,6 +65,7 @@ export interface Product {
   useSameAsFlat: boolean;
   papers: Paper[];
   finishing: string[];
+  colors?: { front?: string; back?: string };  // Color specifications
 }
 
 // === State utama form (dipakai Step 2–5) ===
@@ -57,10 +74,19 @@ export interface QuoteFormData {
     clientType: 'Individual' | 'Company';
     companyName: string;
     contactPerson: string;
+    firstName?: string;      // For individual clients
+    lastName?: string;       // For individual clients
     email: string;
     phone: string;
     countryCode: string;
     role: string;
+    addressLine1?: string;   // Address fields
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    additionalInfo?: string;
   };
   products: Product[];
   operational: {

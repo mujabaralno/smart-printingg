@@ -140,15 +140,19 @@ export default function SupplierManagementPage() {
         <CardContent className="p-10 space-y-8">
           {/* Search and Create Button */}
           <div className="flex items-center gap-6">
-            <Input
-              placeholder="Search by material name, supplier, or ID"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-            />
+            <div className="flex flex-col gap-2 flex-1">
+              <Label htmlFor="search-input" className="text-sm font-medium text-slate-700">Search</Label>
+              <Input
+                id="search-input"
+                placeholder="Search by material name, supplier, or ID"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full"
+              />
+            </div>
 
             <Button 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300" 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-10" 
               onClick={onAdd}
             >
               <Plus className="h-4 w-4 mr-2" />
