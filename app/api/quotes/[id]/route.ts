@@ -15,8 +15,15 @@ export async function PUT(
     return NextResponse.json(quote);
   } catch (error) {
     console.error('Error updating quote:', error);
+    
+    // Provide more detailed error information
+    let errorMessage = 'Failed to update quote';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to update quote' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

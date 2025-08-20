@@ -109,20 +109,22 @@ export default function QuoteManagementPage() {
         const response = await fetch('/api/quotes');
         if (response.ok) {
           const quotes = await response.json();
+          console.log('Raw quotes from database:', quotes);
           // Transform database quotes to match Row format
           const transformedQuotes = quotes.map((quote: any) => ({
             id: quote.id, // Use database ID for operations
-            quoteId: quote.quoteId, // Keep formatted quote ID for display
+            quoteId: quote.quoteId || `QT-${new Date(quote.date).getFullYear()}-${String(new Date(quote.date).getMonth() + 1).padStart(2, '0')}-${String(new Date(quote.date).getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`, // Generate quote ID if missing
             clientName: quote.client?.companyName || quote.client?.contactPerson || "Unknown Client",
             contactPerson: quote.client?.contactPerson || "Unknown Contact",
             date: quote.date.split('T')[0], // Convert ISO date to YYYY-MM-DD
             amount: quote.amounts?.total || 0,
             status: quote.status as Status,
             userId: quote.user?.id || "cmejqfk3s0000x5a98slufy9n", // Use real admin user ID as fallback
-            product: quote.product || "Printing Product", // Map to product field for table display
-            productName: quote.product || "Printing Product", // Keep for backward compatibility
+            product: quote.product || (quote.papers && quote.papers.length > 0 ? quote.papers[0].name : "Printing Product"), // Use paper name if available
+            productName: quote.product || (quote.papers && quote.papers.length > 0 ? quote.papers[0].name : "Printing Product"), // Keep for backward compatibility
             quantity: quote.quantity || 0,
           }));
+          console.log('Transformed quotes:', transformedQuotes);
           setRows(transformedQuotes);
         } else {
           console.error('Failed to load quotes');
@@ -275,7 +277,13 @@ export default function QuoteManagementPage() {
         userId: draft.userId || null, // Allow null if no user assigned
         product: draft.productName?.trim() || "Printing Product",
         quantity: draft.quantity === "" ? 0 : Number(draft.quantity),
-        amount: Number(draft.amount), // This will be handled by the database service
+        sides: "1", // Default to 1 side since not in edit form
+        printing: "Digital", // Default to Digital printing since not in edit form
+        amounts: {
+          base: Number(draft.amount) * 0.8, // Calculate base amount (80% of total)
+          vat: Number(draft.amount) * 0.2,  // Calculate VAT (20% of total)
+          total: Number(draft.amount)        // Total amount from form
+        }
       };
       
       console.log('Updating quote with data:', updateData);

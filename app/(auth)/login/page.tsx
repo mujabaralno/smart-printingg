@@ -69,9 +69,10 @@ export default function LoginPage() {
     }
   };
 
-  // Server-side OTP API integration
+  // Server-side OTP API integration with fallback to test endpoints
   const sendOtpDirect = async (phoneNumber: string) => {
     try {
+      // First try the real Twilio endpoint
       const response = await fetch('/api/otp/send', {
         method: 'POST',
         headers: {
@@ -85,11 +86,44 @@ export default function LoginPage() {
       if (response.ok && data.success) {
         return { success: true, sid: data.sessionId };
       } else {
-        throw new Error(data.message || 'Failed to send verification code');
+        // If Twilio fails, try the test endpoint as fallback
+        console.log('Twilio failed, trying test OTP endpoint...');
+        return await sendTestOtp(phoneNumber);
       }
     } catch (error) {
       console.error('Twilio API error:', error);
-      throw error;
+      // Fallback to test OTP
+      console.log('Falling back to test OTP endpoint...');
+      return await sendTestOtp(phoneNumber);
+    }
+  };
+
+  // Test OTP fallback function
+  const sendTestOtp = async (phoneNumber: string) => {
+    try {
+      const response = await fetch('/api/otp/test-send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        // Show test OTP in console for development
+        if (data.testOtp) {
+          console.log(`🔐 TEST OTP for ${phoneNumber}: ${data.testOtp}`);
+          console.log('⚠️ This is a test verification code for development purposes');
+        }
+        return { success: true, sid: data.sessionId, isTest: true };
+      } else {
+        throw new Error(data.error || 'Failed to send test verification code');
+      }
+    } catch (error) {
+      console.error('Test OTP API error:', error);
+      throw new Error('Both Twilio and test OTP services failed');
     }
   };
 

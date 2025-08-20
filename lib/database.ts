@@ -248,6 +248,8 @@ export class DatabaseService {
         client: true,
         user: true,
         amounts: true,
+        papers: true,
+        finishing: true,
       },
       orderBy: { date: 'desc' },
     });
@@ -468,31 +470,36 @@ export class DatabaseService {
         if (data.amounts) {
           console.log('Updating amounts:', data.amounts);
           
-          // Check if QuoteAmount exists, if not create it
-          const existingAmount = await tx.quoteAmount.findUnique({
-            where: { quoteId: id },
-          });
-
-          if (existingAmount) {
-            await tx.quoteAmount.update({
+          try {
+            // Check if QuoteAmount exists, if not create it
+            const existingAmount = await tx.quoteAmount.findUnique({
               where: { quoteId: id },
-              data: {
-                base: data.amounts.base || 0,
-                vat: data.amounts.vat || 0,
-                total: data.amounts.total || 0,
-              },
             });
-            console.log('Updated existing amount record');
-          } else {
-            await tx.quoteAmount.create({
-              data: {
-                quoteId: id,
-                base: data.amounts.base || 0,
-                vat: data.amounts.vat || 0,
-                total: data.amounts.total || 0,
-              },
-            });
-            console.log('Created new amount record');
+
+            if (existingAmount) {
+              await tx.quoteAmount.update({
+                where: { quoteId: id },
+                data: {
+                  base: data.amounts.base || 0,
+                  vat: data.amounts.vat || 0,
+                  total: data.amounts.total || 0,
+                },
+              });
+              console.log('Updated existing amount record');
+            } else {
+              await tx.quoteAmount.create({
+                data: {
+                  quoteId: id,
+                  base: data.amounts.base || 0,
+                  vat: data.amounts.vat || 0,
+                  total: data.amounts.total || 0,
+                },
+              });
+              console.log('Created new amount record');
+            }
+          } catch (amountError) {
+            console.error('Error updating amounts:', amountError);
+            throw new Error(`Failed to update quote amounts: ${amountError instanceof Error ? amountError.message : 'Unknown error'}`);
           }
         }
         
@@ -594,7 +601,8 @@ export class DatabaseService {
     };
   }
 
-  // Supplier operations
+  // Supplier operations - Temporarily disabled for SQLite compatibility
+  /*
   static async createSupplier(supplierData: {
     name: string;
     contact?: string;
@@ -719,6 +727,7 @@ export class DatabaseService {
       orderBy: { name: 'asc' },
     });
   }
+  */
 
   static async getClientStats() {
     const db = this.checkDatabase();
