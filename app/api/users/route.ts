@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseService } from '@/lib/database';
+import { HybridDatabaseService } from '@/lib/database-hybrid';
 
 // Fallback demo users for when database is not available
 const DEMO_USERS = [
@@ -39,20 +39,20 @@ const DEMO_USERS = [
 ];
 
 export async function GET() {
-  try {
-    console.log('👥 Users API called - attempting to fetch from database');
-    
-    // Try to get users from database first
-    const users = await DatabaseService.getAllUsers();
-    console.log(`✅ Successfully fetched ${users.length} users from database`);
-    return NextResponse.json(users);
-  } catch (error) {
-    console.error('❌ Database error, falling back to demo users:', error);
-    
-    // Return demo users as fallback
-    console.log('🔄 Returning demo users as fallback');
-    return NextResponse.json(DEMO_USERS);
-  }
+      try {
+      console.log('👥 Users API called - attempting to fetch from database');
+      
+      // Use hybrid service that handles both database and fallback
+      const users = await HybridDatabaseService.getAllUsers();
+      console.log(`✅ Successfully fetched ${users.length} users (database or fallback)`);
+      return NextResponse.json(users);
+    } catch (error) {
+      console.error('❌ Unexpected error in users API:', error);
+      
+      // Return demo users as final fallback
+      console.log('🔄 Returning demo users as final fallback');
+      return NextResponse.json(DEMO_USERS);
+    }
 }
 
 export async function POST(request: NextRequest) {

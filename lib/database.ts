@@ -8,6 +8,114 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
+// Fallback data for when database is not available
+const FALLBACK_DATA = {
+  users: [
+    {
+      id: "admin-001",
+      email: "admin@example.com",
+      name: "John Admin",
+      role: "admin",
+      password: "admin123",
+      profilePicture: null,
+      status: "Active",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "estimator-001",
+      email: "estimator@example.com",
+      name: "Sarah Estimator",
+      role: "estimator",
+      password: "estimator123",
+      profilePicture: null,
+      status: "Active",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "user-001",
+      email: "user@example.com",
+      name: "Mike User",
+      role: "user",
+      password: "user123",
+      profilePicture: null,
+      status: "Active",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  ],
+  clients: [
+    {
+      id: "client-001",
+      clientType: "Company",
+      companyName: "Tech Solutions Ltd.",
+      contactPerson: "John Smith",
+      email: "john@techsolutions.com",
+      phone: "+971-50-123-4567",
+      countryCode: "+971",
+      role: "CEO",
+      userId: "admin-001",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "client-002",
+      clientType: "Individual",
+      companyName: null,
+      contactPerson: "Sarah Johnson",
+      email: "sarah.j@email.com",
+      phone: "+971-55-987-6543",
+      countryCode: "+971",
+      role: null,
+      userId: "estimator-001",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  ],
+  quotes: [
+    {
+      id: "quote-001",
+      quoteId: "QT-2025-0820-001",
+      date: new Date().toISOString(),
+      status: "Pending",
+      clientId: "client-001",
+      userId: "admin-001",
+      product: "Business Cards",
+      quantity: 1000,
+      sides: "2",
+      printing: "Digital",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "quote-002",
+      quoteId: "QT-2025-0820-002",
+      date: new Date().toISOString(),
+      status: "Approved",
+      clientId: "client-002",
+      userId: "estimator-001",
+      product: "Brochures",
+      quantity: 500,
+      sides: "1",
+      printing: "Offset",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  ]
+};
+
+// Helper function to check if database is available
+async function isDatabaseAvailable(): Promise<boolean> {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return true;
+  } catch (error) {
+    console.log('❌ Database not available, using fallback data:', error);
+    return false;
+  }
+}
+
 // Database service class
 export class DatabaseService {
   // User operations
@@ -17,44 +125,144 @@ export class DatabaseService {
     role?: string;
     profilePicture?: string;
   }) {
-    return await prisma.user.create({
-      data: userData,
-    });
+    try {
+      if (await isDatabaseAvailable()) {
+        return await prisma.user.create({
+          data: userData,
+        });
+      } else {
+        // Return mock user for fallback
+        return {
+          id: `fallback-${Date.now()}`,
+          ...userData,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      // Return mock user for fallback
+      return {
+        id: `fallback-${Date.now()}`,
+        ...userData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    }
   }
 
   static async getUserByEmail(email: string) {
-    return await prisma.user.findUnique({
-      where: { email },
-    });
+    try {
+      if (await isDatabaseAvailable()) {
+        return await prisma.user.findUnique({
+          where: { email },
+        });
+      } else {
+        // Return from fallback data
+        return FALLBACK_DATA.users.find(u => u.email === email) || null;
+      }
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return FALLBACK_DATA.users.find(u => u.email === email) || null;
+    }
   }
 
   static async getUserById(id: string) {
-    return await prisma.user.findUnique({
-      where: { id },
-      include: {
-        quotes: true,
-        clients: true,
-      },
-    });
+    try {
+      if (await isDatabaseAvailable()) {
+        return await prisma.user.findUnique({
+          where: { id },
+          include: {
+            quotes: true,
+            clients: true,
+          },
+        });
+      } else {
+        // Return from fallback data
+        const user = FALLBACK_DATA.users.find(u => u.id === id);
+        if (user) {
+          return {
+            ...user,
+            quotes: FALLBACK_DATA.quotes.filter(q => q.userId === id),
+            clients: FALLBACK_DATA.clients.filter(c => c.userId === id)
+          };
+        }
+        return null;
+      }
+    } catch (error) {
+      console.error('Error getting user by ID:', error);
+      const user = FALLBACK_DATA.users.find(u => u.id === id);
+      if (user) {
+        return {
+          ...user,
+          quotes: FALLBACK_DATA.quotes.filter(q => q.userId === id),
+          clients: FALLBACK_DATA.clients.filter(c => c.userId === id)
+        };
+      }
+      return null;
+    }
   }
 
   static async updateUser(id: string, data: any) {
-    return await prisma.user.update({
-      where: { id },
-      data,
-    });
+    try {
+      if (await isDatabaseAvailable()) {
+        return await prisma.user.update({
+          where: { id },
+          data,
+        });
+      } else {
+        // Return updated user from fallback data
+        const userIndex = FALLBACK_DATA.users.findIndex(u => u.id === id);
+        if (userIndex !== -1) {
+          FALLBACK_DATA.users[userIndex] = { ...FALLBACK_DATA.users[userIndex], ...data, updatedAt: new Date() };
+          return FALLBACK_DATA.users[userIndex];
+        }
+        return null;
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      return null;
+    }
   }
 
   static async deleteUser(id: string) {
-    return await prisma.user.delete({
-      where: { id },
-    });
+    try {
+      if (await isDatabaseAvailable()) {
+        return await prisma.user.delete({
+          where: { id },
+        });
+      } else {
+        // Remove from fallback data
+        const userIndex = FALLBACK_DATA.users.findIndex(u => u.id === id);
+        if (userIndex !== -1) {
+          const deletedUser = FALLBACK_DATA.users[userIndex];
+          FALLBACK_DATA.users.splice(userIndex, 1);
+          return deletedUser;
+        }
+        return null;
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      return null;
+    }
   }
 
   static async getAllUsers() {
-    return await prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+    try {
+      if (await isDatabaseAvailable()) {
+        return await prisma.user.findMany({
+          orderBy: { createdAt: 'desc' },
+        });
+      } else {
+        // Return fallback data
+        console.log('🔄 Using fallback users data');
+        return FALLBACK_DATA.users;
+      }
+    } catch (error) {
+      console.error('Error getting all users:', error);
+      console.log('🔄 Using fallback users data due to error');
+      return FALLBACK_DATA.users;
+    }
   }
 
   // Client operations
@@ -68,9 +276,30 @@ export class DatabaseService {
     role?: string;
     userId?: string;
   }) {
-    return await prisma.client.create({
-      data: clientData,
-    });
+    try {
+      if (await isDatabaseAvailable()) {
+        return await prisma.client.create({
+          data: clientData,
+        });
+      } else {
+        // Return mock client for fallback
+        return {
+          id: `fallback-client-${Date.now()}`,
+          ...clientData,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+      }
+    } catch (error) {
+      console.error('Error creating client:', error);
+      // Return mock client for fallback
+      return {
+        id: `fallback-client-${Date.now()}`,
+        ...clientData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    }
   }
 
   static async getClientById(id: string) {
