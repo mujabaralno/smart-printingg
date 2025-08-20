@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Eye, Pencil, Calendar, DollarSign, ChevronDown, ChevronUp, Download, ChevronDown as ChevronDownIcon } from "lucide-react";
 import { getQuotes } from "@/lib/dummy-data";
 import Link from "next/link";
+import CreateQuoteModal from "@/components/create-quote/CreateQuoteModal";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { quotes as QUOTES, users as USERS } from "@/constants";
 import {
@@ -43,6 +44,7 @@ export default function QuoteManagementPage() {
   const [showNewQuoteNotification, setShowNewQuoteNotification] = React.useState(false);
   const [newQuoteCount, setNewQuoteCount] = React.useState(0);
   const [downloadingPDF, setDownloadingPDF] = React.useState<string | null>(null);
+  const [isCreateQuoteModalOpen, setIsCreateQuoteModalOpen] = React.useState(false);
 
   // ===== filter & paging =====
   const [search, setSearch] = React.useState("");
@@ -252,6 +254,21 @@ export default function QuoteManagementPage() {
     }
   };
 
+  const handleCreateQuote = (newQuote: any) => {
+    // Add the new quote to the existing quotes
+    const updatedRows = [...rows, newQuote];
+    setRows(updatedRows);
+    
+    // Show success notification
+    setNewQuoteCount(prev => prev + 1);
+    setShowNewQuoteNotification(true);
+    
+    // Hide notification after 3 seconds
+    setTimeout(() => {
+      setShowNewQuoteNotification(false);
+    }, 3000);
+  };
+
   return (
     <div className="space-y-12">
       {/* New Quote Notification */}
@@ -306,11 +323,12 @@ export default function QuoteManagementPage() {
               />
             </div>
 
-            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-10">
-              <Link href="/create-quote" className="gap-2 flex items-center">
-                <Plus className="h-4 w-4" />
-                Create a New Quote
-              </Link>
+            <Button 
+              onClick={() => setIsCreateQuoteModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-10 gap-2 flex items-center"
+            >
+              <Plus className="h-4 w-4" />
+              Create a New Quote
             </Button>
           </div>
 
@@ -757,6 +775,13 @@ export default function QuoteManagementPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Quote Modal */}
+      <CreateQuoteModal 
+        isOpen={isCreateQuoteModalOpen}
+        onClose={() => setIsCreateQuoteModalOpen(false)}
+        onSubmit={handleCreateQuote}
+      />
     </div>
   );
 }

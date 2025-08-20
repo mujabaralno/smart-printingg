@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { getQuotes } from "@/lib/dummy-data";
 import Link from "next/link";
+import CreateQuoteModal from "@/components/create-quote/CreateQuoteModal";
 
 // Motivational quotes collection
 const motivationalQuotes = [
@@ -59,13 +60,30 @@ const motivationalQuotes = [
 ];
 
 export default function DashboardPage() {
-  const [allQuotes, setAllQuotes] = useState(getQuotes());
+  const [allQuotes, setAllQuotes] = useState(() => {
+    // Try to load from localStorage first, fallback to dummy data
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('smartPrintingQuotes');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.log('Failed to parse saved quotes, using default data');
+        }
+      }
+    }
+    return getQuotes();
+  });
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [currentMotivationalQuote, setCurrentMotivationalQuote] = useState("");
   const [updateStatusValue, setUpdateStatusValue] = useState<string>("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isCreateQuoteModalOpen, setIsCreateQuoteModalOpen] = useState(false);
   
   const user = { name: "John", role: "admin" }; // Mock user data
 
@@ -87,9 +105,23 @@ export default function DashboardPage() {
     return () => clearInterval(quoteInterval);
   }, []);
 
-  // Debug: Monitor allQuotes changes
+  // Cleanup function for modals
   useEffect(() => {
-    console.log('allQuotes changed:', allQuotes);
+    return () => {
+      // Cleanup modal states when component unmounts
+      setIsViewModalOpen(false);
+      setIsUpdateModalOpen(false);
+      setSelectedQuote(null);
+      setUpdateStatusValue("");
+      setIsUpdating(false);
+    };
+  }, []);
+
+  // Save quotes to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined' && allQuotes.length > 0) {
+      localStorage.setItem('smartPrintingQuotes', JSON.stringify(allQuotes));
+    }
   }, [allQuotes]);
 
   // Filter quotes based on selected status - use useMemo for better performance
@@ -161,39 +193,91 @@ export default function DashboardPage() {
   };
 
   const handleViewQuote = (quote: any) => {
+    if (!quote || !quote.quoteNumber) {
+      console.error('Invalid quote data provided to view modal');
+      alert('Invalid quote data. Please try again.');
+      return;
+    }
+    
+    console.log('Opening view modal for quote:', quote);
     setSelectedQuote(quote);
     setIsViewModalOpen(true);
   };
 
   const handleUpdateQuote = (quote: any) => {
+    if (!quote || !quote.quoteNumber) {
+      console.error('Invalid quote data provided to update modal');
+      alert('Invalid quote data. Please try again.');
+      return;
+    }
+    
+    console.log('Opening update modal for quote:', quote);
     setSelectedQuote(quote);
-    setUpdateStatusValue(quote.status);
+    setUpdateStatusValue(quote.status || "");
     setIsUpdateModalOpen(true);
   };
 
   const handleStatusUpdate = (newStatus: string) => {
-    if (selectedQuote) {
-      console.log('Before update - allQuotes:', allQuotes);
-      console.log('Before update - selectedQuote:', selectedQuote);
+    // Validate input data
+    if (!selectedQuote || !selectedQuote.quoteNumber) {
+      alert('No quote selected for update');
+      return;
+    }
+
+    if (!updateStatusValue || !newStatus) {
+      alert('Please select a valid status before updating.');
+      return;
+    }
+
+    if (updateStatusValue === selectedQuote.status) {
+      alert('Quote already has this status. No changes needed.');
+      return;
+    }
+
+    try {
+      // Store the quote number for reference
+      const quoteNumber = selectedQuote.quoteNumber;
       
       // Update the quote status in local state
       const updatedQuotes = allQuotes.map(quote => 
-        quote.quoteNumber === selectedQuote.quoteNumber 
+        quote.quoteNumber === quoteNumber 
           ? { ...quote, status: newStatus as any }
           : quote
       );
       
-      console.log('After update - updatedQuotes:', updatedQuotes);
-      
+      // Update the quotes state
       setAllQuotes(updatedQuotes);
+      // Save to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('smartPrintingQuotes', JSON.stringify(updatedQuotes));
+      }
       
-      // Update the selectedQuote with new status
-      setSelectedQuote({ ...selectedQuote, status: newStatus });
+      // Show success message
+      setSuccessMessage(`Quote status updated to ${newStatus} successfully!`);
+      setShowSuccessMessage(true);
       
-      console.log(`Updated quote ${selectedQuote.quoteNumber} to ${newStatus}`);
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        setSuccessMessage("");
+      }, 3000);
+      
+      // Force close modal by resetting all states
+      setIsUpdateModalOpen(false);
+      setUpdateStatusValue("");
+      setSelectedQuote(null);
+      setIsUpdating(false);
+      
+    } catch (error) {
+      console.error('Error updating quote status:', error);
+      alert('Error updating quote status. Please try again.');
+      
+      // Reset states on error too
+      setIsUpdateModalOpen(false);
+      setUpdateStatusValue("");
+      setSelectedQuote(null);
+      setIsUpdating(false);
     }
-    
-    setIsUpdateModalOpen(false);
   };
 
   const handleDownloadPDF = (quote: any) => {
@@ -201,137 +285,193 @@ export default function DashboardPage() {
     console.log(`Downloading PDF for quote ${quote.quoteNumber}`);
   };
 
-  const closeViewModal = () => {
-    setIsViewModalOpen(false);
-    setSelectedQuote(null);
+  const handleCreateQuote = (newQuote: any) => {
+    // Add the new quote to the existing quotes
+    const updatedQuotes = [...allQuotes, newQuote];
+    setAllQuotes(updatedQuotes);
+    
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('smartPrintingQuotes', JSON.stringify(updatedQuotes));
+    }
+    
+    // Show success message
+    setSuccessMessage(`New quote ${newQuote.quoteNumber} created successfully!`);
+    setShowSuccessMessage(true);
+    
+    // Hide success message after 3 seconds
+    setTimeout(() => {
+      setShowSuccessMessage(false);
+      setSuccessMessage("");
+    }, 3000);
   };
 
-  const closeUpdateModal = () => {
-    setIsUpdateModalOpen(false);
-    setUpdateStatusValue(""); // Reset the status value
-    // Don't clear selectedQuote to allow other actions to work
+  const ViewQuoteModal = () => {
+    // Only render if modal should be open
+    if (!isViewModalOpen) return null;
+    
+    return (
+      <Dialog 
+        open={isViewModalOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            // Force close and reset all states
+            setIsViewModalOpen(false);
+            setSelectedQuote(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Quote Details - {selectedQuote?.quoteNumber}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-600">Client Name</label>
+                <p className="text-lg font-semibold">{selectedQuote?.customerName}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Amount</label>
+                <p className="text-lg font-semibold">${selectedQuote?.totalAmount}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Date Created</label>
+                <p className="text-lg font-semibold">{selectedQuote && formatDate(selectedQuote.createdDate)}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Status</label>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  selectedQuote?.status === "Approved" 
+                    ? "bg-blue-100 text-blue-700"
+                    : selectedQuote?.status === "Pending"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-red-100 text-red-700"
+                }`}>
+                  {selectedQuote?.status}
+                </span>
+              </div>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-600">Products & Services</label>
+              <div className="mt-2 p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-700">
+                  • Business Cards - 1000 units<br/>
+                  • Brochures - 500 units<br/>
+                  • Custom Design Services
+                </p>
+              </div>
+            </div>
+
+            <div className="flex space-x-4">
+              <Button 
+                onClick={() => handleDownloadPDF(selectedQuote)}
+                className="flex items-center space-x-2"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download PDF</span>
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  // Close view modal first
+                  setIsViewModalOpen(false);
+                  setSelectedQuote(null);
+                  
+                  // Then open update modal
+                  handleUpdateQuote(selectedQuote);
+                }}
+              >
+                Edit Quote
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
-  const ViewQuoteModal = () => (
-    <Dialog open={isViewModalOpen} onOpenChange={closeViewModal}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Quote Details - {selectedQuote?.quoteNumber}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+  const UpdateQuoteModal = () => {
+    // Only render if modal should be open
+    if (!isUpdateModalOpen) return null;
+    
+    return (
+      <Dialog 
+        open={isUpdateModalOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            // Force close and reset all states
+            setIsUpdateModalOpen(false);
+            setUpdateStatusValue("");
+            setSelectedQuote(null);
+            setIsUpdating(false);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Quote - {selectedQuote?.quoteNumber}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
             <div>
-              <label className="text-sm font-medium text-gray-600">Client Name</label>
-              <p className="text-lg font-semibold">{selectedQuote?.customerName}</p>
+              <label className="text-sm font-medium text-gray-600">Update Status</label>
+              <Select value={updateStatusValue} onValueChange={setUpdateStatusValue}>
+                <SelectTrigger className="w-full mt-2">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-600">Amount</label>
-              <p className="text-lg font-semibold">${selectedQuote?.totalAmount}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-600">Date Created</label>
-              <p className="text-lg font-semibold">{selectedQuote && formatDate(selectedQuote.createdDate)}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-600">Status</label>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                selectedQuote?.status === "Approved" 
-                  ? "bg-blue-100 text-blue-700"
-                  : selectedQuote?.status === "Pending"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : "bg-red-100 text-red-700"
-              }`}>
-                {selectedQuote?.status}
-              </span>
+            
+            <div className="flex space-x-4">
+              <Button 
+                onClick={() => handleStatusUpdate(updateStatusValue)}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={!updateStatusValue}
+              >
+                Apply Status Change
+              </Button>
+              <Button 
+                onClick={() => {
+                  // Force close and reset all states
+                  setIsUpdateModalOpen(false);
+                  setUpdateStatusValue("");
+                  setSelectedQuote(null);
+                  setIsUpdating(false);
+                  
+                  // Navigate to step 2 customer detail choose
+                  window.location.href = `/create-quote?step=2&edit=${selectedQuote?.quoteNumber}`;
+                }}
+                variant="outline"
+                className="flex items-center space-x-2"
+              >
+                <Edit className="w-4 h-4" />
+                <span>Edit Quote Details</span>
+              </Button>
             </div>
           </div>
-          
-          <div>
-            <label className="text-sm font-medium text-gray-600">Products & Services</label>
-            <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-700">
-                • Business Cards - 1000 units<br/>
-                • Brochures - 500 units<br/>
-                • Custom Design Services
-              </p>
-            </div>
-          </div>
-
-          <div className="flex space-x-4">
-            <Button 
-              onClick={() => handleDownloadPDF(selectedQuote)}
-              className="flex items-center space-x-2"
-            >
-              <Download className="w-4 h-4" />
-              <span>Download PDF</span>
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => {
-                closeViewModal();
-                handleUpdateQuote(selectedQuote);
-              }}
-            >
-              Edit Quote
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-
-  const UpdateQuoteModal = () => (
-    <Dialog open={isUpdateModalOpen} onOpenChange={closeUpdateModal}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Update Quote - {selectedQuote?.quoteNumber}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-6">
-          <div>
-            <label className="text-sm font-medium text-gray-600">Update Status</label>
-            <Select value={updateStatusValue} onValueChange={setUpdateStatusValue}>
-              <SelectTrigger className="w-full mt-2">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex space-x-4">
-            <Button 
-              onClick={() => {
-                if (updateStatusValue && updateStatusValue !== selectedQuote?.status) {
-                  handleStatusUpdate(updateStatusValue);
-                }
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Apply Status Change
-            </Button>
-            <Button 
-              onClick={() => {
-                closeUpdateModal();
-                // Navigate to step 2 customer detail choose
-                window.location.href = `/create-quote?step=2&edit=${selectedQuote?.quoteNumber}`;
-              }}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              <Edit className="w-4 h-4" />
-              <span>Edit Quote Details</span>
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   return (
     <div className="space-y-12">
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="fixed top-4 right-4 z-[9999] bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="w-5 h-5" />
+            <span>{successMessage}</span>
+          </div>
+        </div>
+      )}
+
       {/* Welcome Header */}
       <div className="text-center space-y-3">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -395,12 +535,13 @@ export default function DashboardPage() {
               </SelectContent>
             </Select>
             
-            <Link href="/create-quote">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                <Plus className="w-5 h-5 mr-2" />
-                Create a New Quote
-              </Button>
-            </Link>
+            <Button 
+              onClick={() => setIsCreateQuoteModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Create a New Quote
+            </Button>
           </div>
         </div>
 
@@ -510,6 +651,11 @@ export default function DashboardPage() {
       {/* Modals */}
       <ViewQuoteModal />
       <UpdateQuoteModal />
+      <CreateQuoteModal 
+        isOpen={isCreateQuoteModalOpen}
+        onClose={() => setIsCreateQuoteModalOpen(false)}
+        onSubmit={handleCreateQuote}
+      />
     </div>
   );
 }
