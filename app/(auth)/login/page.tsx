@@ -164,10 +164,27 @@ export default function LoginPage() {
         setSessionId(result.sid || 'session-' + Date.now());
         setShowOtpModal(true);
         showMessage("Verification code sent to your phone", "success");
+      } else {
+        // Handle API response errors - check if result has error property
+        const errorMessage = (result as any).error || "Failed to send verification code";
+        showMessage(errorMessage, "error");
+        console.error('OTP send failed:', result);
       }
     } catch (error) {
       console.error('Login error:', error);
-      showMessage("Failed to send verification code. Please try again.", "error");
+      
+      // Show more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('Twilio service not configured')) {
+          showMessage("OTP service not configured. Please contact administrator.", "error");
+        } else if (error.message.includes('Failed to send OTP')) {
+          showMessage("Failed to send verification code. Please check your phone number.", "error");
+        } else {
+          showMessage(`Error: ${error.message}`, "error");
+        }
+      } else {
+        showMessage("Failed to send verification code. Please try again.", "error");
+      }
     } finally {
       setIsLoading(false);
     }
