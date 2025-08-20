@@ -601,8 +601,7 @@ export class DatabaseService {
     };
   }
 
-  // Supplier operations - Temporarily disabled for SQLite compatibility
-  /*
+  // Supplier operations
   static async createSupplier(supplierData: {
     name: string;
     contact?: string;
@@ -716,6 +715,28 @@ export class DatabaseService {
     });
   }
 
+  // Get material by materialId
+  static async getMaterialByMaterialId(materialId: string) {
+    const db = this.checkDatabase();
+    return await db.material.findUnique({
+      where: { materialId },
+      include: {
+        supplier: true,
+      },
+    });
+  }
+
+  // Get supplier by email
+  static async getSupplierByEmail(email: string) {
+    const db = this.checkDatabase();
+    return await db.supplier.findUnique({
+      where: { email },
+      include: {
+        materials: true,
+      },
+    });
+  }
+
   // Get materials by supplier
   static async getMaterialsBySupplier(supplierId: string) {
     const db = this.checkDatabase();
@@ -727,7 +748,6 @@ export class DatabaseService {
       orderBy: { name: 'asc' },
     });
   }
-  */
 
   static async getClientStats() {
     const db = this.checkDatabase();
@@ -759,6 +779,141 @@ export class DatabaseService {
     }
 
     console.log('Dummy data migration completed');
+  }
+
+  // Seed database with initial suppliers
+  static async seedSuppliers() {
+    console.log('Starting supplier seeding...');
+    
+    const suppliersToSeed = [
+      {
+        name: 'Paper Source LLC',
+        contact: 'Ahmed Al Mansouri',
+        email: 'ahmed@papersourcellc.ae',
+        phone: '0501234567',
+        countryCode: '+971',
+        address: 'Sheikh Zayed Road',
+        city: 'Dubai',
+        state: 'Dubai',
+        postalCode: '12345',
+        country: 'UAE',
+        status: 'Active'
+      },
+      {
+        name: 'Apex Papers',
+        contact: 'Sarah Johnson',
+        email: 'sarah@apexpapers.ae',
+        phone: '0509876543',
+        countryCode: '+971',
+        address: 'Al Wasl Road',
+        city: 'Dubai',
+        state: 'Dubai',
+        postalCode: '54321',
+        country: 'UAE',
+        status: 'Active'
+      },
+      {
+        name: 'Premium Print Supplies',
+        contact: 'Mohammed Al Rashid',
+        email: 'mohammed@premiumprint.ae',
+        phone: '0505555555',
+        countryCode: '+971',
+        address: 'Jumeirah Road',
+        city: 'Dubai',
+        state: 'Dubai',
+        postalCode: '67890',
+        country: 'UAE',
+        status: 'Active'
+      }
+    ];
+
+    for (const supplierData of suppliersToSeed) {
+      try {
+        const existingSupplier = await this.getSupplierByEmail(supplierData.email);
+        
+        if (!existingSupplier) {
+          await this.createSupplier(supplierData);
+          console.log(`Created supplier: ${supplierData.name}`);
+        } else {
+          console.log(`Supplier already exists: ${supplierData.name}`);
+        }
+      } catch (error) {
+        console.error(`Error creating supplier ${supplierData.name}:`, error);
+      }
+    }
+  }
+
+  // Seed database with initial materials
+  static async seedMaterials() {
+    console.log('Starting material seeding...');
+    
+    // First, get the suppliers to link materials
+    const suppliers = await this.getAllSuppliers();
+    if (suppliers.length === 0) {
+      console.log('No suppliers found, seeding suppliers first...');
+      await this.seedSuppliers();
+      const suppliers = await this.getAllSuppliers();
+    }
+    
+    const materialsToSeed = [
+      {
+        materialId: 'M-001',
+        name: 'Art Paper 300gsm',
+        supplierId: suppliers[0]?.id || '',
+        cost: 0.50,
+        unit: 'per_sheet',
+        status: 'Active'
+      },
+      {
+        materialId: 'M-002',
+        name: 'Art Paper 150gsm',
+        supplierId: suppliers[0]?.id || '',
+        cost: 0.18,
+        unit: 'per_sheet',
+        status: 'Active'
+      },
+      {
+        materialId: 'M-003',
+        name: 'Glossy Paper 200gsm',
+        supplierId: suppliers[1]?.id || '',
+        cost: 0.35,
+        unit: 'per_sheet',
+        status: 'Active'
+      },
+      {
+        materialId: 'M-004',
+        name: 'Matte Paper 250gsm',
+        supplierId: suppliers[1]?.id || '',
+        cost: 0.42,
+        unit: 'per_sheet',
+        status: 'Active'
+      },
+      {
+        materialId: 'M-005',
+        name: 'Cardboard 400gsm',
+        supplierId: suppliers[2]?.id || '',
+        cost: 0.85,
+        unit: 'per_sheet',
+        status: 'Active'
+      }
+    ];
+
+    for (const materialData of materialsToSeed) {
+      try {
+        if (materialData.supplierId) {
+          const existingMaterial = await this.getMaterialByMaterialId(materialData.materialId);
+          
+          if (!existingMaterial) {
+            await this.createMaterial(materialData);
+            console.log(`Created material: ${materialData.name}`);
+          } else {
+            console.log(`Material already exists: ${materialData.name}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Error creating material ${materialData.name}:`, error);
+      }
+    }
   }
 
   // Seed database with initial users

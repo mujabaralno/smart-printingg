@@ -9,8 +9,14 @@ export async function POST(request: NextRequest) {
     // Seed clients
     await DatabaseService.seedClients();
     
+    // Seed suppliers
+    await DatabaseService.seedSuppliers();
+    
+    // Seed materials
+    await DatabaseService.seedMaterials();
+    
     return NextResponse.json({ 
-      message: 'Database seeded successfully',
+      message: 'Database seeded successfully with users, clients, suppliers, and materials',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
