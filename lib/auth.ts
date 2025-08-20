@@ -23,13 +23,17 @@ export const getCurrentUser = (): User | null => {
   
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
+    console.log('getCurrentUser: Raw data from localStorage:', raw);
     if (raw) {
-      return JSON.parse(raw);
+      const user = JSON.parse(raw);
+      console.log('getCurrentUser: Parsed user:', user);
+      return user;
     }
   } catch (e) {
     console.error('Failed to parse user from localStorage:', e);
   }
   
+  console.log('getCurrentUser: No user found');
   return null;
 };
 
@@ -53,19 +57,29 @@ export const getProfilePicture = (): string | null => {
 
 // Client-side function - only uses localStorage
 export const loginUser = async (userData: Omit<User, 'id'>): Promise<User> => {
+  console.log('loginUser: Starting login process with data:', userData);
+  
   const user: User = {
     id: 'temp-id-' + Date.now(),
     ...userData
   };
   
+  console.log('loginUser: Created user object:', user);
+  
   // Store in localStorage
   if (typeof window !== 'undefined') {
+    console.log('loginUser: Storing user in localStorage');
     localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
     if (user.profilePicture) {
       localStorage.setItem(PROFILE_PICTURE_KEY, user.profilePicture);
     }
+    
+    // Verify storage
+    const storedUser = localStorage.getItem(STORAGE_KEY);
+    console.log('loginUser: Verification - stored user:', storedUser);
   }
   
+  console.log('loginUser: Login process completed');
   return user;
 };
 
@@ -106,9 +120,52 @@ export const validateCredentials = async (identifier: string, password: string):
 
 // Logout user
 export const logoutUser = (): void => {
+  console.log('logoutUser: Starting logout process');
+  
   if (typeof window !== 'undefined') {
+    console.log('logoutUser: Clearing localStorage items');
+    
+    // Clear all authentication-related data
+    const beforeUser = localStorage.getItem(STORAGE_KEY);
+    const beforeProfile = localStorage.getItem(PROFILE_PICTURE_KEY);
+    
+    console.log('logoutUser: Before logout - User:', beforeUser, 'Profile:', beforeProfile);
+    
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PROFILE_PICTURE_KEY);
+    
+    // Clear any other potential auth-related items
+    localStorage.removeItem('smartPrintingSession');
+    localStorage.removeItem('smartPrintingToken');
+    
+    // Force clear any remaining auth data
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('smartPrinting')) {
+        console.log('logoutUser: Removing additional auth key:', key);
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // Clear sessionStorage as well
+    sessionStorage.clear();
+    
+    const afterUser = localStorage.getItem(STORAGE_KEY);
+    const afterProfile = localStorage.getItem(PROFILE_PICTURE_KEY);
+    
+    console.log('logoutUser: After logout - User:', afterUser, 'Profile:', afterProfile);
+    console.log('logoutUser: Logout process completed');
+  } else {
+    console.log('logoutUser: Not in browser environment');
+  }
+};
+
+// Force logout - clears all data and redirects
+export const forceLogout = (): void => {
+  logoutUser();
+  
+  // If we're in a browser environment, redirect to login
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login';
   }
 };
 

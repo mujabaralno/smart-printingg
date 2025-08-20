@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { getUser, clearUser, updatePassword } from "@/lib/auth";
+import { getUser, clearUser, updatePassword, logoutUser } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { Search, User } from "lucide-react";
 import {
@@ -20,17 +20,37 @@ export default function Header() {
   const [newPass, setNewPass] = React.useState("");
   const [confirmPass, setConfirmPass] = React.useState("");
   const [err, setErr] = React.useState("");
-  const [currentTime, setCurrentTime] = React.useState(new Date());
+  const [currentTime, setCurrentTime] = React.useState<Date | null>(null);
+  const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
+    setMounted(true);
     setUserState(getUser());
+    setCurrentTime(new Date());
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
   const handleLogout = () => {
-    clearUser();
-    router.replace("/login");
+    alert('Logout clicked! Starting logout process...');
+    
+    // Clear all data immediately
+    if (typeof window !== 'undefined') {
+      // Clear localStorage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear specific keys
+      localStorage.removeItem('smartPrintingUser');
+      localStorage.removeItem('smartPrintingProfilePicture');
+      
+      alert('Data cleared! Redirecting to login...');
+      
+      // Force redirect
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1000);
+    }
   };
 
   const handleChangePassword = () => {
@@ -107,9 +127,11 @@ export default function Header() {
                 <User className="w-4 h-4" />
                 <span className="font-medium">User ID: {user?.id ?? "EMP001"}</span>
               </div>
-              <div className="text-sm text-gray-500">
-                {formatDate(currentTime)} | {formatTime(currentTime)}
-              </div>
+              {mounted && currentTime && (
+                <div className="text-sm text-gray-500">
+                  {formatDate(currentTime)} | {formatTime(currentTime)}
+                </div>
+              )}
             </div>
 
             {/* Account Dropdown */}
@@ -144,15 +166,31 @@ export default function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            
+            {/* Test Logout Button - Direct Access */}
+            <button 
+              onClick={() => {
+                alert('Direct logout button clicked!');
+                localStorage.clear();
+                sessionStorage.clear();
+                alert('All data cleared! Going to login...');
+                window.location.href = '/login';
+              }}
+              className="px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-lg"
+            >
+              🚪 FORCE LOGOUT
+            </button>
           </div>
         </div>
         
         {/* Last Updated Bar */}
-        <div className="px-8 py-2 bg-gray-50 border-t border-gray-100">
-          <div className="text-xs text-gray-500">
-            Last Updated {currentTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+        {currentTime && (
+          <div className="px-8 py-2 bg-gray-50 border-t border-gray-100">
+            <div className="text-xs text-gray-500">
+              Last Updated {currentTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       <Dialog open={openChangePass} onOpenChange={setOpenChangePass}>

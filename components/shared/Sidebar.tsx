@@ -15,8 +15,13 @@ const Sidebar = () => {
 
   React.useEffect(() => {
     const u = getUser();
+    console.log('Sidebar: Current user:', u);
     if (u?.role === "admin" || u?.role === "estimator") {
       setRole(u.role);
+      console.log('Sidebar: Setting role to:', u.role);
+    } else {
+      console.log('Sidebar: No valid role found, defaulting to admin');
+      setRole("admin"); // Default to admin for now
     }
   }, []);
 
@@ -34,7 +39,7 @@ const Sidebar = () => {
             <div className="w-8 h-8 bg-purple-700 rounded-full flex items-center justify-center">
               <span className="text-white font-semibold text-sm">J</span>
             </div>
-            <span className="text-white font-medium">admin</span>
+            <span className="text-white font-medium">{role}</span>
           </div>
         )}
         

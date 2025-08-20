@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Eye, Pencil, Calendar, DollarSign, ChevronDown, ChevronUp, Download, ChevronDown as ChevronDownIcon } from "lucide-react";
+import { Plus, Eye, Pencil, Calendar, DollarSign, ChevronDown, ChevronUp, Download, ChevronDown as ChevronDownIcon, User } from "lucide-react";
 import { getQuotes } from "@/lib/dummy-data";
 import Link from "next/link";
 import CreateQuoteModal from "@/components/create-quote/CreateQuoteModal";
@@ -31,6 +31,7 @@ type UserFilter = "all" | string;
 type Row = (typeof QUOTES)[number] & {
   quoteId?: string; // Add formatted quote ID for display
   productName?: string;
+  product?: string; // This field is used in the table display
   quantity?: number;
 };
 
@@ -118,7 +119,8 @@ export default function QuoteManagementPage() {
             amount: quote.amounts?.total || 0,
             status: quote.status as Status,
             userId: quote.user?.id || "cmejqfk3s0000x5a98slufy9n", // Use real admin user ID as fallback
-            productName: quote.product || "Printing Product",
+            product: quote.product || "Printing Product", // Map to product field for table display
+            productName: quote.product || "Printing Product", // Keep for backward compatibility
             quantity: quote.quantity || 0,
           }));
           setRows(transformedQuotes);
@@ -202,7 +204,7 @@ export default function QuoteManagementPage() {
       amount: q.amount,
       status: q.status,
       userId: q.userId,
-      productName: q.productName ?? "",
+      productName: q.product ?? q.productName ?? "",
       quantity: typeof q.quantity === "number" ? q.quantity : "",
     });
     setOpenEdit(true);
@@ -351,7 +353,7 @@ export default function QuoteManagementPage() {
           role: "Customer"
         },
         products: [{
-          productName: quote.productName || "Printing Product",
+          productName: quote.product || quote.productName || "Printing Product",
           paperName: "Standard Paper",
           quantity: quote.quantity || 0,
           sides: "1" as const,
@@ -584,9 +586,10 @@ export default function QuoteManagementPage() {
               <TableHeader className="bg-slate-50">
                 <TableRow className="border-slate-200">
                   <TableHead className="text-slate-700 font-semibold p-6">Quote ID</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Client Name</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Contact Person</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6">Client Details</TableHead>
                   <TableHead className="text-slate-700 font-semibold p-6">Date</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6">Product</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6">Quantity</TableHead>
                   <TableHead className="text-slate-700 font-semibold p-6">Amount</TableHead>
                   <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
                   <TableHead className="text-slate-700 font-semibold p-6">Actions</TableHead>
@@ -595,16 +598,29 @@ export default function QuoteManagementPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-16 text-slate-500">
+                    <TableCell colSpan={8} className="text-center py-16 text-slate-500">
                       Loading quotes...
                     </TableCell>
                   </TableRow>
                 ) : current.map((q) => (
                   <TableRow key={q.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
                     <TableCell className="font-medium text-slate-900 p-6">{q.quoteId}</TableCell>
-                    <TableCell className="text-slate-700 p-6">{q.clientName}</TableCell>
-                    <TableCell className="text-slate-700 p-6">{q.contactPerson}</TableCell>
+                    <TableCell className="text-slate-700 p-6">
+                      <div className="space-y-1">
+                        <div className="font-medium text-slate-900">{q.clientName}</div>
+                        <div className="text-sm text-slate-600">{q.contactPerson}</div>
+                        <Link 
+                          href="/client-management" 
+                          className="text-xs text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1"
+                        >
+                          <User className="w-3 h-3" />
+                          View Client
+                        </Link>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-slate-700 p-6">{fmtDate(q.date)}</TableCell>
+                    <TableCell className="text-slate-700 p-6">{q.product || 'N/A'}</TableCell>
+                    <TableCell className="text-slate-700 p-6">{q.quantity || 'N/A'}</TableCell>
                     <TableCell className="tabular-nums font-semibold text-slate-900 p-6">{currency.format(q.amount)}</TableCell>
                     <TableCell className="p-6"><StatusBadge value={q.status} /></TableCell>
                     <TableCell className="p-6">
@@ -749,12 +765,12 @@ export default function QuoteManagementPage() {
 
               <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Date:</div>
               <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
-                {viewRow ? fmtDate(viewRow.date) : "—"}
+                {viewRow?.date ? fmtDate(viewRow.date) : "—"}
               </div>
 
               <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Product:</div>
               <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
-                {viewRow?.productName ?? "—"}
+                {viewRow?.product ?? viewRow?.productName ?? "—"}
               </div>
 
               <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Quantity:</div>
@@ -763,8 +779,8 @@ export default function QuoteManagementPage() {
               </div>
 
               <div className="col-span-1 px-4 py-3 text-slate-500 bg-slate-50">Total:</div>
-              <div className="col-span-2 px-4 py-3 font-semibold text-slate-900">
-                {viewTotal(viewRow)}
+              <div className="col-span-2 px-4 py-3 border-slate-200 font-semibold text-slate-900">
+                {viewRow?.amount ? currency.format(viewRow.amount) : "—"}
               </div>
             </div>
           </div>

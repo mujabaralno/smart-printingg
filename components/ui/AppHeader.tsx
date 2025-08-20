@@ -10,9 +10,12 @@ interface AppHeaderProps {
 }
 
 export default function AppHeader({ className = "" }: AppHeaderProps) {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    setCurrentTime(new Date());
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -79,28 +82,30 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
         <GlobalSearch />
 
         {/* Timestamp with Vertical Separator */}
-        <div className="flex items-center space-x-3 text-gray-600">
-          {/* Date on the left */}
-          <div className="text-sm font-medium">
-            {formatDate(currentTime)}
-          </div>
-          
-          {/* Vertical separator line */}
-          <div className="w-px h-6 bg-gray-300"></div>
-          
-          {/* Time and Local Time label on the right */}
-          <div className="flex items-center space-x-2">
-            <div className="text-right">
-              <div className="text-lg font-bold text-gray-800">
-                {formatTime(currentTime)}
-              </div>
-              <div className="text-xs text-gray-500">
-                Local Time
-              </div>
+        {mounted && currentTime && (
+          <div className="flex items-center space-x-3 text-gray-600">
+            {/* Date on the left */}
+            <div className="text-sm font-medium">
+              {formatDate(currentTime)}
             </div>
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            
+            {/* Vertical separator line */}
+            <div className="w-px h-6 bg-gray-300"></div>
+            
+            {/* Time and Local Time label on the right */}
+            <div className="flex items-center space-x-2">
+              <div className="text-right">
+                <div className="text-lg font-bold text-gray-800">
+                  {formatTime(currentTime)}
+                </div>
+                <div className="text-xs text-gray-500">
+                  Local Time
+                </div>
+              </div>
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </header>
   );

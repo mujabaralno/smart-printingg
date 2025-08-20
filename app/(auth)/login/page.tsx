@@ -147,7 +147,7 @@ export default function LoginPage() {
         console.log(`✅ Successfully fetched ${users.length} users from API`);
       } else {
         console.warn('⚠️ Users API failed, this might be expected on Vercel without database');
-        // Continue with empty users array - the API will return demo users
+        // Continue with empty users array - the API will return demo users as fallback
         users = [];
       }
       
@@ -270,42 +270,7 @@ export default function LoginPage() {
 
   const isFormValid = employeeId && password; // Allow login even with location warnings
 
-  // Demo login bypass for testing
-  const handleDemoLogin = async () => {
-    setError("");
-    setSuccess("");
-    setIsLoading(true);
-    
-    try {
-      // Use demo admin user directly
-      const demoUser = {
-        id: "admin-001",
-        email: "admin@example.com",
-        name: "John Admin",
-        role: "admin"
-      };
-      
-      setCurrentUser(demoUser);
-      
-      // Send OTP via Twilio
-      const result = await sendOtpDirect(phoneNumber);
-      
-      if (result.success) {
-        setSessionId(result.sid || 'session-' + Date.now());
-        setShowOtpModal(true);
-        showMessage("Verification code sent to your phone", "success");
-      } else {
-        const errorMessage = (result as any).error || "Failed to send verification code";
-        showMessage(errorMessage, "error");
-        console.error('OTP send failed:', result);
-      }
-    } catch (error) {
-      console.error('Demo login error:', error);
-      showMessage("Failed to send verification code. Please try again.", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
   return (
     <div className="h-screen w-screen flex fixed inset-0">
@@ -452,28 +417,7 @@ export default function LoginPage() {
               )}
             </Button>
 
-            {/* Demo Credentials */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-blue-800 mb-2">Demo Credentials:</h3>
-              <div className="space-y-1 text-xs text-blue-700">
-                <p><strong>Admin:</strong> admin@example.com / admin123</p>
-                <p><strong>Estimator:</strong> estimator@example.com / estimator123</p>
-                <p><strong>User:</strong> user@example.com / user123</p>
-              </div>
-              
-              {/* Demo Login Button */}
-              <div className="mt-3 pt-3 border-t border-blue-200">
-                <Button
-                  onClick={handleDemoLogin}
-                  disabled={isLoading}
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs bg-white hover:bg-blue-50 border-blue-300 text-blue-700"
-                >
-                  🚀 Quick Demo Login (Skip Database)
-                </Button>
-              </div>
-            </div>
+
           </div>
 
           {/* Footer Info */}

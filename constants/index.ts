@@ -13,15 +13,20 @@ export const getSidebarItems = (role: "admin" | "estimator"): SidebarItem[] => {
     { label: "Quote Management",   route: "/quote-management", icons: FileTextIcon },
     { label: "Client Management",  route: "/client-management",icons: Building2Icon },
     { label: "Supplier Management",route: "/supplier-management", icons: PackageIcon },
+    { label: "User Management",   route: "/user-management",  icons: UsersIcon }, // Temporarily visible to all
   ];
 
-  if (role === "admin") {
-    return [
-      ...common,
-      { label: "User Management", route: "/user-management", icons: UsersIcon },
-    ];
-  }
+  // Temporarily return common for all users
   return common;
+  
+  // Original logic (commented out for now)
+  // if (role === "admin") {
+  //   return [
+  //     ...common,
+  //     { label: "User Management", route: "/user-management", icons: UsersIcon },
+  //   ];
+  // }
+  // return common;
 };
 
 export const dataRecentQuote = [

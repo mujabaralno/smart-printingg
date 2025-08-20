@@ -26,25 +26,17 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   useEffect(() => {
     const user = getUser();
+    console.log('ProtectedRoute: Current user:', user);
+    
     if (!user) {
-      // For development, create a default admin user
-      const defaultUser = {
-        id: "EMP001",
-        name: "John Admin",
-        role: "admin" as const,
-        email: "admin@example.com",
-        password: "admin123"
-      };
-      
-      // Store the default user in localStorage for development
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('smartPrintingUser', JSON.stringify(defaultUser));
-      }
-      
-      setLoading(false);
-    } else {
-      setLoading(false);
+      console.log('ProtectedRoute: No user found, redirecting to login');
+      // Redirect to login if no user is found
+      router.replace("/login");
+      return;
     }
+    
+    console.log('ProtectedRoute: User authenticated, allowing access');
+    setLoading(false);
   }, [router]);
 
   if (loading) {

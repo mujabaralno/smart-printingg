@@ -31,6 +31,22 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    // Validate userId if provided
+    if (body.userId) {
+      try {
+        // Use relative URL instead of environment variable for better production compatibility
+        const userResponse = await fetch(`${request.nextUrl.origin}/api/users/${body.userId}`);
+        if (!userResponse.ok) {
+          console.log(`Invalid userId: ${body.userId}`);
+          // Remove invalid userId instead of failing
+          delete body.userId;
+        }
+      } catch (error) {
+        console.log(`Error validating userId: ${body.userId}, removing it`);
+        delete body.userId;
+      }
+    }
+    
     // Validate that clientId exists
     try {
       const client = await DatabaseService.getClientById(body.clientId);

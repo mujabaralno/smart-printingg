@@ -457,10 +457,24 @@ function CreateQuoteContent() {
     }
   };
 
-  // Get current user ID - use default for demo purposes
+  // Get current user ID - use a valid user from the database
   const getCurrentUserId = async () => {
-    // Use a default user ID for demo purposes
-    return 'demo-user-001';
+    try {
+      // Try to get the first available user from the database
+      const response = await fetch('/api/users');
+      if (response.ok) {
+        const users = await response.json();
+        if (users.length > 0) {
+          // Use the first available user (usually admin)
+          return users[0].id;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+    
+    // Fallback to a valid user ID if API fails
+    return 'cmekd5dtw0000x5kp7xvqz8w9'; // admin@example.com
   };
 
   // Validate form data before allowing save

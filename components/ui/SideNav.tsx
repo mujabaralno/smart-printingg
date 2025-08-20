@@ -42,6 +42,7 @@ export default function SideNav({ className = "" }: SideNavProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [user, setUser] = React.useState<any>(null);
+  const [mounted, setMounted] = useState(false);
 
   // Modal states
   const [showAccountSettings, setShowAccountSettings] = useState(false);
@@ -61,9 +62,9 @@ export default function SideNav({ className = "" }: SideNavProps) {
   });
   const [profilePicture, setProfilePicture] = useState<string>("");
 
-
-
   React.useEffect(() => {
+    setMounted(true);
+    
     const loadUser = async () => {
       try {
         const u = await getCurrentUser();
@@ -86,6 +87,11 @@ export default function SideNav({ className = "" }: SideNavProps) {
     
     loadUser();
   }, []);
+
+  // Don't render until mounted to prevent hydration issues
+  if (!mounted) {
+    return null;
+  }
 
   const sideBarItems = getSidebarItems(role);
 
@@ -118,9 +124,13 @@ export default function SideNav({ className = "" }: SideNavProps) {
   const shouldExpand = isExpanded || isHovered;
 
   const handleLogout = () => {
-    logoutUser();
-    // Remove redirect to login - just clear user data
-    setUser(null);
+    // Clear all data
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+      sessionStorage.clear();
+    }
+    // Force redirect
+    window.location.href = '/login';
   };
 
   const handleProfileUpdate = () => {

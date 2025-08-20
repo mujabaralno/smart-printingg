@@ -108,6 +108,12 @@ export default function DashboardPage() {
             status: quote.status,
             totalAmount: quote.amounts?.total || 0,
             userId: quote.user?.id || "u1",
+            // Preserve original data for view modal
+            client: quote.client,
+            amounts: quote.amounts,
+            date: quote.date,
+            product: quote.product,
+            quantity: quote.quantity,
           }));
           setAllQuotes(transformedQuotes);
         } else {
@@ -384,11 +390,15 @@ export default function DashboardPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Amount</label>
-                <p className="text-lg font-semibold">${isNaN(selectedQuote?.amounts?.total) ? 0 : (selectedQuote?.amounts?.total || 0)}</p>
+                <p className="text-lg font-semibold">
+                  ${selectedQuote?.amounts?.total ? selectedQuote.amounts.total.toFixed(2) : '0.00'}
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Date Created</label>
-                <p className="text-lg font-semibold">{selectedQuote && formatDate(selectedQuote.date)}</p>
+                <p className="text-lg font-semibold">
+                  {selectedQuote?.date ? formatDate(selectedQuote.date) : 'No date available'}
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Status</label>
@@ -408,9 +418,11 @@ export default function DashboardPage() {
               <label className="text-sm font-medium text-gray-600">Products & Services</label>
               <div className="mt-2 p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-700">
-                  • Business Cards - 1000 units<br/>
-                  • Brochures - 500 units<br/>
-                  • Custom Design Services
+                  {selectedQuote?.product ? (
+                    `• ${selectedQuote.product} - ${selectedQuote?.quantity || 0} units`
+                  ) : (
+                    "• No product details available"
+                  )}
                 </p>
               </div>
             </div>

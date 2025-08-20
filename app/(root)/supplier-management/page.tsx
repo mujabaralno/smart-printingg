@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Pencil, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Plus, Pencil, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -268,24 +268,7 @@ export default function SupplierManagementPage() {
     setOpen(true);
   };
 
-  const onDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this material?")) {
-      try {
-        const response = await fetch(`/api/materials/${id}`, {
-          method: 'DELETE',
-        });
-        
-        if (response.ok) {
-          setMaterials(prev => prev.filter(m => m.id !== id));
-        } else {
-          alert('Failed to delete material');
-        }
-      } catch (error) {
-        console.error('Error deleting material:', error);
-        alert('Error deleting material');
-      }
-    }
-  };
+
 
   const onSubmit = async () => {
     if (!draft.name || !draft.supplier?.id || draft.cost === undefined) {
@@ -348,11 +331,7 @@ export default function SupplierManagementPage() {
           Supplier Management
         </h1>
         <p className="text-lg text-slate-600">Manage and track all your printing suppliers and materials with real-time database operations.</p>
-        <div className="flex items-center justify-center gap-6 text-sm text-slate-500">
-          <span>Total Suppliers: <span className="font-semibold text-slate-700">{suppliers.length}</span></span>
-          <span>Total Materials: <span className="font-semibold text-slate-700">{materials.length}</span></span>
-          <span>Active Materials: <span className="font-semibold text-green-600">{materials.filter(m => m.status === "Active").length}</span></span>
-        </div>
+
       </div>
       
       {/* Main Content Card */}
@@ -515,14 +494,6 @@ export default function SupplierManagementPage() {
                             className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
                           >
                             <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => onDelete(r.id)}
-                            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>

@@ -25,6 +25,7 @@ type Mode = "add" | "edit";
 export default function ClientManagementPage() {
   // data lokal (mulai dari dummy)
   const [rows, setRows] = React.useState<ClientRow[]>([]);
+  const [quotes, setQuotes] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   
   // Load clients from database on page load
@@ -61,6 +62,17 @@ export default function ClientManagementPage() {
               updatedAt: client.updatedAt,
             }));
             setRows(transformedClients);
+            
+            // Load quotes for these clients
+            try {
+              const quotesResponse = await fetch('/api/quotes');
+              if (quotesResponse.ok) {
+                const quotesData = await quotesResponse.json();
+                setQuotes(quotesData);
+              }
+            } catch (error) {
+              console.error('Error loading quotes:', error);
+            }
           } else {
             // If no clients in database, use seed clients
             console.log('No clients in database, using seed clients');
@@ -399,6 +411,7 @@ export default function ClientManagementPage() {
                   <TableHead className="text-slate-700 font-semibold p-4">Contact Person</TableHead>
                   <TableHead className="text-slate-700 font-semibold p-4">Email</TableHead>
                   <TableHead className="text-slate-700 font-semibold p-4">Phone</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4">Quotes</TableHead>
                   <TableHead className="text-slate-700 font-semibold p-4">Status</TableHead>
                   <TableHead className="text-slate-700 font-semibold p-4">Actions</TableHead>
                 </TableRow>
@@ -406,7 +419,7 @@ export default function ClientManagementPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-16 text-slate-500">
+                    <TableCell colSpan={9} className="text-center py-16 text-slate-500">
                       Loading clients...
                     </TableCell>
                   </TableRow>
@@ -451,6 +464,19 @@ export default function ClientManagementPage() {
                       </a>
                     </TableCell>
                     <TableCell className="p-4">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                          {quotes.filter(q => q.clientId === r.id).length}
+                        </span>
+                        <Link 
+                          href="/quote-management" 
+                          className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                        >
+                          View Quotes
+                        </Link>
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-4">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                         r.status === "Active" 
                           ? "bg-green-100 text-green-800" 
@@ -477,7 +503,7 @@ export default function ClientManagementPage() {
                 {current.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={9}
                       className="text-center py-16 text-slate-500"
                     >
                       {filtered.length === 0 ? "No clients found matching your filters." : "No clients to display."}

@@ -153,26 +153,34 @@ export class DatabaseService {
     finishing?: string[];
     amounts?: { base: number; vat: number; total: number };
   }) {
-    const { papers, finishing, amounts, ...basicQuoteData } = quoteData;
+    const { papers, finishing, amounts, userId, ...basicQuoteData } = quoteData;
+    
+    // Only include userId if it's provided and valid
+    const quoteDataToCreate: any = {
+      ...basicQuoteData,
+      papers: papers ? {
+        create: papers.map(paper => ({
+          name: paper.name,
+          gsm: paper.gsm,
+        }))
+      } : undefined,
+      finishing: finishing ? {
+        create: finishing.map(finish => ({
+          name: finish,
+        }))
+      } : undefined,
+      amounts: amounts ? {
+        create: amounts
+      } : undefined,
+    };
+    
+    // Only add userId if it's provided and not empty
+    if (userId && userId.trim() !== '') {
+      quoteDataToCreate.userId = userId;
+    }
     
     return await prisma.quote.create({
-      data: {
-        ...basicQuoteData,
-        papers: papers ? {
-          create: papers.map(paper => ({
-            name: paper.name,
-            gsm: paper.gsm,
-          }))
-        } : undefined,
-        finishing: finishing ? {
-          create: finishing.map(finish => ({
-            name: finish,
-          }))
-        } : undefined,
-        amounts: amounts ? {
-          create: amounts
-        } : undefined,
-      },
+      data: quoteDataToCreate,
       include: {
         client: true,
         user: true,
@@ -343,10 +351,6 @@ export class DatabaseService {
         }
 
         return updatedQuote;
-      }, {
-        // Add timeout and retry options for SQLite
-        timeout: 10000,
-        maxWait: 5000,
       });
     } catch (error) {
       console.error('Error in updateQuote:', error);
@@ -495,10 +499,6 @@ export class DatabaseService {
         
         console.log('Refreshed quote with all details:', refreshedQuote);
         return refreshedQuote;
-      }, {
-        // Add timeout and retry options for SQLite
-        timeout: 15000,
-        maxWait: 5000,
       });
     } catch (error) {
       console.error('Error in updateQuoteWithDetails:', error);
