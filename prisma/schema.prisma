@@ -1,92 +1,86 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// Use PostgreSQL for production and development
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  name           String
-  role           String   @default("user") // admin, user, manager
-  password       String?  // Optional password for authentication
-  profilePicture String?
-  status         String   @default("Active") // Active, Inactive
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  quotes         Quote[]
-  clients        Client[]
-  searchHistory  SearchHistory[]
+  id              String            @id @default(cuid())
+  email           String            @unique
+  name            String
+  role            String            @default("user")
+  password        String?
+  profilePicture  String?
+  status          String            @default("Active")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  clients         Client[]
+  quotes          Quote[]
   searchAnalytics SearchAnalytics[]
+  searchHistory   SearchHistory[]
 }
 
 model Client {
-  id           String   @id @default(cuid())
-  clientType   String   // Company, Individual
-  companyName  String?
+  id            String   @id @default(cuid())
+  clientType    String
+  companyName   String?
   contactPerson String
-  email        String
-  phone        String
-  countryCode  String
-  role         String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  quotes       Quote[]
-  userId       String?
-  user         User?    @relation(fields: [userId], references: [id])
+  email         String
+  phone         String
+  countryCode   String
+  role          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  quotes        Quote[]
 }
 
 model Quote {
-  id         String      @id @default(cuid())
-  quoteId    String      @unique // e.g., QT-2024-0718-001
-  date       DateTime
-  status     String      @default("Pending") // Pending, Approved, Rejected, Completed
-  clientId   String
-  client     Client      @relation(fields: [clientId], references: [id])
-  userId     String?
-  user       User?       @relation(fields: [userId], references: [id])
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  
-  // Quote details
-  product    String
-  quantity   Int
-  sides      String
-  printing   String
-  papers     Paper[]
-  finishing  Finishing[]
-  amounts    QuoteAmount?
+  id        String       @id @default(cuid())
+  quoteId   String       @unique
+  date      DateTime
+  status    String       @default("Pending")
+  clientId  String
+  userId    String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  product   String
+  quantity  Int
+  sides     String
+  printing  String
+  finishing Finishing[]
+  papers    Paper[]
+  client    Client       @relation(fields: [clientId], references: [id])
+  user      User?        @relation(fields: [userId], references: [id])
+  amounts   QuoteAmount?
 }
 
 model Paper {
-  id       String @id @default(cuid())
-  name     String
-  gsm      String
-  quoteId  String
-  quote    Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  name    String
+  gsm     String
+  quoteId String
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 }
 
 model Finishing {
-  id       String @id @default(cuid())
-  name     String
-  quoteId  String
-  quote    Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  name    String
+  quoteId String
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 }
 
 model QuoteAmount {
-  id       String @id @default(cuid())
-  base     Float
-  vat      Float
-  total    Float
-  quoteId  String @unique
-  quote    Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  base    Float
+  vat     Float
+  total   Float
+  quoteId String @unique
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 }
 
 model SearchHistory {
@@ -105,35 +99,34 @@ model SearchAnalytics {
   user      User?    @relation(fields: [userId], references: [id])
 }
 
-// Supplier and Material models for real supplier management
 model Supplier {
-  id          String   @id @default(cuid())
-  name        String   // e.g., "Paper Source LLC"
-  contact     String?  // Contact person name
+  id          String     @id @default(cuid())
+  name        String
+  contact     String?
   email       String?
   phone       String?
-  countryCode String?  @default("+971")
+  countryCode String?    @default("+971")
   address     String?
   city        String?
   state       String?
   postalCode  String?
-  country     String?  @default("UAE")
-  status      String   @default("Active") // Active, Inactive
+  country     String?    @default("UAE")
+  status      String     @default("Active")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   materials   Material[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 model Material {
   id          String   @id @default(cuid())
-  materialId  String   @unique // e.g., "M-001" - for display purposes
-  name        String   // e.g., "Art Paper 300gsm"
+  materialId  String   @unique
+  name        String
   supplierId  String
-  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   cost        Float
-  unit        String   // "per_sheet", "per_packet", "per_kg"
-  status      String   @default("Active") // Active, Inactive
+  unit        String
+  status      String   @default("Active")
   lastUpdated DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 }
