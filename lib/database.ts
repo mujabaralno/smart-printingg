@@ -737,6 +737,17 @@ export class DatabaseService {
     });
   }
 
+  // Get supplier by name
+  static async getSupplierByName(name: string) {
+    const db = this.checkDatabase();
+    return await db.supplier.findFirst({
+      where: { name },
+      include: {
+        materials: true,
+      },
+    });
+  }
+
   // Get materials by supplier
   static async getMaterialsBySupplier(supplierId: string) {
     const db = this.checkDatabase();
@@ -829,11 +840,12 @@ export class DatabaseService {
 
     for (const supplierData of suppliersToSeed) {
       try {
-        const existingSupplier = await this.getSupplierByEmail(supplierData.email);
+        // Check if supplier exists by name instead of email (since email is optional)
+        const existingSupplier = await this.getSupplierByName(supplierData.name);
         
         if (!existingSupplier) {
-          await this.createSupplier(supplierData);
-          console.log(`Created supplier: ${supplierData.name}`);
+          const newSupplier = await this.createSupplier(supplierData);
+          console.log(`Created supplier: ${supplierData.name} with ID: ${newSupplier.id}`);
         } else {
           console.log(`Supplier already exists: ${supplierData.name}`);
         }

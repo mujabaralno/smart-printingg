@@ -6,14 +6,32 @@ export async function POST(request: NextRequest) {
     console.log('🌱 Starting supplier and material seeding...');
     
     // Seed suppliers first
-    await DatabaseService.seedSuppliers();
+    console.log('📋 Step 1: Seeding suppliers...');
+    const suppliersResult = await DatabaseService.seedSuppliers();
+    console.log('✅ Suppliers seeding result:', suppliersResult);
     
     // Then seed materials (which depend on suppliers)
-    await DatabaseService.seedMaterials();
+    console.log('📦 Step 2: Seeding materials...');
+    const materialsResult = await DatabaseService.seedMaterials();
+    console.log('✅ Materials seeding result:', materialsResult);
+    
+    // Verify the data was created
+    console.log('🔍 Step 3: Verifying data creation...');
+    const suppliers = await DatabaseService.getAllSuppliers();
+    const materials = await DatabaseService.getAllMaterials();
+    
+    console.log('📊 Final counts:', {
+      suppliers: suppliers.length,
+      materials: materials.length
+    });
     
     return NextResponse.json({ 
       success: true,
       message: 'Suppliers and materials seeded successfully',
+      results: {
+        suppliers: suppliers.length,
+        materials: materials.length
+      },
       timestamp: new Date().toISOString()
     });
   } catch (error) {
