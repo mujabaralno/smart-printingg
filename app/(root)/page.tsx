@@ -81,22 +81,18 @@ export default function DashboardPage() {
 
   // Check authentication
   useEffect(() => {
-    const checkAuth = async () => {
-      const currentUser = getCurrentUser();
-      if (!currentUser) {
-        router.push('/login');
-        return;
-      }
+    // Remove authentication requirement - allow access without login
+    const currentUser = getCurrentUser();
+    if (currentUser) {
       setUser({ name: currentUser.name, role: currentUser.role });
-    };
-
-    checkAuth();
+    } else {
+      // Set a default user for demo purposes
+      setUser({ name: "Demo User", role: "admin" });
+    }
   }, [router]);
 
   // Load quotes from database on page load
   useEffect(() => {
-    if (!user) return; // Only load quotes if user is authenticated
-    
     const loadQuotes = async () => {
       try {
         setIsLoading(true);
@@ -129,12 +125,10 @@ export default function DashboardPage() {
     };
 
     loadQuotes();
-  }, [user]);
+  }, []);
 
   // Set initial quote and change it periodically
   useEffect(() => {
-    if (!user) return; // Only set quotes if user is authenticated
-    
     // Function to get a random motivational quote
     const getRandomQuote = () => {
       const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
@@ -149,7 +143,7 @@ export default function DashboardPage() {
     }, 45000);
 
     return () => clearInterval(interval);
-  }, [user]);
+  }, []);
 
   // Cleanup function for modals
   useEffect(() => {
@@ -165,15 +159,13 @@ export default function DashboardPage() {
 
   // Filter quotes based on selected status - use useMemo for better performance
   const filteredQuotes = useMemo(() => {
-    if (!user) return []; // Return empty array if user not authenticated
-    
     const filtered = statusFilter === "All" 
       ? allQuotes 
       : allQuotes.filter(q => q.status === statusFilter);
     
     console.log('filteredQuotes recalculated:', filtered);
     return filtered;
-  }, [allQuotes, statusFilter, user]);
+  }, [allQuotes, statusFilter]);
 
   // Calculate metrics - these will now update automatically when allQuotes changes
   const totalQuotes = useMemo(() => allQuotes.length, [allQuotes]);

@@ -457,20 +457,10 @@ function CreateQuoteContent() {
     }
   };
 
-  // Get current user ID from database (for now, use the first admin user)
+  // Get current user ID - use default for demo purposes
   const getCurrentUserId = async () => {
-    try {
-      const response = await fetch('/api/users');
-      if (response.ok) {
-        const users = await response.json();
-        const adminUser = users.find((user: any) => user.role === 'admin');
-        return adminUser?.id || users[0]?.id;
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-    // Fallback to a default user ID if API fails
-    return 'cmejqfk3s0000x5a98slufy9n'; // admin@example.com
+    // Use a default user ID for demo purposes
+    return 'demo-user-001';
   };
 
   // Validate form data before allowing save

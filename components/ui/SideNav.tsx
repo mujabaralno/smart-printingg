@@ -119,7 +119,8 @@ export default function SideNav({ className = "" }: SideNavProps) {
 
   const handleLogout = () => {
     logoutUser();
-    router.push("/login");
+    // Remove redirect to login - just clear user data
+    setUser(null);
   };
 
   const handleProfileUpdate = () => {

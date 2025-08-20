@@ -69,35 +69,21 @@ export default function LoginPage() {
     }
   };
 
-  // Direct Twilio API integration
+  // Server-side OTP API integration
   const sendOtpDirect = async (phoneNumber: string) => {
-    const accountSid = process.env.NEXT_PUBLIC_TWILIO_ACCOUNT_SID;
-    const authToken = process.env.NEXT_PUBLIC_TWILIO_AUTH_TOKEN;
-    const serviceSid = process.env.NEXT_PUBLIC_TWILIO_VERIFY_SERVICE_ID;
-    
-    if (!accountSid || !authToken || !serviceSid) {
-      throw new Error('Twilio credentials not configured. Please check your environment variables.');
-    }
-    
     try {
-      const credentials = btoa(`${accountSid}:${authToken}`);
-      
-      const response = await fetch(`https://verify.twilio.com/v2/Services/${serviceSid}/Verifications`, {
+      const response = await fetch('/api/otp/send', {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${credentials}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: new URLSearchParams({
-          'To': phoneNumber,
-          'Channel': 'sms'
-        })
+        body: JSON.stringify({ phoneNumber })
       });
 
       const data = await response.json();
       
-      if (response.ok) {
-        return { success: true, sid: data.sid };
+      if (response.ok && data.success) {
+        return { success: true, sid: data.sessionId };
       } else {
         throw new Error(data.message || 'Failed to send verification code');
       }
@@ -108,35 +94,21 @@ export default function LoginPage() {
   };
 
   const verifyOtpDirect = async (phoneNumber: string, code: string) => {
-    const accountSid = process.env.NEXT_PUBLIC_TWILIO_ACCOUNT_SID;
-    const authToken = process.env.NEXT_PUBLIC_TWILIO_AUTH_TOKEN;
-    const serviceSid = process.env.NEXT_PUBLIC_TWILIO_VERIFY_SERVICE_ID;
-    
-    if (!accountSid || !authToken || !serviceSid) {
-      throw new Error('Twilio credentials not configured. Please check your environment variables.');
-    }
-    
     try {
-      const credentials = btoa(`${accountSid}:${authToken}`);
-      
-      const response = await fetch(`https://verify.twilio.com/v2/Services/${serviceSid}/VerificationCheck`, {
+      const response = await fetch('/api/otp/verify', {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${credentials}`,
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/json',
         },
-        body: new URLSearchParams({
-          'To': phoneNumber,
-          'Code': code
-        })
+        body: JSON.stringify({ phoneNumber, otp: code })
       });
 
       const data = await response.json();
       
-      if (response.ok && data.status === 'approved') {
+      if (response.ok && data.success) {
         return { success: true };
       } else {
-        throw new Error(data.message || 'Invalid verification code');
+        throw new Error(data.error || 'Invalid verification code');
       }
     } catch (error) {
       console.error('Verification error:', error);
