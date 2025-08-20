@@ -6,7 +6,8 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Create Prisma client with Vercel-optimized settings
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+// Only create if DATABASE_URL is available
+export const prisma = globalForPrisma.prisma ?? (process.env.DATABASE_URL ? new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   datasources: {
     db: {
@@ -22,13 +23,31 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
       enableQueryLogging: false,
     },
   },
-});
+}) : null);
 
 // Only create one instance in development
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 // Database connection health check
 export async function checkDatabaseConnection() {
+  // If no DATABASE_URL, return build mode status
+  if (!process.env.DATABASE_URL) {
+    return { 
+      status: 'build_mode', 
+      message: 'Database check skipped - no DATABASE_URL available',
+      timestamp: new Date().toISOString() 
+    };
+  }
+  
+  // If prisma client is not available, return error
+  if (!prisma) {
+    return { 
+      status: 'failed', 
+      error: 'Prisma client not initialized - missing DATABASE_URL',
+      timestamp: new Date().toISOString() 
+    };
+  }
+  
   try {
     await prisma.$queryRaw`SELECT 1`;
     return { status: 'connected', timestamp: new Date().toISOString() };
@@ -44,11 +63,13 @@ export async function checkDatabaseConnection() {
 
 // Graceful shutdown for Vercel
 export async function closeDatabaseConnection() {
-  try {
-    await prisma.$disconnect();
-    console.log('Database connection closed gracefully');
-  } catch (error) {
-    console.error('Error closing database connection:', error);
+  if (prisma) {
+    try {
+      await prisma.$disconnect();
+      console.log('Database connection closed gracefully');
+    } catch (error) {
+      console.error('Error closing database connection:', error);
+    }
   }
 }
 

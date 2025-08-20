@@ -10,6 +10,14 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 // Database service class
 export class DatabaseService {
+  // Helper method to check if database is available
+  private static checkDatabase() {
+    if (!prisma) {
+      throw new Error('Database not available - DATABASE_URL not configured');
+    }
+    return prisma;
+  }
+
   // User operations
   static async createUser(userData: {
     email: string;
@@ -17,19 +25,22 @@ export class DatabaseService {
     role?: string;
     profilePicture?: string;
   }) {
-    return await prisma.user.create({
+    const db = this.checkDatabase();
+    return await db.user.create({
       data: userData,
     });
   }
 
   static async getUserByEmail(email: string) {
-    return await prisma.user.findUnique({
+    const db = this.checkDatabase();
+    return await db.user.findUnique({
       where: { email },
     });
   }
 
   static async getUserById(id: string) {
-    return await prisma.user.findUnique({
+    const db = this.checkDatabase();
+    return await db.user.findUnique({
       where: { id },
       include: {
         quotes: true,
@@ -39,20 +50,23 @@ export class DatabaseService {
   }
 
   static async updateUser(id: string, data: any) {
-    return await prisma.user.update({
+    const db = this.checkDatabase();
+    return await db.user.update({
       where: { id },
       data,
     });
   }
 
   static async deleteUser(id: string) {
-    return await prisma.user.delete({
+    const db = this.checkDatabase();
+    return await db.user.delete({
       where: { id },
     });
   }
 
   static async getAllUsers() {
-    return await prisma.user.findMany({
+    const db = this.checkDatabase();
+    return await db.user.findMany({
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -68,13 +82,15 @@ export class DatabaseService {
     role?: string;
     userId?: string;
   }) {
-    return await prisma.client.create({
+    const db = this.checkDatabase();
+    return await db.client.create({
       data: clientData,
     });
   }
 
   static async getClientById(id: string) {
-    return await prisma.client.findUnique({
+    const db = this.checkDatabase();
+    return await db.client.findUnique({
       where: { id },
       include: {
         quotes: true,
@@ -84,7 +100,8 @@ export class DatabaseService {
   }
 
   static async getClientByEmail(email: string) {
-    return await prisma.client.findFirst({
+    const db = this.checkDatabase();
+    return await db.client.findFirst({
       where: { email },
       include: {
         quotes: true,
@@ -94,7 +111,8 @@ export class DatabaseService {
   }
 
   static async getAllClients() {
-    return await prisma.client.findMany({
+    const db = this.checkDatabase();
+    return await db.client.findMany({
       include: {
         quotes: true,
         user: true,
@@ -104,14 +122,16 @@ export class DatabaseService {
   }
 
   static async updateClient(id: string, data: any) {
-    return await prisma.client.update({
+    const db = this.checkDatabase();
+    return await db.client.update({
       where: { id },
       data,
     });
   }
 
   static async deleteClient(id: string) {
-    return await prisma.client.delete({
+    const db = this.checkDatabase();
+    return await db.client.delete({
       where: { id },
     });
   }
@@ -128,7 +148,8 @@ export class DatabaseService {
     sides: string;
     printing: string;
   }) {
-    return await prisma.quote.create({
+    const db = this.checkDatabase();
+    return await db.quote.create({
       data: quoteData,
       include: {
         client: true,
@@ -179,7 +200,8 @@ export class DatabaseService {
       quoteDataToCreate.userId = userId;
     }
     
-    return await prisma.quote.create({
+    const db = this.checkDatabase();
+    return await db.quote.create({
       data: quoteDataToCreate,
       include: {
         client: true,
@@ -192,7 +214,8 @@ export class DatabaseService {
   }
 
   static async getQuoteById(id: string) {
-    return await prisma.quote.findUnique({
+    const db = this.checkDatabase();
+    return await db.quote.findUnique({
       where: { id },
       include: {
         client: true,
@@ -205,7 +228,8 @@ export class DatabaseService {
   }
 
   static async getQuoteByQuoteId(quoteId: string) {
-    return await prisma.quote.findUnique({
+    const db = this.checkDatabase();
+    return await db.quote.findUnique({
       where: { quoteId },
       include: {
         client: true,
@@ -218,7 +242,8 @@ export class DatabaseService {
   }
 
   static async getAllQuotes() {
-    return await prisma.quote.findMany({
+    const db = this.checkDatabase();
+    return await db.quote.findMany({
       include: {
         client: true,
         user: true,
@@ -229,7 +254,8 @@ export class DatabaseService {
   }
 
   static async getQuotesByStatus(status: string) {
-    return await prisma.quote.findMany({
+    const db = this.checkDatabase();
+    return await db.quote.findMany({
       where: { status },
       include: {
         client: true,
@@ -243,7 +269,8 @@ export class DatabaseService {
   }
 
   static async updateQuoteStatus(id: string, status: string) {
-    return await prisma.quote.update({
+    const db = this.checkDatabase();
+    return await db.quote.update({
       where: { id },
       data: { status },
       include: {
@@ -263,14 +290,7 @@ export class DatabaseService {
       console.log('DatabaseService.updateQuote called with:', { id, data });
       
       // First, verify the quote exists
-      const existingQuote = await prisma.quote.findUnique({
-        where: { id },
-        include: {
-          client: true,
-          user: true,
-          amounts: true,
-        },
-      });
+      const existingQuote = await this.getQuoteById(id);
       
       if (!existingQuote) {
         throw new Error('Quote not found in database');
@@ -279,7 +299,7 @@ export class DatabaseService {
       console.log('Found existing quote:', existingQuote.id);
       
       // Start a transaction to update both Quote and QuoteAmount
-      return await prisma.$transaction(async (tx) => {
+      return await this.checkDatabase().$transaction(async (tx) => {
         // Prepare the quote update data, only including valid fields
         const validQuoteData: any = {};
         
@@ -364,16 +384,7 @@ export class DatabaseService {
       console.log('DatabaseService.updateQuoteWithDetails called with:', { id, data });
       
       // First, verify the quote exists
-      const existingQuote = await prisma.quote.findUnique({
-        where: { id },
-        include: {
-          client: true,
-          user: true,
-          amounts: true,
-          papers: true,
-          finishing: true,
-        },
-      });
+      const existingQuote = await this.getQuoteById(id);
       
       if (!existingQuote) {
         throw new Error('Quote not found in database');
@@ -382,7 +393,7 @@ export class DatabaseService {
       console.log('Found existing quote:', existingQuote.id);
       
       // Start a transaction to update quote and all related data
-      return await prisma.$transaction(async (tx) => {
+      return await this.checkDatabase().$transaction(async (tx) => {
         // Prepare the quote update data
         const validQuoteData: any = {};
         
@@ -507,7 +518,8 @@ export class DatabaseService {
   }
 
   static async deleteQuote(id: string) {
-    return await prisma.quote.delete({
+    const db = this.checkDatabase();
+    return await db.quote.delete({
       where: { id },
     });
   }
@@ -519,14 +531,16 @@ export class DatabaseService {
     vat: number;
     total: number;
   }) {
-    return await prisma.quoteAmount.create({
+    const db = this.checkDatabase();
+    return await db.quoteAmount.create({
       data: amountData,
     });
   }
 
   // Search operations
   static async saveSearchHistory(query: string, userId?: string) {
-    return await prisma.searchHistory.create({
+    const db = this.checkDatabase();
+    return await db.searchHistory.create({
       data: {
         query,
         userId,
@@ -535,7 +549,8 @@ export class DatabaseService {
   }
 
   static async getSearchHistory(userId?: string, limit = 10) {
-    return await prisma.searchHistory.findMany({
+    const db = this.checkDatabase();
+    return await db.searchHistory.findMany({
       where: userId ? { userId } : {},
       orderBy: { timestamp: 'desc' },
       take: limit,
@@ -543,7 +558,8 @@ export class DatabaseService {
   }
 
   static async saveSearchAnalytics(query: string, userId?: string) {
-    return await prisma.searchAnalytics.create({
+    const db = this.checkDatabase();
+    return await db.searchAnalytics.create({
       data: {
         query,
         userId,
@@ -552,7 +568,8 @@ export class DatabaseService {
   }
 
   static async getSearchAnalytics(userId?: string, limit = 100) {
-    return await prisma.searchAnalytics.findMany({
+    const db = this.checkDatabase();
+    return await db.searchAnalytics.findMany({
       where: userId ? { userId } : {},
       orderBy: { timestamp: 'desc' },
       take: limit,
@@ -561,11 +578,12 @@ export class DatabaseService {
 
   // Statistics
   static async getQuoteStats() {
-    const total = await prisma.quote.count();
-    const pending = await prisma.quote.count({ where: { status: 'Pending' } });
-    const approved = await prisma.quote.count({ where: { status: 'Approved' } });
-    const rejected = await prisma.quote.count({ where: { status: 'Rejected' } });
-    const completed = await prisma.quote.count({ where: { status: 'Completed' } });
+    const db = this.checkDatabase();
+    const total = await db.quote.count();
+    const pending = await db.quote.count({ where: { status: 'Pending' } });
+    const approved = await db.quote.count({ where: { status: 'Approved' } });
+    const rejected = await db.quote.count({ where: { status: 'Rejected' } });
+    const completed = await db.quote.count({ where: { status: 'Completed' } });
 
     return {
       total,
@@ -590,13 +608,15 @@ export class DatabaseService {
     country?: string;
     status?: string;
   }) {
-    return await prisma.supplier.create({
+    const db = this.checkDatabase();
+    return await db.supplier.create({
       data: supplierData,
     });
   }
 
   static async getSupplierById(id: string) {
-    return await prisma.supplier.findUnique({
+    const db = this.checkDatabase();
+    return await db.supplier.findUnique({
       where: { id },
       include: {
         materials: true,
@@ -605,7 +625,8 @@ export class DatabaseService {
   }
 
   static async getAllSuppliers() {
-    return await prisma.supplier.findMany({
+    const db = this.checkDatabase();
+    return await db.supplier.findMany({
       include: {
         materials: true,
       },
@@ -614,7 +635,8 @@ export class DatabaseService {
   }
 
   static async updateSupplier(id: string, data: any) {
-    return await prisma.supplier.update({
+    const db = this.checkDatabase();
+    return await db.supplier.update({
       where: { id },
       data,
       include: {
@@ -624,7 +646,8 @@ export class DatabaseService {
   }
 
   static async deleteSupplier(id: string) {
-    return await prisma.supplier.delete({
+    const db = this.checkDatabase();
+    return await db.supplier.delete({
       where: { id },
     });
   }
@@ -638,7 +661,8 @@ export class DatabaseService {
     unit: string;
     status?: string;
   }) {
-    return await prisma.material.create({
+    const db = this.checkDatabase();
+    return await db.material.create({
       data: materialData,
       include: {
         supplier: true,
@@ -647,7 +671,8 @@ export class DatabaseService {
   }
 
   static async getMaterialById(id: string) {
-    return await prisma.material.findUnique({
+    const db = this.checkDatabase();
+    return await db.material.findUnique({
       where: { id },
       include: {
         supplier: true,
@@ -656,7 +681,8 @@ export class DatabaseService {
   }
 
   static async getAllMaterials() {
-    return await prisma.material.findMany({
+    const db = this.checkDatabase();
+    return await db.material.findMany({
       include: {
         supplier: true,
       },
@@ -665,7 +691,8 @@ export class DatabaseService {
   }
 
   static async updateMaterial(id: string, data: any) {
-    return await prisma.material.update({
+    const db = this.checkDatabase();
+    return await db.material.update({
       where: { id },
       data,
       include: {
@@ -675,14 +702,16 @@ export class DatabaseService {
   }
 
   static async deleteMaterial(id: string) {
-    return await prisma.material.delete({
+    const db = this.checkDatabase();
+    return await db.material.delete({
       where: { id },
     });
   }
 
   // Get materials by supplier
   static async getMaterialsBySupplier(supplierId: string) {
-    return await prisma.material.findMany({
+    const db = this.checkDatabase();
+    return await db.material.findMany({
       where: { supplierId },
       include: {
         supplier: true,
@@ -692,9 +721,10 @@ export class DatabaseService {
   }
 
   static async getClientStats() {
-    const total = await prisma.client.count();
-    const companies = await prisma.client.count({ where: { clientType: 'Company' } });
-    const individuals = await prisma.client.count({ where: { clientType: 'Individual' } });
+    const db = this.checkDatabase();
+    const total = await db.client.count();
+    const companies = await db.client.count({ where: { clientType: 'Company' } });
+    const individuals = await db.client.count({ where: { clientType: 'Individual' } });
 
     return {
       total,
@@ -709,14 +739,12 @@ export class DatabaseService {
     console.log('Starting dummy data migration...');
     
     // Create default admin user if none exists
-    const existingUser = await prisma.user.findFirst();
+    const existingUser = await this.getUserByEmail('admin@example.com');
     if (!existingUser) {
-      await prisma.user.create({
-        data: {
-          email: 'admin@example.com',
-          name: 'John Admin',
-          role: 'admin',
-        },
+      await this.createUser({
+        email: 'admin@example.com',
+        name: 'John Admin',
+        role: 'admin',
       });
       console.log('Created default admin user');
     }
@@ -751,22 +779,19 @@ export class DatabaseService {
 
     for (const userData of usersToSeed) {
       try {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: userData.email }
-        });
+        const existingUser = await this.getUserByEmail(userData.email);
         
         if (!existingUser) {
-          await prisma.user.create({
-            data: userData,
+          await this.createUser({
+            email: userData.email,
+            name: userData.name,
+            role: userData.role,
           });
           console.log(`Created user: ${userData.email}`);
         } else {
           // Update existing user with password if missing
           if (!existingUser.password) {
-            await prisma.user.update({
-              where: { email: userData.email },
-              data: { password: userData.password }
-            });
+            await this.updateUser(existingUser.id, { password: userData.password });
             console.log(`Updated user password: ${userData.email}`);
           } else {
             console.log(`User already exists: ${userData.email}`);
@@ -778,9 +803,7 @@ export class DatabaseService {
     }
 
     // Also update existing users with passwords if they don't have them
-    const existingUsers = await prisma.user.findMany({
-      where: { password: null }
-    });
+    const existingUsers = await this.getAllUsers();
 
     for (const user of existingUsers) {
       try {
@@ -795,10 +818,7 @@ export class DatabaseService {
           defaultPassword = 'manager123';
         }
         
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { password: defaultPassword }
-        });
+        await this.updateUser(user.id, { password: defaultPassword });
         console.log(`Set password for user: ${user.email}`);
       } catch (error) {
         console.error(`Error setting password for user ${user.email}:`, error);
@@ -862,14 +882,10 @@ export class DatabaseService {
 
     for (const clientData of clientsToSeed) {
       try {
-        const existingClient = await prisma.client.findFirst({
-          where: { email: clientData.email }
-        });
+        const existingClient = await this.getClientByEmail(clientData.email);
         
         if (!existingClient) {
-          await prisma.client.create({
-            data: clientData,
-          });
+          await this.createClient(clientData);
           console.log(`Created client: ${clientData.contactPerson}`);
         } else {
           console.log(`Client already exists: ${clientData.contactPerson}`);
