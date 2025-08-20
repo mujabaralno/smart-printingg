@@ -29,6 +29,7 @@ type UserFilter = "all" | string;
 
 
 type Row = (typeof QUOTES)[number] & {
+  quoteId?: string; // Add formatted quote ID for display
   productName?: string;
   quantity?: number;
 };
@@ -40,7 +41,8 @@ const fmtDate = (iso: string) =>
 const PAGE_SIZE = 20; // Increased from 7 to 20 as per requirements
 
 export default function QuoteManagementPage() {
-  const [rows, setRows] = React.useState<Row[]>(QUOTES as Row[]);
+  const [rows, setRows] = React.useState<Row[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [showNewQuoteNotification, setShowNewQuoteNotification] = React.useState(false);
   const [newQuoteCount, setNewQuoteCount] = React.useState(0);
   const [downloadingPDF, setDownloadingPDF] = React.useState<string | null>(null);
@@ -51,48 +53,94 @@ export default function QuoteManagementPage() {
   const [from, setFrom] = React.useState<string>("");
   const [to, setTo] = React.useState<string>("");
   const [status, setStatus] = React.useState<StatusFilter>("all");
-  const [user, setUser] = React.useState<UserFilter>("all");
+  const [contactPerson, setContactPerson] = React.useState<UserFilter>("all");
   const [minAmount, setMinAmount] = React.useState<string>("");
   const [page, setPage] = React.useState(1);
   const [showAll, setShowAll] = React.useState(false); // New state for show more option
 
-  React.useEffect(() => setPage(1), [search, from, to, status, user, minAmount]);
+  React.useEffect(() => setPage(1), [search, from, to, status, contactPerson, minAmount]);
 
-  // Listen for new quotes from localStorage or other sources
+  // Load contact persons for filter dropdown
+  const [filterContactPersons, setFilterContactPersons] = React.useState<Array<{id: string, name: string}>>([]);
+
   React.useEffect(() => {
-    const checkForNewQuotes = () => {
-      const newQuotes = localStorage.getItem('newQuotes');
-      if (newQuotes) {
-        try {
-          const parsedQuotes = JSON.parse(newQuotes);
-          if (Array.isArray(parsedQuotes) && parsedQuotes.length > 0) {
-            // Add new quotes to the existing list
-            setRows(prevRows => {
-              const existingIds = new Set(prevRows.map(q => q.id));
-              const uniqueNewQuotes = parsedQuotes.filter(q => !existingIds.has(q.id));
-              if (uniqueNewQuotes.length > 0) {
-                return [...prevRows, ...uniqueNewQuotes];
-              }
-              return prevRows;
-            });
-            // Clear the localStorage
-            localStorage.removeItem('newQuotes');
-          }
-        } catch (error) {
-          console.error('Error parsing new quotes:', error);
-          localStorage.removeItem('newQuotes');
+    const loadContactPersons = async () => {
+      try {
+        const response = await fetch('/api/clients');
+        if (response.ok) {
+          const clients = await response.json();
+          // Extract unique contact persons
+          const contactPersons = clients.reduce((acc: any[], client: any) => {
+            if (client.contactPerson && !acc.find(cp => cp.name === client.contactPerson)) {
+              acc.push({
+                id: client.contactPerson,
+                name: client.contactPerson
+              });
+            }
+            return acc;
+          }, []);
+          setFilterContactPersons(contactPersons);
         }
+      } catch (error) {
+        console.error('Error loading contact persons for filter:', error);
+        // Fallback to extracting from current rows if API fails
+        const contactPersons = rows.reduce((acc: any[], row: any) => {
+          if (row.contactPerson && !acc.find(cp => cp.name === row.contactPerson)) {
+            acc.push({
+              id: row.contactPerson,
+              name: row.contactPerson
+            });
+          }
+          return acc;
+        }, []);
+        setFilterContactPersons(contactPersons);
       }
     };
 
-    // Check immediately
-    checkForNewQuotes();
+    loadContactPersons();
+  }, [rows]);
 
-    // Set up interval to check for new quotes
-    const interval = setInterval(checkForNewQuotes, 2000);
+  // Load quotes from database on page load
+  React.useEffect(() => {
+    const loadQuotes = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/quotes');
+        if (response.ok) {
+          const quotes = await response.json();
+          // Transform database quotes to match Row format
+          const transformedQuotes = quotes.map((quote: any) => ({
+            id: quote.id, // Use database ID for operations
+            quoteId: quote.quoteId, // Keep formatted quote ID for display
+            clientName: quote.client?.companyName || quote.client?.contactPerson || "Unknown Client",
+            contactPerson: quote.client?.contactPerson || "Unknown Contact",
+            date: quote.date.split('T')[0], // Convert ISO date to YYYY-MM-DD
+            amount: quote.amounts?.total || 0,
+            status: quote.status as Status,
+            userId: quote.user?.id || "cmejqfk3s0000x5a98slufy9n", // Use real admin user ID as fallback
+            productName: quote.product || "Printing Product",
+            quantity: quote.quantity || 0,
+          }));
+          setRows(transformedQuotes);
+        } else {
+          console.error('Failed to load quotes');
+          // Fallback to dummy data if API fails
+          setRows(QUOTES);
+        }
+      } catch (error) {
+        console.error('Error loading quotes:', error);
+        // Fallback to dummy data if API fails
+        setRows(QUOTES);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return () => clearInterval(interval);
+    loadQuotes();
   }, []);
+
+  // Note: Quotes are now loaded from the database through the main dashboard
+  // This page will be updated to use the database service in future iterations
 
   const filtered = React.useMemo(() => {
     return rows.filter((q) => {
@@ -105,15 +153,15 @@ export default function QuoteManagementPage() {
         q.contactPerson.toLowerCase().includes(s);
 
       const hitStatus = status === "all" || q.status === status;
-      const hitUser = user === "all" || q.userId === user;
+      const hitContactPerson = contactPerson === "all" || q.contactPerson === contactPerson;
       const hitAmount = minAmount === "" || q.amount >= Number(minAmount);
 
       const hitFrom = from === "" || q.date >= from;
       const hitTo = to === "" || q.date <= to;
 
-      return hitSearch && hitStatus && hitUser && hitAmount && hitFrom && hitTo;
+      return hitSearch && hitStatus && hitContactPerson && hitAmount && hitFrom && hitTo;
     });
-  }, [rows, search, from, to, status, user, minAmount]);
+      }, [rows, search, from, to, status, contactPerson, minAmount]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const start = (page - 1) * PAGE_SIZE;
@@ -138,7 +186,7 @@ export default function QuoteManagementPage() {
     date: "",
     amount: "",
     status: "Approved",
-    userId: USERS[0]?.id ?? "",
+    userId: "cmejqfk3s0000x5a98slufy9n", // Use real admin user ID instead of dummy data
     productName: "",
     quantity: "",
   });
@@ -160,30 +208,118 @@ export default function QuoteManagementPage() {
     setOpenEdit(true);
   };
 
-  const onSubmitEdit = () => {
+  const onSubmitEdit = async () => {
     if (!draft.id || !draft.clientName || !draft.contactPerson || !draft.date || draft.amount === "") {
       alert("Please complete all required fields.");
       return;
     }
-    setRows((prev): Row[] =>
-      prev.map((r) =>
-        r.id === draft.id
-          ? {
-              ...r,
-              clientName: draft.clientName,
-              contactPerson: draft.contactPerson,
-              date: draft.date,
-              amount: Number(draft.amount),
-              status: draft.status,
-              userId: draft.userId,
-              productName: draft.productName?.trim() || r.productName,
-              quantity:
-                draft.quantity === "" ? r.quantity : Number(draft.quantity),
-            }
-          : r
-      )
-    );
-    setOpenEdit(false);
+
+    try {
+      console.log('Starting quote update for:', draft.id);
+      
+      // First, we need to find or create the client
+      let clientId = "";
+      
+      // Try to find existing client by email (using a default email since we don't have it in the form)
+      console.log('Searching for existing client...');
+      const clientResponse = await fetch('/api/clients');
+      if (clientResponse.ok) {
+        const clients = await clientResponse.json();
+        console.log('Found clients:', clients.length);
+        const existingClient = clients.find((c: any) => 
+          c.contactPerson === draft.contactPerson || 
+          c.companyName === draft.clientName
+        );
+        if (existingClient) {
+          clientId = existingClient.id;
+          console.log('Using existing client:', clientId);
+        }
+      }
+
+      // If no existing client found, create a new one
+      if (!clientId) {
+        console.log('Creating new client...');
+        const createClientResponse = await fetch('/api/clients', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            clientType: "Company",
+            companyName: draft.clientName,
+            contactPerson: draft.contactPerson,
+            email: "customer@example.com", // Default email since not in form
+            phone: "123456789", // Default phone since not in form
+            countryCode: "+971",
+            role: "Customer"
+          }),
+        });
+
+        if (createClientResponse.ok) {
+          const newClient = await createClientResponse.json();
+          clientId = newClient.id;
+          console.log('Created new client:', clientId);
+        } else {
+          const errorData = await createClientResponse.json();
+          throw new Error(`Failed to create client: ${errorData.error || 'Unknown error'}`);
+        }
+      }
+
+      // Update quote in database with correct schema mapping
+      const updateData = {
+        clientId: clientId,
+        date: new Date(draft.date + 'T00:00:00.000Z').toISOString(), // Ensure proper date format
+        status: draft.status,
+        userId: draft.userId || null, // Allow null if no user assigned
+        product: draft.productName?.trim() || "Printing Product",
+        quantity: draft.quantity === "" ? 0 : Number(draft.quantity),
+        amount: Number(draft.amount), // This will be handled by the database service
+      };
+      
+      console.log('Updating quote with data:', updateData);
+      
+      const response = await fetch(`/api/quotes/${draft.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Quote update failed:', response.status, errorData);
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to update quote`);
+      }
+
+      const updatedQuote = await response.json();
+      console.log('Quote updated successfully:', updatedQuote);
+
+      // Update local state
+      setRows((prev): Row[] =>
+        prev.map((r) =>
+          r.id === draft.id
+            ? {
+                ...r,
+                clientName: draft.clientName,
+                contactPerson: draft.contactPerson,
+                date: draft.date,
+                amount: Number(draft.amount),
+                status: draft.status,
+                userId: draft.userId,
+                productName: draft.productName?.trim() || r.productName,
+                quantity:
+                  draft.quantity === "" ? r.quantity : Number(draft.quantity),
+              }
+            : r
+        )
+      );
+
+      setOpenEdit(false);
+    } catch (error) {
+      console.error('Error updating quote:', error);
+      alert(`Error updating quote: ${error instanceof Error ? error.message : 'Please try again.'}`);
+    }
   };
 
   // ===== modal VIEW (Eye) =====
@@ -300,12 +436,6 @@ export default function QuoteManagementPage() {
           Quote Management
         </h1>
         <p className="text-lg text-slate-600">Manage and track all your printing quotes. View, edit, and monitor the status of customer quotations.</p>
-        <div className="flex items-center justify-center gap-6 text-sm text-slate-500">
-          <span>Total Quotes: <span className="font-semibold text-slate-700">{rows.length}</span></span>
-          <span>Approved: <span className="font-semibold text-green-600">{rows.filter(q => q.status === "Approved").length}</span></span>
-          <span>Pending: <span className="font-semibold text-yellow-600">{rows.filter(q => q.status === "Pending").length}</span></span>
-          <span>Rejected: <span className="font-semibold text-red-600">{rows.filter(q => q.status === "Rejected").length}</span></span>
-        </div>
       </div>
       
       {/* Main Content Card */}
@@ -370,15 +500,15 @@ export default function QuoteManagementPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">User</label>
-              <Select value={user} onValueChange={(v: UserFilter) => setUser(v)}>
+              <label className="text-sm font-medium text-slate-700">Contact Person</label>
+              <Select value={contactPerson} onValueChange={(v: UserFilter) => setContactPerson(v)}>
                 <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
-                  <SelectValue placeholder="All Users" />
+                  <SelectValue placeholder="All Contact Persons" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  {USERS.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                  <SelectItem value="all">All Contact Persons</SelectItem>
+                  {filterContactPersons.map((cp) => (
+                    <SelectItem key={cp.id} value={cp.id}>{cp.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -463,9 +593,15 @@ export default function QuoteManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {current.map((q) => (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-16 text-slate-500">
+                      Loading quotes...
+                    </TableCell>
+                  </TableRow>
+                ) : current.map((q) => (
                   <TableRow key={q.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
-                    <TableCell className="font-medium text-slate-900 p-6">{q.id}</TableCell>
+                    <TableCell className="font-medium text-slate-900 p-6">{q.quoteId}</TableCell>
                     <TableCell className="text-slate-700 p-6">{q.clientName}</TableCell>
                     <TableCell className="text-slate-700 p-6">{q.contactPerson}</TableCell>
                     <TableCell className="text-slate-700 p-6">{fmtDate(q.date)}</TableCell>
@@ -726,8 +862,8 @@ export default function QuoteManagementPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {USERS.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                  {filterContactPersons.map((cp) => (
+                    <SelectItem key={cp.id} value={cp.id}>{cp.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

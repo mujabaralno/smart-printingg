@@ -28,6 +28,7 @@ const EXISTING_CUSTOMERS = [
     companyName: "Eagan Inc.",
     firstName: "John",
     lastName: "Smith",
+    contactPerson: "John Smith",
     email: "john.smith@eagan.com",
     phone: "501234567",
     countryCode: "+971",
@@ -46,6 +47,7 @@ const EXISTING_CUSTOMERS = [
     companyName: "Tech Solutions Ltd.",
     firstName: "Sarah",
     lastName: "Johnson",
+    contactPerson: "Sarah Johnson",
     email: "sarah.j@techsolutions.com",
     phone: "559876543",
     countryCode: "+971",
@@ -64,6 +66,7 @@ const EXISTING_CUSTOMERS = [
     companyName: "",
     firstName: "Michael",
     lastName: "Brown",
+    contactPerson: "Michael Brown",
     email: "michael.brown@gmail.com",
     phone: "524567890",
     countryCode: "+971",
@@ -84,8 +87,9 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isNewCustomer, setIsNewCustomer] = useState(true);
 
-  const setClient = (patch: Partial<typeof client>) =>
+  const setClient = (patch: Partial<typeof client>) => {
     setFormData((prev) => ({ ...prev, client: { ...prev.client, ...patch } }));
+  };
 
   // Auto-fill functionality
   const handleCompanyNameChange = (value: string) => {
@@ -137,6 +141,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
       companyName: customer.companyName,
       firstName: customer.firstName,
       lastName: customer.lastName,
+      contactPerson: customer.contactPerson || `${customer.firstName} ${customer.lastName}`.trim(),
       email: customer.email,
       phone: customer.phone,
       countryCode: customer.countryCode,
@@ -168,8 +173,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
         id: `CUST${String(EXISTING_CUSTOMERS.length + 1).padStart(3, '0')}`,
         clientType: client.clientType,
         companyName: client.companyName || "",
-        firstName: client.firstName,
-        lastName: client.lastName,
+        contactPerson: client.contactPerson || `${client.firstName} ${client.lastName}`.trim(),
         email: client.email,
         phone: client.phone || "",
         countryCode: client.countryCode || "+971",
@@ -196,8 +200,8 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
   const validateForm = () => {
     const requiredFields = [
       client.email,
-      client.firstName,
-      client.lastName,
+      client.firstName, // Check firstName
+      client.lastName,  // Check lastName
       client.countryCode,
       client.phone
     ];
@@ -210,6 +214,16 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
   };
 
   const isFormValid = validateForm();
+
+  // Update contactPerson when firstName or lastName changes
+  useEffect(() => {
+    if (client.firstName || client.lastName) {
+      const contactPerson = `${client.firstName || ''} ${client.lastName || ''}`.trim();
+      if (contactPerson !== client.contactPerson) {
+        setClient({ contactPerson });
+      }
+    }
+  }, [client.firstName, client.lastName]);
 
   return (
     <div className="space-y-8">
@@ -574,8 +588,31 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
             <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
               <span className="text-white text-xs font-bold">!</span>
             </div>
-            <p className="text-red-700 font-medium">
-              Please fill in all required fields before proceeding
+            <div className="text-red-700">
+              <p className="font-medium mb-2">Please fill in all required fields before proceeding:</p>
+              <ul className="text-sm space-y-1">
+                {!client.firstName?.trim() && <li>• First Name</li>}
+                {!client.lastName?.trim() && <li>• Last Name</li>}
+                {!client.email?.trim() && <li>• Email</li>}
+                {!client.phone?.trim() && <li>• Phone Number</li>}
+                {!client.countryCode && <li>• Country Code</li>}
+                {client.clientType === "Company" && !client.companyName?.trim() && <li>• Company Name</li>}
+                {client.clientType === "Company" && !client.role?.trim() && <li>• Designation</li>}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Form Complete Indicator */}
+      {isFormValid && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+              <span className="text-white text-xs font-bold">✓</span>
+            </div>
+            <p className="text-green-700 font-medium">
+              All required customer information is complete. You can now proceed to the next step.
             </p>
           </div>
         </div>

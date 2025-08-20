@@ -46,7 +46,51 @@ const fmt = (iso: string) =>
   });
 
 export default function UserManagementPage() {
-  const [users, setUsers] = React.useState<AppUser[]>(seedUsers);
+  const [users, setUsers] = React.useState<AppUser[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  
+  // Load users from database on page load
+  React.useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/users');
+        if (response.ok) {
+          const usersData = await response.json();
+          if (usersData.length > 0) {
+            // Transform database users to match AppUser format
+            const transformedUsers = usersData.map((user: any, index: number) => ({
+              id: user.id, // Keep the database ID for operations
+              displayId: `EMP${String(index + 1).padStart(3, "0")}`, // Display ID for UI
+              name: user.name,
+              email: user.email,
+              joined: user.createdAt ? user.createdAt.split('T')[0] : new Date().toISOString().slice(0, 10),
+              role: user.role as AppUserRole,
+              status: "Active" as const, // Default to Active
+              password: "", // Don't load passwords from database for security
+            }));
+            setUsers(transformedUsers);
+          } else {
+            // If no users in database, use seed users
+            console.log('No users in database, using seed users');
+            setUsers(seedUsers);
+          }
+        } else {
+          console.error('Failed to load users');
+          // Fallback to seed users if API fails
+          setUsers(seedUsers);
+        }
+      } catch (error) {
+        console.error('Error loading users:', error);
+        // Fallback to seed users if API fails
+        setUsers(seedUsers);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUsers();
+  }, []);
 
   // ===== filter & paging =====
   const [search, setSearch] = React.useState("");
@@ -105,7 +149,7 @@ export default function UserManagementPage() {
     setError("");
   };
 
-  const addUser = () => {
+  const addUser = async () => {
     if (!name.trim() || !email.trim()) {
       setError("Please fill in all required fields.");
       return;
@@ -122,54 +166,125 @@ export default function UserManagementPage() {
       return;
     }
 
-    if (editingUserId) {
-      // Editing existing user
+    try {
+      if (editingUserId) {
+        // Editing existing user
+        const response = await fetch(`/api/users/${editingUserId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: name.trim(),
+            email: email.trim(),
+            role,
+            // Only update password if a new one is provided
+            password: password.trim() || undefined,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update user');
+        }
+
+        // Update local state
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === editingUserId
+              ? {
+                  ...u,
+                  name: name.trim(),
+                  email: email.trim(),
+                  role,
+                  status: active ? "Active" : "Inactive",
+                  // Only update password if a new one is provided
+                  password: password.trim() || u.password,
+                }
+              : u
+          )
+        );
+      } else {
+        // Adding new user
+        const newId = `EMP${String(users.length + 1).padStart(3, "0")}`;
+        const joined = new Date().toISOString().slice(0, 10);
+        
+        const userData = {
+          name: name.trim(),
+          email: email.trim(),
+          role,
+          password: password.trim(),
+        };
+
+        // Save to database
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create user');
+        }
+
+        const newUser = await response.json();
+        
+        // Add to local state for immediate UI update
+        const user: AppUser = {
+          id: newUser.id || newId,
+          name: name.trim(),
+          email: email.trim(),
+          joined,
+          role,
+          status: "Active", // Default to Active as per feedback
+          password: password.trim(),
+        };
+        setUsers((prev) => [user, ...prev]);
+      }
+      
+      setOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving user:', error);
+      setError('Error saving user. Please try again.');
+    }
+  };
+
+  const toggleStatus = async (id: string) => {
+    try {
+      const user = users.find(u => u.id === id);
+      if (!user) return;
+
+      const newStatus = user.status === "Active" ? "Inactive" : "Active";
+      
+      // Update in database
+      const response = await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user status');
+      }
+
+      // Update local state
       setUsers((prev) =>
         prev.map((u) =>
-          u.id === editingUserId
-            ? {
-                ...u,
-                name: name.trim(),
-                email: email.trim(),
-                role,
-                status: active ? "Active" : "Inactive",
-                // Only update password if a new one is provided
-                password: password.trim() || u.password,
-              }
+          u.id === id
+            ? { ...u, status: u.status === "Active" ? "Inactive" : "Active" }
             : u
         )
       );
-    } else {
-      // Adding new user
-      const newId = `EMP${(Math.random() * 1000 + 1)
-        .toFixed(0)
-        .padStart(3, "0")}`;
-      const joined = new Date().toISOString().slice(0, 10);
-      const user: AppUser = {
-        id: newId,
-        name: name.trim(),
-        email: email.trim(),
-        joined,
-        role,
-        status: "Active", // Default to Active as per feedback
-        // password ini untuk dummy saja, jangan simpan plain text di produksi
-        password: password.trim(),
-      };
-      setUsers((prev) => [user, ...prev]);
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      alert('Error updating user status. Please try again.');
     }
-    
-    setOpen(false);
-    resetForm();
-  };
-
-  const toggleStatus = (id: string) => {
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === id
-          ? { ...u, status: u.status === "Active" ? "Inactive" : "Active" }
-          : u
-      )
-    );
   };
 
   const editUser = (user: AppUser) => {
@@ -322,12 +437,18 @@ export default function UserManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {current.map((u) => (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-16 text-slate-500">
+                      Loading users...
+                    </TableCell>
+                  </TableRow>
+                ) : current.map((u) => (
                   <TableRow key={u.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
                     {/* ID */}
                     <TableCell className="p-6">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                        {u.id}
+                        {u.displayId}
                       </span>
                     </TableCell>
                     

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getUser, setUser } from "@/lib/auth";
+import { getUser } from "@/lib/auth";
 
 const AdvancedLoader = () => (
   <div className="flex flex-col items-center space-y-4">
@@ -35,7 +35,12 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
         email: "admin@example.com",
         password: "admin123"
       };
-      setUser(defaultUser);
+      
+      // Store the default user in localStorage for development
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('smartPrintingUser', JSON.stringify(defaultUser));
+      }
+      
       setLoading(false);
     } else {
       setLoading(false);

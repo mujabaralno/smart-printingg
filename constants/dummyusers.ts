@@ -36,6 +36,7 @@ export type AppUserStatus = "Active" | "Inactive";
 
 export interface AppUser {
   id: string;           
+  displayId?: string;   // Optional display ID for formatted display
   name: string;
   email: string;
   joined: string;      
@@ -45,7 +46,7 @@ export interface AppUser {
 }
 
 export const seedUsers: AppUser[] = [
-  { id: "EMP001", name: "EMP001", email: "EMP001@gmail.com", joined: "2025-06-25", role: "admin",     status: "Active" },
-  { id: "EMP002", name: "EMP002", email: "EMP002@gmail.com", joined: "2025-06-25", role: "user",      status: "Active" },
-  { id: "EMP003", name: "EMP003", email: "EMP003@gmail.com", joined: "2025-06-25", role: "user",      status: "Inactive" },
+  { id: "EMP001", displayId: "EMP001", name: "EMP001", email: "EMP001@gmail.com", joined: "2025-06-25", role: "admin",     status: "Active" },
+  { id: "EMP002", displayId: "EMP002", name: "EMP002", email: "EMP002@gmail.com", joined: "2025-06-25", role: "user",      status: "Active" },
+  { id: "EMP003", displayId: "EMP003", name: "EMP003", email: "EMP003@gmail.com", joined: "2025-06-25", role: "user",      status: "Inactive" },
 ];

@@ -35,7 +35,7 @@ interface Step5Props {
   setFormData: React.Dispatch<React.SetStateAction<QuoteFormData>>;
   otherQuantities: OtherQty[];
   setOtherQuantities: React.Dispatch<React.SetStateAction<OtherQty[]>>;
-  onOpenSave: () => void; 
+  onOpenSave: () => void;
 }
 
 const Step5Quotation: FC<Step5Props> = ({
@@ -43,11 +43,59 @@ const Step5Quotation: FC<Step5Props> = ({
   setFormData,
   otherQuantities,
   setOtherQuantities,
+  onOpenSave,
 }) => {
   // State for included/excluded products
   const [includedProducts, setIncludedProducts] = React.useState<Set<number>>(
     new Set(formData.products.map((_, index) => index))
   );
+
+  // Validation state
+  const [validationErrors, setValidationErrors] = React.useState<string[]>([]);
+
+  // Validate form data before allowing save
+  const validateFormData = () => {
+    const errors: string[] = [];
+
+    // Check if client information is complete
+    if (!formData.client.email || !formData.client.phone) {
+      errors.push("Client email and phone are required");
+    }
+
+    if (formData.client.clientType === "Company" && !formData.client.companyName) {
+      errors.push("Company name is required for company clients");
+    }
+
+    if (!formData.client.contactPerson && (!formData.client.firstName || !formData.client.lastName)) {
+      errors.push("Contact person name is required");
+    }
+
+    // Check if products are selected
+    if (includedProducts.size === 0) {
+      errors.push("At least one product must be selected");
+    }
+
+    // Check if products have required information
+    formData.products.forEach((product, index) => {
+      if (includedProducts.has(index)) {
+        if (!product.productName || !product.quantity) {
+          errors.push(`Product ${index + 1} must have a name and quantity`);
+        }
+      }
+    });
+
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
+
+  // Enhanced save function with validation
+  const handleSaveWithValidation = () => {
+    if (validateFormData()) {
+      onOpenSave();
+    } else {
+      console.error('Validation errors:', validationErrors);
+    }
+  };
 
   // Calculate comprehensive costs for each product
   const calculateProductCosts = (productIndex: number) => {
@@ -207,6 +255,8 @@ const Step5Quotation: FC<Step5Props> = ({
     return { base: basePrice, vat, total };
   };
 
+
+
   const summaryTotals = calculateSummaryTotals();
 
   return (
@@ -247,14 +297,14 @@ const Step5Quotation: FC<Step5Props> = ({
               <div className="flex items-start py-3 border-b border-slate-100">
                 <span className="text-sm font-medium text-slate-600 w-32 flex-shrink-0">Company</span>
                 <span className="font-semibold text-slate-800 text-left ml-4 break-words">
-                  {formData.client.companyName || 'Not specified'}
+                  {formData.client.clientType === "Company" ? (formData.client.companyName || 'Not specified') : 'Individual Client'}
                 </span>
               </div>
               
               <div className="flex items-start py-3 border-b border-slate-100">
                 <span className="text-sm font-medium text-slate-600 w-32 flex-shrink-0">Contact Person</span>
                 <span className="font-semibold text-slate-800 text-left ml-4 break-words">
-                  {formData.client.contactPerson || 'Not specified'}
+                  {formData.client.contactPerson || `${formData.client.firstName || ''} ${formData.client.lastName || ''}`.trim() || 'Not specified'}
                 </span>
               </div>
               
@@ -338,7 +388,7 @@ const Step5Quotation: FC<Step5Props> = ({
                   <Checkbox
                     checked={includedProducts.size === formData.products.length}
                     onCheckedChange={(checked) => {
-                      if (checked) {
+                      if (Boolean(checked)) {
                         setIncludedProducts(new Set(formData.products.map((_, index) => index)));
                       } else {
                         setIncludedProducts(new Set());
@@ -653,8 +703,27 @@ const Step5Quotation: FC<Step5Props> = ({
         </div>
       </div>
 
+
+
       {/* Summary Footer */}
       <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl border border-slate-200 p-6">
+        {/* Validation Errors Display */}
+        {validationErrors.length > 0 && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+            <h4 className="text-lg font-semibold text-red-800 mb-3 flex items-center">
+              ⚠️ Please fix the following issues before saving:
+            </h4>
+            <ul className="space-y-2">
+              {validationErrors.map((error, index) => (
+                <li key={index} className="text-red-700 flex items-center">
+                  <span className="w-2 h-2 bg-red-500 rounded-full mr-3"></span>
+                  {error}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="text-center space-y-3">
           <h4 className="text-lg font-semibold text-slate-800">Ready to Save?</h4>
           <p className="text-slate-600">

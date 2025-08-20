@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Pencil, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -13,13 +13,104 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { materials as EXISTING_MATERIALS } from "@/constants";
 
-import { materials as SUPPLIERS, MaterialRow, CostUnit, unitLabel } from "@/constants";
+// Remove the static import and define the interface
+interface MaterialRow {
+  id: string;
+  materialId: string;
+  name: string;
+  supplier: {
+    id: string;
+    name: string;
+    contact?: string;
+    email?: string;
+    phone?: string;
+  };
+  cost: number;
+  unit: string;
+  lastUpdated: string;
+  status: string;
+}
+
+interface SupplierRow {
+  id: string;
+  name: string;
+  contact?: string;
+  email?: string;
+  phone?: string;
+  countryCode?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  status: string;
+  materials: MaterialRow[];
+}
+
+// Fallback data structure for when API fails
+const createFallbackData = () => {
+  const suppliers: SupplierRow[] = [
+    {
+      id: "fallback-1",
+      name: "Paper Source LLC",
+      contact: "Contact Person",
+      email: "papersourcellc@example.com",
+      phone: "123456789",
+      countryCode: "+971",
+      country: "UAE",
+      status: "Active",
+      materials: []
+    },
+    {
+      id: "fallback-2", 
+      name: "Apex Papers",
+      contact: "Contact Person",
+      email: "apexpapers@example.com",
+      phone: "123456789",
+      countryCode: "+971",
+      country: "UAE",
+      status: "Active",
+      materials: []
+    }
+  ];
+
+  const materials: MaterialRow[] = [
+    {
+      id: "fallback-m-1",
+      materialId: "M-001",
+      name: "Art Paper 300gsm",
+      supplier: suppliers[0],
+      cost: 0.5,
+      unit: "per_sheet",
+      lastUpdated: "2025-08-20",
+      status: "Active"
+    },
+    {
+      id: "fallback-m-2",
+      materialId: "M-002", 
+      name: "Art Paper 150gsm",
+      supplier: suppliers[0],
+      cost: 0.18,
+      unit: "per_sheet",
+      lastUpdated: "2025-08-20",
+      status: "Active"
+    }
+  ];
+
+  // Link materials to suppliers
+  suppliers[0].materials = materials;
+  suppliers[1].materials = [];
+
+  return { suppliers, materials };
+};
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
 });
+
 const fmtDate = (iso?: string) =>
   iso
     ? new Date(iso).toLocaleDateString("en-US", {
@@ -29,43 +120,108 @@ const fmtDate = (iso?: string) =>
       })
     : "—";
 
+const unitLabel = (unit: string) => {
+  switch (unit) {
+    case "per_sheet": return "Per Sheet";
+    case "per_packet": return "Per Packet";
+    case "per_kg": return "Per KG";
+    default: return unit;
+  }
+};
+
 const PAGE_SIZE = 20;
 type Mode = "add" | "edit";
 
 export default function SupplierManagementPage() {
-  const [suppliers, setSuppliers] = useState<MaterialRow[]>(SUPPLIERS);
+  const [suppliers, setSuppliers] = useState<SupplierRow[]>([]);
+  const [materials, setMaterials] = useState<MaterialRow[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // ===== filter & paging =====
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState<string>("");
   const [to, setTo] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<"all" | "Active" | "Inactive">("all");
-  const [unitFilter, setUnitFilter] = useState<"all" | CostUnit>("all");
+  const [unitFilter, setUnitFilter] = useState<"all" | string>("all");
   const [page, setPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
 
   // modal
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("add");
-  const [draft, setDraft] = useState<MaterialRow>({
-    id: "",
-    material: "",
-    supplier: "",
+  const [draft, setDraft] = useState<Partial<MaterialRow>>({
+    materialId: "",
+    name: "",
+    supplier: { id: "", name: "" },
     cost: 0,
     unit: "per_sheet",
     lastUpdated: new Date().toISOString().slice(0, 10),
     status: "Active",
   });
 
+  // Load data from database
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        console.log('Loading supplier and material data...');
+        
+        // Load suppliers
+        const suppliersResponse = await fetch('/api/suppliers');
+        console.log('Suppliers response status:', suppliersResponse.status);
+        if (suppliersResponse.ok) {
+          const suppliersData = await suppliersResponse.json();
+          console.log('Suppliers data loaded:', suppliersData.length, 'suppliers');
+          setSuppliers(suppliersData);
+        } else {
+          console.error('Failed to load suppliers:', suppliersResponse.status);
+          // Fallback to static data if API fails
+          const { suppliers: fallbackSuppliers, materials: fallbackMaterials } = createFallbackData();
+          setSuppliers(fallbackSuppliers);
+          setMaterials(fallbackMaterials);
+          console.log('Using fallback suppliers and materials');
+        }
+        
+        // Load materials
+        const materialsResponse = await fetch('/api/materials');
+        console.log('Materials response status:', materialsResponse.status);
+        if (materialsResponse.ok) {
+          const materialsData = await materialsResponse.json();
+          console.log('Materials data loaded:', materialsData.length, 'materials');
+          setMaterials(materialsData);
+        } else {
+          console.error('Failed to load materials:', materialsResponse.status);
+          // Fallback to static data if API fails
+          const { suppliers: fallbackSuppliers, materials: fallbackMaterials } = createFallbackData();
+          setSuppliers(fallbackSuppliers);
+          setMaterials(fallbackMaterials);
+          console.log('Using fallback suppliers and materials');
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        // Fallback to static data on error
+        const { suppliers: fallbackSuppliers, materials: fallbackMaterials } = createFallbackData();
+        setSuppliers(fallbackSuppliers);
+        setMaterials(fallbackMaterials);
+        console.log('Using fallback suppliers and materials due to error');
+      } finally {
+        setLoading(false);
+        console.log('Data loading completed');
+      }
+    };
+
+    loadData();
+  }, []);
+
   // filter
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    return suppliers.filter((r) => {
+    return materials.filter((r) => {
       const hitSearch =
         s === "" || 
-        r.material.toLowerCase().includes(s) ||
-        r.supplier.toLowerCase().includes(s) ||
-        r.id.toLowerCase().includes(s);
+        r.name.toLowerCase().includes(s) ||
+        r.supplier.name.toLowerCase().includes(s) ||
+        r.materialId.toLowerCase().includes(s);
 
       const hitStatus = statusFilter === "all" || r.status === statusFilter;
       const hitUnit = unitFilter === "all" || r.unit === unitFilter;
@@ -75,7 +231,7 @@ export default function SupplierManagementPage() {
 
       return hitSearch && hitStatus && hitUnit && hitFrom && hitTo;
     });
-  }, [suppliers, search, from, to, statusFilter, unitFilter]);
+  }, [materials, search, from, to, statusFilter, unitFilter]);
 
   // pagination
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -85,16 +241,16 @@ export default function SupplierManagementPage() {
 
   // helpers
   const newId = useCallback(() => {
-    const n = suppliers.length + 1;
+    const n = materials.length + 1;
     return `M-${String(n).padStart(3, "0")}`;
-  }, [suppliers.length]);
+  }, [materials.length]);
 
   const onAdd = () => {
     setMode("add");
     setDraft({
-      id: newId(),
-      material: "",
-      supplier: "",
+      materialId: newId(),
+      name: "",
+      supplier: { id: "", name: "" },
       cost: 0,
       unit: "per_sheet",
       lastUpdated: new Date().toISOString().slice(0, 10),
@@ -103,24 +259,83 @@ export default function SupplierManagementPage() {
     setOpen(true);
   };
 
-  const onEdit = (r: MaterialRow) => {
+  const onEdit = (material: MaterialRow) => {
     setMode("edit");
-    setDraft({ ...r });
+    setDraft({
+      ...material,
+      lastUpdated: new Date(material.lastUpdated).toISOString().slice(0, 10),
+    });
     setOpen(true);
   };
 
-  const onSubmit = () => {
-    if (!draft.material || !draft.supplier || draft.cost <= 0) {
-      return alert("Please fill Material, Supplier, and Cost (must be > 0).");
+  const onDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this material?")) {
+      try {
+        const response = await fetch(`/api/materials/${id}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          setMaterials(prev => prev.filter(m => m.id !== id));
+        } else {
+          alert('Failed to delete material');
+        }
+      } catch (error) {
+        console.error('Error deleting material:', error);
+        alert('Error deleting material');
+      }
     }
-    if (mode === "add") {
-      setSuppliers((prev) => [{ ...draft }, ...prev]);
-    } else {
-      setSuppliers((prev) =>
-        prev.map((r) => (r.id === draft.id ? { ...draft } : r))
-      );
+  };
+
+  const onSubmit = async () => {
+    if (!draft.name || !draft.supplier?.id || draft.cost === undefined) {
+      alert("Please complete all required fields.");
+      return;
     }
-    setOpen(false);
+
+    try {
+      const materialData = {
+        materialId: draft.materialId!,
+        name: draft.name!,
+        supplierId: draft.supplier.id,
+        cost: Number(draft.cost),
+        unit: draft.unit!,
+        status: draft.status!,
+      };
+
+      let response;
+      if (mode === "add") {
+        response = await fetch('/api/materials', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(materialData),
+        });
+      } else {
+        response = await fetch(`/api/materials/${draft.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(materialData),
+        });
+      }
+
+      if (response.ok) {
+        const newMaterial = await response.json();
+        
+        if (mode === "add") {
+          setMaterials(prev => [...prev, newMaterial]);
+        } else {
+          setMaterials(prev => prev.map(m => m.id === draft.id ? newMaterial : m));
+        }
+        
+        setOpen(false);
+      } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error || 'Failed to save material'}`);
+      }
+    } catch (error) {
+      console.error('Error saving material:', error);
+      alert('Error saving material');
+    }
   };
 
 
@@ -132,7 +347,12 @@ export default function SupplierManagementPage() {
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           Supplier Management
         </h1>
-        <p className="text-lg text-slate-600">Manage your material suppliers, costs, and inventory. Track pricing updates and maintain supplier relationships for the Smart Printing System.</p>
+        <p className="text-lg text-slate-600">Manage and track all your printing suppliers and materials with real-time database operations.</p>
+        <div className="flex items-center justify-center gap-6 text-sm text-slate-500">
+          <span>Total Suppliers: <span className="font-semibold text-slate-700">{suppliers.length}</span></span>
+          <span>Total Materials: <span className="font-semibold text-slate-700">{materials.length}</span></span>
+          <span>Active Materials: <span className="font-semibold text-green-600">{materials.filter(m => m.status === "Active").length}</span></span>
+        </div>
       </div>
       
       {/* Main Content Card */}
@@ -198,7 +418,7 @@ export default function SupplierManagementPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Unit</label>
-              <Select value={unitFilter} onValueChange={(v: "all" | CostUnit) => setUnitFilter(v)}>
+              <Select value={unitFilter} onValueChange={(v: "all" | string) => setUnitFilter(v)}>
                 <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
                   <SelectValue placeholder="All Units" />
                 </SelectTrigger>
@@ -252,51 +472,62 @@ export default function SupplierManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {current.map((r) => (
-                  <TableRow key={r.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
-                    <TableCell className="font-medium text-slate-900 p-6">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                        {r.id}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-6">{r.material}</TableCell>
-                    <TableCell className="text-slate-700 p-6">{r.supplier}</TableCell>
-                    <TableCell className="text-slate-700 p-6">{currency.format(r.cost)}</TableCell>
-                    <TableCell className="text-slate-700 p-6">{unitLabel(r.unit)}</TableCell>
-                    <TableCell className="text-slate-700 p-6">{fmtDate(r.lastUpdated)}</TableCell>
-                    <TableCell className="p-6">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        r.status === "Active" 
-                          ? "bg-green-100 text-green-800" 
-                          : "bg-red-100 text-red-800"
-                      }`}>
-                        {r.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="p-6">
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => onEdit(r)}
-                          className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {current.length === 0 && (
+                {loading ? (
                   <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="text-center py-16 text-slate-500"
-                    >
-                      {filtered.length === 0 ? "No materials found matching your filters." : "No materials to display."}
+                    <TableCell colSpan={8} className="text-center py-16 text-slate-500">
+                      Loading materials...
                     </TableCell>
                   </TableRow>
+                ) : current.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-16 text-slate-500">
+                      No materials found with current filters.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  current.map((r) => (
+                    <TableRow key={r.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
+                      <TableCell className="font-medium text-slate-900 p-6">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                          {r.materialId}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-slate-700 p-6">{r.name}</TableCell>
+                      <TableCell className="text-slate-700 p-6">{r.supplier.name}</TableCell>
+                      <TableCell className="text-slate-700 p-6">{currency.format(r.cost)}</TableCell>
+                      <TableCell className="text-slate-700 p-6">{unitLabel(r.unit)}</TableCell>
+                      <TableCell className="text-slate-700 p-6">{fmtDate(r.lastUpdated)}</TableCell>
+                      <TableCell className="p-6">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          r.status === "Active" 
+                            ? "bg-green-100 text-green-800" 
+                            : "bg-red-100 text-red-800"
+                        }`}>
+                          {r.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="p-6">
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => onEdit(r)}
+                            className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => onDelete(r.id)}
+                            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
@@ -366,24 +597,41 @@ export default function SupplierManagementPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               <div>
-                <Label htmlFor="material" className="text-sm font-medium text-slate-700">Material</Label>
+                <Label htmlFor="materialId" className="text-sm font-medium text-slate-700">Material ID</Label>
                 <Input
-                  id="material"
+                  id="materialId"
+                  placeholder="e.g. ART-001"
+                  value={draft.materialId}
+                  onChange={(e) => setDraft({ ...draft, materialId: e.target.value })}
+                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                  disabled={mode === "edit"}
+                />
+              </div>
+              <div>
+                <Label htmlFor="name" className="text-sm font-medium text-slate-700">Material Name</Label>
+                <Input
+                  id="name"
                   placeholder="e.g. Art Paper 300gsm"
-                  value={draft.material}
-                  onChange={(e) => setDraft({ ...draft, material: e.target.value })}
+                  value={draft.name}
+                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                   className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                 />
               </div>
               <div>
                 <Label htmlFor="supplier" className="text-sm font-medium text-slate-700">Supplier</Label>
-                <Input
-                  id="supplier"
-                  placeholder="e.g. Paper Source LLC"
-                  value={draft.supplier}
-                  onChange={(e) => setDraft({ ...draft, supplier: e.target.value })}
-                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-                />
+                                 <Select value={draft.supplier?.id} onValueChange={(v: string) => {
+                   const selectedSupplier = suppliers.find(s => s.id === v);
+                   setDraft({ ...draft, supplier: { id: v, name: selectedSupplier?.name || '' } });
+                 }}>
+                  <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                    <SelectValue placeholder="Select supplier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="cost" className="text-sm font-medium text-slate-700">Cost</Label>
@@ -400,7 +648,7 @@ export default function SupplierManagementPage() {
               </div>
               <div>
                 <Label htmlFor="unit" className="text-sm font-medium text-slate-700">Unit</Label>
-                <Select value={draft.unit} onValueChange={(v: CostUnit) => setDraft({ ...draft, unit: v })}>
+                <Select value={draft.unit} onValueChange={(v: string) => setDraft({ ...draft, unit: v })}>
                   <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
                     <SelectValue placeholder="Select unit" />
                   </SelectTrigger>

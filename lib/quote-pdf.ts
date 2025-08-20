@@ -25,7 +25,16 @@ const calculateOtherQtyPrice = (formData: QuoteFormData, otherQty: OtherQty) => 
   const baseProduct = formData.products.find(p => p.productName === otherQty.productName);
   if (!baseProduct || !baseProduct.quantity || !otherQty.quantity) return { base: 0, vat: 0, total: 0 };
 
-  // Calculate comprehensive costs similar to the UI
+  // Use the calculation from formData if available, otherwise calculate
+  if (formData.calculation && formData.calculation.totalPrice > 0) {
+    const quantityRatio = (otherQty.quantity as number) / (baseProduct.quantity || 1);
+    const basePrice = formData.calculation.subtotal * quantityRatio;
+    const vat = basePrice * 0.05;
+    const total = basePrice + vat;
+    return { base: basePrice, vat, total };
+  }
+
+  // Fallback calculation if formData.calculation is not available
   const quantityRatio = (otherQty.quantity as number) / baseProduct.quantity;
   
   // 1. Paper Costs (price per sheet × entered sheets)
@@ -48,18 +57,36 @@ const calculateOtherQtyPrice = (formData: QuoteFormData, otherQty: OtherQty) => 
     return total;
   }, 0);
 
-  // 4. Calculate subtotal and VAT
+  // 4. Calculate base price and add margin (30% like in UI)
+  const MARGIN_PERCENTAGE = 0.3;
   const basePrice = paperCost + platesCost + finishingCost;
-  const vat = basePrice * 0.05; // 5% VAT
-  const total = basePrice + vat;
+  const marginAmount = basePrice * MARGIN_PERCENTAGE;
+  const subtotal = basePrice + marginAmount;
   
-  return { base: basePrice, vat, total };
+  // 5. Calculate VAT on subtotal (5% like in UI)
+  const vat = subtotal * 0.05;
+  const total = subtotal + vat;
+  
+  return { base: subtotal, vat, total };
 };
 
 // Helper function to calculate main product price
 const calculateMainProductPrice = (formData: QuoteFormData, product: QuoteFormData["products"][0]) => {
-  if (!product || !product.quantity) return { base: 0, vat: 0, total: 0 };
+  if (!product || !product.quantity) {
+    return { base: 0, vat: 0, total: 0 };
+  }
 
+  // Use the calculation from formData if available, otherwise calculate
+  if (formData.calculation && formData.calculation.totalPrice > 0) {
+    // Distribute the total calculation proportionally among products
+    const totalProducts = formData.products.length;
+    const basePrice = formData.calculation.subtotal / totalProducts;
+    const vat = basePrice * 0.05;
+    const total = basePrice + vat;
+    return { base: basePrice, vat, total };
+  }
+
+  // Fallback calculation if formData.calculation is not available
   // 1. Paper Costs (price per sheet × entered sheets)
   const paperCost = formData.operational.papers.reduce((total, p) => {
     const pricePerSheet = (p.pricePerPacket || 0) / (p.sheetsPerPacket || 1);
@@ -80,12 +107,17 @@ const calculateMainProductPrice = (formData: QuoteFormData, product: QuoteFormDa
     return total;
   }, 0);
 
-  // 4. Calculate subtotal and VAT
+  // 4. Calculate base price and add margin (30% like in UI)
+  const MARGIN_PERCENTAGE = 0.3;
   const basePrice = paperCost + platesCost + finishingCost;
-  const vat = basePrice * 0.05; // 5% VAT
-  const total = basePrice + vat;
+  const marginAmount = basePrice * MARGIN_PERCENTAGE;
+  const subtotal = basePrice + marginAmount;
   
-  return { base: basePrice, vat, total };
+  // 5. Calculate VAT on subtotal (5% like in UI)
+  const vat = subtotal * 0.05;
+  const total = subtotal + vat;
+  
+  return { base: subtotal, vat, total };
 };
 
 export async function downloadCustomerPdf(
@@ -267,27 +299,50 @@ export async function downloadCustomerPdf(
     }
 
     // Summary Section
-    const mainProductsTotal = formData.products.reduce((total, product) => {
-      try {
-        const prices = calculateMainProductPrice(formData, product);
-        return total + prices.total;
-      } catch (error) {
-        console.error("Error calculating total for product:", product, error);
-        return total;
-      }
-    }, 0);
+    let mainProductsTotal = 0;
+    let otherQuantitiesTotal = 0;
+    let grandTotal = 0;
 
-    const otherQuantitiesTotal = otherQuantities.reduce((total, o) => {
-      try {
-        const prices = calculateOtherQtyPrice(formData, o);
-        return total + prices.total;
-      } catch (error) {
-        console.error("Error calculating total for other quantity:", o, error);
-        return total;
-      }
-    }, 0);
+    // Use formData.calculation if available, otherwise calculate from individual products
+    if (formData.calculation && formData.calculation.totalPrice > 0) {
+      mainProductsTotal = formData.calculation.totalPrice;
+      
+      // Calculate other quantities based on the main calculation
+      otherQuantitiesTotal = otherQuantities.reduce((total, o) => {
+        try {
+          const prices = calculateOtherQtyPrice(formData, o);
+          return total + prices.total;
+        } catch (error) {
+          console.error("Error calculating total for other quantity:", o, error);
+          return total;
+        }
+      }, 0);
+      
+      grandTotal = mainProductsTotal + otherQuantitiesTotal;
+    } else {
+      // Fallback to individual product calculations
+      mainProductsTotal = formData.products.reduce((total, product) => {
+        try {
+          const prices = calculateMainProductPrice(formData, product);
+          return total + prices.total;
+        } catch (error) {
+          console.error("Error calculating total for product:", product, error);
+          return total;
+        }
+      }, 0);
 
-    const grandTotal = mainProductsTotal + otherQuantitiesTotal;
+      otherQuantitiesTotal = otherQuantities.reduce((total, o) => {
+        try {
+          const prices = calculateOtherQtyPrice(formData, o);
+          return total + prices.total;
+        } catch (error) {
+          console.error("Error calculating total for other quantity:", o, error);
+          return total;
+        }
+      }, 0);
+
+      grandTotal = mainProductsTotal + otherQuantitiesTotal;
+    }
 
     // Summary table with professional styling - positioned to fit on one page
     const summaryStartY = getFinalY(doc, 93) + 8;

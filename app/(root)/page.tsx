@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,9 +38,10 @@ import {
   MoreVertical,
   Filter
 } from "lucide-react";
-import { getQuotes } from "@/lib/dummy-data";
 import Link from "next/link";
-import CreateQuoteModal from "@/components/create-quote/CreateQuoteModal";
+
+import { QuoteStatus } from "@/constants";
+
 
 // Motivational quotes collection
 const motivationalQuotes = [
@@ -60,20 +63,7 @@ const motivationalQuotes = [
 ];
 
 export default function DashboardPage() {
-  const [allQuotes, setAllQuotes] = useState(() => {
-    // Try to load from localStorage first, fallback to dummy data
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('smartPrintingQuotes');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.log('Failed to parse saved quotes, using default data');
-        }
-      }
-    }
-    return getQuotes();
-  });
+  const [allQuotes, setAllQuotes] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -83,27 +73,83 @@ export default function DashboardPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const [isCreateQuoteModalOpen, setIsCreateQuoteModalOpen] = useState(false);
-  
-  const user = { name: "John", role: "admin" }; // Mock user data
 
-  // Function to get a random motivational quote
-  const getRandomQuote = () => {
-    const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
-    return motivationalQuotes[randomIndex];
-  };
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<{ name: string; role: string } | null>(null);
+  
+  const router = useRouter();
+
+  // Check authentication
+  useEffect(() => {
+    const checkAuth = async () => {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        router.push('/login');
+        return;
+      }
+      setUser({ name: currentUser.name, role: currentUser.role });
+    };
+
+    checkAuth();
+  }, [router]);
+
+  // Load quotes from database on page load
+  useEffect(() => {
+    if (!user) return; // Only load quotes if user is authenticated
+    
+    const loadQuotes = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/quotes');
+        if (response.ok) {
+          const quotesData = await response.json();
+          // Transform database quotes to match QuoteRow format
+          const transformedQuotes = quotesData.map((quote: any) => ({
+            id: quote.id,
+            quoteId: quote.quoteId, // This should be the proper quote ID
+            customerName: quote.client?.companyName || quote.client?.contactPerson || "Unknown Client",
+            createdDate: quote.date.split('T')[0], // Convert ISO date to YYYY-MM-DD
+            status: quote.status,
+            totalAmount: quote.amounts?.total || 0,
+            userId: quote.user?.id || "u1",
+          }));
+          setAllQuotes(transformedQuotes);
+        } else {
+          console.error('Failed to load quotes');
+          // Fallback to dummy data if API fails
+          setAllQuotes([]);
+        }
+      } catch (error) {
+        console.error('Error loading quotes:', error);
+        // Fallback to dummy data if API fails
+        setAllQuotes([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadQuotes();
+  }, [user]);
 
   // Set initial quote and change it periodically
   useEffect(() => {
+    if (!user) return; // Only set quotes if user is authenticated
+    
+    // Function to get a random motivational quote
+    const getRandomQuote = () => {
+      const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+      return motivationalQuotes[randomIndex];
+    };
+    
     setCurrentMotivationalQuote(getRandomQuote());
     
     // Change quote every 45 seconds for variety
-    const quoteInterval = setInterval(() => {
+    const interval = setInterval(() => {
       setCurrentMotivationalQuote(getRandomQuote());
     }, 45000);
-    
-    return () => clearInterval(quoteInterval);
-  }, []);
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   // Cleanup function for modals
   useEffect(() => {
@@ -117,30 +163,25 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Save quotes to localStorage whenever they change
-  useEffect(() => {
-    if (typeof window !== 'undefined' && allQuotes.length > 0) {
-      localStorage.setItem('smartPrintingQuotes', JSON.stringify(allQuotes));
-    }
-  }, [allQuotes]);
-
   // Filter quotes based on selected status - use useMemo for better performance
   const filteredQuotes = useMemo(() => {
+    if (!user) return []; // Return empty array if user not authenticated
+    
     const filtered = statusFilter === "All" 
       ? allQuotes 
       : allQuotes.filter(q => q.status === statusFilter);
     
     console.log('filteredQuotes recalculated:', filtered);
     return filtered;
-  }, [allQuotes, statusFilter]);
+  }, [allQuotes, statusFilter, user]);
 
   // Calculate metrics - these will now update automatically when allQuotes changes
-  const totalQuotes = allQuotes.length;
-  const approvedQuotes = allQuotes.filter(q => q.status === "Approved").length;
-  const pendingQuotes = allQuotes.filter(q => q.status === "Pending").length;
-  const rejectedQuotes = allQuotes.filter(q => q.status === "Rejected").length;
+  const totalQuotes = useMemo(() => allQuotes.length, [allQuotes]);
+  const approvedQuotes = useMemo(() => allQuotes.filter(q => q.status === "Approved").length, [allQuotes]);
+  const pendingQuotes = useMemo(() => allQuotes.filter(q => q.status === "Pending").length, [allQuotes]);
+  const rejectedQuotes = useMemo(() => allQuotes.filter(q => q.status === "Rejected").length, [allQuotes]);
 
-  const metricCards = [
+  const metricCards = useMemo(() => [
     {
       title: "Total Quotes",
       value: totalQuotes.toLocaleString(),
@@ -173,19 +214,48 @@ export default function DashboardPage() {
       iconColor: "text-red-600",
       filterValue: "Rejected"
     }
-  ];
+  ], [totalQuotes, approvedQuotes, pendingQuotes, rejectedQuotes]);
+
+  // Show loading while checking authentication
+  if (!user) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-slate-200 rounded-full"></div>
+            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
+            <div className="absolute top-2 left-2 w-12 h-12 border-4 border-transparent border-t-purple-500 rounded-full animate-spin" style={{ animationDirection: "reverse", animationDuration: "0.8s" }}></div>
+          </div>
+          <div className="flex space-x-1">
+            <span className="text-slate-600 animate-pulse">Checking authentication</span>
+            <span className="text-blue-500 animate-bounce">.</span>
+            <span className="text-purple-500 animate-bounce" style={{ animationDelay: "0.1s" }}>.</span>
+            <span className="text-pink-500 animate-bounce" style={{ animationDelay: "0.2s" }}>.</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Format date function to match image format
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const months = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ];
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
-    return `${day} ${month} ${year}`;
+  const formatDate = (dateInput: string | Date) => {
+    try {
+      const date = new Date(dateInput);
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+      }
+      const months = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      ];
+      const day = date.getDate();
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error, dateInput);
+      return 'Invalid Date';
+    }
   };
 
   const handleCardClick = (filterValue: string) => {
@@ -193,7 +263,7 @@ export default function DashboardPage() {
   };
 
   const handleViewQuote = (quote: any) => {
-    if (!quote || !quote.quoteNumber) {
+    if (!quote || !quote.id) {
       console.error('Invalid quote data provided to view modal');
       alert('Invalid quote data. Please try again.');
       return;
@@ -205,7 +275,7 @@ export default function DashboardPage() {
   };
 
   const handleUpdateQuote = (quote: any) => {
-    if (!quote || !quote.quoteNumber) {
+    if (!quote || !quote.id) {
       console.error('Invalid quote data provided to update modal');
       alert('Invalid quote data. Please try again.');
       return;
@@ -217,9 +287,9 @@ export default function DashboardPage() {
     setIsUpdateModalOpen(true);
   };
 
-  const handleStatusUpdate = (newStatus: string) => {
+  const handleStatusUpdate = async (newStatus: string) => {
     // Validate input data
-    if (!selectedQuote || !selectedQuote.quoteNumber) {
+    if (!selectedQuote || !selectedQuote.id) {
       alert('No quote selected for update');
       return;
     }
@@ -235,22 +305,32 @@ export default function DashboardPage() {
     }
 
     try {
-      // Store the quote number for reference
-      const quoteNumber = selectedQuote.quoteNumber;
+      setIsUpdating(true);
       
-      // Update the quote status in local state
+      // Update the quote status in the database
+              const response = await fetch(`/api/quotes/${selectedQuote.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to update quote status');
+        }
+        
+        const updatedQuote = await response.json();
+      
+      // Update the quote in local state
       const updatedQuotes = allQuotes.map(quote => 
-        quote.quoteNumber === quoteNumber 
-          ? { ...quote, status: newStatus as any }
+        quote.id === selectedQuote.id 
+          ? updatedQuote
           : quote
       );
       
       // Update the quotes state
       setAllQuotes(updatedQuotes);
-      // Save to localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('smartPrintingQuotes', JSON.stringify(updatedQuotes));
-      }
       
       // Show success message
       setSuccessMessage(`Quote status updated to ${newStatus} successfully!`);
@@ -285,27 +365,6 @@ export default function DashboardPage() {
     console.log(`Downloading PDF for quote ${quote.quoteNumber}`);
   };
 
-  const handleCreateQuote = (newQuote: any) => {
-    // Add the new quote to the existing quotes
-    const updatedQuotes = [...allQuotes, newQuote];
-    setAllQuotes(updatedQuotes);
-    
-    // Save to localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('smartPrintingQuotes', JSON.stringify(updatedQuotes));
-    }
-    
-    // Show success message
-    setSuccessMessage(`New quote ${newQuote.quoteNumber} created successfully!`);
-    setShowSuccessMessage(true);
-    
-    // Hide success message after 3 seconds
-    setTimeout(() => {
-      setShowSuccessMessage(false);
-      setSuccessMessage("");
-    }, 3000);
-  };
-
   const ViewQuoteModal = () => {
     // Only render if modal should be open
     if (!isViewModalOpen) return null;
@@ -323,21 +382,21 @@ export default function DashboardPage() {
       >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Quote Details - {selectedQuote?.quoteNumber}</DialogTitle>
+            <DialogTitle>Quote Details - {selectedQuote?.quoteId}</DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-600">Client Name</label>
-                <p className="text-lg font-semibold">{selectedQuote?.customerName}</p>
+                <p className="text-lg font-semibold">{selectedQuote?.client?.contactPerson || selectedQuote?.client?.companyName}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Amount</label>
-                <p className="text-lg font-semibold">${selectedQuote?.totalAmount}</p>
+                <p className="text-lg font-semibold">${isNaN(selectedQuote?.amounts?.total) ? 0 : (selectedQuote?.amounts?.total || 0)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Date Created</label>
-                <p className="text-lg font-semibold">{selectedQuote && formatDate(selectedQuote.createdDate)}</p>
+                <p className="text-lg font-semibold">{selectedQuote && formatDate(selectedQuote.date)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Status</label>
@@ -475,7 +534,7 @@ export default function DashboardPage() {
       {/* Welcome Header */}
       <div className="text-center space-y-3">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Welcome, {user.name}
+          Welcome, {user?.name}
         </h1>
         <div className="max-w-4xl mx-auto">
           <p className="text-lg text-slate-600 italic leading-relaxed">
@@ -535,13 +594,14 @@ export default function DashboardPage() {
               </SelectContent>
             </Select>
             
-            <Button 
-              onClick={() => setIsCreateQuoteModalOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create a New Quote
-            </Button>
+            <Link href="/create-quote">
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Create a New Quote
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -561,10 +621,26 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredQuotes.map((quote: any, index: number) => (
-                    <tr key={`${quote.quoteNumber}-${quote.status}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors duration-200">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-slate-500">
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                          <span>Loading quotes...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredQuotes.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-slate-500">
+                        No quotes found. {statusFilter !== "All" && `No quotes with status "${statusFilter}".`}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredQuotes.map((quote: any, index: number) => (
+                    <tr key={`${quote.id}-${quote.status}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors duration-200">
                       <td className="p-4">
-                        <span className="font-mono text-sm text-slate-900">{quote.quoteNumber}</span>
+                        <span className="font-mono text-sm text-slate-900">{quote.quoteId}</span>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center space-x-3">
@@ -581,7 +657,7 @@ export default function DashboardPage() {
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className="font-semibold text-slate-900">${quote.totalAmount}</span>
+                        <span className="font-semibold text-slate-900">${isNaN(quote.totalAmount) ? 0 : (quote.totalAmount || 0)}</span>
                       </td>
                       <td className="p-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -628,7 +704,7 @@ export default function DashboardPage() {
                               <DropdownMenuItem 
                                 onClick={() => {
                                   // Navigate to step 2 customer detail choose
-                                  window.location.href = `/create-quote?step=2&edit=${quote.quoteNumber}`;
+                                  window.location.href = `/create-quote?step=2&edit=${quote.quoteId}`;
                                 }}
                                 className="flex items-center space-x-2 p-3 hover:bg-green-50 cursor-pointer"
                               >
@@ -640,7 +716,8 @@ export default function DashboardPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -651,11 +728,7 @@ export default function DashboardPage() {
       {/* Modals */}
       <ViewQuoteModal />
       <UpdateQuoteModal />
-      <CreateQuoteModal 
-        isOpen={isCreateQuoteModalOpen}
-        onClose={() => setIsCreateQuoteModalOpen(false)}
-        onSubmit={handleCreateQuote}
-      />
+
     </div>
   );
 }

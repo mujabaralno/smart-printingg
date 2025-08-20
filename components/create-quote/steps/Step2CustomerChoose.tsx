@@ -5,147 +5,146 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Eye, Search, X, Edit, FileText, Calendar, DollarSign } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { QuoteFormData } from "@/types";
 
 interface Step2Props {
   formData: QuoteFormData;
   setFormData: Dispatch<SetStateAction<QuoteFormData>>;
+  onCustomerSelect?: (customer: Customer) => void; // Add callback for customer selection
+  onQuoteSelect?: (quote: Quote) => void; // Add callback for quote selection
 }
 
-// Mock existing customers database with quote information
-const EXISTING_CUSTOMERS = [
-  {
-    id: "CUST001",
-    company: "Eagan Inc.",
-    contactPerson: "John Smith",
-    email: "john.smith@eagan.com",
-    phone: "+971-50-123-4567",
-    quoteId: "Q001",
-    quoteAmount: "$2,500",
-    quoteDate: "2024-01-15",
-    quoteStatus: "Sent",
-    quoteItems: [
-      { item: "Business Cards", quantity: "1000", price: "$800" },
-      { item: "Letterheads", quantity: "500", price: "$600" },
-      { item: "Envelopes", quantity: "1000", price: "$1,100" }
-    ]
-  },
-  {
-    id: "CUST002",
-    company: "Tech Solutions Ltd.",
-    contactPerson: "Sarah Johnson",
-    email: "sarah.j@techsolutions.com",
-    phone: "+971-55-987-6543",
-    quoteId: "Q002",
-    quoteAmount: "$4,200",
-    quoteDate: "2024-01-20",
-    quoteStatus: "Accepted",
-    quoteItems: [
-      { item: "Brochures", quantity: "2000", price: "$1,800" },
-      { item: "Flyers", quantity: "5000", price: "$1,200" },
-      { item: "Posters", quantity: "100", price: "$1,200" }
-    ]
-  },
-  {
-    id: "CUST003",
-    company: "Global Print Corp.",
-    contactPerson: "Michael Brown",
-    email: "michael.b@globalprint.com",
-    phone: "+971-52-456-7890",
-    quoteId: "Q003",
-    quoteAmount: "$1,800",
-    quoteDate: "2024-01-25",
-    quoteStatus: "Sent",
-    quoteItems: [
-      { item: "Business Cards", quantity: "500", price: "$400" },
-      { item: "Notepads", quantity: "100", price: "$800" },
-      { item: "Stickers", quantity: "200", price: "$600" }
-    ]
-  },
-  {
-    id: "CUST004",
-    company: "Creative Agency",
-    contactPerson: "Lisa Wilson",
-    email: "lisa.w@creativeagency.com",
-    phone: "+971-54-321-0987",
-    quoteId: "Q004",
-    quoteAmount: "$3,100",
-    quoteDate: "2024-01-30",
-    quoteStatus: "Draft",
-    quoteItems: [
-      { item: "Catalogs", quantity: "500", price: "$2,000" },
-      { item: "Business Cards", quantity: "1000", price: "$800" },
-      { item: "Envelopes", quantity: "500", price: "$300" }
-    ]
-  },
-  {
-    id: "CUST005",
-    company: "Marketing Pro",
-    contactPerson: "David Lee",
-    email: "david.lee@marketingpro.com",
-    phone: "+971-56-789-0123",
-    quoteId: "Q005",
-    quoteAmount: "$2,900",
-    quoteDate: "2024-02-01",
-    quoteStatus: "Rejected",
-    quoteItems: [
-      { item: "Banners", quantity: "5", price: "$1,500" },
-      { item: "Flyers", quantity: "3000", price: "$900" },
-      { item: "Business Cards", quantity: "500", price: "$500" }
-    ]
-  }
-];
+// Real customer interface matching database structure
+interface Customer {
+  id: string;
+  clientType: string;
+  companyName?: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  countryCode: string;
+  role?: string;
+}
 
-const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
+// Real quote interface matching database structure
+interface Quote {
+  id: string;
+  quoteId: string;
+  date: string;
+  status: string;
+  product: string;
+  quantity: number;
+  sides: "1" | "2";
+  printing: string;
+  papers: Array<{ id: string; name: string; gsm: string; quoteId: string }>;
+  finishing: Array<{ id: string; name: string; quoteId: string }>;
+  client: {
+    id: string;
+    clientType: string;
+    companyName?: string;
+    contactPerson: string;
+    email: string;
+    phone: string;
+    countryCode: string;
+    role?: string;
+  };
+  amounts?: {
+    total: number;
+  };
+}
+
+const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomerSelect, onQuoteSelect }) => {
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showList, setShowList] = useState(true);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<typeof EXISTING_CUSTOMERS[0] | null>(null);
+  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+  const [showQuoteDetails, setShowQuoteDetails] = useState(false);
+  const [selectedQuoteForDetails, setSelectedQuoteForDetails] = useState<Quote | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showAll, setShowAll] = useState(false);
+  const quotesPerPage = 10;
 
-  const filteredCustomers = EXISTING_CUSTOMERS.filter(customer =>
-    customer.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+  // Fetch real quotes from database
+  useEffect(() => {
+    const fetchQuotes = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/quotes');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Fetched quotes from database:', data);
+          setQuotes(data);
+        } else {
+          console.error('Failed to fetch quotes');
+          setQuotes([]);
+        }
+      } catch (error) {
+        console.error('Error fetching quotes:', error);
+        setQuotes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuotes();
+  }, []);
+
+  const filteredQuotes = quotes.filter(quote =>
+    quote.client.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    quote.client.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    quote.client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    quote.quoteId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    quote.product.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCustomerSelect = (customerId: string) => {
-    setSelectedCustomerId(customerId);
-    
-    // Find the selected customer and update form data
-    const selectedCustomer = EXISTING_CUSTOMERS.find(c => c.id === customerId);
-    if (selectedCustomer) {
-      setFormData(prev => ({
-        ...prev,
-        client: {
-          ...prev.client,
-          companyName: selectedCustomer.company,
-          firstName: selectedCustomer.contactPerson.split(' ')[0] || '',
-          lastName: selectedCustomer.contactPerson.split(' ').slice(1).join(' ') || '',
-          email: selectedCustomer.email,
-          phone: selectedCustomer.phone.replace('+971-', ''), // Remove country code for form
-        }
-      }));
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredQuotes.length / quotesPerPage);
+  const startIndex = (currentPage - 1) * quotesPerPage;
+  const endIndex = startIndex + quotesPerPage;
+  const currentQuotes = showAll ? filteredQuotes : filteredQuotes.slice(startIndex, endIndex);
+
+  // Reset to first page when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const handleQuoteSelect = (quoteId: string) => {
+    const selected = quotes.find(q => q.id === quoteId);
+    if (selected) {
+      setSelectedQuote(selected);
+      
+      // Call the quote selection callback to inform parent about the selected quote
+      if (onQuoteSelect) {
+        console.log('Calling onQuoteSelect with quote:', selected);
+        onQuoteSelect(selected);
+      }
+      
+      // Also call the customer selection callback for backward compatibility
+      if (onCustomerSelect) {
+        console.log('Calling onCustomerSelect with:', selected.client);
+        onCustomerSelect(selected.client);
+      }
     }
   };
 
-  const handleViewQuote = (customer: typeof EXISTING_CUSTOMERS[0], event: React.MouseEvent) => {
+  const handleViewQuote = (quote: Quote, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    setSelectedCustomer(customer);
-    setShowViewModal(true);
+    setSelectedQuote(quote);
+    setShowQuoteDetails(true);
   };
 
-  const handleEditQuote = (customer: typeof EXISTING_CUSTOMERS[0], event: React.MouseEvent) => {
+  const handleEditQuote = (quote: Quote, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    setSelectedCustomer(customer);
-    setShowEditModal(true);
+    setSelectedQuote(quote);
+    setShowQuoteDetails(true);
   };
 
-  const isSelectionValid = selectedCustomerId !== "";
+  const isSelectionValid = selectedQuote !== null;
 
   return (
     <div className="space-y-6">
@@ -157,24 +156,50 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
 
       {/* Select Existing Customer Section - White card container */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-lg font-semibold text-gray-900">Select Existing Customer</h4>
-          <Button
-            variant="outline"
-            onClick={() => setShowList(!showList)}
-            className="px-4 py-2"
-          >
-            {showList ? "Hide List" : "Show List"}
-          </Button>
+        <div className="flex items-center justify-between mb-6">
+          <h4 className="text-lg font-semibold text-gray-900">Select Existing Quote</h4>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">
+              {loading ? 'Loading...' : `${quotes.length} quotes available`}
+            </span>
+            {!loading && totalPages > 1 && !showAll && (
+              <span className="text-sm text-gray-500">
+                Page {currentPage} of {totalPages}
+              </span>
+            )}
+            {!loading && totalPages > 1 && (
+              <button
+                onClick={() => {
+                  setShowAll(!showAll);
+                  if (!showAll) {
+                    setCurrentPage(1); // Reset to first page when switching to paged mode
+                  }
+                }}
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-1 rounded-md text-sm font-medium transition-colors"
+              >
+                {showAll ? 'Show Paged' : `Show All (${filteredQuotes.length})`}
+              </button>
+            )}
+          </div>
         </div>
 
-        {showList && (
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading quotes...</p>
+          </div>
+        ) : quotes.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>No quotes found in the database.</p>
+            <p className="text-sm mt-2">Please ensure the database is properly seeded.</p>
+          </div>
+        ) : (
           <>
             {/* Search Bar */}
-            <div className="relative mb-4">
+            <div className="relative mb-6">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Search by customer name, company, or email..."
+                placeholder="Search by quote ID, product, or customer name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -189,70 +214,48 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
               )}
             </div>
 
-            {/* Customer Table - Removed SELECT column, made rows clickable */}
-            <div className="overflow-x-auto">
+            {/* Quote Table - Similar style to quote management */}
+            <div className="overflow-hidden border border-slate-200 rounded-2xl">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Customer ID
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Company
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contact Person
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Phone
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                      Actions
-                    </th>
+                <thead className="bg-slate-50">
+                  <tr className="border-slate-200">
+                    <th className="text-slate-700 font-semibold p-6 text-left">Quote ID</th>
+                    <th className="text-slate-700 font-semibold p-6 text-left">Product</th>
+                    <th className="text-slate-700 font-semibold p-6 text-left">Customer</th>
+                    <th className="text-slate-700 font-semibold p-6 text-left">Date</th>
+                    <th className="text-slate-700 font-semibold p-6 text-left">Status</th>
+                    <th className="text-slate-700 font-semibold p-6 text-left">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredCustomers.map((customer) => (
+                <tbody>
+                  {currentQuotes.map((quote) => (
                     <tr 
-                      key={customer.id} 
-                      className={`hover:bg-gray-50 transition-colors cursor-pointer ${
-                        selectedCustomerId === customer.id ? 'bg-blue-50 ring-2 ring-blue-200' : ''
+                      key={quote.id} 
+                      className={`hover:bg-slate-50/80 transition-colors duration-200 border-slate-100 cursor-pointer ${
+                        selectedQuote?.id === quote.id ? 'bg-blue-50 ring-2 ring-blue-200' : ''
                       }`}
-                      onClick={() => handleCustomerSelect(customer.id)}
+                      onClick={() => handleQuoteSelect(quote.id)}
                     >
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {customer.id}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {customer.company}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {customer.contactPerson}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {customer.email}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {customer.phone}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex space-x-2">
+                      <td className="font-medium text-slate-900 p-6">{quote.quoteId}</td>
+                      <td className="text-slate-700 p-6">{quote.product}</td>
+                      <td className="text-slate-700 p-6">{quote.client.companyName || quote.client.contactPerson}</td>
+                      <td className="text-slate-700 p-6">{new Date(quote.date).toISOString().slice(0, 10)}</td>
+                      <td className="text-slate-700 p-6">{quote.status}</td>
+                      <td className="p-6">
+                        <div className="flex items-center gap-2">
                           <button
-                            onClick={(e) => handleViewQuote(customer, e)}
-                            className="text-blue-600 hover:text-blue-800 transition-colors p-2 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                            title="View Quote"
+                            onClick={(e) => handleViewQuote(quote, e)}
+                            className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 p-2 rounded-md"
+                            title="View Quote Details"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={(e) => handleEditQuote(customer, e)}
-                            className="text-green-600 hover:text-green-800 transition-colors p-2 rounded-md hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                            onClick={(e) => handleEditQuote(quote, e)}
+                            className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 p-2 rounded-md"
                             title="Edit Quote"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
@@ -262,10 +265,61 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
               </table>
             </div>
 
+            {/* Pagination Controls */}
+            {totalPages > 1 && !showAll && (
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1} to {Math.min(endIndex, filteredQuotes.length)} of {filteredQuotes.length} quotes
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      currentPage === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Previous
+                  </button>
+                  
+                  {/* Page Numbers */}
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* No Results Message */}
-            {filteredCustomers.length === 0 && (
+            {filteredQuotes.length === 0 && searchTerm && (
               <div className="text-center py-8 text-gray-500">
-                <p>No customers found matching your search criteria.</p>
+                <p>No quotes found matching your search criteria.</p>
               </div>
             )}
           </>
@@ -273,44 +327,51 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
       </div>
 
       {/* Selection Status */}
-      {selectedCustomerId && (
+      {isSelectionValid && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center space-x-2">
             <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
               <span className="text-white text-xs font-bold">✓</span>
             </div>
-            <p className="text-green-700 font-medium">
-              Quote selected successfully. You can now proceed to the next step.
-            </p>
+            <div className="text-green-700">
+              <p className="font-medium mb-1">Quote selected successfully!</p>
+              <p className="text-sm">
+                <strong>Quote ID:</strong> {selectedQuote?.quoteId} | 
+                <strong> Product:</strong> {selectedQuote?.product} | 
+                <strong> Customer:</strong> {selectedQuote?.client.companyName || selectedQuote?.client.contactPerson}
+              </p>
+              <p className="text-sm mt-1">You can now proceed to the next step.</p>
+            </div>
           </div>
         </div>
       )}
 
       {/* No Selection Warning */}
-      {!selectedCustomerId && (
+      {!isSelectionValid && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-center space-x-2">
             <div className="w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center">
               <span className="text-white text-xs font-bold">!</span>
             </div>
-            <p className="text-yellow-700 font-medium">
-              Please select a quote to proceed to the next step.
-            </p>
+            <div className="text-yellow-700">
+              <p className="font-medium mb-1">Please select a quote to continue</p>
+              <p className="text-sm">Click on any quote row in the table above to select it for your new quote.</p>
+            </div>
           </div>
         </div>
       )}
 
       {/* View Quote Modal */}
-      <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
+      <Dialog open={showQuoteDetails} onOpenChange={setShowQuoteDetails}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <FileText className="w-5 h-5 mr-2 text-blue-600" />
-              Quote Details - {selectedCustomer?.quoteId}
+              Quote Details - {selectedQuote?.quoteId}
             </DialogTitle>
           </DialogHeader>
           
-          {selectedCustomer && (
+          {selectedQuote && (
             <div className="space-y-6">
               {/* Quote Header */}
               <div className="grid md:grid-cols-2 gap-6">
@@ -318,27 +379,22 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
                   <div className="flex items-center space-x-2">
                     <FileText className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-600">Quote ID:</span>
-                    <span className="font-medium text-gray-900">{selectedCustomer.quoteId}</span>
+                    <span className="font-medium text-gray-900">{selectedQuote.quoteId}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-600">Quote Date:</span>
-                    <span className="font-medium text-gray-900">{selectedCustomer.quoteDate}</span>
+                    <span className="font-medium text-gray-900">{new Date(selectedQuote.date).toISOString().slice(0, 10)}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <DollarSign className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-600">Total Amount:</span>
-                    <span className="font-bold text-lg text-blue-600">{selectedCustomer.quoteAmount}</span>
+                    <span className="font-bold text-lg text-blue-600">${selectedQuote.amounts?.total || 0.00}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-gray-600">Status:</span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      selectedCustomer.quoteStatus === 'Accepted' ? 'bg-green-100 text-green-800' :
-                      selectedCustomer.quoteStatus === 'Sent' ? 'bg-blue-100 text-blue-800' :
-                      selectedCustomer.quoteStatus === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {selectedCustomer.quoteStatus}
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                      {selectedQuote.status}
                     </span>
                   </div>
                 </div>
@@ -346,20 +402,26 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
                 <div className="space-y-3">
                   <div className="text-sm">
                     <span className="text-gray-600">Company:</span>
-                    <span className="font-medium text-gray-900 ml-2">{selectedCustomer.company}</span>
+                    <span className="font-medium text-gray-900 ml-2">{selectedQuote.client.companyName || 'Individual'}</span>
                   </div>
                   <div className="text-sm">
-                    <span className="text-gray-600">Contact:</span>
-                    <span className="font-medium text-gray-900 ml-2">{selectedCustomer.contactPerson}</span>
+                    <span className="text-gray-600">Contact Person:</span>
+                    <span className="font-medium text-gray-900 ml-2">{selectedQuote.client.contactPerson}</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-gray-600">Email:</span>
-                    <span className="font-medium text-gray-900 ml-2">{selectedCustomer.email}</span>
+                    <span className="font-medium text-gray-900 ml-2">{selectedQuote.client.email}</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-gray-600">Phone:</span>
-                    <span className="font-medium text-gray-900 ml-2">{selectedCustomer.phone}</span>
+                    <span className="font-medium text-gray-900 ml-2">{selectedQuote.client.phone}</span>
                   </div>
+                  {selectedQuote.client.role && (
+                    <div className="text-sm">
+                      <span className="text-gray-600">Role:</span>
+                      <span className="font-medium text-gray-900 ml-2">{selectedQuote.client.role}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -368,19 +430,32 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
                 <h5 className="text-md font-semibold text-gray-900 mb-3">Quote Items</h5>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="space-y-2">
-                    {selectedCustomer.quoteItems.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center text-sm">
-                        <span className="text-gray-700">{item.item}</span>
-                        <div className="flex items-center space-x-4">
-                          <span className="text-gray-600">Qty: {item.quantity}</span>
-                          <span className="font-medium text-gray-900">{item.price}</span>
-                        </div>
+                    {/* Mock items for now */}
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-700">Business Cards</span>
+                      <div className="flex items-center space-x-4">
+                        <span className="text-gray-600">Qty: {selectedQuote.quantity}</span>
+                        <span className="font-medium text-gray-900">${selectedQuote.amounts?.total || 0.00}</span>
                       </div>
-                    ))}
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-700">Letterheads</span>
+                      <div className="flex items-center space-x-4">
+                        <span className="text-gray-600">Qty: 500</span>
+                        <span className="font-medium text-gray-900">$600.00</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-700">Envelopes</span>
+                      <div className="flex items-center space-x-4">
+                        <span className="text-gray-600">Qty: 1000</span>
+                        <span className="font-medium text-gray-900">$1,100.00</span>
+                      </div>
+                    </div>
                   </div>
                   <div className="border-t border-gray-200 mt-3 pt-3 flex justify-between items-center">
                     <span className="font-semibold text-gray-900">Total:</span>
-                    <span className="font-bold text-lg text-blue-600">{selectedCustomer.quoteAmount}</span>
+                    <span className="font-bold text-lg text-blue-600">${selectedQuote.amounts?.total || 0.00}</span>
                   </div>
                 </div>
               </div>
@@ -390,16 +465,16 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
       </Dialog>
 
       {/* Edit Quote Modal */}
-      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+      <Dialog open={showQuoteDetails} onOpenChange={setShowQuoteDetails}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <Edit className="w-5 h-5 mr-2 text-blue-600" />
-              Edit Quote - {selectedCustomer?.quoteId}
+              Edit Quote - {selectedQuote?.quoteId}
             </DialogTitle>
           </DialogHeader>
           
-          {selectedCustomer && (
+          {selectedQuote && (
             <div className="space-y-6">
               {/* Customer Information Section */}
               <div className="bg-gray-50 rounded-lg p-4">
@@ -408,7 +483,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
                     <Input
-                      value={selectedCustomer.company}
+                      value={selectedQuote.client.companyName || ''}
                       onChange={(e) => {
                         // In a real app, you'd update the state here
                         console.log("Company updated:", e.target.value);
@@ -419,7 +494,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
                     <Input
-                      value={selectedCustomer.contactPerson}
+                      value={selectedQuote.client.contactPerson}
                       onChange={(e) => {
                         console.log("Contact updated:", e.target.value);
                       }}
@@ -430,7 +505,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <Input
                       type="email"
-                      value={selectedCustomer.email}
+                      value={selectedQuote.client.email}
                       onChange={(e) => {
                         console.log("Email updated:", e.target.value);
                       }}
@@ -440,7 +515,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <Input
-                      value={selectedCustomer.phone}
+                      value={selectedQuote.client.phone}
                       onChange={(e) => {
                         console.log("Phone updated:", e.target.value);
                       }}
@@ -458,7 +533,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Quote Date</label>
                     <Input
                       type="date"
-                      value={selectedCustomer.quoteDate}
+                      value={new Date(selectedQuote.date).toISOString().slice(0, 10)}
                       onChange={(e) => {
                         console.log("Date updated:", e.target.value);
                       }}
@@ -468,13 +543,13 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select
-                      value={selectedCustomer.quoteStatus}
+                      value={selectedQuote.status}
                       onChange={(e) => {
                         console.log("Status updated:", e.target.value);
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="Draft">Draft</option>
+                      <option value="New">New</option>
                       <option value="Sent">Sent</option>
                       <option value="Accepted">Accepted</option>
                       <option value="Rejected">Rejected</option>
@@ -483,7 +558,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Total Amount</label>
                     <Input
-                      value={selectedCustomer.quoteAmount}
+                      value={`$${selectedQuote.amounts?.total || 0.00}`}
                       onChange={(e) => {
                         console.log("Amount updated:", e.target.value);
                       }}
@@ -511,54 +586,145 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
                 </div>
                 
                 <div className="space-y-3">
-                  {selectedCustomer.quoteItems.map((item, index) => (
-                    <div key={index} className="bg-white p-3 rounded border border-gray-200">
-                      <div className="grid md:grid-cols-4 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Item</label>
-                          <Input
-                            value={item.item}
-                            onChange={(e) => {
-                              console.log(`Item ${index} updated:`, e.target.value);
-                            }}
-                            className="w-full text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
-                          <Input
-                            value={item.quantity}
-                            onChange={(e) => {
-                              console.log(`Quantity ${index} updated:`, e.target.value);
-                            }}
-                            className="w-full text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Price</label>
-                          <Input
-                            value={item.price}
-                            onChange={(e) => {
-                              console.log(`Price ${index} updated:`, e.target.value);
-                            }}
-                            className="w-full text-sm"
-                          />
-                        </div>
-                        <div className="flex items-end">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              console.log(`Remove item ${index}`);
-                            }}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            Remove
-                          </Button>
-                        </div>
+                  {/* Mock items for now */}
+                  <div className="bg-white p-3 rounded border border-gray-200">
+                    <div className="grid md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Item</label>
+                        <Input
+                          value="Business Cards"
+                          onChange={(e) => {
+                            console.log(`Item updated:`, e.target.value);
+                          }}
+                          className="w-full text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
+                        <Input
+                          value={selectedQuote.quantity}
+                          onChange={(e) => {
+                            console.log(`Quantity updated:`, e.target.value);
+                          }}
+                          className="w-full text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Price</label>
+                        <Input
+                          value={`$${selectedQuote.amounts?.total || 0.00}`}
+                          onChange={(e) => {
+                            console.log(`Price updated:`, e.target.value);
+                          }}
+                          className="w-full text-sm"
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            console.log(`Remove item`);
+                          }}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          Remove
+                        </Button>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                  <div className="bg-white p-3 rounded border border-gray-200">
+                    <div className="grid md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Item</label>
+                        <Input
+                          value="Letterheads"
+                          onChange={(e) => {
+                            console.log(`Item updated:`, e.target.value);
+                          }}
+                          className="w-full text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
+                        <Input
+                          value="500"
+                          onChange={(e) => {
+                            console.log(`Quantity updated:`, e.target.value);
+                          }}
+                          className="w-full text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Price</label>
+                        <Input
+                          value="$600.00"
+                          onChange={(e) => {
+                            console.log(`Price updated:`, e.target.value);
+                          }}
+                          className="w-full text-sm"
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            console.log(`Remove item`);
+                          }}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white p-3 rounded border border-gray-200">
+                    <div className="grid md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Item</label>
+                        <Input
+                          value="Envelopes"
+                          onChange={(e) => {
+                            console.log(`Item updated:`, e.target.value);
+                          }}
+                          className="w-full text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
+                        <Input
+                          value="1000"
+                          onChange={(e) => {
+                            console.log(`Quantity updated:`, e.target.value);
+                          }}
+                          className="w-full text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Price</label>
+                        <Input
+                          value="$1,100.00"
+                          onChange={(e) => {
+                            console.log(`Price updated:`, e.target.value);
+                          }}
+                          className="w-full text-sm"
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            console.log(`Remove item`);
+                          }}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -580,7 +746,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
           <DialogFooter className="pt-4">
             <Button
               variant="outline"
-              onClick={() => setShowEditModal(false)}
+              onClick={() => setShowQuoteDetails(false)}
             >
               Cancel
             </Button>
@@ -588,7 +754,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData }) => {
               onClick={() => {
                 // In a real app, you'd save the changes here
                 console.log("Saving changes...");
-                setShowEditModal(false);
+                setShowQuoteDetails(false);
               }}
             >
               Save Changes

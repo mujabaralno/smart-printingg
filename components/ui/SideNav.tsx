@@ -23,7 +23,7 @@ import {
   X
 } from "lucide-react";
 import { getSidebarItems } from "@/constants";
-import { getUser, clearUser, updateUserProfile, updateProfilePicture, updatePassword } from "@/lib/auth";
+import { getCurrentUser, logoutUser, updateUserProfile, updateProfilePicture, updatePassword } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,7 +41,7 @@ export default function SideNav({ className = "" }: SideNavProps) {
   const [role, setRole] = React.useState<"admin" | "estimator">("estimator");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [user, setUser] = React.useState(getUser());
+  const [user, setUser] = React.useState<any>(null);
 
   // Modal states
   const [showAccountSettings, setShowAccountSettings] = useState(false);
@@ -64,21 +64,27 @@ export default function SideNav({ className = "" }: SideNavProps) {
 
 
   React.useEffect(() => {
-    const u = getUser();
-    if (u?.role === "admin" || u?.role === "estimator") {
-      setRole(u.role);
-    }
-    setUser(u);
-    if (u) {
-      setProfileForm({
-        name: u.name || "",
-        email: u.email || "",
-        role: u.role || ""
-      });
-      setProfilePicture(u.profilePicture || "");
-    }
+    const loadUser = async () => {
+      try {
+        const u = await getCurrentUser();
+        if (u?.role === "admin" || u?.role === "estimator") {
+          setRole(u.role);
+        }
+        setUser(u);
+        if (u) {
+          setProfileForm({
+            name: u.name || "",
+            email: u.email || "",
+            role: u.role || ""
+          });
+          setProfilePicture(u.profilePicture || "");
+        }
+      } catch (error) {
+        console.error('Error loading user:', error);
+      }
+    };
     
-
+    loadUser();
   }, []);
 
   const sideBarItems = getSidebarItems(role);
@@ -112,7 +118,7 @@ export default function SideNav({ className = "" }: SideNavProps) {
   const shouldExpand = isExpanded || isHovered;
 
   const handleLogout = () => {
-    clearUser();
+    logoutUser();
     router.push("/login");
   };
 

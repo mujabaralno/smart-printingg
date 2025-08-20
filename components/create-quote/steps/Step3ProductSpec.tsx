@@ -1,6 +1,6 @@
 "use client";
 
-import type { FC, Dispatch, SetStateAction } from "react";
+import React, { type FC, Dispatch, SetStateAction } from "react";
 import { Plus, X, Trash2, Package, Ruler, FileText, Settings, Eye, Palette } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -80,6 +80,22 @@ interface Step3Props {
 
 const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
   const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+
+  // Ensure we have at least one product
+  React.useEffect(() => {
+    if (formData.products.length === 0) {
+      setFormData(prev => ({
+        ...prev,
+        products: [createEmptyProduct()]
+      }));
+    }
+  }, [formData.products.length, setFormData]);
+
+  // Check if this is a template-based quote (has pre-filled product data)
+  const isTemplateQuote = formData.products.length > 0 && 
+    formData.products[0].productName && 
+    formData.products[0].productName !== "" &&
+    formData.products[0].productName !== "Business Card"; // Exclude default "Business Card"
 
   const updateProduct = (idx: number, patch: Partial<Product>) => {
     const next = [...formData.products];
@@ -214,11 +230,33 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="text-center space-y-3">
-        <h3 className="text-2xl font-bold text-slate-900">Product Specification</h3>
-        <p className="text-slate-600">Configure your printing products, sizes, and specifications</p>
+        <h3 className="text-2xl font-bold text-slate-900">Product Specifications</h3>
+        <p className="text-slate-600">
+          {isTemplateQuote 
+            ? "Product details loaded from selected quote template. You can modify these specifications as needed."
+            : "Define the product specifications for your quote"
+          }
+        </p>
       </div>
+
+      {/* Template Quote Indicator */}
+      {isTemplateQuote && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+              <span className="text-white text-xs font-bold">📋</span>
+            </div>
+            <div className="text-blue-700">
+              <p className="font-medium mb-1">Quote Template Loaded</p>
+              <p className="text-sm">
+                Product specifications have been pre-filled from the selected quote template. 
+                You can modify any details to customize for your new quote.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Products */}
       {formData.products.map((product, idx) => (

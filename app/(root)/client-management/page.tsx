@@ -24,7 +24,64 @@ type Mode = "add" | "edit";
 
 export default function ClientManagementPage() {
   // data lokal (mulai dari dummy)
-  const [rows, setRows] = React.useState<ClientRow[]>(CLIENTS);
+  const [rows, setRows] = React.useState<ClientRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  
+  // Load clients from database on page load
+  React.useEffect(() => {
+    const loadClients = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/clients');
+        if (response.ok) {
+          const clientsData = await response.json();
+          if (clientsData.length > 0) {
+            // Transform database clients to match ClientRow format
+            const transformedClients = clientsData.map((client: any, index: number) => ({
+              id: client.id, // Keep database ID for operations
+              displayId: `C-${String(index + 1).padStart(3, "0")}`, // Display ID for UI
+              clientType: client.clientType as "Individual" | "Company",
+              companyName: client.companyName || "",
+              contactPerson: client.contactPerson,
+              firstName: client.clientType === "Individual" ? client.contactPerson.split(" ")[0] || "" : "",
+              lastName: client.clientType === "Individual" ? client.contactPerson.split(" ").slice(1).join(" ") || "" : "",
+              email: client.email,
+              phone: client.phone,
+              countryCode: client.countryCode,
+              role: client.role || "",
+              addressLine1: "",
+              addressLine2: "",
+              city: "",
+              state: "",
+              postalCode: "",
+              country: "",
+              additionalInfo: "",
+              status: "Active" as const,
+              createdAt: client.createdAt,
+              updatedAt: client.updatedAt,
+            }));
+            setRows(transformedClients);
+          } else {
+            // If no clients in database, use seed clients
+            console.log('No clients in database, using seed clients');
+            setRows(CLIENTS);
+          }
+        } else {
+          console.error('Failed to load clients');
+          // Fallback to dummy data if API fails
+          setRows(CLIENTS);
+        }
+      } catch (error) {
+        console.error('Error loading clients:', error);
+        // Fallback to dummy data if API fails
+        setRows(CLIENTS);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadClients();
+  }, []);
   
   // ===== filter & paging =====
   const [search, setSearch] = React.useState("");
@@ -139,7 +196,7 @@ export default function ClientManagementPage() {
   };
 
   // submit modal
-  const onSubmit = () => {
+  const onSubmit = async () => {
     // Validation based on client type
     if (draft.clientType === "Company") {
       if (!draft.companyName || !draft.contactPerson || !draft.email || !draft.role) {
@@ -151,14 +208,79 @@ export default function ClientManagementPage() {
       }
     }
 
-    if (mode === "add") {
-      setRows((prev) => [{ ...draft }, ...prev]);
-    } else {
-      setRows((prev) =>
-        prev.map((r) => (r.id === draft.id ? { ...draft } : r))
-      );
+    try {
+      if (mode === "add") {
+        // Prepare client data for API
+        const clientData = {
+          clientType: draft.clientType,
+          companyName: draft.clientType === "Company" ? draft.companyName : "",
+          contactPerson: draft.contactPerson,
+          email: draft.email,
+          phone: draft.phone,
+          countryCode: draft.countryCode,
+          role: draft.role || "",
+        };
+
+        // Save to database
+        const response = await fetch('/api/clients', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(clientData),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create client');
+        }
+
+        const newClient = await response.json();
+        
+        // Add to local state for immediate UI update
+        const newClientRow: ClientRow = {
+          ...draft,
+          id: newClient.id,
+          displayId: newId(), // Use the formatted display ID
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        setRows((prev) => [newClientRow, ...prev]);
+      } else {
+        // Update existing client - use the database ID, not the display ID
+        const databaseId = draft.id; // This should be the database ID
+        
+        const response = await fetch(`/api/clients/${databaseId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            clientType: draft.clientType,
+            companyName: draft.companyName,
+            contactPerson: draft.contactPerson,
+            email: draft.email,
+            phone: draft.phone,
+            countryCode: draft.countryCode,
+            role: draft.role,
+            // Don't send displayId, createdAt, updatedAt to the API
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update client');
+        }
+
+        // Update local state
+        setRows((prev) =>
+          prev.map((r) => (r.id === databaseId ? { ...draft } : r))
+        );
+      }
+      
+      setOpen(false);
+    } catch (error) {
+      console.error('Error saving client:', error);
+      alert('Error saving client. Please try again.');
     }
-    setOpen(false);
   };
 
   // Update contact person when firstName/lastName or companyName changes
@@ -282,11 +404,17 @@ export default function ClientManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {current.map((r) => (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-16 text-slate-500">
+                      Loading clients...
+                    </TableCell>
+                  </TableRow>
+                ) : current.map((r) => (
                   <TableRow key={r.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
                     <TableCell className="font-medium text-slate-900 p-4">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                        {r.id}
+                        {r.displayId}
                       </span>
                     </TableCell>
                     <TableCell className="p-4">

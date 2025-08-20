@@ -383,6 +383,8 @@ function drawPrintingPattern(
 }
 
 const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
+
+  
   // ===== Output size state management =====
   const [outputDimensions, setOutputDimensions] = React.useState<{
     [productIndex: number]: { width: number; height: number }
@@ -413,6 +415,31 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
     return initial;
   });
 
+
+
+  // ===== Helper function to parse color count from Step 3 =====
+  const getMaxColorsForProduct = (product: any) => {
+    const frontColors = product.colors?.front || "";
+    const backColors = product.colors?.back || "";
+    
+    // Parse color strings to get maximum number of colors
+    const parseColorCount = (colorStr: string) => {
+      if (colorStr.includes("1 Color")) return 1;
+      if (colorStr.includes("2 Colors")) return 2;
+      if (colorStr.includes("3 Colors")) return 3;
+      if (colorStr.includes("4 Colors (CMYK)")) return 4;
+      if (colorStr.includes("4+1 Colors")) return 5;
+      if (colorStr.includes("4+2 Colors")) return 6;
+      return 0;
+    };
+    
+    const frontCount = parseColorCount(frontColors);
+    const backCount = parseColorCount(backColors);
+    
+    // Return the maximum count between front and back
+    return Math.max(frontCount, backCount);
+  };
+
   // ===== Track user edits to enteredSheets =====
   const [userEditedSheets, setUserEditedSheets] = React.useState<Set<string>>(new Set());
 
@@ -421,12 +448,21 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
   // ===== Enhanced calculation exactly matching HTML logic =====
   const perPaperCalc = React.useMemo(() => {
-    // Calculate for each product
+    // Calculate for each product with their own paper indices
     return formData.products.map((product, productIndex) => {
       const qty = product?.quantity ?? 0;
       const productDimensions = outputDimensions[productIndex] || { width: 0, height: 0 };
 
-      return formData.operational.papers.map((opPaper) => {
+      // Map through the product's papers (not operational papers)
+      return product.papers.map((paper, paperIndex) => {
+        // Calculate the global paper index for this product's paper
+        let globalPaperIndex = 0;
+        for (let pi = 0; pi < productIndex; pi++) {
+          globalPaperIndex += formData.products[pi].papers.length;
+        }
+        globalPaperIndex += paperIndex;
+        
+        const opPaper = formData.operational.papers[globalPaperIndex];
         const layout = computeLayout(
           opPaper?.inputWidth ?? null,
           opPaper?.inputHeight ?? null,
@@ -446,7 +482,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             ? opPaper.pricePerPacket / opPaper.sheetsPerPacket
             : null);
 
-        return { layout, recommendedSheets, pricePerSheet };
+        return { layout, recommendedSheets, pricePerSheet, opPaper };
       });
     });
   }, [
@@ -461,7 +497,22 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
     if (perPaperCalc.length > 0 && perPaperCalc[0]?.length > 0) {
       setFormData((prev) => {
         const nextPapers = prev.operational.papers.map((p, i) => {
-          const rec = perPaperCalc[0]?.[i]?.recommendedSheets ?? p.recommendedSheets;
+          // Find which product and paper index this operational paper corresponds to
+          let productIndex = 0;
+          let paperIndex = 0;
+          let currentPaperCount = 0;
+          
+          for (let pi = 0; pi < formData.products.length; pi++) {
+            if (i >= currentPaperCount && i < currentPaperCount + formData.products[pi].papers.length) {
+              productIndex = pi;
+              paperIndex = i - currentPaperCount;
+              break;
+            }
+            currentPaperCount += formData.products[pi].papers.length;
+          }
+          
+          // Get the recommended sheets from the correct product's calculation
+          const rec = perPaperCalc[productIndex]?.[paperIndex]?.recommendedSheets ?? p.recommendedSheets;
           const paperKey = `paper-${i}`;
           const hasUserEdited = userEditedSheets.has(paperKey);
           
@@ -489,7 +540,35 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         };
       });
     }
-  }, [perPaperCalc, setFormData, userEditedSheets]);
+  }, [perPaperCalc, setFormData, userEditedSheets, formData.products]);
+
+  // ===== Sync selected colors when form data changes =====
+  React.useEffect(() => {
+    // Only reset colors when the actual color configuration changes, not on every render
+    setSelectedColors(prev => {
+      const newState = { ...prev };
+      formData.products.forEach((product, productIndex) => {
+        if (!newState[productIndex]) {
+          newState[productIndex] = {};
+        }
+        product.papers.forEach((paper, paperIndex) => {
+          if (!newState[productIndex][paperIndex]) {
+            newState[productIndex][paperIndex] = [];
+          }
+          
+          // Only clear colors if the color configuration actually changed
+          const maxColors = getMaxColorsForProduct(product);
+          const currentColors = newState[productIndex][paperIndex];
+          
+          // If we have a limit and exceed it, trim to the limit
+          if (maxColors > 0 && currentColors.length > maxColors) {
+            newState[productIndex][paperIndex] = currentColors.slice(0, maxColors);
+          }
+        });
+      });
+      return newState;
+    });
+  }, [formData.products.map(p => `${p.colors?.front}-${p.colors?.back}`).join('|')]);
 
   // ===== Plates & Units =====
   const { plates, units } = React.useMemo(() => {
@@ -497,7 +576,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
     let totalPlates = 0;
     let totalUnits = 0;
 
-    formData.products.forEach((product) => {
+    formData.products.forEach((product, productIndex) => {
       const sides = product?.sides ?? "1";
       const printing = product?.printingSelection ?? "Digital";
 
@@ -508,13 +587,22 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
       const productPapers = product.papers || [];
       const totalSheets = productPapers.reduce(
         (acc, paper, paperIndex) => {
-          const opPaper = formData.operational.papers[paperIndex];
+          // Get the recommended sheets from the correct product's calculation
+          const rec = perPaperCalc[productIndex]?.[paperIndex]?.recommendedSheets ?? 0;
+          
+          // Find the corresponding operational paper
+          let globalPaperIndex = 0;
+          for (let pi = 0; pi < productIndex; pi++) {
+            globalPaperIndex += formData.products[pi].papers.length;
+          }
+          globalPaperIndex += paperIndex;
+          
+          const opPaper = formData.operational.papers[globalPaperIndex];
           if (opPaper) {
             const entered = opPaper.enteredSheets ?? null;
-            const rec = perPaperCalc[formData.products.indexOf(product)]?.[paperIndex]?.recommendedSheets ?? 0;
             return acc + (entered != null ? entered : rec);
           }
-          return acc;
+          return acc + rec;
         },
         0
       );
@@ -533,9 +621,22 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
   React.useEffect(() => {
     setFormData((prev) => {
       const nextPapers = prev.operational.papers.map((p, i) => {
-        // Fix indexing: perPaperCalc is 2D array [productIndex][paperIndex]
-        // Since we're mapping papers, we need to get the first product's calculations
-        const rec = perPaperCalc[0]?.[i]?.recommendedSheets ?? p.recommendedSheets;
+        // Find which product and paper index this operational paper corresponds to
+        let productIndex = 0;
+        let paperIndex = 0;
+        let currentPaperCount = 0;
+        
+        for (let pi = 0; pi < formData.products.length; pi++) {
+          if (i >= currentPaperCount && i < currentPaperCount + formData.products[pi].papers.length) {
+            productIndex = pi;
+            paperIndex = i - currentPaperCount;
+            break;
+          }
+          currentPaperCount += formData.products[pi].papers.length;
+        }
+        
+        // Get the recommended sheets from the correct product's calculation
+        const rec = perPaperCalc[productIndex]?.[paperIndex]?.recommendedSheets ?? p.recommendedSheets;
         
         // REVISION 1: Force "Enter Sheets" to match recommended sheets by default
         // But preserve user edits if they have manually changed the value
@@ -579,7 +680,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         },
       };
     });
-  }, [perPaperCalc, plates, units, setFormData, userEditedSheets]);
+  }, [perPaperCalc, plates, units, setFormData, userEditedSheets, formData.products]);
 
   // ===== Sync operational papers with product papers =====
   React.useEffect(() => {
@@ -595,10 +696,12 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         // Create operational paper entries for each product's papers
         formData.products.forEach((product, productIndex) => {
           product.papers.forEach((paper, paperIndex) => {
+            // Calculate the global paper index for this product's paper
             const globalPaperIndex = newOperationalPapers.length;
             const existingOpPaper = prev.operational.papers[globalPaperIndex];
             
             // Get recommended sheets from calculations if available
+            // Use the product-specific calculation
             const recommendedSheets = perPaperCalc[productIndex]?.[paperIndex]?.recommendedSheets ?? 1;
             
             // Create new operational paper entry or use existing one
@@ -629,6 +732,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
           operational: {
             ...prev.operational,
             papers: newOperationalPapers,
+            plates,
+            units,
           },
         };
       });
@@ -747,25 +852,44 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
     }));
   };
 
+  // ===== Enhanced color toggle with validation =====
   const handleColorToggle = (productIndex: number, paperIndex: number, color: string) => {
-    setSelectedColors(prev => {
-      const newState = { ...prev };
-      if (!newState[productIndex]) {
-        newState[productIndex] = {};
+    const product = formData.products[productIndex];
+    const maxColors = getMaxColorsForProduct(product);
+    
+    // Create a completely new state object
+    const newSelectedColors = { ...selectedColors };
+    
+    // Ensure the structure exists
+    if (!newSelectedColors[productIndex]) {
+      newSelectedColors[productIndex] = {};
+    }
+    if (!newSelectedColors[productIndex][paperIndex]) {
+      newSelectedColors[productIndex][paperIndex] = [];
+    }
+    
+    const currentColorsArray = newSelectedColors[productIndex][paperIndex];
+    
+    if (currentColorsArray.includes(color)) {
+      // Remove color if already selected
+      newSelectedColors[productIndex][paperIndex] = currentColorsArray.filter(c => c !== color);
+    } else {
+      // Add color if we have no limit or haven't reached it
+      if (maxColors === 0 || currentColorsArray.length < maxColors) {
+        newSelectedColors[productIndex][paperIndex] = [...currentColorsArray, color];
       }
-      if (!newState[productIndex][paperIndex]) {
-        newState[productIndex][paperIndex] = [];
-      }
-      
-      const currentColors = newState[productIndex][paperIndex];
-      if (currentColors.includes(color)) {
-        newState[productIndex][paperIndex] = currentColors.filter(c => c !== color);
-      } else {
-        newState[productIndex][paperIndex] = [...currentColors, color];
-      }
-      
-      return newState;
-    });
+    }
+    
+    // Update the state
+    setSelectedColors(newSelectedColors);
+  };
+
+  // ===== Sync selected colors with form data =====
+  const syncColorsWithFormData = () => {
+    // This function can be called when moving to the next step
+    // to ensure the selected colors are properly saved
+    console.log('Selected colors:', selectedColors);
+    // You can add logic here to save the colors to the form data if needed
   };
 
 
@@ -774,11 +898,27 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
   const [openIdx, setOpenIdx] = React.useState<number | null>(null);
   const openData =
     openIdx != null
-      ? {
-          paper: formData.products[0].papers[openIdx],
-          op: formData.operational.papers[openIdx],
-          calc: perPaperCalc[0]?.[openIdx], // Fix: access first product's calculations
-        }
+      ? (() => {
+          // Find which product and paper index this global paper index corresponds to
+          let productIndex = 0;
+          let paperIndex = 0;
+          let currentPaperCount = 0;
+          
+          for (let pi = 0; pi < formData.products.length; pi++) {
+            if (openIdx >= currentPaperCount && openIdx < currentPaperCount + formData.products[pi].papers.length) {
+              productIndex = pi;
+              paperIndex = openIdx - currentPaperCount;
+              break;
+            }
+            currentPaperCount += formData.products[pi].papers.length;
+          }
+          
+          return {
+            paper: formData.products[productIndex]?.papers[paperIndex],
+            op: formData.operational.papers[openIdx],
+            calc: perPaperCalc[productIndex]?.[paperIndex],
+          };
+        })()
       : null;
 
   // ===== Currency formatter =====
@@ -855,7 +995,14 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
           </div>
 
           {product.papers.map((paper, paperIndex) => {
-            const opPaper = formData.operational.papers[paperIndex];
+            // Calculate the global paper index for this product's paper
+            let globalPaperIndex = 0;
+            for (let pi = 0; pi < productIndex; pi++) {
+              globalPaperIndex += formData.products[pi].papers.length;
+            }
+            globalPaperIndex += paperIndex;
+            
+            const opPaper = formData.operational.papers[globalPaperIndex];
             const { layout, recommendedSheets, pricePerSheet } = perPaperCalc[productIndex]?.[paperIndex] ?? {
               layout: {
                 usableW: 0,
@@ -910,7 +1057,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setOpenIdx(paperIndex)}
+                      onClick={() => setOpenIdx(globalPaperIndex)}
                       className="border-blue-500 text-blue-600 hover:bg-blue-500 rounded-xl"
                     >
                       <Calculator className="w-4 h-4 mr-2" />
@@ -954,7 +1101,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           value={opPaper?.inputWidth ?? ""}
                           className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                           onChange={(e) =>
-                            handlePaperOpChange(paperIndex, "inputWidth", e.target.value)
+                            handlePaperOpChange(globalPaperIndex, "inputWidth", e.target.value)
                           }
                         />
                       </div>
@@ -968,7 +1115,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           min={0}
                           step="0.1"
                           onChange={(e) =>
-                            handlePaperOpChange(paperIndex, "inputHeight", e.target.value)
+                            handlePaperOpChange(globalPaperIndex, "inputHeight", e.target.value)
                           }
                         />
                       </div>
@@ -1045,7 +1192,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           onChange={(e) => {
                             const value = parseFloat(e.target.value);
                             if (value >= (recommendedSheets || 0)) {
-                              handlePaperOpChange(paperIndex, "enteredSheets", e.target.value);
+                              handlePaperOpChange(globalPaperIndex, "enteredSheets", e.target.value);
                             }
                           }}
                         />
@@ -1069,13 +1216,13 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                             <button
                               type="button"
                               onClick={() => {
-                                const paperKey = `paper-${paperIndex}`;
+                                const paperKey = `paper-${globalPaperIndex}`;
                                 setUserEditedSheets(prev => {
                                   const newSet = new Set(prev);
                                   newSet.delete(paperKey);
                                   return newSet;
                                 });
-                                handlePaperOpChange(paperIndex, "enteredSheets", String(recommendedSheets));
+                                handlePaperOpChange(globalPaperIndex, "enteredSheets", String(recommendedSheets));
                               }}
                               className="text-xs text-blue-600 hover:text-blue-800 underline"
                             >
@@ -1111,7 +1258,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                           value={opPaper?.pricePerSheet ?? ""}
                           onChange={(e) =>
-                            handlePaperOpChange(paperIndex, "pricePerSheet", e.target.value)
+                            handlePaperOpChange(globalPaperIndex, "pricePerSheet", e.target.value)
                           }
                         />
                         <div className="text-xs text-slate-500 mt-1">
@@ -1131,7 +1278,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                               value={opPaper?.sheetsPerPacket ?? ""}
                               onChange={(e) =>
                                 handlePaperOpChange(
-                                  paperIndex,
+                                  globalPaperIndex,
                                   "sheetsPerPacket",
                                   e.target.value
                                 )
@@ -1146,7 +1293,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                               placeholder="$ 0.00"
                               value={opPaper?.pricePerPacket ?? ""}
                               onChange={(e) =>
-                                handlePaperOpChange(paperIndex, "pricePerPacket", e.target.value)
+                                handlePaperOpChange(globalPaperIndex, "pricePerPacket", e.target.value)
                               }
                             />
                           </div>
@@ -1281,60 +1428,155 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
                 <Palette className="w-4 h-4 mr-2 text-blue-600" />
                 Color Options for {paper.name ? `${paper.name}${paper.gsm ? ` ${paper.gsm}gsm` : ""}` : `Paper ${paperIndex + 1}`}
-                <span className="ml-2 text-xs text-slate-500 font-normal">(Independent selection)</span>
+                <span className="ml-2 text-xs text-slate-500 font-normal">
+                  (Max: {getMaxColorsForProduct(formData.products[productIndex])} colors from Step 3)
+                </span>
+                <span className="ml-auto text-xs text-blue-600 font-mono">
+                  {selectedColors[productIndex]?.[paperIndex]?.length || 0}/{getMaxColorsForProduct(formData.products[productIndex])} selected
+                </span>
               </h5>
-              <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-10 gap-2">
-                {availableColors.map((color) => (
-                  <div
-                    key={color.value}
-                    className={`p-2 rounded-lg border cursor-pointer transition-all duration-200 text-center group ${
-                      selectedColors[productIndex]?.[paperIndex]?.includes(color.value)
-                        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                    onClick={() => handleColorToggle(productIndex, paperIndex, color.value)}
-                    title={color.name}
-                  >
-                    <div className={`w-full h-4 rounded mb-1 ${color.color} group-hover:scale-105 transition-transform`}></div>
-                    <div className="text-xs font-medium text-slate-600 truncate">
-                      {color.shortName}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {selectedColors[productIndex]?.[paperIndex]?.length > 0 ? (
-                <div className="mt-3 p-2 bg-blue-50 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div className="text-xs font-medium text-blue-800">
-                      Selected ({selectedColors[productIndex]?.[paperIndex]?.length || 0}): {selectedColors[productIndex]?.[paperIndex]?.map(c => {
-                        const colorObj = availableColors.find(ac => ac.value === c);
-                        return colorObj ? colorObj.shortName : c;
-                      }).join(', ') || ''}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedColors(prev => ({
-                          ...prev,
-                          [productIndex]: {
-                            ...prev[productIndex],
-                            [paperIndex]: []
-                          }
-                        }));
-                      }}
-                      className="text-xs text-blue-600 hover:text-blue-800 underline hover:no-underline"
-                    >
-                      Clear All
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-3 p-2 bg-slate-50 rounded-lg">
-                  <div className="text-xs text-slate-500 text-center">
-                    No colors selected for this paper
+              {getMaxColorsForProduct(formData.products[productIndex]) === 0 && (
+                <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Info className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm text-blue-800">
+                      No color limit set in Step 3. You can select unlimited colors here, or go back to Step 3 to set specific color limits.
+                    </span>
                   </div>
                 </div>
               )}
+              <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-10 gap-2">
+                {availableColors.map((color) => {
+                  const maxColors = getMaxColorsForProduct(formData.products[productIndex]);
+                  const currentCount = selectedColors[productIndex]?.[paperIndex]?.length || 0;
+                  const isSelected = selectedColors[productIndex]?.[paperIndex]?.includes(color.value);
+                  // Disable if we have a limit AND we've reached it AND this color is not selected
+                  const isDisabled = maxColors > 0 && currentCount >= maxColors && !isSelected;
+                  
+                  return (
+                    <div
+                      key={color.value}
+                      className={`p-2 rounded-lg border transition-all duration-300 text-center group relative overflow-hidden ${
+                        isSelected
+                          ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 ring-2 ring-blue-200 ring-offset-1 shadow-md cursor-pointer transform scale-105'
+                          : isDisabled
+                          ? 'border-slate-100 bg-slate-50 cursor-not-allowed opacity-40 grayscale'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm cursor-pointer active:scale-95 hover:scale-105'
+                      }`}
+                      onClick={() => {
+                        if (!isDisabled) {
+                          handleColorToggle(productIndex, paperIndex, color.value);
+                        }
+                      }}
+                      title={isDisabled ? `${color.name} - Color limit reached` : color.name}
+                    >
+                      {/* Selection Checkmark */}
+                      {isSelected && (
+                        <div className="absolute top-1 right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center shadow-sm">
+                          <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
+                      
+                      {/* Color Swatch with Enhanced Styling */}
+                      <div className={`w-full h-4 rounded mb-1 ${color.color} ${
+                        !isDisabled ? 'group-hover:scale-105' : ''
+                      } transition-all duration-300 ${
+                        isSelected ? 'ring-2 ring-blue-300 ring-offset-1 shadow-inner' : ''
+                      }`}></div>
+                      
+                      {/* Color Name with Enhanced Typography */}
+                      <div className={`text-xs font-medium truncate transition-colors duration-300 ${
+                        isSelected 
+                          ? 'text-blue-700 font-semibold' 
+                          : isDisabled 
+                            ? 'text-slate-400' 
+                            : 'text-slate-600 group-hover:text-slate-800'
+                      }`}>
+                        {color.shortName}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {(() => {
+                const maxColors = getMaxColorsForProduct(formData.products[productIndex]);
+                const currentCount = selectedColors[productIndex]?.[paperIndex]?.length || 0;
+                const remainingColors = maxColors - currentCount;
+                
+                if (currentCount > 0) {
+                  return (
+                    <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg shadow-sm">
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-blue-800 mb-2">
+                            Selected Colors ({currentCount})
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedColors[productIndex]?.[paperIndex]?.map(c => {
+                              const colorObj = availableColors.find(ac => ac.value === c);
+                              return (
+                                <div key={c} className="flex items-center space-x-1 px-2 py-1 bg-white rounded-full border border-blue-200 shadow-sm">
+                                  <div className={`w-3 h-3 rounded-full ${colorObj?.color || 'bg-gray-400'}`}></div>
+                                  <span className="text-xs font-medium text-blue-700">{colorObj?.shortName || c}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {maxColors > 0 && remainingColors > 0 && (
+                            <div className="text-xs text-blue-600 mt-2">
+                              {remainingColors} more color{remainingColors !== 1 ? 's' : ''} available
+                            </div>
+                          )}
+                          {maxColors === 0 && (
+                            <div className="text-xs text-blue-600 mt-2">
+                              Unlimited selection enabled
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedColors(prev => ({
+                              ...prev,
+                              [productIndex]: {
+                                ...prev[productIndex],
+                                [paperIndex]: []
+                              }
+                            }));
+                          }}
+                          className="ml-4 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200 border border-red-200 hover:border-red-300"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="mt-3 p-3 bg-gradient-to-r from-slate-50 to-gray-50 border border-slate-200 rounded-lg">
+                      <div className="text-center">
+                        <div className="w-8 h-8 mx-auto mb-2 bg-slate-200 rounded-full flex items-center justify-center">
+                          <Palette className="w-4 h-4 text-slate-500" />
+                        </div>
+                        <div className="text-sm font-medium text-slate-600 mb-1">
+                          No colors selected for this paper
+                        </div>
+                        {maxColors > 0 ? (
+                          <div className="text-xs text-blue-600">
+                            You can select up to {maxColors} color{maxColors !== 1 ? 's' : ''}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-blue-600">
+                            You can select unlimited colors (no limit set in Step 3)
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+              })()}
             </div>
 
             {/* Summary Information Card - Above Visualization */}

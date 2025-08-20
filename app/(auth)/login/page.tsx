@@ -1,10 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { setUser } from "@/lib/auth";
+import { loginUser } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { dummyUsers } from "@/constants/dummyusers";
 import { Eye, EyeOff, Shield, AlertCircle, RefreshCw, CheckCircle, Lock, User, X, Smartphone, Globe } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { checkUserLocation, LocationData, LocationCheckResult } from "@/lib/location-utils";
@@ -26,6 +25,7 @@ export default function LoginPage() {
   const [phoneNumber] = useState<string>('+971588712409');
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Check user location on component mount
   useEffect(() => {
@@ -71,12 +71,12 @@ export default function LoginPage() {
 
   // Direct Twilio API integration
   const sendOtpDirect = async (phoneNumber: string) => {
-    const accountSid = process.env.NEXT_PUBLIC_TWILIO_ACCOUNT_SID || '';
-    const authToken = process.env.NEXT_PUBLIC_TWILIO_AUTH_TOKEN || '';
-    const serviceSid = process.env.NEXT_PUBLIC_TWILIO_VERIFY_SERVICE_ID || '';
+    const accountSid = process.env.NEXT_PUBLIC_TWILIO_ACCOUNT_SID;
+    const authToken = process.env.NEXT_PUBLIC_TWILIO_AUTH_TOKEN;
+    const serviceSid = process.env.NEXT_PUBLIC_TWILIO_VERIFY_SERVICE_ID;
     
     if (!accountSid || !authToken || !serviceSid) {
-      throw new Error('Twilio credentials not configured');
+      throw new Error('Twilio credentials not configured. Please check your environment variables.');
     }
     
     try {
@@ -108,12 +108,12 @@ export default function LoginPage() {
   };
 
   const verifyOtpDirect = async (phoneNumber: string, code: string) => {
-    const accountSid = process.env.NEXT_PUBLIC_TWILIO_ACCOUNT_SID || '';
-    const authToken = process.env.NEXT_PUBLIC_TWILIO_AUTH_TOKEN || '';
-    const serviceSid = process.env.NEXT_PUBLIC_TWILIO_VERIFY_SERVICE_ID || '';
+    const accountSid = process.env.NEXT_PUBLIC_TWILIO_ACCOUNT_SID;
+    const authToken = process.env.NEXT_PUBLIC_TWILIO_AUTH_TOKEN;
+    const serviceSid = process.env.NEXT_PUBLIC_TWILIO_VERIFY_SERVICE_ID;
     
     if (!accountSid || !authToken || !serviceSid) {
-      throw new Error('Twilio credentials not configured');
+      throw new Error('Twilio credentials not configured. Please check your environment variables.');
     }
     
     try {
@@ -123,7 +123,7 @@ export default function LoginPage() {
         method: 'POST',
         headers: {
           'Authorization': `Basic ${credentials}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: new URLSearchParams({
           'To': phoneNumber,
@@ -163,19 +163,29 @@ export default function LoginPage() {
       console.warn("Location warning:", locationError);
     }
 
-    // Validate credentials
-    const user = dummyUsers.find(u => 
-      (u.id === employeeId || u.email === employeeId) && u.password === password
-    );
-    
-    if (!user) {
-      showMessage("Invalid Employee ID or Password", "error");
-      return;
-    }
-
     setIsLoading(true);
     
     try {
+      // Validate credentials against database
+      const response = await fetch('/api/users');
+      if (!response.ok) {
+        throw new Error('Failed to fetch users from database');
+      }
+      
+      const users = await response.json();
+      const user = users.find((u: any) => 
+        (u.id === employeeId || u.email === employeeId) && u.password === password
+      );
+      
+      if (!user) {
+        showMessage("Invalid Employee ID or Password", "error");
+        return;
+      }
+
+      // Store the validated user for OTP verification
+      setCurrentUser(user);
+      
+      // Send OTP via Twilio
       const result = await sendOtpDirect(phoneNumber);
       
       if (result.success) {
@@ -184,6 +194,7 @@ export default function LoginPage() {
         showMessage("Verification code sent to your phone", "success");
       }
     } catch (error) {
+      console.error('Login error:', error);
       showMessage("Failed to send verification code. Please try again.", "error");
     } finally {
       setIsLoading(false);
@@ -199,44 +210,25 @@ export default function LoginPage() {
       return;
     }
 
+    if (!currentUser) {
+      showMessage("User session expired. Please login again.", "error");
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      // Check for instant access code first
-      if (otp === '012345') {
-        const user = dummyUsers.find(u => 
-          (u.id === employeeId || u.email === employeeId) && u.password === password
-        );
-        
-        if (user) {
-          setUser(user);
-          showMessage("Login successful! Redirecting...", "success");
-          
-          setTimeout(() => {
-            setShowOtpModal(false);
-            router.push("/");
-          }, 1000);
-        }
-        return;
-      }
-
       // Verify with Twilio
       const result = await verifyOtpDirect(phoneNumber, otp);
       
       if (result.success) {
-        const user = dummyUsers.find(u => 
-          (u.id === employeeId || u.email === employeeId) && u.password === password
-        );
+        loginUser(currentUser);
+        showMessage("Login successful! Redirecting...", "success");
         
-        if (user) {
-          setUser(user);
-          showMessage("Login successful! Redirecting...", "success");
-          
-          setTimeout(() => {
-            setShowOtpModal(false);
-            router.push("/");
-          }, 1000);
-        }
+        setTimeout(() => {
+          setShowOtpModal(false);
+          router.push("/");
+        }, 1000);
       }
     } catch (error) {
       showMessage("Invalid verification code", "error");
@@ -270,6 +262,7 @@ export default function LoginPage() {
     setShowOtpModal(false);
     setOtp('');
     setSessionId('');
+    setCurrentUser(null);
     setError("");
     setSuccess("");
   };
@@ -357,7 +350,7 @@ export default function LoginPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Employee ID
+                  Employee ID or Email
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -365,7 +358,7 @@ export default function LoginPage() {
                     type="text"
                     value={employeeId}
                     onChange={(e) => setEmployeeId(e.target.value)}
-                    placeholder="Enter your Employee ID"
+                    placeholder="Enter your Employee ID or Email"
                     className="pl-11 h-12 bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-lg transition-colors"
                     disabled={isLoading}
                   />
@@ -420,6 +413,16 @@ export default function LoginPage() {
                 </div>
               )}
             </Button>
+
+            {/* Demo Credentials */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-blue-800 mb-2">Demo Credentials:</h3>
+              <div className="space-y-1 text-xs text-blue-700">
+                <p><strong>Admin:</strong> admin@example.com / admin123</p>
+                <p><strong>Estimator:</strong> estimator@example.com / estimator123</p>
+                <p><strong>User:</strong> user@example.com / user123</p>
+              </div>
+            </div>
           </div>
 
           {/* Footer Info */}
