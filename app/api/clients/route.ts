@@ -3,12 +3,20 @@ import { DatabaseService } from '@/lib/database';
 
 export async function GET() {
   try {
+    console.log('🔍 API: Starting to fetch clients...');
     const clients = await DatabaseService.getAllClients();
+    console.log(`✅ API: Fetched ${clients.length} clients successfully`);
+    console.log('Sample client data:', clients[0] || 'No clients found');
     return NextResponse.json(clients);
-  } catch (error) {
-    console.error('Error fetching clients:', error);
+  } catch (error: any) {
+    console.error('❌ API: Error fetching clients:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return NextResponse.json(
-      { error: 'Failed to fetch clients' },
+      { error: 'Failed to fetch clients', details: error.message },
       { status: 500 }
     );
   }

@@ -36,6 +36,8 @@ interface Step5Props {
   otherQuantities: OtherQty[];
   setOtherQuantities: React.Dispatch<React.SetStateAction<OtherQty[]>>;
   onOpenSave: () => void;
+  isEditMode?: boolean;
+  selectedQuoteId?: string | null;
 }
 
 const Step5Quotation: FC<Step5Props> = ({

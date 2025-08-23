@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -32,6 +32,12 @@ model Client {
   phone         String
   countryCode   String
   role          String?
+  address       String?
+  city          String?
+  state         String?
+  postalCode    String?
+  country       String?
+  status        String   @default("Active")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   userId        String?
@@ -40,37 +46,59 @@ model Client {
 }
 
 model Quote {
-  id        String       @id @default(cuid())
-  quoteId   String       @unique
-  date      DateTime
-  status    String       @default("Pending")
-  clientId  String
-  userId    String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  product   String
-  quantity  Int
-  sides     String
-  printing  String
-  finishing Finishing[]
-  papers    Paper[]
-  client    Client       @relation(fields: [clientId], references: [id])
-  user      User?        @relation(fields: [userId], references: [id])
-  amounts   QuoteAmount?
+  id                String            @id @default(cuid())
+  quoteId           String            @unique
+  date              DateTime
+  status            String            @default("Pending")
+  clientId          String
+  userId            String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  product           String
+  quantity          Int
+  sides             String
+  printing          String
+  colors            String?
+  productName       String?
+  printingSelection String?
+  flatSizeHeight    Float?
+  closeSizeSpine    Float?
+  useSameAsFlat     Boolean?          @default(false)
+  flatSizeWidth     Float?
+  flatSizeSpine     Float?
+  closeSizeHeight   Float?
+  closeSizeWidth    Float?
+  finishing         Finishing[]
+  papers            Paper[]
+  user              User?             @relation(fields: [userId], references: [id])
+  client            Client            @relation(fields: [clientId], references: [id])
+  amounts           QuoteAmount?
+  operational       QuoteOperational?
 }
 
 model Paper {
-  id      String @id @default(cuid())
-  name    String
-  gsm     String
-  quoteId String
-  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  name              String
+  gsm               String
+  quoteId           String
+  inputWidth        Float?
+  inputHeight       Float?
+  pricePerPacket    Float?
+  pricePerSheet     Float?
+  sheetsPerPacket   Int?
+  recommendedSheets Int?
+  enteredSheets     Int?
+  outputWidth       Float?
+  outputHeight      Float?
+  selectedColors    String?
+  quote             Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 }
 
 model Finishing {
   id      String @id @default(cuid())
   name    String
   quoteId String
+  cost    Float?
   quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 }
 
@@ -81,6 +109,16 @@ model QuoteAmount {
   total   Float
   quoteId String @unique
   quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+}
+
+model QuoteOperational {
+  id        String   @id @default(cuid())
+  quoteId   String   @unique
+  plates    Int?
+  units     Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 }
 
 model SearchHistory {
@@ -121,6 +159,7 @@ model Material {
   id          String   @id @default(cuid())
   materialId  String   @unique
   name        String
+  gsm         String?
   supplierId  String
   cost        Float
   unit        String

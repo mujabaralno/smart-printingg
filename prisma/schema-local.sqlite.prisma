@@ -122,6 +122,7 @@ model Material {
   id          String   @id @default(cuid())
   materialId  String   @unique
   name        String
+  gsm         String?  // GSM field for paper weight (e.g., "300", "150", "80")
   supplierId  String
   supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   cost        Float

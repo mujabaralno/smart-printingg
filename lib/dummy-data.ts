@@ -21,6 +21,7 @@ export const QUOTE_DETAILS: Record<string, QuoteDetail> = {
     printing: "Digital",
     papers: [{ name: "BOOK", gsm: "300" }],
     finishing: ["UV Spot", "Lamination"],
+    colors: { front: "4/0 CMYK + 2 PMS Colors" },
     amounts: { base: 2450, vat: 122.5, total: 2450, status: "Approved" },
   },
 
@@ -43,6 +44,7 @@ export const QUOTE_DETAILS: Record<string, QuoteDetail> = {
     printing: "Offset",
     papers: [{ name: "Art Paper", gsm: "150" }],
     finishing: ["Lamination"],
+    colors: { front: "4/4 CMYK", back: "4/4 CMYK" },
     amounts: { base: 1800, vat: 90, total: 1890, status: "Approved" },
   },
 
@@ -65,6 +67,7 @@ export const QUOTE_DETAILS: Record<string, QuoteDetail> = {
     printing: "Offset",
     papers: [{ name: "HVS", gsm: "80" }],
     finishing: ["UV Spot", "Foil Stamping"],
+    colors: { front: "4/4 CMYK + 1 PMS", back: "4/4 CMYK + 1 PMS" },
     amounts: { base: 3200, vat: 160, total: 3360, status: "Approved" },
   },
 
@@ -87,6 +90,7 @@ export const QUOTE_DETAILS: Record<string, QuoteDetail> = {
     printing: "Digital",
     papers: [{ name: "Glossy", gsm: "200" }],
     finishing: ["Lamination"],
+    colors: { front: "4/4 CMYK", back: "4/4 CMYK" },
     amounts: { base: 1200, vat: 60, total: 1260, status: "Pending" },
   },
 
@@ -109,6 +113,7 @@ export const QUOTE_DETAILS: Record<string, QuoteDetail> = {
     printing: "Offset",
     papers: [{ name: "Art Paper", gsm: "250" }],
     finishing: ["UV Spot"],
+    colors: { front: "4/4 CMYK + 2 PMS Colors" },
     amounts: { base: 800, vat: 40, total: 840, status: "Approved" },
   },
 
@@ -131,6 +136,7 @@ export const QUOTE_DETAILS: Record<string, QuoteDetail> = {
     printing: "Offset",
     papers: [{ name: "HVS", gsm: "120" }],
     finishing: ["Perfect Binding"],
+    colors: { front: "4/4 CMYK", back: "4/4 CMYK" },
     amounts: { base: 2800, vat: 140, total: 2940, status: "Approved" },
   },
 
@@ -153,6 +159,7 @@ export const QUOTE_DETAILS: Record<string, QuoteDetail> = {
     printing: "Digital",
     papers: [{ name: "BOOK", gsm: "300" }],
     finishing: ["UV Spot"],
+    colors: { front: "4/0 CMYK + 1 PMS Color" },
     amounts: { base: 400, vat: 20, total: 420, status: "Rejected" },
   },
 
@@ -175,6 +182,7 @@ export const QUOTE_DETAILS: Record<string, QuoteDetail> = {
     printing: "Offset",
     papers: [{ name: "Art Paper", gsm: "200" }],
     finishing: ["Perfect Binding", "Foil Stamping"],
+    colors: { front: "4/4 CMYK + 2 PMS Colors", back: "4/4 CMYK + 2 PMS Colors" },
     amounts: { base: 4500, vat: 225, total: 4725, status: "Approved" },
   },
 
@@ -197,6 +205,7 @@ export const QUOTE_DETAILS: Record<string, QuoteDetail> = {
     printing: "Digital",
     papers: [{ name: "HVS", gsm: "100" }],
     finishing: ["Spiral Binding"],
+    colors: { front: "4/4 CMYK", back: "4/4 CMYK" },
     amounts: { base: 1600, vat: 80, total: 1680, status: "Pending" },
   },
 
@@ -219,6 +228,7 @@ export const QUOTE_DETAILS: Record<string, QuoteDetail> = {
     printing: "Offset",
     papers: [{ name: "Glossy", gsm: "150" }],
     finishing: ["Lamination"],
+    colors: { front: "4/4 CMYK + 1 PMS Color" },
     amounts: { base: 2100, vat: 105, total: 2205, status: "Approved" },
   }
 };

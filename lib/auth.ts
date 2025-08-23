@@ -225,6 +225,19 @@ export const updatePassword = (newPassword: string): void => {
   }
 };
 
+// Convert user ID to employee format (e.g., "EMP001")
+export const convertToEmpFormat = (id: string): string => {
+  if (!id) return 'EMP000';
+  
+  // If ID is already in EMP format, return as is
+  if (id.startsWith('EMP')) return id;
+  
+  // Convert numeric ID to EMP format
+  const numericPart = id.replace(/\D/g, '');
+  const paddedNumber = numericPart.padStart(3, '0');
+  return `EMP${paddedNumber}`;
+};
+
 // Server-side functions (these should only be called from API routes or server components)
 export const getCurrentUserFromDatabase = async (): Promise<User | null> => {
   try {

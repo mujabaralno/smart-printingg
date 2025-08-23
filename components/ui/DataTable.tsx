@@ -82,7 +82,7 @@ export default function DataTable<T>({
   return (
     <div className={cn("bg-surface border border-border rounded-2xl overflow-hidden shadow-sm", className)}>
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full table-fixed">
           <thead className="bg-muted/50 border-b border-border sticky top-0 z-10">
             <tr>
               {columns.map((column) => (
@@ -94,11 +94,16 @@ export default function DataTable<T>({
                     column.sortable && "cursor-pointer hover:bg-muted/70 transition-colors duration-200",
                     column.width && column.width
                   )}
+                  style={{
+                    width: column.width || 'auto',
+                    minWidth: column.width || 'auto',
+                    maxWidth: column.width || 'auto'
+                  }}
                   onClick={() => column.sortable && handleSort(column.key)}
                   scope="col"
                 >
                   <div className="flex items-center space-x-2">
-                    <span>{column.header}</span>
+                    <span className="truncate">{column.header}</span>
                     {column.sortable && getSortIcon(column.key)}
                   </div>
                 </th>
@@ -130,8 +135,15 @@ export default function DataTable<T>({
                   <td
                     key={column.key}
                     className="px-6 py-4 text-sm text-foreground"
+                    style={{
+                      width: column.width || 'auto',
+                      minWidth: column.width || 'auto',
+                      maxWidth: column.width || 'auto'
+                    }}
                   >
-                    {column.accessor(item)}
+                    <div className="truncate">
+                      {column.accessor(item)}
+                    </div>
                   </td>
                 ))}
               </tr>

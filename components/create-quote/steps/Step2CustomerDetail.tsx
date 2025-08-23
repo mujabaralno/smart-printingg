@@ -33,12 +33,11 @@ const EXISTING_CUSTOMERS = [
     phone: "501234567",
     countryCode: "+971",
     role: "Marketing Manager",
-    addressLine1: "Sheikh Zayed Road",
-    addressLine2: "Office 1205, Business Bay",
+    address: "Sheikh Zayed Road, Office 1205, Business Bay",
     city: "Dubai",
     state: "Dubai",
     postalCode: "00000",
-    country: "UAE",
+    country: "Dubai",
     additionalInfo: "Regular customer, prefers digital communication"
   },
   {
@@ -52,12 +51,11 @@ const EXISTING_CUSTOMERS = [
     phone: "559876543",
     countryCode: "+971",
     role: "Operations Director",
-    addressLine1: "Marina Walk",
-    addressLine2: "Tower 3, Level 15",
+    address: "Marina Walk, Tower 3, Level 15",
     city: "Dubai",
     state: "Dubai",
     postalCode: "00000",
-    country: "UAE",
+    country: "Dubai",
     additionalInfo: "Bulk orders, requires detailed quotations"
   },
   {
@@ -71,12 +69,11 @@ const EXISTING_CUSTOMERS = [
     phone: "524567890",
     countryCode: "+971",
     role: "",
-    addressLine1: "Al Wasl Road",
-    addressLine2: "Villa 25",
+    address: "Al Wasl Road, Villa 25",
     city: "Dubai",
     state: "Dubai",
     postalCode: "00000",
-    country: "UAE",
+    country: "Dubai",
     additionalInfo: "Individual client, small quantity orders"
   }
 ];
@@ -88,7 +85,33 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
   const [isNewCustomer, setIsNewCustomer] = useState(true);
 
   const setClient = (patch: Partial<typeof client>) => {
-    setFormData((prev) => ({ ...prev, client: { ...prev.client, ...patch } }));
+    console.log('Step2CustomerDetail: Updating client with patch:', patch);
+    console.log('Step2CustomerDetail: Current client before update:', client);
+    
+    setFormData((prev) => {
+      const updatedClient = { 
+        ...prev.client, 
+        ...patch 
+      };
+      
+      // Auto-update contactPerson when firstName or lastName changes
+      if (patch.firstName || patch.lastName) {
+        const firstName = patch.firstName || prev.client.firstName || '';
+        const lastName = patch.lastName || prev.client.lastName || '';
+        if (firstName || lastName) {
+          updatedClient.contactPerson = `${firstName} ${lastName}`.trim();
+        }
+      }
+      
+      const updatedFormData = { 
+        ...prev, 
+        client: updatedClient
+      };
+      
+      console.log('Step2CustomerDetail: Updated form data sent to parent:', updatedFormData);
+      console.log('Step2CustomerDetail: Updated client data:', updatedClient);
+      return updatedFormData;
+    });
   };
 
   // Auto-fill functionality
@@ -146,8 +169,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
       phone: customer.phone,
       countryCode: customer.countryCode,
       role: customer.role,
-      addressLine1: customer.addressLine1,
-      addressLine2: customer.addressLine2,
+      address: customer.address,
       city: customer.city,
       state: customer.state,
       postalCode: customer.postalCode,
@@ -178,8 +200,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
         phone: client.phone || "",
         countryCode: client.countryCode || "+971",
         role: client.role || "",
-        addressLine1: client.addressLine1 || "",
-        addressLine2: client.addressLine2 || "",
+        address: client.address || "",
         city: client.city || "",
         state: client.state || "",
         postalCode: client.postalCode || "",
@@ -191,39 +212,55 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
     }
   };
 
+  // Only save when form is valid and it's a new customer
   useEffect(() => {
     if (validateForm() && isNewCustomer) {
       saveNewCustomer();
     }
-  }, [client, isNewCustomer]);
+  }, [isNewCustomer]); // Remove client dependency to prevent infinite loop
 
   const validateForm = () => {
-    const requiredFields = [
+    // Essential required fields for all client types
+    const essentialRequired = [
+      client.firstName,
+      client.lastName,
       client.email,
-      client.firstName, // Check firstName
-      client.lastName,  // Check lastName
-      client.countryCode,
       client.phone
     ];
 
-    if (client.clientType === "Company") {
-      requiredFields.push(client.companyName, client.role);
-    }
+    // Additional required fields for company clients
+    const companyRequired = client.clientType === "Company" ? [
+      client.companyName
+    ] : [];
 
-    return requiredFields.every(field => field && field.trim() !== "");
+    const allRequired = [...essentialRequired, ...companyRequired];
+    return allRequired.every(field => field && field.trim() !== "");
   };
 
   const isFormValid = validateForm();
 
-  // Update contactPerson when firstName or lastName changes
+  // Initialize form with default values if not set
   useEffect(() => {
-    if (client.firstName || client.lastName) {
-      const contactPerson = `${client.firstName || ''} ${client.lastName || ''}`.trim();
-      if (contactPerson !== client.contactPerson) {
-        setClient({ contactPerson });
-      }
+    console.log('Step2CustomerDetail: Initializing form with defaults');
+    console.log('Step2CustomerDetail: Current client state:', client);
+    
+    if (!client.countryCode) {
+      setClient({ countryCode: "+971" });
     }
-  }, [client.firstName, client.lastName]);
+    if (!client.country) {
+      setClient({ country: "Dubai" });
+    }
+    
+    // Ensure firstName and lastName are initialized if not set
+    if (!client.firstName) {
+      setClient({ firstName: "" });
+    }
+    if (!client.lastName) {
+      setClient({ lastName: "" });
+    }
+    
+    console.log('Step2CustomerDetail: Form initialized with defaults');
+  }, []); // Only run once on mount
 
   return (
     <div className="space-y-8">
@@ -307,7 +344,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               </Label>
               <Input
                 id="companyName"
-                value={client.companyName}
+                value={client.companyName || ""}
                 onChange={(e) => handleCompanyNameChange(e.target.value)}
                 placeholder="Company"
                 className={`inputForm ${
@@ -344,7 +381,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               </Label>
               <Input
                 id="designation"
-                value={client.role}
+                value={client.role || ""}
                 onChange={(e) => setClient({ role: e.target.value })}
                 placeholder="Designation"
                 className={`inputForm ${
@@ -403,6 +440,26 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
           </div>
         </div>
 
+        {/* Contact Person (Auto-generated) */}
+        <div className="grid md:grid-cols-1 gap-y-6">
+          <div>
+            <Label htmlFor="contactPerson" className="mb-2 block">
+              Contact Person:
+            </Label>
+            <Input
+              id="contactPerson"
+              value={client.contactPerson || ""}
+              onChange={(e) => setClient({ contactPerson: e.target.value })}
+              placeholder="Contact Person (auto-generated from first and last name)"
+              className="inputForm bg-gray-50"
+              readOnly
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Auto-generated from first and last name
+            </p>
+          </div>
+        </div>
+
         {/* Email and Phone */}
         <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
           <div>
@@ -412,7 +469,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
             <Input
               id="email"
               type="email"
-              value={client.email}
+              value={client.email || ""}
               onChange={(e) => setClient({ email: e.target.value })}
               placeholder="Email"
               className={`inputForm ${
@@ -432,7 +489,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
             </Label>
             <div className="flex space-x-2">
               <Select
-                value={client.countryCode}
+                value={client.countryCode || "+971"}
                 onValueChange={(value) => setClient({ countryCode: value })}
               >
                 <SelectTrigger className={`w-32 py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
@@ -451,7 +508,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               <Input
                 id="phone"
                 inputMode="tel"
-                value={client.phone}
+                value={client.phone || ""}
                 onChange={(e) => {
                   const v = e.target.value.replace(/[^\d]/g, "");
                   setClient({ phone: v });
@@ -470,32 +527,26 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
           </div>
         </div>
 
-        {/* Address Line 1 and 2 */}
-        <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
+        {/* Address Information */}
+        <div className="grid md:grid-cols-1 gap-y-6">
           <div>
-            <Label htmlFor="addressLine1" className="mb-2 block">
-              Address Line 1:
+            <Label htmlFor="address" className="mb-2 block">
+              Address: <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="addressLine1"
-              value={client.addressLine1 || ""}
-              onChange={(e) => setClient({ addressLine1: e.target.value })}
-              placeholder="Street Address"
-              className="inputForm"
+              id="address"
+              value={client.address || ""}
+              onChange={(e) => setClient({ address: e.target.value })}
+              placeholder="Street Address, Building, Suite, etc."
+              className={`inputForm ${
+                !client.address?.trim()
+                  ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                  : ""
+              }`}
             />
-          </div>
-
-          <div>
-            <Label htmlFor="addressLine2" className="mb-2 block">
-              Address Line 2:
-            </Label>
-            <Input
-              id="addressLine2"
-              value={client.addressLine2 || ""}
-              onChange={(e) => setClient({ addressLine2: e.target.value })}
-              placeholder="Apartment, Suite, Building (Optional)"
-              className="inputForm"
-            />
+            {!client.address?.trim() && (
+              <p className="text-red-500 text-sm mt-1">Address is required</p>
+            )}
           </div>
         </div>
 
@@ -503,28 +554,42 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
         <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
           <div>
             <Label htmlFor="city" className="mb-2 block">
-              City:
+              City: <span className="text-red-500">*</span>
             </Label>
             <Input
               id="city"
               value={client.city || ""}
               onChange={(e) => setClient({ city: e.target.value })}
               placeholder="City"
-              className="inputForm"
+              className={`inputForm ${
+                !client.city?.trim()
+                  ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                  : ""
+              }`}
             />
+            {!client.city?.trim() && (
+              <p className="text-red-500 text-sm mt-1">City is required</p>
+            )}
           </div>
 
           <div>
             <Label htmlFor="state" className="mb-2 block">
-              State/Province:
+              State/Province: <span className="text-red-500">*</span>
             </Label>
             <Input
               id="state"
               value={client.state || ""}
               onChange={(e) => setClient({ state: e.target.value })}
               placeholder="State or Province"
-              className="inputForm"
+              className={`inputForm ${
+                !client.state?.trim()
+                  ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                  : ""
+              }`}
             />
+            {!client.state?.trim() && (
+              <p className="text-red-500 text-sm mt-1">State/Province is required</p>
+            )}
           </div>
         </div>
 
@@ -532,34 +597,48 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
         <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
           <div>
             <Label htmlFor="postalCode" className="mb-2 block">
-              Postal Code:
+              Postal Code: <span className="text-red-500">*</span>
             </Label>
             <Input
               id="postalCode"
               value={client.postalCode || ""}
               onChange={(e) => setClient({ postalCode: e.target.value })}
               placeholder="Postal/ZIP Code"
-              className="inputForm"
+              className={`inputForm ${
+                !client.postalCode?.trim()
+                  ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                  : ""
+              }`}
             />
+            {!client.postalCode?.trim() && (
+              <p className="text-red-500 text-sm mt-1">Postal Code is required</p>
+            )}
           </div>
 
           <div>
             <Label htmlFor="country" className="mb-2 block">
-              Country:
+              Country: <span className="text-red-500">*</span>
             </Label>
             <Select
-              value={client.country || ""}
+              value={client.country || "Dubai"}
               onValueChange={(value) => setClient({ country: value })}
             >
-              <SelectTrigger className="py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors">
+              <SelectTrigger className={`py-5 border rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                !client.country?.trim()
+                  ? "border-red-300"
+                  : "border-gray-200"
+              }`}>
                 <SelectValue placeholder="Select Country" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="United Arab Emirates">Dubai</SelectItem>
+                <SelectItem value="Dubai">Dubai</SelectItem>
                 <SelectItem value="India">India</SelectItem>
                 <SelectItem value="Indonesia">Indonesia</SelectItem>
               </SelectContent>
             </Select>
+            {!client.country?.trim() && (
+              <p className="text-red-500 text-sm mt-1">Country is required</p>
+            )}
           </div>
         </div>
 
@@ -589,16 +668,17 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               <span className="text-white text-xs font-bold">!</span>
             </div>
             <div className="text-red-700">
-              <p className="font-medium mb-2">Please fill in all required fields before proceeding:</p>
+              <p className="font-medium mb-2">Please fill in the essential fields to proceed:</p>
               <ul className="text-sm space-y-1">
                 {!client.firstName?.trim() && <li>• First Name</li>}
                 {!client.lastName?.trim() && <li>• Last Name</li>}
                 {!client.email?.trim() && <li>• Email</li>}
                 {!client.phone?.trim() && <li>• Phone Number</li>}
-                {!client.countryCode && <li>• Country Code</li>}
                 {client.clientType === "Company" && !client.companyName?.trim() && <li>• Company Name</li>}
-                {client.clientType === "Company" && !client.role?.trim() && <li>• Designation</li>}
               </ul>
+              <p className="text-xs text-red-600 mt-2">
+                Address fields are optional but recommended for complete customer information.
+              </p>
             </div>
           </div>
         </div>
@@ -612,7 +692,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               <span className="text-white text-xs font-bold">✓</span>
             </div>
             <p className="text-green-700 font-medium">
-              All required customer information is complete. You can now proceed to the next step.
+              Essential customer information is complete. You can now proceed to the next step.
             </p>
           </div>
         </div>

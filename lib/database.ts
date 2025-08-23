@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import cuid from 'cuid';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -80,12 +81,55 @@ export class DatabaseService {
     phone: string;
     countryCode: string;
     role?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
     userId?: string;
   }) {
     const db = this.checkDatabase();
-    return await db.client.create({
-      data: clientData,
-    });
+    
+    try {
+      // Use raw SQL with proper CUID generation
+      const clientId = cuid();
+      const result = await db.$executeRaw`
+        INSERT INTO Client (
+          id, clientType, companyName, contactPerson, email, phone, countryCode, 
+          role, address, city, state, postalCode, country, userId, 
+          createdAt, updatedAt, status
+        ) VALUES (
+          ${clientId},
+          ${clientData.clientType},
+          ${clientData.companyName || ''},
+          ${clientData.contactPerson},
+          ${clientData.email},
+          ${clientData.phone || ''},
+          ${clientData.countryCode || '+971'},
+          ${clientData.role || ''},
+          ${clientData.address || ''},
+          ${clientData.city || ''},
+          ${clientData.state || ''},
+          ${clientData.postalCode || ''},
+          ${clientData.country || ''},
+          ${clientData.userId || null},
+          ${new Date()},
+          ${new Date()},
+          'Active'
+        )
+      `;
+      
+      // Get the ID of the newly created client
+      const newClient = await db.$queryRaw`
+        SELECT * FROM Client WHERE id = ${clientId}
+      `;
+      
+      return (newClient as any[])[0];
+      
+    } catch (error) {
+      console.error('Error in createClient:', error);
+      throw error;
+    }
   }
 
   static async getClientById(id: string) {
@@ -112,21 +156,139 @@ export class DatabaseService {
 
   static async getAllClients() {
     const db = this.checkDatabase();
-    return await db.client.findMany({
-      include: {
-        quotes: true,
-        user: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    try {
+      // Use raw SQL to get ALL client data including address fields
+      let clients;
+      try {
+        const rawClients = await db.$queryRaw`
+          SELECT 
+            id,
+            clientType,
+            companyName,
+            contactPerson,
+            email,
+            phone,
+            countryCode,
+            role,
+            address,
+            city,
+            state,
+            postalCode,
+            country,
+            status,
+            createdAt,
+            updatedAt,
+            userId
+          FROM Client
+          ORDER BY createdAt DESC
+        `;
+        
+        clients = (rawClients as any[]).map(client => ({
+          ...client,
+          // Ensure all fields have proper values
+          address: client.address || '',
+          city: client.city || '',
+          state: client.state || '',
+          postalCode: client.postalCode || '',
+          country: client.country || '',
+        }));
+        
+        console.log('Successfully fetched clients with raw SQL:', clients.length);
+      } catch (sqlError: any) {
+        console.error('Raw SQL query failed:', sqlError?.message || 'Unknown error');
+        throw sqlError;
+      }
+      
+      // Get quote counts for each client
+      const clientsWithQuotes = await Promise.all(
+        clients.map(async (client) => {
+          try {
+            const quoteCount = await db.quote.count({
+              where: { clientId: client.id }
+            });
+            
+            return {
+              ...client,
+              _count: { quotes: quoteCount },
+              quotes: []
+            };
+          } catch (quoteError: any) {
+            console.log(`Error getting quote count for client ${client.id}:`, quoteError?.message || 'Unknown error');
+            return {
+              ...client,
+              _count: { quotes: 0 },
+              quotes: []
+            };
+          }
+        })
+      );
+      
+      return clientsWithQuotes;
+      
+    } catch (error) {
+      console.error('Error in getAllClients:', error);
+      // Return empty array instead of throwing to prevent infinite loops
+      return [];
+    }
   }
 
   static async updateClient(id: string, data: any) {
     const db = this.checkDatabase();
-    return await db.client.update({
-      where: { id },
-      data,
-    });
+    
+    try {
+      // Use raw SQL to update client with address fields
+      const result = await db.$executeRaw`
+        UPDATE Client 
+        SET 
+          clientType = ${data.clientType},
+          companyName = ${data.companyName || ''},
+          contactPerson = ${data.contactPerson || ''},
+          email = ${data.email},
+          phone = ${data.phone || ''},
+          countryCode = ${data.countryCode || '+971'},
+          role = ${data.role || ''},
+          address = ${data.address || ''},
+          city = ${data.city || ''},
+          state = ${data.state || ''},
+          postalCode = ${data.postalCode || ''},
+          country = ${data.country || ''},
+          updatedAt = ${new Date()}
+        WHERE id = ${id}
+      `;
+      
+      // Fetch the updated client to return
+      const updatedClient = await db.client.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          clientType: true,
+          companyName: true,
+          contactPerson: true,
+          email: true,
+          phone: true,
+          countryCode: true,
+          role: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          userId: true,
+        }
+      });
+      
+      // Add empty address fields for now (we'll get them from raw SQL later)
+      return {
+        ...updatedClient,
+        address: data.address || '',
+        city: data.city || '',
+        state: data.state || '',
+        postalCode: data.postalCode || '',
+        country: data.country || '',
+      };
+      
+    } catch (error) {
+      console.error('Error in updateClient:', error);
+      throw error;
+    }
   }
 
   static async deleteClient(id: string) {
@@ -159,7 +321,7 @@ export class DatabaseService {
     });
   }
 
-  // Create quote with complete details including papers, finishing, and amounts
+  // Create quote with complete details including papers, finishing, amounts, colors, and operational data
   static async createQuoteWithDetails(quoteData: {
     quoteId: string;
     date: Date;
@@ -170,28 +332,70 @@ export class DatabaseService {
     quantity: number;
     sides: string;
     printing: string;
-    papers?: { name: string; gsm: string }[];
-    finishing?: string[];
+    colors?: { front?: string; back?: string };
+    
+    // New Step 3 fields for product specifications
+    productName?: string;
+    printingSelection?: string;
+    flatSizeWidth?: number;
+    flatSizeHeight?: number;
+    flatSizeSpine?: number;
+    closeSizeWidth?: number;
+    closeSizeHeight?: number;
+    closeSizeSpine?: number;
+    useSameAsFlat?: boolean;
+    
+    papers?: { 
+      name: string; 
+      gsm: string;
+      inputWidth?: number;
+      inputHeight?: number;
+      pricePerPacket?: number;
+      pricePerSheet?: number;
+      sheetsPerPacket?: number;
+      recommendedSheets?: number;
+      enteredSheets?: number;
+      outputWidth?: number;
+      outputHeight?: number;
+      selectedColors?: string[];  // Array of selected color values
+    }[];
+    finishing?: { name: string; cost?: number }[];
     amounts?: { base: number; vat: number; total: number };
+    operational?: { plates?: number; units?: number };
   }) {
-    const { papers, finishing, amounts, userId, ...basicQuoteData } = quoteData;
+    const { papers, finishing, amounts, operational, colors, userId, ...basicQuoteData } = quoteData;
     
     // Only include userId if it's provided and valid
     const quoteDataToCreate: any = {
       ...basicQuoteData,
+      colors: colors ? JSON.stringify(colors) : null,
       papers: papers ? {
         create: papers.map(paper => ({
           name: paper.name,
           gsm: paper.gsm,
+          inputWidth: paper.inputWidth || null,
+          inputHeight: paper.inputHeight || null,
+          pricePerPacket: paper.pricePerPacket || null,
+          pricePerSheet: paper.pricePerSheet || null,
+          sheetsPerPacket: paper.sheetsPerPacket || null,
+          recommendedSheets: paper.recommendedSheets || null,
+          enteredSheets: paper.enteredSheets || null,
+          outputWidth: paper.outputWidth || null,
+          outputHeight: paper.outputHeight || null,
+          selectedColors: paper.selectedColors ? JSON.stringify(paper.selectedColors) : null,
         }))
       } : undefined,
       finishing: finishing ? {
         create: finishing.map(finish => ({
-          name: finish,
+          name: finish.name,
+          cost: finish.cost || null,
         }))
       } : undefined,
       amounts: amounts ? {
         create: amounts
+      } : undefined,
+      operational: operational ? {
+        create: operational
       } : undefined,
     };
     
@@ -209,6 +413,7 @@ export class DatabaseService {
         papers: true,
         finishing: true,
         amounts: true,
+        operational: true,
       },
     });
   }
@@ -223,6 +428,7 @@ export class DatabaseService {
         papers: true,
         finishing: true,
         amounts: true,
+        operational: true,
       },
     });
   }
@@ -237,22 +443,64 @@ export class DatabaseService {
         papers: true,
         finishing: true,
         amounts: true,
+        operational: true,
       },
     });
   }
 
   static async getAllQuotes() {
     const db = this.checkDatabase();
-    return await db.quote.findMany({
-      include: {
-        client: true,
-        user: true,
-        amounts: true,
-        papers: true,
-        finishing: true,
-      },
-      orderBy: { date: 'desc' },
-    });
+    try {
+      // Explicitly select all fields including Step 3 fields
+      return await db.quote.findMany({
+        select: {
+          id: true,
+          quoteId: true,
+          date: true,
+          status: true,
+          clientId: true,
+          userId: true,
+          product: true,
+          quantity: true,
+          sides: true,
+          printing: true,
+          colors: true,
+          createdAt: true,
+          updatedAt: true,
+          // Step 3 fields
+          productName: true,
+          printingSelection: true,
+          flatSizeWidth: true,
+          flatSizeHeight: true,
+          flatSizeSpine: true,
+          closeSizeWidth: true,
+          closeSizeHeight: true,
+          closeSizeSpine: true,
+          useSameAsFlat: true,
+          client: {
+            select: {
+              id: true,
+              companyName: true,
+              contactPerson: true,
+              email: true,
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            }
+          },
+          amounts: true,
+        },
+        orderBy: { date: 'desc' },
+      });
+    } catch (error) {
+      console.error('Error in getAllQuotes:', error);
+      // Return empty array instead of throwing to prevent infinite loops
+      return [];
+    }
   }
 
   static async getQuotesByStatus(status: string) {
@@ -268,6 +516,26 @@ export class DatabaseService {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  // Get quotes by client ID for autofill functionality
+  static async getQuotesByClientId(clientId: string) {
+    const db = this.checkDatabase();
+    try {
+      return await db.quote.findMany({
+        where: { clientId },
+        include: {
+          papers: true,
+          finishing: true,
+          amounts: true,
+          operational: true,
+        },
+        orderBy: { updatedAt: 'desc' }, // Get most recent first
+      });
+    } catch (error) {
+      console.error('Error in getQuotesByClientId:', error);
+      return [];
+    }
   }
 
   static async updateQuoteStatus(id: string, status: string) {
@@ -407,6 +675,17 @@ export class DatabaseService {
         if (data.quantity !== undefined) validQuoteData.quantity = data.quantity;
         if (data.sides !== undefined) validQuoteData.sides = data.sides;
         if (data.printing !== undefined) validQuoteData.printing = data.printing;
+        if (data.printingSelection !== undefined) validQuoteData.printingSelection = data.printingSelection;
+        
+        // Handle the new Step 3 fields
+        if (data.flatSizeWidth !== undefined) validQuoteData.flatSizeWidth = data.flatSizeWidth;
+        if (data.flatSizeHeight !== undefined) validQuoteData.flatSizeHeight = data.flatSizeHeight;
+        if (data.flatSizeSpine !== undefined) validQuoteData.flatSizeSpine = data.flatSizeSpine;
+        if (data.closeSizeWidth !== undefined) validQuoteData.closeSizeWidth = data.closeSizeWidth;
+        if (data.closeSizeHeight !== undefined) validQuoteData.closeSizeHeight = data.closeSizeHeight;
+        if (data.closeSizeSpine !== undefined) validQuoteData.closeSizeSpine = data.closeSizeSpine;
+        if (data.useSameAsFlat !== undefined) validQuoteData.useSameAsFlat = data.useSameAsFlat;
+        if (data.colors !== undefined) validQuoteData.colors = data.colors;
 
         console.log('Updating quote with valid data:', validQuoteData);
 
@@ -663,6 +942,7 @@ export class DatabaseService {
   static async createMaterial(materialData: {
     materialId: string;
     name: string;
+    gsm?: string;
     supplierId: string;
     cost: number;
     unit: string;
@@ -729,7 +1009,7 @@ export class DatabaseService {
   // Get supplier by email
   static async getSupplierByEmail(email: string) {
     const db = this.checkDatabase();
-    return await db.supplier.findUnique({
+    return await db.supplier.findFirst({
       where: { email },
       include: {
         materials: true,
@@ -860,17 +1140,18 @@ export class DatabaseService {
     console.log('Starting material seeding...');
     
     // First, get the suppliers to link materials
-    const suppliers = await this.getAllSuppliers();
+    let suppliers = await this.getAllSuppliers();
     if (suppliers.length === 0) {
       console.log('No suppliers found, seeding suppliers first...');
       await this.seedSuppliers();
-      const suppliers = await this.getAllSuppliers();
+      suppliers = await this.getAllSuppliers();
     }
     
     const materialsToSeed = [
       {
         materialId: 'M-001',
-        name: 'Art Paper 300gsm',
+        name: 'Art Paper',
+        gsm: '300',
         supplierId: suppliers[0]?.id || '',
         cost: 0.50,
         unit: 'per_sheet',
@@ -878,7 +1159,8 @@ export class DatabaseService {
       },
       {
         materialId: 'M-002',
-        name: 'Art Paper 150gsm',
+        name: 'Art Paper',
+        gsm: '150',
         supplierId: suppliers[0]?.id || '',
         cost: 0.18,
         unit: 'per_sheet',
@@ -886,7 +1168,8 @@ export class DatabaseService {
       },
       {
         materialId: 'M-003',
-        name: 'Glossy Paper 200gsm',
+        name: 'Glossy Paper',
+        gsm: '200',
         supplierId: suppliers[1]?.id || '',
         cost: 0.35,
         unit: 'per_sheet',
@@ -894,7 +1177,8 @@ export class DatabaseService {
       },
       {
         materialId: 'M-004',
-        name: 'Matte Paper 250gsm',
+        name: 'Matte Paper',
+        gsm: '250',
         supplierId: suppliers[1]?.id || '',
         cost: 0.42,
         unit: 'per_sheet',
@@ -902,7 +1186,8 @@ export class DatabaseService {
       },
       {
         materialId: 'M-005',
-        name: 'Cardboard 400gsm',
+        name: 'Cardboard',
+        gsm: '400',
         supplierId: suppliers[2]?.id || '',
         cost: 0.85,
         unit: 'per_sheet',
@@ -1047,12 +1332,12 @@ export class DatabaseService {
       },
       {
         clientType: 'Individual',
-        companyName: null,
+        companyName: undefined,
         contactPerson: 'David Lee',
         email: 'david.lee@gmail.com',
         phone: '567890123',
         countryCode: '+971',
-        role: null,
+        role: undefined,
       }
     ];
 

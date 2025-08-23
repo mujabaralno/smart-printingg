@@ -18,13 +18,19 @@ interface Step2Props {
 // Real customer interface matching database structure
 interface Customer {
   id: string;
-  clientType: string;
+  clientType?: string;
   companyName?: string;
   contactPerson: string;
   email: string;
-  phone: string;
-  countryCode: string;
+  phone?: string;
+  countryCode?: string;
   role?: string;
+  // New address fields
+  address?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
 }
 
 // Real quote interface matching database structure
@@ -37,20 +43,70 @@ interface Quote {
   quantity: number;
   sides: "1" | "2";
   printing: string;
-  papers: Array<{ id: string; name: string; gsm: string; quoteId: string }>;
-  finishing: Array<{ id: string; name: string; quoteId: string }>;
+  colors?: string | { front?: string; back?: string }; // Can be JSON string or object
+  
+  // Enhanced Step 3 fields for product specifications
+  productName?: string;
+  printingSelection?: string;
+  flatSizeWidth?: number;
+  flatSizeHeight?: number;
+  flatSizeSpine?: number;
+  closeSizeWidth?: number;
+  closeSizeHeight?: number;
+  closeSizeSpine?: number;
+  useSameAsFlat?: boolean;
+  
+  // Enhanced paper and finishing with operational data
+  papers?: Array<{ 
+    id: string; 
+    name: string; 
+    gsm: string; 
+    quoteId: string;
+    inputWidth?: number;
+    inputHeight?: number;
+    pricePerPacket?: number;
+    pricePerSheet?: number;
+    sheetsPerPacket?: number;
+    recommendedSheets?: number;
+    enteredSheets?: number;
+    outputWidth?: number;
+    outputHeight?: number;
+    selectedColors?: string;
+  }>;
+  finishing?: Array<{ 
+    id: string; 
+    name: string; 
+    quoteId: string;
+    cost?: number;
+  }>;
+  
+  // Client with enhanced address fields
   client: {
     id: string;
-    clientType: string;
+    clientType?: string;
     companyName?: string;
     contactPerson: string;
     email: string;
-    phone: string;
-    countryCode: string;
+    phone?: string;
+    countryCode?: string;
     role?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
   };
+  
   amounts?: {
+    base?: number;
+    vat?: number;
     total: number;
+  };
+  
+  // Operational data
+  operational?: {
+    plates?: number;
+    units?: number;
   };
 }
 
@@ -59,8 +115,13 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
-  const [showQuoteDetails, setShowQuoteDetails] = useState(false);
-  const [selectedQuoteForDetails, setSelectedQuoteForDetails] = useState<Quote | null>(null);
+  
+  // Separate state for view and edit modals
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [quoteForModal, setQuoteForModal] = useState<Quote | null>(null);
+  const [quoteItems, setQuoteItems] = useState<Quote[]>([]);
+  const [loadingQuoteItems, setLoadingQuoteItems] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -130,37 +191,56 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
     }
   };
 
-  const handleViewQuote = (quote: Quote, event: React.MouseEvent) => {
+  const handleViewQuote = async (quote: Quote, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    setSelectedQuote(quote);
-    setShowQuoteDetails(true);
+    setQuoteForModal(quote);
+    setLoadingQuoteItems(true);
+    setShowViewModal(true);
+    
+    try {
+      // Fetch all quotes with the same quoteId to get all products for this quote
+      const response = await fetch('/api/quotes');
+      if (response.ok) {
+        const allQuotes = await response.json();
+        const relatedQuotes = allQuotes.filter((q: Quote) => q.quoteId === quote.quoteId);
+        setQuoteItems(relatedQuotes);
+      } else {
+        console.error('Failed to fetch quote items');
+        setQuoteItems([quote]); // Fallback to just the current quote
+      }
+    } catch (error) {
+      console.error('Error fetching quote items:', error);
+      setQuoteItems([quote]); // Fallback to just the current quote
+    } finally {
+      setLoadingQuoteItems(false);
+    }
   };
 
   const handleEditQuote = (quote: Quote, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    setSelectedQuote(quote);
-    setShowQuoteDetails(true);
+    setQuoteForModal(quote);
+    setShowEditModal(true);
   };
 
   const isSelectionValid = selectedQuote !== null;
 
   return (
     <div className="space-y-6">
-      {/* Page Title - Changed to "Select Quote" as per revision */}
+      {/* Page Title - Clear explanation of what we're selecting */}
       <div className="text-center">
-        <h2 className="font-bold text-3xl text-gray-900">Select Quote</h2>
-        <p className="text-gray-600 mt-2">Review and modify customer details from the selected template</p>
+        <h2 className="font-bold text-3xl text-gray-900">Select Quote Template</h2>
+        <p className="text-gray-600 mt-2">Choose an existing quote to use as a template. The customer details and product specifications will be automatically filled in the next steps.</p>
       </div>
 
       {/* Select Existing Customer Section - White card container */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <h4 className="text-lg font-semibold text-gray-900">Select Existing Quote</h4>
+          <h4 className="text-lg font-semibold text-gray-900">Existing CustomerQuotes</h4>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">
-              {loading ? 'Loading...' : `${quotes.length} quotes available`}
+              {loading ? 'Loading...' : `${quotes.length} quote templates available`}
             </span>
             {!loading && totalPages > 1 && !showAll && (
               <span className="text-sm text-gray-500">
@@ -326,7 +406,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
         )}
       </div>
 
-      {/* Selection Status */}
+                  {/* Selection Status */}
       {isSelectionValid && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center space-x-2">
@@ -334,13 +414,13 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
               <span className="text-white text-xs font-bold">✓</span>
             </div>
             <div className="text-green-700">
-              <p className="font-medium mb-1">Quote selected successfully!</p>
+              <p className="font-medium mb-1">Quote template selected successfully!</p>
               <p className="text-sm">
                 <strong>Quote ID:</strong> {selectedQuote?.quoteId} | 
                 <strong> Product:</strong> {selectedQuote?.product} | 
                 <strong> Customer:</strong> {selectedQuote?.client.companyName || selectedQuote?.client.contactPerson}
               </p>
-              <p className="text-sm mt-1">You can now proceed to the next step.</p>
+              <p className="text-sm mt-1">Customer details and product specifications will be auto-filled in the next steps.</p>
             </div>
           </div>
         </div>
@@ -353,25 +433,25 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
             <div className="w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center">
               <span className="text-white text-xs font-bold">!</span>
             </div>
-            <div className="text-yellow-700">
-              <p className="font-medium mb-1">Please select a quote to continue</p>
-              <p className="text-sm">Click on any quote row in the table above to select it for your new quote.</p>
+                          <div className="text-yellow-700">
+              <p className="font-medium mb-1">Please select a quote template to continue</p>
+              <p className="text-sm">Click on any quote row in the table above to use it as a template for your new quote.</p>
             </div>
           </div>
         </div>
       )}
 
       {/* View Quote Modal */}
-      <Dialog open={showQuoteDetails} onOpenChange={setShowQuoteDetails}>
+      <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <FileText className="w-5 h-5 mr-2 text-blue-600" />
-              Quote Details - {selectedQuote?.quoteId}
+              Quote Details - {quoteForModal?.quoteId}
             </DialogTitle>
           </DialogHeader>
           
-          {selectedQuote && (
+          {quoteForModal && (
             <div className="space-y-6">
               {/* Quote Header */}
               <div className="grid md:grid-cols-2 gap-6">
@@ -379,22 +459,22 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                   <div className="flex items-center space-x-2">
                     <FileText className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-600">Quote ID:</span>
-                    <span className="font-medium text-gray-900">{selectedQuote.quoteId}</span>
+                    <span className="font-medium text-gray-900">{quoteForModal.quoteId}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-600">Quote Date:</span>
-                    <span className="font-medium text-gray-900">{new Date(selectedQuote.date).toISOString().slice(0, 10)}</span>
+                    <span className="font-medium text-gray-900">{new Date(quoteForModal.date).toISOString().slice(0, 10)}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <DollarSign className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-600">Total Amount:</span>
-                    <span className="font-bold text-lg text-blue-600">${selectedQuote.amounts?.total || 0.00}</span>
+                    <span className="font-bold text-lg text-blue-600">${(quoteForModal.amounts?.total || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-gray-600">Status:</span>
                     <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                      {selectedQuote.status}
+                      {quoteForModal.status}
                     </span>
                   </div>
                 </div>
@@ -402,24 +482,50 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                 <div className="space-y-3">
                   <div className="text-sm">
                     <span className="text-gray-600">Company:</span>
-                    <span className="font-medium text-gray-900 ml-2">{selectedQuote.client.companyName || 'Individual'}</span>
+                    <span className="font-medium text-gray-900 ml-2">{quoteForModal.client.companyName || 'Individual'}</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-gray-600">Contact Person:</span>
-                    <span className="font-medium text-gray-900 ml-2">{selectedQuote.client.contactPerson}</span>
+                    <span className="font-medium text-gray-900 ml-2">{quoteForModal.client.contactPerson}</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-gray-600">Email:</span>
-                    <span className="font-medium text-gray-900 ml-2">{selectedQuote.client.email}</span>
+                    <span className="font-medium text-gray-900 ml-2">{quoteForModal.client.email}</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-gray-600">Phone:</span>
-                    <span className="font-medium text-gray-900 ml-2">{selectedQuote.client.phone}</span>
+                    <span className="font-medium text-gray-900 ml-2">{quoteForModal.client.phone}</span>
                   </div>
-                  {selectedQuote.client.role && (
+                  {quoteForModal.client.role && (
                     <div className="text-sm">
                       <span className="text-gray-600">Role:</span>
-                      <span className="font-medium text-gray-900 ml-2">{selectedQuote.client.role}</span>
+                      <span className="font-medium text-gray-900 ml-2">{quoteForModal.client.role}</span>
+                    </div>
+                  )}
+                  {quoteForModal.client.countryCode && (
+                    <div className="text-sm">
+                      <span className="text-gray-600">Country Code:</span>
+                      <span className="font-medium text-gray-900 ml-2">{quoteForModal.client.countryCode}</span>
+                    </div>
+                  )}
+                  
+                  {/* Address Information */}
+                  {(quoteForModal.client.address || quoteForModal.client.city || quoteForModal.client.state || quoteForModal.client.postalCode || quoteForModal.client.country) && (
+                    <div className="pt-2 border-t border-gray-100">
+                      <div className="text-xs font-medium text-gray-600 mb-1">Address:</div>
+                      <div className="space-y-1">
+                        {quoteForModal.client.address && (
+                          <div className="text-sm text-gray-900">{quoteForModal.client.address}</div>
+                        )}
+                        {(quoteForModal.client.city || quoteForModal.client.state || quoteForModal.client.postalCode) && (
+                          <div className="text-sm text-gray-900">
+                            {[quoteForModal.client.city, quoteForModal.client.state, quoteForModal.client.postalCode].filter(Boolean).join(', ')}
+                          </div>
+                        )}
+                        {quoteForModal.client.country && (
+                          <div className="text-sm text-gray-900">{quoteForModal.client.country}</div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -429,34 +535,110 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
               <div>
                 <h5 className="text-md font-semibold text-gray-900 mb-3">Quote Items</h5>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="space-y-2">
-                    {/* Mock items for now */}
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-700">Business Cards</span>
-                      <div className="flex items-center space-x-4">
-                        <span className="text-gray-600">Qty: {selectedQuote.quantity}</span>
-                        <span className="font-medium text-gray-900">${selectedQuote.amounts?.total || 0.00}</span>
-                      </div>
+                  {loadingQuoteItems ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                      <p className="text-gray-600 text-sm">Loading quote items...</p>
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-700">Letterheads</span>
-                      <div className="flex items-center space-x-4">
-                        <span className="text-gray-600">Qty: 500</span>
-                        <span className="font-medium text-gray-900">$600.00</span>
+                  ) : (
+                    <>
+                      <div className="space-y-3">
+                        {quoteItems.map((item, idx) => {
+                          // Calculate individual item price if available
+                          const itemPrice = item.amounts?.total || 0;
+                          
+                          // Parse colors if they exist as JSON string
+                          let colorInfo = '';
+                          if (item.colors) {
+                            try {
+                              const colors = typeof item.colors === 'string' ? JSON.parse(item.colors) : item.colors;
+                              if (colors.front || colors.back) {
+                                colorInfo = ` • Colors: ${colors.front || ''}${colors.front && colors.back ? ' / ' : ''}${colors.back || ''}`;
+                              }
+                            } catch (e) {
+                              // If parsing fails, treat as string
+                              if (typeof item.colors === 'string' && item.colors) {
+                                colorInfo = ` • Colors: ${item.colors}`;
+                              }
+                            }
+                          }
+                          
+                          return (
+                            <div key={idx} className="bg-white p-3 rounded border border-gray-200">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <span className="text-gray-900 font-medium text-base">{item.productName || item.product || 'Product'}</span>
+                                  <div className="text-sm text-gray-600 mt-1 space-y-1">
+                                    <div>
+                                      <span className="font-medium">Quantity:</span> {item.quantity} units
+                                      {item.sides && <span> • <span className="font-medium">Sides:</span> {item.sides}</span>}
+                                      {(item.printingSelection || item.printing) && <span> • <span className="font-medium">Printing:</span> {item.printingSelection || item.printing}</span>}
+                                    </div>
+                                    {item.papers && item.papers.length > 0 && (
+                                      <div>
+                                        <span className="font-medium">Paper:</span> {item.papers[0].name} {item.papers[0].gsm}gsm
+                                        {item.papers[0].inputWidth && item.papers[0].inputHeight && (
+                                          <span> • Input: {item.papers[0].inputWidth} × {item.papers[0].inputHeight} cm</span>
+                                        )}
+                                        {item.papers[0].outputWidth && item.papers[0].outputHeight && (
+                                          <span> • Output: {item.papers[0].outputWidth} × {item.papers[0].outputHeight} cm</span>
+                                        )}
+                                        {item.papers[0].sheetsPerPacket && (
+                                          <span> • Sheets per packet: {item.papers[0].sheetsPerPacket}</span>
+                                        )}
+                                        {item.papers[0].pricePerSheet && (
+                                          <span> • Price per sheet: ${item.papers[0].pricePerSheet}</span>
+                                        )}
+                                      </div>
+                                    )}
+                                    {item.finishing && item.finishing.length > 0 && (
+                                      <div>
+                                        <span className="font-medium">Finishing:</span> {item.finishing.map(f => f.name).join(', ')}
+                                        {item.finishing.some(f => f.cost) && (
+                                          <span> • Total cost: ${item.finishing.reduce((sum, f) => sum + (f.cost || 0), 0).toFixed(2)}</span>
+                                        )}
+                                      </div>
+                                    )}
+                                    {colorInfo && (
+                                      <div><span className="font-medium">Colors:</span> {colorInfo.replace(' • Colors: ', '')}</div>
+                                    )}
+                                    {(item.flatSizeWidth || item.flatSizeHeight) && (
+                                      <div>
+                                        <span className="font-medium">Flat Size:</span> {item.flatSizeWidth || 0} × {item.flatSizeHeight || 0} cm
+                                        {item.flatSizeSpine && <span> × {item.flatSizeSpine} cm (spine)</span>}
+                                      </div>
+                                    )}
+                                    {(item.closeSizeWidth || item.closeSizeHeight) && !item.useSameAsFlat && (
+                                      <div>
+                                        <span className="font-medium">Close Size:</span> {item.closeSizeWidth || 0} × {item.closeSizeHeight || 0} cm
+                                        {item.closeSizeSpine && <span> × {item.closeSizeSpine} cm (spine)</span>}
+                                      </div>
+                                    )}
+                                    {item.operational && (
+                                      <div>
+                                        <span className="font-medium">Operational:</span> 
+                                        {item.operational.plates && <span> {item.operational.plates} plates</span>}
+                                        {item.operational.units && <span> • {item.operational.units} units</span>}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-right ml-4">
+                                  <span className="font-bold text-lg text-blue-600">${itemPrice.toFixed(2)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-700">Envelopes</span>
-                      <div className="flex items-center space-x-4">
-                        <span className="text-gray-600">Qty: 1000</span>
-                        <span className="font-medium text-gray-900">$1,100.00</span>
+                      <div className="border-t border-gray-200 mt-3 pt-3 flex justify-between items-center">
+                        <span className="font-semibold text-gray-900">Total:</span>
+                        <span className="font-bold text-lg text-blue-600">
+                          ${quoteItems.reduce((total, item) => total + (item.amounts?.total || 0), 0).toFixed(2)}
+                        </span>
                       </div>
-                    </div>
-                  </div>
-                  <div className="border-t border-gray-200 mt-3 pt-3 flex justify-between items-center">
-                    <span className="font-semibold text-gray-900">Total:</span>
-                    <span className="font-bold text-lg text-blue-600">${selectedQuote.amounts?.total || 0.00}</span>
-                  </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -465,16 +647,16 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
       </Dialog>
 
       {/* Edit Quote Modal */}
-      <Dialog open={showQuoteDetails} onOpenChange={setShowQuoteDetails}>
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <Edit className="w-5 h-5 mr-2 text-blue-600" />
-              Edit Quote - {selectedQuote?.quoteId}
+              Edit Quote - {quoteForModal?.quoteId}
             </DialogTitle>
           </DialogHeader>
           
-          {selectedQuote && (
+          {quoteForModal && (
             <div className="space-y-6">
               {/* Customer Information Section */}
               <div className="bg-gray-50 rounded-lg p-4">
@@ -483,9 +665,8 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
                     <Input
-                      value={selectedQuote.client.companyName || ''}
+                      value={quoteForModal.client.companyName || ''}
                       onChange={(e) => {
-                        // In a real app, you'd update the state here
                         console.log("Company updated:", e.target.value);
                       }}
                       className="w-full"
@@ -494,7 +675,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
                     <Input
-                      value={selectedQuote.client.contactPerson}
+                      value={quoteForModal.client.contactPerson}
                       onChange={(e) => {
                         console.log("Contact updated:", e.target.value);
                       }}
@@ -505,7 +686,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <Input
                       type="email"
-                      value={selectedQuote.client.email}
+                      value={quoteForModal.client.email}
                       onChange={(e) => {
                         console.log("Email updated:", e.target.value);
                       }}
@@ -515,12 +696,94 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <Input
-                      value={selectedQuote.client.phone}
+                      value={quoteForModal.client.phone}
                       onChange={(e) => {
                         console.log("Phone updated:", e.target.value);
                       }}
                       className="w-full"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Country Code</label>
+                    <Input
+                      value={quoteForModal.client.countryCode || '+971'}
+                      onChange={(e) => {
+                        console.log("Country code updated:", e.target.value);
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <Input
+                      value={quoteForModal.client.role || ''}
+                      onChange={(e) => {
+                        console.log("Role updated:", e.target.value);
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                
+                {/* Address Fields */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h5 className="text-sm font-medium text-gray-700 mb-3">Address Information</h5>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Address</label>
+                      <Input
+                        value={quoteForModal.client.address || ''}
+                        onChange={(e) => {
+                          console.log("Address updated:", e.target.value);
+                        }}
+                        className="w-full"
+                        placeholder="Street address"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">City</label>
+                      <Input
+                        value={quoteForModal.client.city || ''}
+                        onChange={(e) => {
+                          console.log("City updated:", e.target.value);
+                        }}
+                        className="w-full"
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">State/Province</label>
+                      <Input
+                        value={quoteForModal.client.state || ''}
+                        onChange={(e) => {
+                          console.log("State updated:", e.target.value);
+                        }}
+                        className="w-full"
+                        placeholder="State or province"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Postal Code</label>
+                      <Input
+                        value={quoteForModal.client.postalCode || ''}
+                        onChange={(e) => {
+                          console.log("Postal code updated:", e.target.value);
+                        }}
+                        className="w-full"
+                        placeholder="Postal code"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Country</label>
+                      <Input
+                        value={quoteForModal.client.country || ''}
+                        onChange={(e) => {
+                          console.log("Country updated:", e.target.value);
+                        }}
+                        className="w-full"
+                        placeholder="Country"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -533,7 +796,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     <label className="block text-sm font-medium text-gray-700 mb-1">Quote Date</label>
                     <Input
                       type="date"
-                      value={new Date(selectedQuote.date).toISOString().slice(0, 10)}
+                      value={new Date(quoteForModal.date).toISOString().slice(0, 10)}
                       onChange={(e) => {
                         console.log("Date updated:", e.target.value);
                       }}
@@ -543,7 +806,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select
-                      value={selectedQuote.status}
+                      value={quoteForModal.status}
                       onChange={(e) => {
                         console.log("Status updated:", e.target.value);
                       }}
@@ -558,13 +821,175 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Total Amount</label>
                     <Input
-                      value={`$${selectedQuote.amounts?.total || 0.00}`}
+                      value={`$${(quoteForModal.amounts?.total || 0).toFixed(2)}`}
                       onChange={(e) => {
                         console.log("Amount updated:", e.target.value);
                       }}
                       className="w-full"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Step 3 Product Specifications Section */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Product Specifications (Step 3)</h4>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                    <Input
+                      value={quoteForModal.productName || quoteForModal.product || ''}
+                      onChange={(e) => {
+                        console.log("Product name updated:", e.target.value);
+                      }}
+                      className="w-full"
+                      placeholder="e.g., Business Cards, Letterheads"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Printing Selection</label>
+                    <select
+                      value={quoteForModal.printingSelection || quoteForModal.printing || 'Digital'}
+                      onChange={(e) => {
+                        console.log("Printing selection updated:", e.target.value);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="Digital">Digital</option>
+                      <option value="Offset">Offset</option>
+                      <option value="Either">Either</option>
+                      <option value="Both">Both</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                    <Input
+                      type="number"
+                      value={quoteForModal.quantity}
+                      onChange={(e) => {
+                        console.log("Quantity updated:", e.target.value);
+                      }}
+                      className="w-full"
+                      placeholder="Quantity"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sides</label>
+                    <select
+                      value={quoteForModal.sides}
+                      onChange={(e) => {
+                        console.log("Sides updated:", e.target.value);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="1">1 Side</option>
+                      <option value="2">2 Sides</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Size Specifications */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h5 className="text-sm font-medium text-gray-700 mb-3">Size Specifications</h5>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Flat Size Width (cm)</label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={quoteForModal.flatSizeWidth || ''}
+                        onChange={(e) => {
+                          console.log("Flat size width updated:", e.target.value);
+                        }}
+                        className="w-full"
+                        placeholder="Width"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Flat Size Height (cm)</label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={quoteForModal.flatSizeHeight || ''}
+                        onChange={(e) => {
+                          console.log("Flat size height updated:", e.target.value);
+                        }}
+                        className="w-full"
+                        placeholder="Height"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Flat Size Spine (cm)</label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={quoteForModal.flatSizeSpine || ''}
+                        onChange={(e) => {
+                          console.log("Flat size spine updated:", e.target.value);
+                        }}
+                        className="w-full"
+                        placeholder="Spine"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={quoteForModal.useSameAsFlat || false}
+                        onChange={(e) => {
+                          console.log("Use same as flat updated:", e.target.checked);
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Use same dimensions for close size</span>
+                    </label>
+                  </div>
+
+                  {!quoteForModal.useSameAsFlat && (
+                    <div className="grid md:grid-cols-3 gap-4 mt-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Close Size Width (cm)</label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={quoteForModal.closeSizeWidth || ''}
+                          onChange={(e) => {
+                            console.log("Close size width updated:", e.target.value);
+                          }}
+                          className="w-full"
+                          placeholder="Width"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Close Size Height (cm)</label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={quoteForModal.closeSizeHeight || ''}
+                          onChange={(e) => {
+                            console.log("Close size height updated:", e.target.value);
+                          }}
+                          className="w-full"
+                          placeholder="Height"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Close Size Spine (cm)</label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={quoteForModal.closeSizeSpine || ''}
+                          onChange={(e) => {
+                            console.log("Close size spine updated:", e.target.value);
+                          }}
+                          className="w-full"
+                          placeholder="Spine"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -586,40 +1011,151 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                 </div>
                 
                 <div className="space-y-3">
-                  {/* Mock items for now */}
-                  <div className="bg-white p-3 rounded border border-gray-200">
-                    <div className="grid md:grid-cols-4 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Item</label>
-                        <Input
-                          value="Business Cards"
-                          onChange={(e) => {
-                            console.log(`Item updated:`, e.target.value);
-                          }}
-                          className="w-full text-sm"
-                        />
+                  {/* Display actual quote data with enhanced fields */}
+                  <div className="bg-white p-4 rounded border border-gray-200">
+                    <div className="space-y-3">
+                      {/* Basic Product Info */}
+                      <div className="grid md:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Product Name</label>
+                          <Input
+                            value={quoteForModal.productName || quoteForModal.product || ''}
+                            onChange={(e) => {
+                              console.log(`Product name updated:`, e.target.value);
+                            }}
+                            className="w-full text-sm"
+                            placeholder="Product name"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
+                          <Input
+                            type="number"
+                            value={quoteForModal.quantity}
+                            onChange={(e) => {
+                              console.log(`Quantity updated:`, e.target.value);
+                            }}
+                            className="w-full text-sm"
+                            placeholder="Quantity"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Total Price</label>
+                          <Input
+                            value={`$${(quoteForModal.amounts?.total || 0).toFixed(2)}`}
+                            onChange={(e) => {
+                              console.log(`Price updated:`, e.target.value);
+                            }}
+                            className="w-full text-sm"
+                            placeholder="Price"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
-                        <Input
-                          value={selectedQuote.quantity}
-                          onChange={(e) => {
-                            console.log(`Quantity updated:`, e.target.value);
-                          }}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Price</label>
-                        <Input
-                          value={`$${selectedQuote.amounts?.total || 0.00}`}
-                          onChange={(e) => {
-                            console.log(`Price updated:`, e.target.value);
-                          }}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                      <div className="flex items-end">
+
+                      {/* Paper Specifications */}
+                      {quoteForModal.papers && quoteForModal.papers.length > 0 && (
+                        <div className="border-t border-gray-100 pt-3">
+                          <h6 className="text-xs font-medium text-gray-700 mb-2">Paper Specifications</h6>
+                          <div className="grid md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Paper Type</label>
+                              <Input
+                                value={quoteForModal.papers[0].name}
+                                onChange={(e) => {
+                                  console.log(`Paper name updated:`, e.target.value);
+                                }}
+                                className="w-full text-sm"
+                                placeholder="Paper name"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">GSM</label>
+                              <Input
+                                value={quoteForModal.papers[0].gsm}
+                                onChange={(e) => {
+                                  console.log(`GSM updated:`, e.target.value);
+                                }}
+                                className="w-full text-sm"
+                                placeholder="GSM"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Input Size (W × H cm)</label>
+                              <div className="flex space-x-2">
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  value={quoteForModal.papers[0].inputWidth || ''}
+                                  onChange={(e) => {
+                                    console.log(`Input width updated:`, e.target.value);
+                                  }}
+                                  className="w-full text-sm"
+                                  placeholder="Width"
+                                />
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  value={quoteForModal.papers[0].inputHeight || ''}
+                                  onChange={(e) => {
+                                    console.log(`Input height updated:`, e.target.value);
+                                  }}
+                                  className="w-full text-sm"
+                                  placeholder="Height"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Price per Sheet</label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={quoteForModal.papers[0].pricePerSheet || ''}
+                                onChange={(e) => {
+                                  console.log(`Price per sheet updated:`, e.target.value);
+                                }}
+                                className="w-full text-sm"
+                                placeholder="Price"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Finishing Specifications */}
+                      {quoteForModal.finishing && quoteForModal.finishing.length > 0 && (
+                        <div className="border-t border-gray-100 pt-3">
+                          <h6 className="text-xs font-medium text-gray-700 mb-2">Finishing Specifications</h6>
+                          <div className="grid md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Finishing Type</label>
+                              <Input
+                                value={quoteForModal.finishing[0].name}
+                                onChange={(e) => {
+                                  console.log(`Finishing name updated:`, e.target.value);
+                                }}
+                                className="w-full text-sm"
+                                placeholder="Finishing name"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Cost</label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={quoteForModal.finishing[0].cost || ''}
+                                onChange={(e) => {
+                                  console.log(`Finishing cost updated:`, e.target.value);
+                                }}
+                                className="w-full text-sm"
+                                placeholder="Cost"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="border-t border-gray-100 pt-3 flex justify-end">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -628,102 +1164,41 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                           }}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
-                          Remove
+                          Remove Item
                         </Button>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-white p-3 rounded border border-gray-200">
-                    <div className="grid md:grid-cols-4 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Item</label>
-                        <Input
-                          value="Letterheads"
-                          onChange={(e) => {
-                            console.log(`Item updated:`, e.target.value);
-                          }}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
-                        <Input
-                          value="500"
-                          onChange={(e) => {
-                            console.log(`Quantity updated:`, e.target.value);
-                          }}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Price</label>
-                        <Input
-                          value="$600.00"
-                          onChange={(e) => {
-                            console.log(`Price updated:`, e.target.value);
-                          }}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                      <div className="flex items-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            console.log(`Remove item`);
-                          }}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    </div>
+                </div>
+              </div>
+
+              {/* Operational Data Section */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Operational Data</h4>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Plates</label>
+                    <Input
+                      type="number"
+                      value={quoteForModal.operational?.plates || ''}
+                      onChange={(e) => {
+                        console.log("Plates updated:", e.target.value);
+                      }}
+                      className="w-full"
+                      placeholder="Number of plates"
+                    />
                   </div>
-                  <div className="bg-white p-3 rounded border border-gray-200">
-                    <div className="grid md:grid-cols-4 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Item</label>
-                        <Input
-                          value="Envelopes"
-                          onChange={(e) => {
-                            console.log(`Item updated:`, e.target.value);
-                          }}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
-                        <Input
-                          value="1000"
-                          onChange={(e) => {
-                            console.log(`Quantity updated:`, e.target.value);
-                          }}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Price</label>
-                        <Input
-                          value="$1,100.00"
-                          onChange={(e) => {
-                            console.log(`Price updated:`, e.target.value);
-                          }}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                      <div className="flex items-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            console.log(`Remove item`);
-                          }}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
+                    <Input
+                      type="number"
+                      value={quoteForModal.operational?.units || ''}
+                      onChange={(e) => {
+                        console.log("Units updated:", e.target.value);
+                      }}
+                      className="w-full"
+                      placeholder="Number of units"
+                    />
                   </div>
                 </div>
               </div>
@@ -746,7 +1221,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
           <DialogFooter className="pt-4">
             <Button
               variant="outline"
-              onClick={() => setShowQuoteDetails(false)}
+              onClick={() => setShowEditModal(false)}
             >
               Cancel
             </Button>
@@ -754,7 +1229,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
               onClick={() => {
                 // In a real app, you'd save the changes here
                 console.log("Saving changes...");
-                setShowQuoteDetails(false);
+                setShowEditModal(false);
               }}
             >
               Save Changes

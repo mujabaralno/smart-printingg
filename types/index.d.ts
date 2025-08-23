@@ -34,6 +34,7 @@ export interface OperationalPaper {
   enteredSheets: number | null;
   outputWidth: number | null;
   outputHeight: number | null;
+  selectedColors?: string[];  // Array of selected colors for this paper
 }
 
 // Calculation result interface for operational calculations
@@ -80,8 +81,7 @@ export interface QuoteFormData {
     phone: string;
     countryCode: string;
     role: string;
-    addressLine1?: string;   // Address fields
-    addressLine2?: string;
+    address?: string;        // Address field (matches database schema)
     city?: string;
     state?: string;
     postalCode?: string;
@@ -132,6 +132,10 @@ export interface QuoteDetail {
   printing: PrintingSelection | string;
   papers: Paper[];
   finishing: string[];
+  colors?: {
+    front?: string;
+    back?: string;
+  };
 
   // ringkasan harga/status (untuk modal Step 1)
   amounts: {
@@ -183,6 +187,12 @@ export const createEmptyForm = (): QuoteFormData => ({
     phone: '',
     countryCode: '+971',
     role: '',
+    address: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: '',
+    additionalInfo: '',
   },
   products: [createEmptyProduct()],
   operational: {

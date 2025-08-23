@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Calculator, Settings, BarChart3, Edit3, AlertTriangle, Database, Palette, Info } from "lucide-react";
+import { Package, Calculator, Settings, BarChart3, Edit3, AlertTriangle, Database, Palette, Info, Clock, DollarSign, Search, Building } from "lucide-react";
 import type { QuoteFormData } from "@/types";
 
 interface Step4Props {
@@ -384,17 +384,227 @@ function drawPrintingPattern(
 
 const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
-  
+  // ===== Debug: Log component mount and initial data =====
+  React.useEffect(() => {
+    console.log('🚀 Step4Operational: Component mounted with data:', {
+      productsLength: formData.products.length,
+      operationalPapersLength: formData.operational.papers.length,
+      products: formData.products.map(p => ({
+        name: p.productName,
+        quantity: p.quantity,
+        papers: p.papers.length,
+        colors: p.colors
+      })),
+      operationalPapers: formData.operational.papers.map(p => ({
+        inputWidth: p.inputWidth,
+        inputHeight: p.inputHeight,
+        outputWidth: p.outputWidth,
+        outputHeight: p.outputHeight,
+        selectedColors: p.selectedColors,
+        pricePerSheet: p.pricePerSheet,
+        pricePerPacket: p.pricePerPacket
+      }))
+    });
+    
+    // CRITICAL: Initialize operational data structure for multiple products
+    initializeOperationalData();
+  }, [formData.products]);
+
+  // ===== Initialize operational data structure for multiple products =====
+  const initializeOperationalData = () => {
+    console.log('🔄 Step4Operational: Initializing operational data structure...');
+    
+    // Calculate total papers needed across all products
+    const totalPapersNeeded = formData.products.reduce((total, product) => total + product.papers.length, 0);
+    
+    // If operational papers don't match total papers needed, initialize them
+    if (formData.operational.papers.length !== totalPapersNeeded) {
+      console.log(`📊 Initializing operational data: ${totalPapersNeeded} papers needed, ${formData.operational.papers.length} currently exist`);
+      
+      const newOperationalPapers: any[] = [];
+      let globalPaperIndex = 0;
+      
+      formData.products.forEach((product, productIndex) => {
+        product.papers.forEach((paper, paperIndex) => {
+          // Check if we have existing operational data for this paper
+          const existingOpPaper = formData.operational.papers[globalPaperIndex];
+          
+          if (existingOpPaper) {
+            // Use existing data
+            newOperationalPapers.push(existingOpPaper);
+          } else {
+            // Create new operational paper entry
+            const newOpPaper = {
+              inputWidth: null,
+              inputHeight: null,
+              pricePerPacket: null,
+              pricePerSheet: null,
+              sheetsPerPacket: null,
+              recommendedSheets: 0,
+              enteredSheets: null,
+              outputWidth: product.closeSize?.width ?? product.flatSize?.width ?? null,
+              outputHeight: product.closeSize?.height ?? product.flatSize?.height ?? null,
+              selectedColors: product.colors ? [product.colors.front, product.colors.back].filter((color): color is string => Boolean(color)) : []
+            };
+            newOperationalPapers.push(newOpPaper);
+          }
+          
+          globalPaperIndex++;
+        });
+      });
+      
+      // Update form data with proper operational structure
+      setFormData(prev => ({
+        ...prev,
+        operational: {
+          ...prev.operational,
+          papers: newOperationalPapers
+        }
+      }));
+      
+      console.log('✅ Operational data structure initialized:', newOperationalPapers);
+    }
+    
+    // Initialize output dimensions for all products
+      const newOutputDimensions: { [productIndex: number]: { width: number; height: number } } = {};
+      formData.products.forEach((product, productIndex) => {
+      newOutputDimensions[productIndex] = {
+        width: product.closeSize?.width ?? product.flatSize?.width ?? 0,
+        height: product.closeSize?.height ?? product.flatSize?.height ?? 0
+      };
+    });
+    setOutputDimensions(newOutputDimensions);
+    
+    // Initialize selected colors for all products and papers
+    const newSelectedColors: { [productIndex: number]: { [paperIndex: number]: string[] } } = {};
+    formData.products.forEach((product, productIndex) => {
+      newSelectedColors[productIndex] = {};
+      product.papers.forEach((paper, paperIndex) => {
+                     newSelectedColors[productIndex][paperIndex] = product.colors ? 
+               [product.colors.front, product.colors.back].filter((color): color is string => Boolean(color)) : [];
+      });
+    });
+    setSelectedColors(newSelectedColors);
+  };
+
+  // ===== Autofill operational data from database =====
+  const autofillOperationalData = async (clientId: string) => {
+    try {
+      console.log('🔄 Step4Operational: Autofilling operational data for client:', clientId);
+      
+      const response = await fetch(`/api/quotes/autofill/${clientId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch autofill data');
+      }
+      
+      const quotes = await response.json();
+      if (quotes.length === 0) {
+        console.log('📭 No previous quotes found for autofill');
+        return;
+      }
+      
+      // Find the most recent quote with operational data
+      const quoteWithOperational = quotes.find((quote: any) => 
+        quote.operational && quote.operational.papers && quote.operational.papers.length > 0
+      );
+      
+      if (!quoteWithOperational) {
+        console.log('📭 No operational data found in previous quotes');
+        return;
+      }
+      
+      console.log('✅ Found quote with operational data:', quoteWithOperational.id);
+      
+      // Extract operational data and apply it to current form
+      const { operational, papers } = quoteWithOperational;
+      
+      // Update operational data
+      setFormData(prev => ({
+        ...prev,
+        operational: {
+          ...prev.operational,
+          plates: operational.plates,
+          units: operational.units,
+          papers: operational.papers || []
+        }
+      }));
+      
+      // Update output dimensions from operational data
+      const newOutputDimensions: { [productIndex: number]: { width: number; height: number } } = {};
+      formData.products.forEach((product, productIndex) => {
+        // Find corresponding paper in operational data
+        const opPaper = operational.papers[productIndex];
+        if (opPaper && opPaper.outputWidth && opPaper.outputHeight) {
+          newOutputDimensions[productIndex] = {
+            width: opPaper.outputWidth,
+            height: opPaper.outputHeight
+          };
+        } else {
+          newOutputDimensions[productIndex] = {
+            width: product.closeSize?.width ?? product.flatSize?.width ?? 0,
+            height: product.closeSize?.height ?? product.flatSize?.height ?? 0
+          };
+        }
+      });
+      setOutputDimensions(newOutputDimensions);
+      
+      // Update selected colors from operational data
+      const newSelectedColors: { [productIndex: number]: { [paperIndex: number]: string[] } } = {};
+      formData.products.forEach((product, productIndex) => {
+        newSelectedColors[productIndex] = {};
+        product.papers.forEach((paper, paperIndex) => {
+          const opPaper = operational.papers[productIndex];
+          if (opPaper && opPaper.selectedColors) {
+            let colors: string[] = [];
+            try {
+              if (typeof opPaper.selectedColors === 'string') {
+                colors = JSON.parse(opPaper.selectedColors);
+              } else if (Array.isArray(opPaper.selectedColors)) {
+                colors = opPaper.selectedColors;
+              }
+            } catch (error) {
+              console.error('Error parsing selectedColors from autofill:', error);
+              colors = [];
+            }
+            newSelectedColors[productIndex][paperIndex] = colors;
+          } else {
+                       newSelectedColors[productIndex][paperIndex] = product.colors ? 
+             [product.colors.front, product.colors.back].filter((color): color is string => Boolean(color)) : [];
+          }
+        });
+      });
+      setSelectedColors(newSelectedColors);
+      
+      console.log('✅ Operational data autofilled successfully');
+      
+    } catch (error) {
+      console.error('❌ Error autofilling operational data:', error);
+    }
+  };
+
   // ===== Output size state management =====
   const [outputDimensions, setOutputDimensions] = React.useState<{
     [productIndex: number]: { width: number; height: number }
   }>(() => {
     const initial: { [productIndex: number]: { width: number; height: number } } = {};
     formData.products.forEach((product, index) => {
-      initial[index] = {
-        width: product?.closeSize?.width ?? product?.flatSize?.width ?? 0,
-        height: product?.closeSize?.height ?? product?.flatSize?.height ?? 0
-      };
+      // Check if we have saved operational data for this product
+      const hasOperationalData = formData.operational.papers.length > index;
+      
+      if (hasOperationalData) {
+        // Use saved operational data if available
+        const opPaper = formData.operational.papers[index];
+        initial[index] = {
+          width: opPaper?.outputWidth ?? product?.closeSize?.width ?? product?.flatSize?.width ?? 0,
+          height: opPaper?.outputHeight ?? product?.closeSize?.height ?? product?.flatSize?.height ?? 0
+        };
+      } else {
+        // Fall back to product dimensions
+        initial[index] = {
+          width: product?.closeSize?.width ?? product?.flatSize?.width ?? 0,
+          height: product?.closeSize?.height ?? product?.flatSize?.height ?? 0
+        };
+      }
     });
     return initial;
   });
@@ -409,13 +619,188 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
     formData.products.forEach((product, productIndex) => {
       initial[productIndex] = {};
       product.papers.forEach((paper, paperIndex) => {
-        initial[productIndex][paperIndex] = [];
+        // Check if we have saved operational data with selected colors
+        const hasOperationalData = formData.operational.papers.length > 0;
+        if (hasOperationalData) {
+          // Calculate the global paper index for this product's paper
+          let globalPaperIndex = 0;
+          for (let pi = 0; pi < productIndex; pi++) {
+            globalPaperIndex += formData.products[pi].papers.length;
+          }
+          globalPaperIndex += paperIndex;
+          
+          const opPaper = formData.operational.papers[globalPaperIndex];
+          initial[productIndex][paperIndex] = opPaper?.selectedColors || [];
+        } else {
+          initial[productIndex][paperIndex] = [];
+        }
       });
     });
     return initial;
   });
 
+  // ===== Sync local state with formData changes (important for editing existing quotes) =====
+  React.useEffect(() => {
+    console.log('🔄 Step4Operational: formData changed, syncing local state...', {
+      productsLength: formData.products.length,
+      operationalPapersLength: formData.operational.papers.length,
+      hasOperationalData: formData.operational.papers.some(p => 
+        p.inputWidth !== null || p.inputHeight !== null || 
+        p.outputWidth !== null || p.outputHeight !== null ||
+        p.selectedColors !== null
+      )
+    });
 
+    // If we have operational data, ensure our local state is in sync
+    if (formData.operational.papers.length > 0) {
+      // Update outputDimensions from operational data
+      const newOutputDimensions: { [productIndex: number]: { width: number; height: number } } = {};
+      formData.products.forEach((product, productIndex) => {
+        // Find the corresponding operational paper for this product
+        let globalPaperIndex = 0;
+        for (let pi = 0; pi < productIndex; pi++) {
+          globalPaperIndex += formData.products[pi].papers.length;
+        }
+        
+        // Use the first paper's operational data for this product
+        const opPaper = formData.operational.papers[globalPaperIndex];
+        if (opPaper) {
+          newOutputDimensions[productIndex] = {
+            width: opPaper.outputWidth ?? product?.closeSize?.width ?? product?.flatSize?.width ?? 0,
+            height: opPaper.outputHeight ?? product?.closeSize?.height ?? product?.flatSize?.height ?? 0
+          };
+          console.log(`📏 Syncing outputDimensions for product ${productIndex}:`, newOutputDimensions[productIndex]);
+        } else {
+          newOutputDimensions[productIndex] = {
+            width: product?.closeSize?.width ?? product?.flatSize?.width ?? 0,
+            height: product?.closeSize?.height ?? product?.flatSize?.height ?? 0
+          };
+        }
+      });
+      
+      setOutputDimensions(newOutputDimensions);
+      
+      // Update selectedColors from operational data - CRITICAL FIX for color loading
+      const newSelectedColors: { [productIndex: number]: { [paperIndex: number]: string[] } } = {};
+      formData.products.forEach((product, productIndex) => {
+        newSelectedColors[productIndex] = {};
+        product.papers.forEach((paper, paperIndex) => {
+          let globalPaperIndex = 0;
+          for (let pi = 0; pi < productIndex; pi++) {
+            globalPaperIndex += formData.products[pi].papers.length;
+          }
+          globalPaperIndex += paperIndex;
+          
+          const opPaper = formData.operational.papers[globalPaperIndex];
+          if (opPaper && opPaper.selectedColors) {
+            // Parse selectedColors if it's a string (from database)
+            let colors: string[] = [];
+            try {
+              if (typeof opPaper.selectedColors === 'string') {
+                colors = JSON.parse(opPaper.selectedColors);
+              } else if (Array.isArray(opPaper.selectedColors)) {
+                colors = opPaper.selectedColors;
+              }
+            } catch (error) {
+              console.error('Error parsing selectedColors:', error);
+              colors = [];
+            }
+            
+            newSelectedColors[productIndex][paperIndex] = colors || [];
+            console.log(`🎨 Syncing colors for product ${productIndex}, paper ${paperIndex}:`, colors);
+          } else {
+            newSelectedColors[productIndex][paperIndex] = [];
+            console.log(`🎨 No colors found for product ${productIndex}, paper ${paperIndex}`);
+          }
+        });
+      });
+      
+      console.log('🎨 Final selectedColors state:', newSelectedColors);
+      setSelectedColors(newSelectedColors);
+    }
+  }, [formData.operational.papers, formData.products]);
+
+  // ===== Debug: Monitor color changes =====
+  React.useEffect(() => {
+    console.log('🎨 Step4Operational: selectedColors changed:', selectedColors);
+    console.log('🎨 Step4Operational: formData operational papers:', formData.operational.papers.map(p => ({
+      hasSelectedColors: !!p.selectedColors,
+      selectedColorsType: typeof p.selectedColors,
+      selectedColorsValue: p.selectedColors
+    })));
+  }, [selectedColors, formData.operational.papers]);
+
+  // ===== Initialize selectedColors when formData changes (e.g., when editing existing quote) =====
+  const selectedColorsInitializedRef = React.useRef(false);
+  
+  React.useEffect(() => {
+    // Check if we have operational data that should be loaded (existing quote)
+    const hasOperationalData = formData.operational.papers.length > 0 && 
+      formData.operational.papers.some(p => p.selectedColors && p.selectedColors.length > 0);
+    
+    // Debug logging
+    console.log('🔄 Step4Operational: Checking for operational data...', {
+      hasOperationalData,
+      operationalPapersLength: formData.operational.papers.length,
+      selectedColorsInitialized: selectedColorsInitializedRef.current,
+      products: formData.products.length,
+      operationalPapers: formData.operational.papers.map(p => ({
+        hasSelectedColors: !!p.selectedColors,
+        selectedColorsLength: p.selectedColors?.length || 0,
+        selectedColorsType: typeof p.selectedColors,
+        selectedColorsValue: p.selectedColors,
+        outputWidth: p.outputWidth,
+        outputHeight: p.outputHeight,
+        inputWidth: p.inputWidth,
+        inputHeight: p.inputHeight
+      }))
+    });
+    
+    // Always reinitialize when editing existing quotes or when operational data changes
+    if (hasOperationalData || !selectedColorsInitializedRef.current) {
+      const initial: { [productIndex: number]: { [paperIndex: number]: string[] } } = {};
+      formData.products.forEach((product, productIndex) => {
+        initial[productIndex] = {};
+        product.papers.forEach((paper, paperIndex) => {
+          // Calculate the global paper index for this product's paper
+          let globalPaperIndex = 0;
+          for (let pi = 0; pi < productIndex; pi++) {
+            globalPaperIndex += formData.products[pi].papers.length;
+          }
+          globalPaperIndex += paperIndex;
+          
+          // Check if we have saved operational data with selected colors
+          const opPaper = formData.operational.papers[globalPaperIndex];
+          if (opPaper && opPaper.selectedColors) {
+            // Parse selectedColors if it's a string (from database)
+            let colors: string[] = [];
+            try {
+              if (typeof opPaper.selectedColors === 'string') {
+                colors = JSON.parse(opPaper.selectedColors);
+              } else if (Array.isArray(opPaper.selectedColors)) {
+                colors = opPaper.selectedColors;
+              }
+            } catch (error) {
+              console.error('Error parsing selectedColors in initialization:', error);
+              colors = [];
+            }
+            
+            initial[productIndex][paperIndex] = colors || [];
+            console.log(`🎨 Loaded colors for product ${productIndex}, paper ${paperIndex}:`, colors);
+          } else {
+            initial[productIndex][paperIndex] = [];
+            console.log(`🎨 No colors found for product ${productIndex}, paper ${paperIndex} during initialization`);
+          }
+        });
+      });
+      
+      if (Object.keys(initial).length > 0) {
+        console.log('✅ Setting selectedColors with initial data:', initial);
+        setSelectedColors(initial);
+        selectedColorsInitializedRef.current = true;
+      }
+    }
+  }, [formData.products, formData.operational.papers]);
 
   // ===== Helper function to parse color count from Step 3 =====
   const getMaxColorsForProduct = (product: any) => {
@@ -445,6 +830,41 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
   // ===== Supplier database modal =====
   const [showSupplierDB, setShowSupplierDB] = React.useState(false);
+
+  // ===== Update outputDimensions when formData changes (e.g., when existing quote is selected) =====
+  React.useEffect(() => {
+    console.log('📏 Step4Operational: Updating outputDimensions...', {
+      productsLength: formData.products.length,
+      operationalPapersLength: formData.operational.papers.length
+    });
+    
+    const newOutputDimensions: { [productIndex: number]: { width: number; height: number } } = {};
+    
+    formData.products.forEach((product, index) => {
+      // Check if we have saved operational data for this product
+      const hasOperationalData = formData.operational.papers.length > index;
+      
+      if (hasOperationalData) {
+        // Use saved operational data if available
+        const opPaper = formData.operational.papers[index];
+        newOutputDimensions[index] = {
+          width: opPaper?.outputWidth ?? product?.closeSize?.width ?? product?.flatSize?.width ?? 0,
+          height: opPaper?.outputHeight ?? product?.closeSize?.height ?? product?.flatSize?.height ?? 0
+        };
+        console.log(`📏 Product ${index}: Using operational data - width: ${opPaper?.outputWidth}, height: ${opPaper?.outputHeight}`);
+      } else {
+        // Fall back to product dimensions
+        newOutputDimensions[index] = {
+          width: product?.closeSize?.width ?? product?.flatSize?.width ?? 0,
+          height: product?.closeSize?.height ?? product?.flatSize?.height ?? 0
+        };
+        console.log(`📏 Product ${index}: Using product dimensions - width: ${product?.closeSize?.width}, height: ${product?.closeSize?.height}`);
+      }
+    });
+    
+    console.log('📏 Final outputDimensions:', newOutputDimensions);
+    setOutputDimensions(newOutputDimensions);
+  }, [formData.products, formData.operational.papers]);
 
   // ===== Enhanced calculation exactly matching HTML logic =====
   const perPaperCalc = React.useMemo(() => {
@@ -486,9 +906,9 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
       });
     });
   }, [
-    formData.operational.papers,
+    formData.operational.papers.length,
     outputDimensions,
-    formData.products,
+    formData.products.length,
   ]);
 
   // ===== Initialize enteredSheets with recommended values =====
@@ -516,10 +936,20 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
           const paperKey = `paper-${i}`;
           const hasUserEdited = userEditedSheets.has(paperKey);
           
-          // Force enteredSheets to match recommended value unless user has edited it
+          // IMPORTANT: Preserve existing data when editing existing quotes
+          // Check if this paper has existing data that should be preserved
+          const hasExistingData = p.inputWidth !== null || p.inputHeight !== null || 
+                                 p.pricePerPacket !== null || p.pricePerSheet !== null ||
+                                 p.outputWidth !== null || p.outputHeight !== null;
+          
           if (hasUserEdited) {
+            // User has manually edited this field, keep their value
+            return { ...p, recommendedSheets: rec };
+          } else if (hasExistingData && p.enteredSheets !== null) {
+            // This paper has existing data from a saved quote, preserve it
             return { ...p, recommendedSheets: rec };
           } else {
+            // No existing data, use recommended value as default
             return { ...p, recommendedSheets: rec, enteredSheets: rec };
           }
         });
@@ -572,9 +1002,34 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
   // ===== Plates & Units =====
   const { plates, units } = React.useMemo(() => {
-    // Calculate total plates and units across all products
+    // Check if we have existing operational data that should be preserved
+    const hasExistingOperationalData = formData.operational.plates !== null || 
+                                      formData.operational.units !== null ||
+                                      formData.operational.papers.some(p => 
+                                        p.inputWidth !== null || p.inputHeight !== null ||
+                                        p.pricePerPacket !== null || p.pricePerSheet !== null
+                                      );
+    
+    // Use user-entered values if available, otherwise use defaults
+    const userPlates = formData.operational.plates;
+    const userUnits = formData.operational.units;
+    
+    // If user has entered values, use them; otherwise use defaults
+    if (userPlates !== null || userUnits !== null) {
+      return {
+        plates: userPlates ?? 4, // Default to 4 plates
+        units: userUnits ?? 0
+      };
+    }
+    
+    // Calculate total plates and units across all products for new quotes
     let totalPlates = 0;
     let totalUnits = 0;
+
+    // Ensure we have products to calculate from
+    if (!formData.products || formData.products.length === 0) {
+      return { plates: 0, units: 0 };
+    }
 
     formData.products.forEach((product, productIndex) => {
       const sides = product?.sides ?? "1";
@@ -610,11 +1065,21 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
       totalUnits += totalSheets * (sides === "2" ? 2 : 1);
     });
 
-    return { plates: totalPlates, units: totalUnits };
+    // Ensure calculated values are valid and set defaults
+    const finalPlates = Math.max(0, totalPlates);
+    const finalUnits = Math.max(0, totalUnits);
+    
+    // Default to 4 plates if no calculation, and use entered sheets for units
+    return { 
+      plates: finalPlates > 0 ? finalPlates : 4, 
+      units: finalUnits > 0 ? finalUnits : 0 
+    };
   }, [
     formData.operational.papers,
     perPaperCalc,
     formData.products,
+    formData.operational.plates,
+    formData.operational.units,
   ]);
 
   // ===== Sync to state =====
@@ -705,6 +1170,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             const recommendedSheets = perPaperCalc[productIndex]?.[paperIndex]?.recommendedSheets ?? 1;
             
             // Create new operational paper entry or use existing one
+            // IMPORTANT: Preserve existing data when editing existing quotes
             const newOpPaper: QuoteFormData["operational"]["papers"][0] = existingOpPaper || {
               inputWidth: null,
               inputHeight: null,
@@ -718,8 +1184,16 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             };
             
             // Update with latest recommended sheets and ensure enteredSheets matches
+            // But preserve existing values if they were set from a saved quote
             newOpPaper.recommendedSheets = recommendedSheets;
-            if (!existingOpPaper || !userEditedSheets.has(`paper-${globalPaperIndex}`)) {
+            
+            // Only override enteredSheets if:
+            // 1. No existing operational paper, OR
+            // 2. User hasn't manually edited it, OR  
+            // 3. The existing value is not from a saved quote (i.e., it's the default)
+            if (!existingOpPaper || 
+                !userEditedSheets.has(`paper-${globalPaperIndex}`) ||
+                existingOpPaper.enteredSheets === existingOpPaper.recommendedSheets) {
               newOpPaper.enteredSheets = recommendedSheets;
             }
             
@@ -784,6 +1258,56 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
     });
   }, [formData.products]);
 
+  // ===== Sync selected colors with form data for saving =====
+  React.useEffect(() => {
+    // Only update if selectedColors actually changed to prevent infinite loops
+    const hasColorChanges = Object.keys(selectedColors).some(productIndexStr => {
+      const productIndex = parseInt(productIndexStr);
+      return Object.keys(selectedColors[productIndex] || {}).some(paperIndexStr => {
+        const paperIndex = parseInt(paperIndexStr);
+        const globalPaperIndex = productIndex * 1 + paperIndex;
+        const currentPaper = formData.operational.papers[globalPaperIndex];
+        const currentColors = currentPaper?.selectedColors || [];
+        const newColors = (selectedColors as any)[productIndex]?.[paperIndex] || [];
+        return JSON.stringify(currentColors) !== JSON.stringify(newColors);
+      });
+    });
+
+    if (hasColorChanges) {
+      setFormData(prev => {
+        const updatedPapers = prev.operational.papers.map((paper, paperIndex) => {
+          // Find which product and paper this corresponds to
+          let productIndex = 0;
+          let currentPaperCount = 0;
+          
+          for (let pi = 0; pi < prev.products.length; pi++) {
+            if (paperIndex >= currentPaperCount && paperIndex < currentPaperCount + prev.products[pi].papers.length) {
+              productIndex = pi;
+              break;
+            }
+            currentPaperCount += prev.products[pi].papers.length;
+          }
+          
+          const paperIndexInProduct = paperIndex - currentPaperCount;
+          const selectedColorsForThisPaper = (selectedColors as any)[productIndex]?.[paperIndexInProduct] || [];
+          
+          return {
+            ...paper,
+            selectedColors: selectedColorsForThisPaper
+          };
+        });
+        
+        return {
+          ...prev,
+          operational: {
+            ...prev.operational,
+            papers: updatedPapers
+          }
+        };
+      });
+    }
+  }, [selectedColors, formData.operational.papers, setFormData]);
+
   // ===== Validation functions =====
   const validateOutputDimensions = (width: number, height: number, inputWidth: number | null, inputHeight: number | null) => {
     if (!inputWidth || !inputHeight) return null;
@@ -837,6 +1361,60 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         finishing: prev.operational.finishing.map((f) =>
           f.name === name ? { ...f, cost } : f
         ),
+      },
+    }));
+  };
+
+  const handlePlatesChange = (value: string) => {
+    if (value === "") {
+      setFormData((prev) => ({
+        ...prev,
+        operational: {
+          ...prev.operational,
+          plates: null,
+        },
+      }));
+      return;
+    }
+    
+    const plates = parseFloat(value);
+    if (isNaN(plates) || plates < 0) return;
+    
+    // Prevent unreasonably large values (likely typos)
+    if (plates > 1000) return;
+    
+    setFormData((prev) => ({
+      ...prev,
+      operational: {
+        ...prev.operational,
+        plates,
+      },
+    }));
+  };
+
+  const handleUnitsChange = (value: string) => {
+    if (value === "") {
+      setFormData((prev) => ({
+        ...prev,
+        operational: {
+          ...prev.operational,
+          units: null,
+        },
+      }));
+      return;
+    }
+    
+    const units = parseFloat(value);
+    if (isNaN(units) || units < 0) return;
+    
+    // Prevent unreasonably large values (likely typos)
+    if (units > 1000000) return;
+    
+    setFormData((prev) => ({
+      ...prev,
+      operational: {
+        ...prev.operational,
+        units,
       },
     }));
   };
@@ -921,6 +1499,153 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         })()
       : null;
 
+  // ===== Supplier Database state =====
+  const [suppliers, setSuppliers] = React.useState<any[]>([
+    // Initial sample suppliers for dropdown
+    {
+      id: 'initial-supplier-1',
+      name: 'Premium Print Supplies',
+      contact: 'Mohammed Al Rashid',
+      email: 'mohammed@premiumprint.ae',
+      phone: '0505555555',
+      country: 'UAE',
+      city: 'Dubai'
+    },
+    {
+      id: 'initial-supplier-2',
+      name: 'Paper Source LLC',
+      contact: 'Ahmed Al Mansouri',
+      email: 'ahmed@papersourcellc.ae',
+      phone: '0501234567',
+      country: 'UAE',
+      city: 'Dubai'
+    }
+  ]);
+  const [materials, setMaterials] = React.useState<any[]>([
+    // Initial sample data to show something immediately
+    {
+      id: 'initial-1',
+      name: 'Premium Card Stock 300gsm',
+      gsm: '300',
+      cost: 0.85,
+      unit: 'per_sheet',
+      supplierName: 'Premium Print Supplies',
+      supplierContact: 'Mohammed Al Rashid',
+      supplierEmail: 'mohammed@premiumprint.ae',
+      supplierPhone: '0505555555',
+      supplierCountry: 'UAE',
+      supplierCity: 'Dubai'
+    },
+    {
+      id: 'initial-2',
+      name: 'Glossy Paper 200gsm',
+      gsm: '200',
+      cost: 0.35,
+      unit: 'per_sheet',
+      supplierName: 'Paper Source LLC',
+      supplierContact: 'Ahmed Al Mansouri',
+      supplierEmail: 'ahmed@papersourcellc.ae',
+      supplierPhone: '0501234567',
+      supplierCountry: 'UAE',
+      supplierCity: 'Dubai'
+    }
+  ]);
+  const [isLoadingSuppliers, setIsLoadingSuppliers] = React.useState(false);
+  const [supplierSearchTerm, setSupplierSearchTerm] = React.useState('');
+  const [selectedSupplier, setSelectedSupplier] = React.useState('');
+  const [selectedGSM, setSelectedGSM] = React.useState('');
+
+  // ===== Fetch suppliers and materials =====
+  const fetchSuppliersAndMaterials = async () => {
+    try {
+      setIsLoadingSuppliers(true);
+      console.log('🔄 Fetching suppliers and materials...');
+      
+      const response = await fetch('/api/suppliers');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch suppliers: ${response.status}`);
+      }
+      
+      const suppliersData = await response.json();
+      console.log('📊 Suppliers data received:', suppliersData.length, 'suppliers');
+      setSuppliers(suppliersData);
+      
+      // Extract all materials from suppliers
+      const allMaterials = suppliersData.reduce((acc: any[], supplier: any) => {
+        if (supplier.materials && Array.isArray(supplier.materials)) {
+          const materialsWithSupplier = supplier.materials.map((material: any) => ({
+            id: material.id,
+            materialId: material.materialId,
+            name: material.name,
+            gsm: material.gsm,
+            cost: material.cost,
+            unit: material.unit,
+            status: material.status,
+            supplierName: supplier.name,
+            supplierContact: supplier.contact,
+            supplierEmail: supplier.email,
+            supplierPhone: supplier.phone,
+            supplierCountry: supplier.country,
+            supplierCity: supplier.city
+          }));
+          acc.push(...materialsWithSupplier);
+        }
+        return acc;
+      }, []);
+      
+      console.log('📦 Total materials extracted:', allMaterials.length);
+      setMaterials(allMaterials);
+    } catch (error) {
+      console.error('❌ Error fetching suppliers:', error);
+      // Keep the initial sample data if API fails
+      console.log('Using fallback data');
+    } finally {
+      setIsLoadingSuppliers(false);
+    }
+  };
+
+  // ===== Auto-fetch data on component mount =====
+  React.useEffect(() => {
+    fetchSuppliersAndMaterials();
+  }, []);
+
+  // ===== Filter materials based on search and filters =====
+  const filteredMaterials = React.useMemo(() => {
+    let filtered = materials;
+    
+    // Filter by search term
+    if (supplierSearchTerm) {
+      filtered = filtered.filter(material => 
+        material.name.toLowerCase().includes(supplierSearchTerm.toLowerCase()) ||
+        material.gsm?.toLowerCase().includes(supplierSearchTerm.toLowerCase()) ||
+        material.supplierName.toLowerCase().includes(supplierSearchTerm.toLowerCase())
+      );
+    }
+    
+    // Filter by supplier
+    if (selectedSupplier) {
+      filtered = filtered.filter(material => material.supplierName === selectedSupplier);
+    }
+    
+    // Filter by GSM range
+    if (selectedGSM) {
+      const [min, max] = selectedGSM.split('-').map(Number);
+      if (max) {
+        filtered = filtered.filter(material => {
+          const gsm = parseInt(material.gsm);
+          return gsm >= min && gsm <= max;
+        });
+      } else if (selectedGSM === '400+') {
+        filtered = filtered.filter(material => {
+          const gsm = parseInt(material.gsm);
+          return gsm >= 400;
+        });
+      }
+    }
+    
+    return filtered;
+  }, [materials, supplierSearchTerm, selectedSupplier, selectedGSM]);
+
   // ===== Currency formatter =====
   const fmt = (n: number) =>
     new Intl.NumberFormat("en-US", {
@@ -980,6 +1705,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         <h3 className="text-2xl font-bold text-slate-900">Operational Details</h3>
         <p className="text-slate-600">Configure paper specifications, costs, and production details</p>
       </div>
+
+
 
       {formData.products.map((product, productIndex) => (
         <div key={productIndex} className="space-y-8">
@@ -1089,29 +1816,36 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 <CardContent className="space-y-6">
                   {/* Paper Size Section */}
                   <div className="space-y-4">
-                    <h5 className="text-md font-semibold text-slate-700">Input Sheet Size</h5>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="mb-2 block text-sm font-medium text-slate-700">Width (cm)</Label>
+                    <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
+                      <Package className="w-4 h-4 mr-2 text-blue-600" />
+                      Input Sheet Size
+                    </h5>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                          Width (cm)
+                        </Label>
                         <Input
                           type="number"
                           placeholder="Width"
                           min={0}
                           step="0.1"
                           value={opPaper?.inputWidth ?? ""}
-                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
                           onChange={(e) =>
                             handlePaperOpChange(globalPaperIndex, "inputWidth", e.target.value)
                           }
                         />
                       </div>
-                      <div>
-                        <Label className="mb-2 block text-sm font-medium text-slate-700">Height (cm)</Label>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                          Height (cm)
+                        </Label>
                         <Input
                           type="number"
                           placeholder="Height"
                           value={opPaper?.inputHeight ?? ""}
-                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
                           min={0}
                           step="0.1"
                           onChange={(e) =>
@@ -1124,33 +1858,37 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
                   {/* Output Size Section - Now Editable */}
                   <div className="space-y-4">
-                    <h5 className="text-md font-semibold text-slate-700 flex items-center">
+                    <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
                       <Edit3 className="w-4 h-4 mr-2 text-blue-600" />
                       Output Item Size
                     </h5>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="mb-2 block text-sm font-medium text-slate-700">Output Width (cm)</Label>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                          Output Width (cm)
+                        </Label>
                         <Input
                           type="number"
                           placeholder="Width"
                           min={0}
                           step="0.1"
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl ${
+                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 ${
                             dimensionError ? 'border-red-300 bg-red-50' : ''
                           }`}
                           value={outputDimensions[productIndex]?.width || ""}
                           onChange={(e) => handleOutputDimensionChange(productIndex, 'width', e.target.value)}
                         />
                       </div>
-                      <div>
-                        <Label className="mb-2 block text-sm font-medium text-slate-700">Output Height (cm)</Label>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                          Output Height (cm)
+                        </Label>
                         <Input
                           type="number"
                           placeholder="Height"
                           min={0}
                           step="0.1"
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl ${
+                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 ${
                             dimensionError ? 'border-red-300 bg-red-50' : ''
                           }`}
                           value={outputDimensions[productIndex]?.height || ""}
@@ -1162,18 +1900,23 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
                   {/* Sheet Management Section */}
                   <div className="space-y-4">
-                    <h5 className="text-md font-semibold text-slate-700">Sheet Management</h5>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="mb-2 block text-sm font-medium text-slate-700">Recommended Sheets</Label>
+                    <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
+                      <BarChart3 className="w-4 h-4 mr-2 text-blue-600" />
+                      Sheet Management
+                    </h5>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                          Recommended Sheets
+                        </Label>
                         <Input
                           value={recommendedSheets || ""}
                           readOnly
-                          className="bg-slate-100 border-slate-300 rounded-xl"
+                          className="bg-slate-100 border-slate-300 rounded-xl h-10"
                         />
                       </div>
-                      <div>
-                        <Label className="mb-2 block text-sm font-medium text-slate-700">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
                           Enter Sheets
                           {!opPaper?.enteredSheets && (
                             <span className="ml-2 text-xs text-blue-600 font-normal">
@@ -1185,7 +1928,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           min={recommendedSheets || 0}
                           placeholder={recommendedSheets ? String(recommendedSheets) : "e.g. 125"}
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl ${
+                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 ${
                             !opPaper?.enteredSheets ? 'bg-blue-50 border-blue-200' : ''
                           }`}
                           value={opPaper?.enteredSheets ?? recommendedSheets ?? ""}
@@ -1247,15 +1990,20 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 <CardContent className="space-y-6">
                   {/* Pricing Section */}
                   <div className="space-y-4">
-                    <h5 className="text-md font-semibold text-slate-700">Cost Details</h5>
+                    <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
+                      <BarChart3 className="w-4 h-4 mr-2 text-blue-600" />
+                      Cost Details
+                    </h5>
                     <div className="space-y-4">
-                      <div>
-                        <Label className="mb-2 block text-sm font-medium text-slate-700">Price per Sheet (Direct)</Label>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                          Price per Sheet (Direct)
+                        </Label>
                         <Input
                           type="number"
                           placeholder="$ 0.00"
                           step="0.0001"
-                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
                           value={opPaper?.pricePerSheet ?? ""}
                           onChange={(e) =>
                             handlePaperOpChange(globalPaperIndex, "pricePerSheet", e.target.value)
@@ -1267,13 +2015,16 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                       </div>
                       <div className="border-t pt-4">
                         <h6 className="text-sm font-medium text-slate-600 mb-3">OR Calculate from Packet Pricing:</h6>
-                        <div className="space-y-3">
-                          <div>
-                            <Label className="mb-2 block text-sm font-medium text-slate-700">Sheets per Packet</Label>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-slate-700 flex items-center">
+                              <Package className="w-4 h-4 mr-2 text-blue-600" />
+                              Sheets per Packet
+                            </Label>
                             <Input
                               type="number"
                               placeholder="e.g. 500"
-                              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
                               min={0}
                               value={opPaper?.sheetsPerPacket ?? ""}
                               onChange={(e) =>
@@ -1285,11 +2036,14 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                               }
                             />
                           </div>
-                          <div>
-                            <Label className="mb-2 block text-sm font-medium text-slate-700">Price per Packet</Label>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-slate-700 flex items-center">
+                              <DollarSign className="w-4 h-4 mr-2 text-blue-600" />
+                              Price per Packet
+                            </Label>
                             <Input
                               type="number"
-                              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
                               placeholder="$ 0.00"
                               value={opPaper?.pricePerPacket ?? ""}
                               onChange={(e) =>
@@ -1297,11 +2051,14 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                               }
                             />
                           </div>
-                          <div>
-                            <Label className="mb-2 block text-sm font-medium text-slate-700">Calculated Price per Sheet</Label>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-slate-700 flex items-center">
+                              <Calculator className="w-4 h-4 mr-2 text-blue-600" />
+                              Calculated Price per Sheet
+                            </Label>
                             <Input
                               readOnly
-                              className="bg-slate-100 border-slate-300 rounded-xl"
+                              className="bg-slate-100 border-slate-300 rounded-xl h-10"
                               value={
                                 (() => {
                                   // If direct price per sheet is set, show that
@@ -1347,23 +2104,107 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 <CardContent className="space-y-6">
                   {/* Production Costs Section */}
                   <div className="space-y-4">
-                    <h5 className="text-md font-semibold text-slate-700">Production Costs</h5>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="mb-2 block text-sm font-medium text-slate-700">No. of plates</Label>
+                    <div className="flex items-center justify-between">
+                      <h5 className="text-md font-semibold text-slate-700 flex items-center">
+                        <Calculator className="w-4 h-4 mr-2 text-blue-600" />
+                        Production Costs
+                      </h5>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          handlePlatesChange("");
+                          handleUnitsChange("");
+                        }}
+                        className="text-xs h-8 px-3"
+                      >
+                        <Calculator className="w-3 h-3 mr-1" />
+                        Auto-calculate
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                          No. of plates
+                        </Label>
                         <Input 
-                          readOnly 
-                          className="bg-slate-100 border-slate-300 rounded-xl" 
-                          value={plates} 
+                          type="number"
+                          min="0"
+                          placeholder="e.g. 8"
+                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 ${
+                            !formData.operational.plates ? 'bg-blue-50 border-blue-200' : 'bg-white'
+                          }`}
+                          value={formData.operational.plates ?? plates ?? ""} 
+                          onChange={(e) => handlePlatesChange(e.target.value)}
                         />
+                        {!formData.operational.plates ? (
+                          <div className="text-blue-600 text-xs mt-1">
+                            ✓ Using calculated value: {plates}
+                          </div>
+                        ) : (
+                          <div className="text-amber-600 text-xs mt-1 flex items-center justify-between">
+                            <span>⚠ Custom value set (calculated: {plates})</span>
+                            <button
+                              type="button"
+                              onClick={() => handlePlatesChange("")}
+                              className="text-xs text-blue-600 hover:text-blue-800 underline"
+                            >
+                              Reset to calculated
+                            </button>
+                          </div>
+                        )}
+                        {formData.operational.plates && plates > 0 && Math.abs(formData.operational.plates - plates) > plates * 0.5 && (
+                          <div className="text-orange-600 text-xs mt-1">
+                            ⚠️ Warning: Custom value differs significantly from calculated value
+                          </div>
+                        )}
+                        {formData.operational.plates && formData.operational.plates === 0 && plates > 0 && (
+                          <div className="text-blue-600 text-xs mt-1">
+                            ℹ️ Note: Set to 0 (Digital printing - no plates needed)
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <Label className="mb-2 block text-sm font-medium text-slate-700">No. of units</Label>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                          No. of units
+                        </Label>
                         <Input 
-                          readOnly 
-                          className="bg-slate-100 border-slate-300 rounded-xl" 
-                          value={units} 
+                          type="number"
+                          min="0"
+                          placeholder="e.g. 1000"
+                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 ${
+                            !formData.operational.units ? 'bg-blue-50 border-blue-200' : 'bg-white'
+                          }`}
+                          value={formData.operational.units ?? units ?? ""} 
+                          onChange={(e) => handleUnitsChange(e.target.value)}
                         />
+                        {!formData.operational.units ? (
+                          <div className="text-blue-600 text-xs mt-1">
+                            ✓ Using calculated value: {units}
+                          </div>
+                        ) : (
+                          <div className="text-amber-600 text-xs mt-1 flex items-center justify-between">
+                            <span>⚠ Custom value set (calculated: {units})</span>
+                            <button
+                              type="button"
+                              onClick={() => handleUnitsChange("")}
+                              className="text-xs text-blue-600 hover:text-blue-800 underline"
+                            >
+                              Reset to calculated
+                            </button>
+                          </div>
+                        )}
+                        {formData.operational.units && Math.abs(formData.operational.units - units) > units * 0.5 && (
+                          <div className="text-orange-600 text-xs mt-1">
+                            ⚠️ Warning: Custom value differs significantly from calculated value
+                          </div>
+                        )}
+                        {formData.operational.units && formData.operational.units === 0 && units > 0 && (
+                          <div className="text-blue-600 text-xs mt-1">
+                            ℹ️ Note: Set to 0 (No units specified)
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1734,7 +2575,10 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         {/* Performance Rating */}
                         <div className="bg-slate-50 p-2 rounded-lg">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-slate-700">Performance:</span>
+                            <span className="text-sm font-medium text-slate-700 flex items-center">
+                              <BarChart3 className="w-4 h-4 mr-2 text-blue-600" />
+                              Performance:
+                            </span>
                             <div className="flex items-center space-x-1">
                               {[...Array(5)].map((_, i) => (
                                 <div
@@ -1902,70 +2746,215 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         </div>
       ))}
 
-      {/* Supplier Database Modal */}
-      <Dialog open={showSupplierDB} onOpenChange={setShowSupplierDB}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      {/* Enhanced Supplier Database Modal */}
+      <Dialog 
+        open={showSupplierDB} 
+        onOpenChange={(open) => {
+          setShowSupplierDB(open);
+          if (open) {
+            fetchSuppliersAndMaterials();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center text-xl font-bold text-slate-800">
-              <Database className="w-6 h-6 mr-3 text-green-600" />
-              Supplier Database
+            <DialogTitle className="flex items-center text-2xl font-bold text-slate-800">
+              <Database className="w-8 h-8 mr-3 text-green-600" />
+              Supplier Database & Material Catalog
             </DialogTitle>
+            <p className="text-slate-600 mt-2">Browse available materials, suppliers, and pricing information</p>
           </DialogHeader>
+          
           <div className="space-y-6">
-            {/* Sample supplier data */}
-            <div className="grid gap-4">
-              <div className="border border-slate-200 rounded-xl p-4 hover:bg-slate-50 transition-colors">
-                <div className="flex justify-between items-start">
+            {/* Search and Filter Section */}
+            <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-4 border border-slate-200">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <h4 className="font-semibold text-slate-800">Premium Art Paper 300gsm</h4>
-                    <p className="text-slate-600 text-sm">High-quality coated paper, ideal for marketing materials</p>
-                    <div className="mt-2 flex gap-4 text-sm">
-                      <span className="text-green-600">✓ In Stock</span>
-                      <span className="text-blue-600">32×45 cm sheets</span>
+                  <Label htmlFor="material-search" className="text-sm font-medium text-slate-700 flex items-center">
+                    <Search className="w-4 h-4 mr-2 text-blue-600" />
+                    Search Materials
+                  </Label>
+                  <Input
+                    id="material-search"
+                    placeholder="Paper name, GSM, supplier..."
+                    className="mt-1"
+                    value={supplierSearchTerm}
+                    onChange={(e) => setSupplierSearchTerm(e.target.value)}
+                  />
                     </div>
+                <div>
+                  <Label htmlFor="supplier-filter" className="text-sm font-medium text-slate-700 flex items-center">
+                    <Building className="w-4 h-4 mr-2 text-blue-600" />
+                    Supplier
+                  </Label>
+                  <select
+                    id="supplier-filter"
+                    className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={selectedSupplier}
+                    onChange={(e) => setSelectedSupplier(e.target.value)}
+                  >
+                    <option value="">All Suppliers</option>
+                    {suppliers.map((supplier) => (
+                      <option key={supplier.id} value={supplier.name}>
+                        {supplier.name}
+                      </option>
+                    ))}
+                  </select>
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold text-lg">$0.085</div>
-                    <div className="text-slate-500 text-sm">per sheet</div>
+                <div>
+                  <Label htmlFor="gsm-filter" className="text-sm font-medium text-slate-700 flex items-center">
+                    <BarChart3 className="w-4 h-4 mr-2 text-blue-600" />
+                    GSM Range
+                  </Label>
+                  <select
+                    id="gsm-filter"
+                    className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={selectedGSM}
+                    onChange={(e) => setSelectedGSM(e.target.value)}
+                  >
+                    <option value="">All GSM</option>
+                    <option value="80-120">80-120 gsm</option>
+                    <option value="150-200">150-200 gsm</option>
+                    <option value="250-300">250-300 gsm</option>
+                    <option value="400+">400+ gsm</option>
+                  </select>
                   </div>
                 </div>
               </div>
-              <div className="border border-slate-200 rounded-xl p-4 hover:bg-slate-50 transition-colors">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-semibold text-slate-800">Standard Offset 200gsm</h4>
-                    <p className="text-slate-600 text-sm">Cost-effective option for general printing needs</p>
-                    <div className="mt-2 flex gap-4 text-sm">
-                      <span className="text-yellow-600">⚠ Low Stock</span>
-                      <span className="text-blue-600">35×50 cm sheets</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-lg">$0.045</div>
-                    <div className="text-slate-500 text-sm">per sheet</div>
-                  </div>
+
+            {/* Professional Materials Table */}
+            {isLoadingSuppliers ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                <div className="text-slate-600 font-medium">Loading supplier database...</div>
+                <div className="text-slate-500 text-sm mt-2">Fetching materials and supplier information</div>
+              </div>
+            ) : filteredMaterials.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-slate-400 mb-4 text-6xl">🔍</div>
+                <div className="text-slate-600 font-medium text-lg">No materials found</div>
+                <div className="text-slate-500 text-sm mt-2">
+                  {supplierSearchTerm || selectedSupplier || selectedGSM 
+                    ? "Try adjusting your search criteria" 
+                    : "No materials available in the database"
+                  }
                 </div>
               </div>
-              <div className="border border-slate-200 rounded-xl p-4 hover:bg-slate-50 transition-colors">
-                <div className="flex justify-between items-start">
+            ) : (
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                          Material
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                          GSM
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                          Supplier
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                          Contact
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                          Location
+                        </th>
+                        <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                          Price
+                        </th>
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {filteredMaterials.map((material, index) => {
+                        const isPremium = material.cost > 0.05;
+                        const isEco = material.name.toLowerCase().includes('recycled') || material.name.toLowerCase().includes('eco');
+                        const isStandard = !isPremium && !isEco;
+                        
+                        let statusColor = 'bg-blue-100 text-blue-800';
+                        let statusText = 'Standard';
+                        
+                        if (isPremium) {
+                          statusColor = 'bg-green-100 text-green-800';
+                          statusText = 'Premium';
+                        } else if (isEco) {
+                          statusColor = 'bg-emerald-100 text-emerald-800';
+                          statusText = 'Eco-Friendly';
+                        }
+                        
+                        return (
+                          <tr key={material.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-slate-900">{material.name}</div>
+                                <div className="text-xs text-slate-500">ID: {material.materialId}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {material.gsm} gsm
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-slate-900">{material.supplierName}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-slate-900">{material.supplierContact || material.supplierEmail}</div>
+                              <div className="text-xs text-slate-500">{material.supplierPhone}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-slate-900">{material.supplierCity}</div>
+                              <div className="text-xs text-slate-500">{material.supplierCountry}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <div className="text-sm font-semibold text-slate-900">
+                                ${material.cost.toFixed(3)}
+                              </div>
+                              <div className="text-xs text-slate-500">per {material.unit}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
+                                {statusText}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Additional Information */}
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <h5 className="font-semibold text-slate-800 mb-3 flex items-center">
+                <Info className="w-4 h-4 mr-2 text-blue-600" />
+                Material Selection Guidelines
+              </h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-600">
                   <div>
-                    <h4 className="font-semibold text-slate-800">Recycled Paper 150gsm</h4>
-                    <p className="text-slate-600 text-sm">Eco-friendly option with good print quality</p>
-                    <div className="mt-2 flex gap-4 text-sm">
-                      <span className="text-green-600">✓ In Stock</span>
-                      <span className="text-blue-600">30×42 cm sheets</span>
+                  <strong>Printing Method:</strong> Consider digital vs offset compatibility
                     </div>
+                <div>
+                  <strong>Finish Requirements:</strong> Matte, glossy, or textured surfaces
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold text-lg">$0.032</div>
-                    <div className="text-slate-500 text-sm">per sheet</div>
+                <div>
+                  <strong>Environmental Impact:</strong> Recycled content and sustainability
                   </div>
+                <div>
+                  <strong>Cost Optimization:</strong> Balance quality with budget constraints
                 </div>
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button onClick={() => setShowSupplierDB(false)} className="px-6 py-2 rounded-xl">
+          
+          <DialogFooter className="pt-6">
+            <Button variant="outline" onClick={() => setShowSupplierDB(false)} className="px-6 py-2 rounded-xl">
               Close
             </Button>
           </DialogFooter>
@@ -2158,14 +3147,15 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 </div>
               </div>
 
-              {/* Production Summary */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Enhanced Production Summary */}
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200 p-6 text-center">
                   <div className="w-12 h-12 bg-blue-200 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <Package className="w-6 h-6 text-blue-700" />
                   </div>
                   <div className="text-blue-700 font-medium mb-1">Plates Required</div>
                   <div className="text-3xl font-bold text-blue-800">{plates}</div>
+                  <div className="text-xs text-blue-600 mt-1">Printing plates</div>
                 </div>
                 
                 <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 p-6 text-center">
@@ -2174,6 +3164,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   </div>
                   <div className="text-green-700 font-medium mb-1">Units Produced</div>
                   <div className="text-3xl font-bold text-green-800">{units}</div>
+                  <div className="text-xs text-green-600 mt-1">Final items</div>
                 </div>
                 
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl border border-purple-200 p-6 text-center">
@@ -2183,6 +3174,113 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   <div className="text-purple-700 font-medium mb-1">Efficiency</div>
                   <div className={`text-3xl font-bold ${(openData.calc?.layout.efficiency ?? 0) > 80 ? 'text-green-600' : (openData.calc?.layout.efficiency ?? 0) > 60 ? 'text-yellow-600' : 'text-red-600'}`}>
                     {openData.calc?.layout.efficiency?.toFixed(1) ?? "—"}%
+                  </div>
+                  <div className="text-xs text-purple-600 mt-1">Layout optimization</div>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl border border-orange-200 p-6 text-center">
+                  <div className="w-12 h-12 bg-orange-200 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Palette className="w-6 h-6 text-orange-700" />
+                  </div>
+                  <div className="text-orange-700 font-medium mb-1">Colors</div>
+                  <div className="text-3xl font-bold text-orange-800">
+                    {openData?.op?.selectedColors ? 
+                      (Array.isArray(openData.op.selectedColors) ? openData.op.selectedColors.length : 1) : 
+                      1
+                    }
+                  </div>
+                  <div className="text-xs text-orange-600 mt-1">Printing colors</div>
+                </div>
+              </div>
+
+              {/* Advanced Cost Analysis */}
+              <div className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl border border-slate-200 p-8">
+                <div className="flex items-center mb-6">
+                  <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center mr-4">
+                    <BarChart3 className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <h6 className="text-xl font-bold text-slate-800">Advanced Cost Analysis</h6>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Cost per Unit Analysis */}
+                  <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <h6 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                      <Calculator className="w-5 h-5 mr-2 text-indigo-600" />
+                      Cost per Unit Analysis
+                    </h6>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center py-3 px-4 bg-slate-50 rounded-xl">
+                        <span className="text-slate-600">Paper Cost per Unit</span>
+                        <span className="font-semibold text-indigo-600">
+                          {fmt(
+                            ((openData.op?.enteredSheets ?? openData.calc?.recommendedSheets ?? 0) * 
+                             (openData.calc?.pricePerSheet ?? 0)) / 
+                            (formData.products[0]?.quantity ?? 1)
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-3 px-4 bg-blue-50 rounded-xl">
+                        <span className="text-slate-600">Finishing Cost per Unit</span>
+                        <span className="font-semibold text-blue-600">
+                          {fmt(
+                            (formData.products[0]?.finishing ? formData.operational.finishing
+                              .filter((f) => formData.products[0].finishing.includes(f.name))
+                              .reduce((acc, f) => {
+                                const actualSheetsNeeded = openData?.op?.enteredSheets ?? openData?.calc?.recommendedSheets ?? 0;
+                                return acc + ((f.cost ?? 0) * actualSheetsNeeded);
+                              }, 0) : 0) / (formData.products[0]?.quantity ?? 1)
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-3 px-4 bg-green-50 rounded-xl">
+                        <span className="text-slate-600">Total Cost per Unit</span>
+                        <span className="font-bold text-green-600 text-lg">
+                          {fmt(
+                            (((openData.op?.enteredSheets ?? openData.calc?.recommendedSheets ?? 0) * 
+                              (openData.calc?.pricePerSheet ?? 0)) + 
+                             (formData.products[0]?.finishing ? formData.operational.finishing
+                               .filter((f) => formData.products[0].finishing.includes(f.name))
+                               .reduce((acc, f) => {
+                                 const actualSheetsNeeded = openData?.op?.enteredSheets ?? openData?.calc?.recommendedSheets ?? 0;
+                                 return acc + ((f.cost ?? 0) * actualSheetsNeeded);
+                                                               }, 0) : 0)) / (formData.products[0]?.quantity ?? 1)
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Production Timeline */}
+                  <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <h6 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                      <Clock className="w-5 h-5 mr-2 text-orange-600" />
+                      Production Timeline
+                    </h6>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center py-3 px-4 bg-slate-50 rounded-xl">
+                        <span className="text-slate-600">Setup Time</span>
+                        <span className="font-semibold text-slate-800">2-3 hours</span>
+                      </div>
+                      <div className="flex justify-between items-center py-3 px-4 bg-blue-50 rounded-xl">
+                        <span className="text-slate-600">Printing Time</span>
+                        <span className="font-semibold text-blue-600">
+                          {Math.ceil((openData.op?.enteredSheets ?? openData.calc?.recommendedSheets ?? 0) / 100)} hours
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-3 px-4 bg-green-50 rounded-xl">
+                        <span className="text-slate-600">Finishing Time</span>
+                        <span className="font-semibold text-green-600">
+                          {Math.ceil((openData.op?.enteredSheets ?? openData.calc?.recommendedSheets ?? 0) / 50)} hours
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-3 px-4 bg-orange-50 rounded-xl">
+                        <span className="text-slate-600">Total Production</span>
+                        <span className="font-bold text-orange-600 text-lg">
+                          {Math.ceil(2 + (openData.op?.enteredSheets ?? openData.calc?.recommendedSheets ?? 0) / 100 + (openData.op?.enteredSheets ?? openData.calc?.recommendedSheets ?? 0) / 50)} hours
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

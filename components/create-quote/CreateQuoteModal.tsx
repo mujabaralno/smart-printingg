@@ -29,7 +29,25 @@ interface CreateQuoteModalProps {
   onSubmit: (formData: QuoteFormData) => void;
 }
 
-// Mock existing customers database
+const EMPTY_CLIENT: QuoteFormData["client"] = {
+  clientType: "Individual",
+  companyName: "",
+  contactPerson: "",
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  countryCode: "+971",
+  role: "",
+  address: "",
+  city: "",
+  state: "",
+  postalCode: "",
+  country: "Dubai",
+  additionalInfo: "",
+};
+
+// Mock existing customers for autofill
 const EXISTING_CUSTOMERS = [
   {
     id: "CUST001",
@@ -42,12 +60,11 @@ const EXISTING_CUSTOMERS = [
     phone: "501234567",
     countryCode: "+971",
     role: "Marketing Manager",
-    addressLine1: "Sheikh Zayed Road",
-    addressLine2: "Office 1205, Business Bay",
+    address: "Sheikh Zayed Road, Office 1205, Business Bay",
     city: "Dubai",
     state: "Dubai",
     postalCode: "00000",
-    country: "UAE",
+    country: "Dubai",
     additionalInfo: "Regular customer, prefers digital communication"
   },
   {
@@ -61,12 +78,11 @@ const EXISTING_CUSTOMERS = [
     phone: "559876543",
     countryCode: "+971",
     role: "Operations Director",
-    addressLine1: "Marina Walk",
-    addressLine2: "Tower 3, Level 15",
+    address: "Marina Walk, Tower 3, Level 15",
     city: "Dubai",
     state: "Dubai",
     postalCode: "00000",
-    country: "UAE",
+    country: "Dubai",
     additionalInfo: "Bulk orders, requires detailed quotations"
   },
   {
@@ -80,12 +96,11 @@ const EXISTING_CUSTOMERS = [
     phone: "524567890",
     countryCode: "+971",
     role: "",
-    addressLine1: "Al Wasl Road",
-    addressLine2: "Villa 25",
+    address: "Al Wasl Road, Villa 25",
     city: "Dubai",
     state: "Dubai",
     postalCode: "00000",
-    country: "UAE",
+    country: "Dubai",
     additionalInfo: "Individual client, small quantity orders"
   }
 ];
@@ -99,13 +114,14 @@ const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
     client: {
       clientType: "Company",
       companyName: "",
+      firstName: "",
+      lastName: "",
       contactPerson: "",
       email: "",
       phone: "",
       countryCode: "+971",
       role: "",
-      addressLine1: "",
-      addressLine2: "",
+      address: "",
       city: "",
       state: "",
       postalCode: "",
@@ -133,8 +149,28 @@ const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
   const [isNewCustomer, setIsNewCustomer] = useState(true);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
-  const setClient = (patch: Partial<typeof formData.client>) =>
-    setFormData((prev) => ({ ...prev, client: { ...prev.client, ...patch } }));
+  const setClient = (patch: Partial<typeof formData.client>) => {
+    setFormData((prev) => {
+      const updatedClient = { 
+        ...prev.client, 
+        ...patch 
+      };
+      
+      // Auto-update contactPerson when firstName or lastName changes
+      if (patch.firstName || patch.lastName) {
+        const firstName = patch.firstName || prev.client.firstName || '';
+        const lastName = patch.lastName || prev.client.lastName || '';
+        if (firstName || lastName) {
+          updatedClient.contactPerson = `${firstName} ${lastName}`.trim();
+        }
+      }
+      
+      return { 
+        ...prev, 
+        client: updatedClient
+      };
+    });
+  };
 
   // Auto-fill functionality
   const handleCompanyNameChange = (value: string) => {
@@ -162,19 +198,43 @@ const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
     }
   };
 
+  const handlePersonNameChange = (field: "firstName" | "lastName", value: string) => {
+    setClient({ [field]: value });
+    
+    const currentFirstName = field === "firstName" ? value : (formData.client.firstName || "");
+    const currentLastName = field === "lastName" ? value : (formData.client.lastName || "");
+    
+    if (currentFirstName && currentLastName) {
+      const existingCustomer = EXISTING_CUSTOMERS.find(
+        customer => 
+          customer.firstName.toLowerCase() === currentFirstName.toLowerCase() &&
+          customer.lastName.toLowerCase() === currentLastName.toLowerCase()
+      );
+      
+      if (existingCustomer) {
+        setSelectedCustomer(existingCustomer);
+        setIsNewCustomer(false);
+      } else {
+        setSelectedCustomer(null);
+        setIsNewCustomer(true);
+      }
+    }
+  };
+
   const handleCustomerSelect = (customer: any) => {
     setSelectedCustomer(customer);
     setIsNewCustomer(false);
     setClient({
       clientType: customer.clientType,
       companyName: customer.companyName,
+      firstName: customer.firstName,
+      lastName: customer.lastName,
       contactPerson: customer.contactPerson,
       email: customer.email,
       phone: customer.phone,
       countryCode: customer.countryCode,
       role: customer.role,
-      addressLine1: customer.addressLine1,
-      addressLine2: customer.addressLine2,
+      address: customer.address,
       city: customer.city,
       state: customer.state,
       postalCode: customer.postalCode,
@@ -185,7 +245,32 @@ const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
     setSearchTerm(customer.companyName || customer.contactPerson);
   };
 
+  const validateForm = () => {
+    // Essential required fields for all client types
+    const essentialRequired = [
+      formData.client.firstName,
+      formData.client.lastName,
+      formData.client.email,
+      formData.client.phone
+    ];
+
+    // Additional required fields for company clients
+    const companyRequired = formData.client.clientType === "Company" ? [
+      formData.client.companyName
+    ] : [];
+
+    const allRequired = [...essentialRequired, ...companyRequired];
+    return allRequired.every(field => field && field.trim() !== "");
+  };
+
+  const isFormValid = validateForm();
+
   const handleSubmit = () => {
+    if (!isFormValid) {
+      alert("Please fill in all required fields before creating the quote.");
+      return;
+    }
+
     // Generate a unique quote number
     const quoteNumber = `QT${Date.now()}`;
     
@@ -211,13 +296,14 @@ const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
       client: {
         clientType: "Company",
         companyName: "",
+        firstName: "",
+        lastName: "",
         contactPerson: "",
         email: "",
         phone: "",
         countryCode: "+971",
         role: "",
-        addressLine1: "",
-        addressLine2: "",
+        address: "",
         city: "",
         state: "",
         postalCode: "",
@@ -283,62 +369,109 @@ const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
               </RadioGroup>
             </div>
 
-            {/* Company Name / Individual Names */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {formData.client.clientType === "Company" ? (
+            {/* Company and Designation (Company only) */}
+            {formData.client.clientType === "Company" && (
+              <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="companyName" className="text-sm font-medium text-slate-700">
                     Company Name *
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="companyName"
-                      value={searchTerm}
-                      onChange={(e) => handleCompanyNameChange(e.target.value)}
-                      placeholder="Enter company name"
-                      className="w-full"
-                    />
-                    {showSuggestions && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-                        {EXISTING_CUSTOMERS.filter(customer => 
-                          customer.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          customer.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
-                        ).map((customer) => (
-                                                      <div
-                              key={customer.id}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100"
-                              onClick={() => handleCustomerSelect(customer)}
-                            >
-                              <div className="font-medium">
-                                {customer.clientType === "Company" ? customer.companyName : customer.contactPerson}
-                              </div>
-                              <div className="text-sm text-gray-600">{customer.email}</div>
-                            </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <Input
+                    id="companyName"
+                    value={formData.client.companyName}
+                    onChange={(e) => handleCompanyNameChange(e.target.value)}
+                    placeholder="Enter company name"
+                    className={!formData.client.companyName?.trim() ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""}
+                  />
+                  
+                  {/* Auto-complete suggestions */}
+                  {showSuggestions && searchTerm && EXISTING_CUSTOMERS.filter(customer =>
+                    customer.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    customer.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {EXISTING_CUSTOMERS.filter(customer =>
+                        customer.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        customer.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
+                      ).map((customer) => (
+                        <div
+                          key={customer.id}
+                          className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          onClick={() => handleCustomerSelect(customer)}
+                        >
+                          <div className="font-medium text-gray-900">{customer.companyName || `${customer.firstName} ${customer.lastName}`}</div>
+                          <div className="text-sm text-gray-500">{customer.email}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ) : (
                 <div className="space-y-2">
-                  <Label htmlFor="contactPerson" className="text-sm font-medium text-slate-700">
-                    Contact Person *
+                  <Label htmlFor="designation" className="text-sm font-medium text-slate-700">
+                    Designation *
                   </Label>
                   <Input
-                    id="contactPerson"
-                    value={formData.client.contactPerson}
-                    onChange={(e) => setClient({ contactPerson: e.target.value })}
-                    placeholder="Enter contact person name"
+                    id="designation"
+                    value={formData.client.role}
+                    onChange={(e) => setClient({ role: e.target.value })}
+                    placeholder="Enter designation"
+                    className={!formData.client.role?.trim() ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""}
                   />
                 </div>
-              )}
+              </div>
+            )}
+
+            {/* First Name and Last Name */}
+            <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-sm font-medium text-slate-700">
+                  First Name *
+                </Label>
+                <Input
+                  id="firstName"
+                  value={formData.client.firstName}
+                  onChange={(e) => handlePersonNameChange("firstName", e.target.value)}
+                  placeholder="Enter first name"
+                  className={!formData.client.firstName?.trim() ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-sm font-medium text-slate-700">
+                  Last Name *
+                </Label>
+                <Input
+                  id="lastName"
+                  value={formData.client.lastName}
+                  onChange={(e) => handlePersonNameChange("lastName", e.target.value)}
+                  placeholder="Enter last name"
+                  className={!formData.client.lastName?.trim() ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""}
+                />
+              </div>
             </div>
 
-            {/* Contact Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Contact Person (Auto-generated) */}
+            <div className="space-y-2">
+              <Label htmlFor="contactPerson" className="text-sm font-medium text-slate-700">
+                Contact Person
+              </Label>
+              <Input
+                id="contactPerson"
+                value={formData.client.contactPerson}
+                onChange={(e) => setClient({ contactPerson: e.target.value })}
+                placeholder="Contact Person (auto-generated from first and last name)"
+                className="bg-gray-50"
+                readOnly
+              />
+              <p className="text-sm text-gray-500">
+                Auto-generated from first and last name
+              </p>
+            </div>
+
+            {/* Email and Phone */}
+            <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-                  Email Address *
+                  Email *
                 </Label>
                 <Input
                   id="email"
@@ -346,126 +479,110 @@ const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
                   value={formData.client.email}
                   onChange={(e) => setClient({ email: e.target.value })}
                   placeholder="Enter email address"
+                  className={!formData.client.email?.trim() ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-sm font-medium text-slate-700">
-                  Phone Number *
+                  Phone *
                 </Label>
                 <div className="flex space-x-2">
-                  <Select value={formData.client.countryCode} onValueChange={(value) => setClient({ countryCode: value })}>
-                    <SelectTrigger className="w-24">
+                  <Select
+                    value={formData.client.countryCode}
+                    onValueChange={(value) => setClient({ countryCode: value })}
+                  >
+                    <SelectTrigger className={`w-32 ${!formData.client.countryCode ? "border-red-300" : ""}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="+971">+971</SelectItem>
+                      <SelectItem value="+62">+62</SelectItem>
                       <SelectItem value="+1">+1</SelectItem>
-                      <SelectItem value="+44">+44</SelectItem>
-                      <SelectItem value="+61">+61</SelectItem>
                     </SelectContent>
                   </Select>
                   <Input
                     id="phone"
+                    inputMode="tel"
                     value={formData.client.phone}
-                    onChange={(e) => setClient({ phone: e.target.value })}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^\d]/g, "");
+                      setClient({ phone: v });
+                    }}
                     placeholder="Enter phone number"
-                    className="flex-1"
+                    className={`flex-1 ${!formData.client.phone?.trim() ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""}`}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Role (for companies) */}
-            {formData.client.clientType === "Company" && (
+            {/* Address Information */}
+            <div className="grid md:grid-cols-1 gap-y-4">
               <div className="space-y-2">
-                <Label htmlFor="role" className="text-sm font-medium text-slate-700">
-                  Role/Position
+                <Label htmlFor="address" className="text-sm font-medium text-slate-700">
+                  Address *
                 </Label>
                 <Input
-                  id="role"
-                  value={formData.client.role}
-                  onChange={(e) => setClient({ role: e.target.value })}
-                  placeholder="e.g., Marketing Manager, Operations Director"
+                  id="address"
+                  value={formData.client.address}
+                  onChange={(e) => setClient({ address: e.target.value })}
+                  placeholder="Enter street address, building, suite, etc."
+                  className={!formData.client.address?.trim() ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""}
                 />
               </div>
-            )}
+            </div>
 
-            {/* Address Information */}
-            <div className="space-y-4">
-              <h4 className="text-md font-medium text-slate-700">Address Information</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="addressLine1" className="text-sm font-medium text-slate-700">
-                    Address Line 1 *
-                  </Label>
-                  <Input
-                    id="addressLine1"
-                    value={formData.client.addressLine1}
-                    onChange={(e) => setClient({ addressLine1: e.target.value })}
-                    placeholder="Enter street address"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="addressLine2" className="text-sm font-medium text-slate-700">
-                    Address Line 2
-                  </Label>
-                  <Input
-                    id="addressLine2"
-                    value={formData.client.addressLine2}
-                    onChange={(e) => setClient({ addressLine2: e.target.value })}
-                    placeholder="Apartment, suite, etc. (optional)"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city" className="text-sm font-medium text-slate-700">
-                    City *
-                  </Label>
-                  <Input
-                    id="city"
-                    value={formData.client.city}
-                    onChange={(e) => setClient({ city: e.target.value })}
-                    placeholder="Enter city"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state" className="text-sm font-medium text-slate-700">
-                    State/Province *
-                  </Label>
-                  <Input
-                    id="state"
-                    value={formData.client.state}
-                    onChange={(e) => setClient({ state: e.target.value })}
-                    placeholder="Enter state or province"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="postalCode" className="text-sm font-medium text-slate-700">
-                    Postal Code *
-                  </Label>
-                  <Input
-                    id="postalCode"
-                    value={formData.client.postalCode}
-                    onChange={(e) => setClient({ postalCode: e.target.value })}
-                    placeholder="Enter postal code"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="country" className="text-sm font-medium text-slate-700">
-                    Country *
-                  </Label>
-                  <Select value={formData.client.country} onValueChange={(value) => setClient({ country: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="UAE">UAE</SelectItem>
-                      <SelectItem value="USA">USA</SelectItem>
-                      <SelectItem value="UK">UK</SelectItem>
-                      <SelectItem value="Canada">Canada</SelectItem>
-                      <SelectItem value="Australia">Australia</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            {/* City, State, Postal Code, Country */}
+            <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="city" className="text-sm font-medium text-slate-700">
+                  City *
+                </Label>
+                <Input
+                  id="city"
+                  value={formData.client.city}
+                  onChange={(e) => setClient({ city: e.target.value })}
+                  placeholder="Enter city"
+                  className={!formData.client.city?.trim() ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state" className="text-sm font-medium text-slate-700">
+                  State/Province *
+                </Label>
+                <Input
+                  id="state"
+                  value={formData.client.state}
+                  onChange={(e) => setClient({ state: e.target.value })}
+                  placeholder="Enter state or province"
+                  className={!formData.client.state?.trim() ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="postalCode" className="text-sm font-medium text-slate-700">
+                  Postal Code *
+                </Label>
+                <Input
+                  id="postalCode"
+                  value={formData.client.postalCode}
+                  onChange={(e) => setClient({ postalCode: e.target.value })}
+                  placeholder="Enter postal code"
+                  className={!formData.client.postalCode?.trim() ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="country" className="text-sm font-medium text-slate-700">
+                  Country *
+                </Label>
+                <Select value={formData.client.country} onValueChange={(value) => setClient({ country: value })}>
+                  <SelectTrigger className={!formData.client.country?.trim() ? "border-red-300" : ""}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Dubai">Dubai</SelectItem>
+                    <SelectItem value="India">India</SelectItem>
+                    <SelectItem value="Indonesia">Indonesia</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -484,7 +601,43 @@ const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
             </div>
           </div>
 
+          {/* Validation Summary */}
+          {!isFormValid && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">!</span>
+                </div>
+                <div className="text-red-700">
+                  <p className="font-medium mb-2">Please fill in the essential fields to proceed:</p>
+                  <ul className="text-sm space-y-1">
+                    {!formData.client.firstName?.trim() && <li>• First Name</li>}
+                    {!formData.client.lastName?.trim() && <li>• Last Name</li>}
+                    {!formData.client.email?.trim() && <li>• Email</li>}
+                    {!formData.client.phone?.trim() && <li>• Phone Number</li>}
+                    {formData.client.clientType === "Company" && !formData.client.companyName?.trim() && <li>• Company Name</li>}
+                  </ul>
+                  <p className="text-xs text-red-600 mt-2">
+                    Address fields are optional but recommended for complete customer information.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
+          {/* Form Complete Indicator */}
+          {isFormValid && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">✓</span>
+                </div>
+                            <p className="text-green-700 font-medium">
+              Essential customer information is complete. You can now create the quote.
+            </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="flex space-x-3 pt-6">
@@ -498,9 +651,7 @@ const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
           <Button
             onClick={handleSubmit}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
-            disabled={!formData.client.email || !formData.client.phone || 
-                     (formData.client.clientType === "Company" && !formData.client.companyName) ||
-                     (formData.client.clientType === "Individual" && !formData.client.contactPerson)}
+            disabled={!isFormValid}
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Quote

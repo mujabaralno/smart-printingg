@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Sparkles, Copy, FileText, Eye, Edit, Search } from "lucide-react";
+import { Plus, Sparkles, Copy, FileText, Eye, Edit, Search, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import StepIndicator from "@/components/create-quote/StepIndicator";
@@ -20,13 +20,21 @@ import { detailToForm } from "@/lib/detail-to-form";
 import { PreviousQuote } from "@/types";
 
 const EMPTY_CLIENT: QuoteFormData["client"] = {
-  clientType: "Company",
+  clientType: "Individual",
   companyName: "",
   contactPerson: "",
+  firstName: "",
+  lastName: "",
   email: "",
   phone: "",
   countryCode: "+971",
   role: "",
+  address: "",
+  city: "",
+  state: "",
+  postalCode: "",
+  country: "Dubai",
+  additionalInfo: "",
 };
 
 // Synthetic customer data
@@ -39,6 +47,12 @@ const SYNTHETIC_CUSTOMERS: {
   countryCode: string;
   role: string;
   clientType: 'Individual' | 'Company';
+  address?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  additionalInfo?: string;
 }[] = [
   {
     id: "CUST001",
@@ -48,7 +62,13 @@ const SYNTHETIC_CUSTOMERS: {
     phone: "+971-50-123-4567",
     countryCode: "+971",
     role: "Marketing Manager",
-    clientType: "Company"
+    clientType: "Company",
+    address: "Sheikh Zayed Road, Office 1205, Business Bay",
+    city: "Dubai",
+    state: "Dubai",
+    postalCode: "00000",
+    country: "Dubai",
+    additionalInfo: "Regular customer, prefers digital communication"
   },
   {
     id: "CUST002",
@@ -58,7 +78,13 @@ const SYNTHETIC_CUSTOMERS: {
     phone: "+971-55-987-6543",
     countryCode: "+971",
     role: "Operations Director",
-    clientType: "Company"
+    clientType: "Company",
+    address: "Marina Walk, Tower 3, Level 15",
+    city: "Dubai",
+    state: "Dubai",
+    postalCode: "00000",
+    country: "Dubai",
+    additionalInfo: "Bulk orders, requires detailed quotations"
   },
   {
     id: "CUST003",
@@ -67,8 +93,14 @@ const SYNTHETIC_CUSTOMERS: {
     email: "michael.b@globalprint.com",
     phone: "+971-52-456-7890",
     countryCode: "+971",
-    role: "Procurement Manager",
-    clientType: "Company"
+    role: "Customer",
+    clientType: "Company",
+    address: "Al Wasl Road, Villa 25",
+    city: "Dubai",
+    state: "Dubai",
+    postalCode: "00000",
+    country: "Dubai",
+    additionalInfo: "Individual client, small quantity orders"
   },
   {
     id: "CUST004",
@@ -78,7 +110,13 @@ const SYNTHETIC_CUSTOMERS: {
     phone: "+971-54-321-0987",
     countryCode: "+971",
     role: "Creative Director",
-    clientType: "Company"
+    clientType: "Company",
+    address: "Jumeirah Beach Road, Office 45",
+    city: "Dubai",
+    state: "Dubai",
+    postalCode: "00000",
+    country: "Dubai",
+    additionalInfo: "Creative projects, high-quality printing"
   },
   {
     id: "CUST005",
@@ -88,7 +126,13 @@ const SYNTHETIC_CUSTOMERS: {
     phone: "+971-56-789-0123",
     countryCode: "+971",
     role: "Marketing Specialist",
-    clientType: "Company"
+    clientType: "Company",
+    address: "Al Barsha, Office 12",
+    city: "Dubai",
+    state: "Dubai",
+    postalCode: "00000",
+    country: "Dubai",
+    additionalInfo: "Marketing materials, regular orders"
   }
 ];
 
@@ -109,6 +153,12 @@ function CreateQuoteContent() {
     phone: string;
     countryCode: string;
     role: string | null;
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    additionalInfo?: string;
   } | null>(null);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
@@ -120,8 +170,8 @@ function CreateQuoteContent() {
       {
         productName: "Business Card",
         quantity: 1000,
-        sides: "1",
-        printingSelection: "Digital",
+        sides: "1" as const,
+        printingSelection: "Digital" as const,
         flatSize: { width: 9, height: 5.5, spine: null },
         closeSize: { width: 9, height: 5.5, spine: null },
         useSameAsFlat: false,
@@ -182,6 +232,15 @@ function CreateQuoteContent() {
           ]
     );
   }, [mainProduct?.productName]);
+
+  // Monitor form data changes
+  useEffect(() => {
+    console.log('Parent: Form data updated:', formData);
+    console.log('Parent: Client data:', formData.client);
+    console.log('Parent: Client firstName:', formData.client.firstName);
+    console.log('Parent: Client lastName:', formData.client.lastName);
+    console.log('Parent: Client contactPerson:', formData.client.contactPerson);
+  }, [formData]);
 
   // Handle URL parameters for step and edit mode
   useEffect(() => {
@@ -281,25 +340,23 @@ function CreateQuoteContent() {
 
   const canProceedFromStep2 = () => {
     if (quoteMode === "new") {
-      // For new quote mode, validate required fields
+      // For new quote mode, validate only essential fields
       const client = formData.client;
-      const requiredFields = [
-        client.email,
-        client.firstName, // Check firstName instead of contactPerson
-        client.lastName,  // Check lastName
-        client.countryCode,
-        client.phone
+      const essentialFields = [
+        client.firstName, // First name is required
+        client.lastName,  // Last name is required
+        client.email,     // Email is required
+        client.phone      // Phone is required
       ];
       
-      // Add company-specific required fields
+      // Add company-specific required fields only if company type
       if (client.clientType === "Company") {
-        requiredFields.push(client.companyName, client.role);
+        essentialFields.push(client.companyName);
       }
       
-      return requiredFields.every(field => field && field.trim() !== "");
+      return essentialFields.every(field => field && field.trim() !== "");
     } else if (quoteMode === "existing") {
       // For existing quote mode, we need to select an actual existing quote
-      // This will be handled in Step2CustomerChoose when they select a specific quote
       return selectedQuoteId !== null; // Must have selected a specific quote to edit
     }
     
@@ -316,29 +373,62 @@ function CreateQuoteContent() {
   };
 
   const handleStartNew = () => {
-    setFormData((prev) => ({ 
-      ...prev, 
-      client: { ...EMPTY_CLIENT },
-      // Reset to default product for new quotes
-      products: [
-        {
-          productName: "Business Card",
-          quantity: 1000,
-          sides: "1",
-          printingSelection: "Digital",
-          flatSize: { width: 9, height: 5.5, spine: null },
-          closeSize: { width: 9, height: 5.5, spine: null },
-          useSameAsFlat: false,
-          papers: [{ name: "Art Paper", gsm: "300" }],
-          finishing: ["UV Spot", "Lamination"],
-          paperName: "Book",
-        },
-      ]
-    }));
+    console.log('Starting new quote - resetting all data');
+    
+    // Create a completely clean client object
+    const cleanClient = {
+      clientType: "Company" as const,
+      companyName: "",
+      contactPerson: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      countryCode: "+971",
+      role: "",
+      address: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      country: "",
+      additionalInfo: "",
+    };
+    
+    console.log('Clean client object created:', cleanClient);
+    
+    // Reset form data completely
+    setFormData((prev) => {
+      const newFormData = { 
+        ...prev, 
+        client: cleanClient,
+        // Reset to default product for new quotes
+        products: [
+          {
+            productName: "Business Card",
+            quantity: 1000,
+            sides: "1" as const,
+            printingSelection: "Digital" as const,
+            flatSize: { width: 9, height: 5.5, spine: null },
+            closeSize: { width: 9, height: 5.5, spine: null },
+            useSameAsFlat: false,
+            papers: [{ name: "Art Paper", gsm: "300" }],
+            finishing: ["UV Spot", "Lamination"],
+            paperName: "Book",
+          },
+        ]
+      };
+      
+      console.log('New form data set:', newFormData);
+      return newFormData;
+    });
+    
+    // Reset all customer-related state
     setQuoteMode("new");
-    setSelectedQuoteId(null); // Reset selected quote ID for new quotes
-    setCurrentStep(2);
+    setSelectedQuoteId(null);
     setSelectedCustomer(null);
+    setCurrentStep(2);
+    
+    console.log('New quote started with clean data');
   };
 
   const handleSelectQuote = (q: PreviousQuote) => {
@@ -359,6 +449,12 @@ function CreateQuoteContent() {
     phone: string;
     countryCode: string;
     role: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    additionalInfo?: string;
   }) => {
     setSelectedCustomer(customer);
     setFormData((prev) => ({
@@ -371,6 +467,12 @@ function CreateQuoteContent() {
         phone: customer.phone,
         countryCode: customer.countryCode,
         role: customer.role || '',
+        address: customer.address || '',
+        city: customer.city || '',
+        state: customer.state || '',
+        postalCode: customer.postalCode || '',
+        country: customer.country || '',
+        additionalInfo: customer.additionalInfo || '',
       }
     }));
   };
@@ -383,43 +485,263 @@ function CreateQuoteContent() {
     phone: string;
     countryCode: string;
     role: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    additionalInfo?: string;
   }) => {
     // Handle editing customer - for now just select it
     handleSelectCustomer(customer);
   };
 
-  const handleCustomerSelect = (customer: {
+  const handleCustomerSelect = async (customer: {
     id: string;
-    clientType: string;
+    clientType?: string;
     companyName?: string;
     contactPerson: string;
     email: string;
-    phone: string;
-    countryCode: string;
+    phone?: string;
+    countryCode?: string;
     role?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    additionalInfo?: string;
   }) => {
     setSelectedCustomer({
       id: customer.id,
-      clientType: customer.clientType as 'Individual' | 'Company',
+      clientType: (customer.clientType || 'Individual') as 'Individual' | 'Company',
       companyName: customer.companyName || null,
       contactPerson: customer.contactPerson,
       email: customer.email,
-      phone: customer.phone,
-      countryCode: customer.countryCode,
+      phone: customer.phone || '',
+      countryCode: customer.countryCode || '',
       role: customer.role || null,
+      address: customer.address || '',
+      city: customer.city || '',
+      state: customer.state || '',
+      postalCode: customer.postalCode || '',
+      country: customer.country || '',
+      additionalInfo: customer.additionalInfo || '',
     });
+    // Ensure phone has a value - if empty, use a default
+    const phoneValue = customer.phone && customer.phone.trim() !== '' ? customer.phone : '0000000000';
+    
+    console.log('=== AUTO-FILLING CLIENT DATA ===');
+    console.log('Customer data received:', customer);
+    console.log('Phone value:', phoneValue);
+    console.log('Email value:', customer.email);
+    
     setFormData((prev) => ({
       ...prev,
       client: {
-        clientType: customer.clientType as 'Individual' | 'Company',
+        clientType: (customer.clientType || 'Individual') as 'Individual' | 'Company',
         companyName: customer.companyName || '',
         contactPerson: customer.contactPerson,
         email: customer.email,
-        phone: customer.phone,
-        countryCode: customer.countryCode,
+        phone: phoneValue,
+        countryCode: customer.countryCode || '+971',
         role: customer.role || '',
+        address: customer.address || '',
+        city: customer.city || '',
+        state: customer.state || '',
+        postalCode: customer.postalCode || '',
+        country: customer.country || '',
+        additionalInfo: customer.additionalInfo || '',
       }
     }));
+    
+    console.log('Form data updated with client info');
+
+    // Auto-fill Step 3 data if customer has previous quotes
+    try {
+      // Use the dedicated autofill endpoint that includes all related data
+      const quotesResponse = await fetch(`/api/quotes/autofill/${customer.id}`);
+      if (!quotesResponse.ok) {
+        throw new Error('Failed to fetch quotes for autofill');
+      }
+      
+      const clientQuotes = await quotesResponse.json();
+      
+      if (clientQuotes.length > 0) {
+        // Group quotes by quoteId to get quote groups (a quote can have multiple products)
+        const quoteGroups = clientQuotes.reduce((groups: any, quote: any) => {
+          if (!groups[quote.quoteId]) {
+            groups[quote.quoteId] = [];
+          }
+          groups[quote.quoteId].push(quote);
+          return groups;
+        }, {});
+        
+        // Get the most recent quote group (by date)
+        const latestQuoteId = Object.keys(quoteGroups).sort((a, b) => {
+          const dateA = new Date(quoteGroups[a][0].date);
+          const dateB = new Date(quoteGroups[b][0].date);
+          return dateB.getTime() - dateA.getTime();
+        })[0];
+        
+        const latestQuotes = quoteGroups[latestQuoteId];
+        
+        console.log('Latest quotes for autofill:', latestQuotes);
+        
+        // Convert database quotes to products - consolidate all papers into one product
+        // Since all quotes in latestQuotes have the same quoteId, they represent one product with multiple papers
+        const firstQuote = latestQuotes[0];
+        
+        // Parse colors if they exist
+        let colors: { front?: string; back?: string } | undefined;
+        if (firstQuote.colors) {
+          try {
+            colors = JSON.parse(firstQuote.colors);
+          } catch (e) {
+            console.warn('Failed to parse colors JSON:', firstQuote.colors);
+          }
+        }
+        
+        // Collect all papers from all quotes in this group
+        let allPapers: any[] = [];
+        latestQuotes.forEach((quote: any) => {
+          if (quote.papers && Array.isArray(quote.papers) && quote.papers.length > 0) {
+            quote.papers.forEach((p: any) => {
+              // Try to find the best matching paper name from the database
+              let paperName = p.name || 'Standard Paper';
+              let paperGsm = p.gsm || '150';
+              
+              // Ensure we never have empty strings
+              if (!paperName || paperName.trim() === '') {
+                paperName = 'Standard Paper';
+              }
+              if (!paperGsm || paperGsm.trim() === '') {
+                paperGsm = '150';
+              }
+              
+              console.log(`Processing paper: ${paperName} with GSM: ${paperGsm}`);
+              
+              // Store the clean paper name without any suffixes for better matching
+              const cleanPaperName = paperName.replace(/\s*\(Custom\)$/, '').trim();
+              
+              // Check if this paper is already added (avoid duplicates)
+              const existingPaper = allPapers.find(ap => ap.name === cleanPaperName && ap.gsm === paperGsm);
+              if (!existingPaper) {
+                allPapers.push({
+                  name: cleanPaperName,
+                  gsm: paperGsm
+                });
+              }
+            });
+          }
+        });
+        
+        // If no papers found, use default
+        if (allPapers.length === 0) {
+          allPapers = [{ name: 'Standard Paper', gsm: '150' }];
+        }
+        
+        console.log('Final consolidated papers array:', allPapers);
+        console.log('Paper names being stored:', allPapers.map(p => p.name));
+        
+        // Collect all finishing from all quotes in this group
+        let allFinishing: string[] = [];
+        latestQuotes.forEach((quote: any) => {
+          if (quote.finishing && Array.isArray(quote.finishing) && quote.finishing.length > 0) {
+            quote.finishing.forEach((f: any) => {
+              const finishingName = f.name || f;
+              if (finishingName && !allFinishing.includes(finishingName)) {
+                allFinishing.push(finishingName);
+              }
+            });
+          }
+        });
+        
+        console.log(`Processing quote group ${latestQuoteId}:`, {
+          totalQuotes: latestQuotes.length,
+          papers: allPapers,
+          finishing: allFinishing
+        });
+        
+        // Create one product with all papers and finishing
+        const product = {
+          productName: firstQuote.productName || firstQuote.product || 'Business Card',
+          quantity: firstQuote.quantity,
+          sides: (firstQuote.sides === '1' || firstQuote.sides === '2' ? firstQuote.sides : '1') as '1' | '2',
+          printingSelection: firstQuote.printingSelection || firstQuote.printing || 'Digital',
+          flatSize: {
+            width: firstQuote.flatSizeWidth || 0,
+            height: firstQuote.flatSizeHeight || 0,
+            spine: firstQuote.flatSizeSpine || null,
+          },
+          closeSize: {
+            width: firstQuote.closeSizeWidth || 0,
+            height: firstQuote.closeSizeHeight || 0,
+            spine: firstQuote.closeSizeSpine || null,
+          },
+          useSameAsFlat: firstQuote.useSameAsFlat || false,
+          papers: allPapers,
+          finishing: allFinishing,
+          colors,
+        };
+        
+        const products = [{
+          ...product,
+          paperName: product.papers && product.papers.length > 0 ? product.papers[0].name : "Standard Paper"
+        }];
+        
+        // Update form data with all products
+        setFormData(prev => {
+          const newFormData = {
+            ...prev,
+            products
+          };
+          console.log('Updating form data with autofilled products:', newFormData);
+          return newFormData;
+        });
+        
+        console.log(`Auto-filled ${products.length} products from customer's previous quote:`, products);
+        
+        // Force a re-render by updating a timestamp
+        setFormData(prev => ({
+          ...prev,
+          products: [...products] // Create new array reference
+        }));
+      }
+    } catch (error) {
+      console.error('Error auto-filling quote data:', error);
+    }
+  };
+
+  // Function to map saved color descriptions to dropdown options
+  const mapColorToDropdownOption = (colorDesc: string): string => {
+    if (!colorDesc) return "";
+    
+    const desc = colorDesc.toLowerCase();
+    
+    // Map specific color descriptions to dropdown options
+    if (desc.includes("4/4 cmyk") && desc.includes("2 pms")) {
+      return "4+2 Colors";
+    } else if (desc.includes("4/4 cmyk") && desc.includes("1 pms")) {
+      return "4+1 Colors";
+    } else if (desc.includes("4/4 cmyk") || desc.includes("4/4")) {
+      return "4 Colors (CMYK)";
+    } else if (desc.includes("4/0 cmyk") && desc.includes("2 pms")) {
+      return "4+2 Colors";
+    } else if (desc.includes("4/0 cmyk") && desc.includes("1 pms")) {
+      return "4+1 Colors";
+    } else if (desc.includes("4/0 cmyk") || desc.includes("4/0")) {
+      return "4 Colors (CMYK)";
+    } else if (desc.includes("3 colors") || desc.includes("3")) {
+      return "3 Colors";
+    } else if (desc.includes("2 colors") || desc.includes("2")) {
+      return "2 Colors";
+    } else if (desc.includes("1 color") || desc.includes("1")) {
+      return "1 Color";
+    }
+    
+    // Default fallback
+    return "4 Colors (CMYK)";
   };
 
   // Handle quote selection for editing existing quotes
@@ -432,18 +754,58 @@ function CreateQuoteContent() {
     // Also set the customer data
     handleCustomerSelect(quote.client);
     
-    // Update form data with the quote's product information
+    // Update form data with the quote's complete product information
     if (quote.product) {
+      // Determine appropriate sizes based on product type
+      let defaultFlatSize = { width: 9, height: 5.5, spine: 0 };
+      let defaultCloseSize = { width: 9, height: 5.5, spine: 0 };
+      
+      // Set appropriate default sizes for different product types
+      switch (quote.product.toLowerCase()) {
+        case 'book':
+        case 'catalog':
+        case 'annual report':
+        case 'technical manual':
+          defaultFlatSize = { width: 8.5, height: 11, spine: 0.5 };
+          defaultCloseSize = { width: 8.5, height: 11, spine: 0.5 };
+          break;
+        case 'brochure':
+        case 'flyer a5':
+          defaultFlatSize = { width: 8.27, height: 11.69, spine: 0 };
+          defaultCloseSize = { width: 4.13, height: 11.69, spine: 0 };
+          break;
+        case 'poster':
+          defaultFlatSize = { width: 18, height: 24, spine: 0 };
+          defaultCloseSize = { width: 18, height: 24, spine: 0 };
+          break;
+        case 'business card':
+        case 'business cards':
+          defaultFlatSize = { width: 3.5, height: 2, spine: 0 };
+          defaultCloseSize = { width: 3.5, height: 2, spine: 0 };
+          break;
+        case 'letterhead':
+          defaultFlatSize = { width: 8.5, height: 11, spine: 0 };
+          defaultCloseSize = { width: 8.5, height: 11, spine: 0 };
+          break;
+        default:
+          defaultFlatSize = { width: 9, height: 5.5, spine: 0 };
+          defaultCloseSize = { width: 9, height: 5.5, spine: 0 };
+      }
+      
+      // Map saved colors to dropdown options
+      const mappedFrontColor = mapColorToDropdownOption(quote.colors?.front);
+      const mappedBackColor = mapColorToDropdownOption(quote.colors?.back);
+      
       setFormData(prev => ({
         ...prev,
         products: [{
           productName: quote.product || "Printing Product",
-          paperName: "Standard Paper",
+          paperName: quote.papers && quote.papers.length > 0 ? quote.papers[0].name : "Standard Paper",
           quantity: quote.quantity || 100,
           sides: (quote.sides as "1" | "2") || "1",
           printingSelection: (quote.printing as "Digital" | "Offset" | "Either" | "Both") || "Digital",
-          flatSize: { width: 9, height: 5.5, spine: 0 },
-          closeSize: { width: 9, height: 5.5, spine: 0 },
+          flatSize: defaultFlatSize,
+          closeSize: defaultCloseSize,
           useSameAsFlat: true,
           papers: quote.papers && quote.papers.length > 0 
             ? quote.papers.map((p: any) => ({ name: p.name, gsm: p.gsm }))
@@ -451,9 +813,22 @@ function CreateQuoteContent() {
           finishing: quote.finishing && quote.finishing.length > 0
             ? quote.finishing.map((f: any) => f.name)
             : [],
-          colors: { front: "", back: "" }
+          colors: { 
+            front: mappedFrontColor, 
+            back: mappedBackColor 
+          }
         }]
       }));
+      
+      console.log('Form data updated with selected quote:', {
+        product: quote.product,
+        quantity: quote.quantity,
+        sides: quote.sides,
+        printing: quote.printing,
+        papers: quote.papers,
+        finishing: quote.finishing,
+        colors: { front: mappedFrontColor, back: mappedBackColor }
+      });
     }
   };
 
@@ -481,6 +856,16 @@ function CreateQuoteContent() {
   const validateFormData = () => {
     const errors: string[] = [];
 
+    // Debug: Log the current form data
+    console.log('Validating form data:', {
+      client: formData.client,
+      contactPerson: formData.client.contactPerson,
+      firstName: formData.client.firstName,
+      lastName: formData.client.lastName,
+      email: formData.client.email,
+      phone: formData.client.phone
+    });
+
     // Check if client information is complete
     if (!formData.client.email || !formData.client.phone) {
       errors.push("Client email and phone are required");
@@ -490,8 +875,22 @@ function CreateQuoteContent() {
       errors.push("Company name is required for company clients");
     }
 
-    if (!formData.client.contactPerson && (!formData.client.firstName || !formData.client.lastName)) {
-      errors.push("Contact person name is required");
+    // Check if we have either contactPerson OR both firstName and lastName
+    const hasContactPerson = formData.client.contactPerson && formData.client.contactPerson.trim() !== '';
+    const hasFullName = formData.client.firstName && formData.client.firstName.trim() !== '' && 
+                       formData.client.lastName && formData.client.lastName.trim() !== '';
+    
+    if (!hasContactPerson && !hasFullName) {
+      errors.push("Contact person name is required (or first name and last name)");
+    }
+
+    // Address fields are optional but if provided, should be complete
+    const hasPartialAddress = formData.client.address || formData.client.city || formData.client.state || formData.client.postalCode || formData.client.country;
+    const hasCompleteAddress = formData.client.address && formData.client.city && formData.client.state && formData.client.postalCode && formData.client.country;
+    
+    if (hasPartialAddress && !hasCompleteAddress) {
+      console.warn('Partial address provided - some address fields are missing');
+      // Don't throw error, just warn - address is optional
     }
 
     // Check if products exist and have required information
@@ -513,32 +912,229 @@ function CreateQuoteContent() {
     return true;
   };
 
+  // Validate and clean quote data before sending to database
+  const validateAndCleanQuoteData = (data: any) => {
+    // Ensure papers array has valid objects
+    if (data.papers && Array.isArray(data.papers)) {
+      data.papers = data.papers.map((paper: any) => ({
+        name: paper.name || "Standard Paper",
+        gsm: paper.gsm || "150",
+        inputWidth: paper.inputWidth || null,
+        inputHeight: paper.inputHeight || null,
+        pricePerPacket: paper.pricePerPacket || null,
+        pricePerSheet: paper.pricePerSheet || null,
+        sheetsPerPacket: paper.sheetsPerPacket || null,
+        recommendedSheets: paper.recommendedSheets || null,
+        enteredSheets: paper.enteredSheets || null,
+        outputWidth: paper.outputWidth || null,
+        outputHeight: paper.outputHeight || null,
+        selectedColors: paper.selectedColors || null,
+      }));
+    }
+
+    // Ensure finishing array has valid objects
+    if (data.finishing && Array.isArray(data.finishing)) {
+      data.finishing = data.finishing.map((finish: any) => ({
+        name: finish.name || "Standard Finishing",
+        cost: finish.cost || 0,
+      }));
+    }
+
+    // Ensure amounts object has valid numbers
+    if (data.amounts) {
+      data.amounts = {
+        base: Number(data.amounts.base) || 0,
+        vat: Number(data.amounts.vat) || 0,
+        total: Number(data.amounts.total) || 0,
+      };
+    }
+
+    // Ensure operational data has valid values
+    if (data.operational) {
+      data.operational = {
+        plates: data.operational.plates ? Number(data.operational.plates) : null,
+        units: data.operational.units ? Number(data.operational.units) : null,
+      };
+    }
+
+    return data;
+  };
+
   const handleSaveQuote = async (isUpdate: boolean = false) => {
     setIsSaving(true);
     try {
+      // Debug: Log the current form data before processing
+      console.log('=== QUOTE CREATION DEBUG ===');
+      console.log('Current formData.client:', formData.client);
+      console.log('Current selectedCustomer:', selectedCustomer);
+      console.log('Current quoteMode:', quoteMode);
+      console.log('Current selectedQuoteId:', selectedQuoteId);
+      
+      // Force synchronize form data - ensure all fields are properly set
+      let needsFormUpdate = false;
+      const updatedClient = { ...formData.client };
+      
+      // Ensure all required fields have at least empty strings instead of undefined
+      if (updatedClient.email === undefined) {
+        updatedClient.email = '';
+        needsFormUpdate = true;
+      }
+      if (updatedClient.phone === undefined) {
+        updatedClient.phone = '';
+        needsFormUpdate = true;
+      }
+      if (updatedClient.contactPerson === undefined) {
+        updatedClient.contactPerson = '';
+        needsFormUpdate = true;
+      }
+      if (updatedClient.address === undefined) {
+        updatedClient.address = '';
+        needsFormUpdate = true;
+      }
+      if (updatedClient.city === undefined) {
+        updatedClient.city = '';
+        needsFormUpdate = true;
+      }
+      if (updatedClient.state === undefined) {
+        updatedClient.state = '';
+        needsFormUpdate = true;
+      }
+      if (updatedClient.postalCode === undefined) {
+        updatedClient.postalCode = '';
+        needsFormUpdate = true;
+      }
+      if (updatedClient.country === undefined) {
+        updatedClient.country = '';
+        needsFormUpdate = true;
+      }
+      
+      // Ensure contactPerson is set if firstName and lastName are available
+      if (!updatedClient.contactPerson && (updatedClient.firstName || updatedClient.lastName)) {
+        const contactPerson = `${updatedClient.firstName || ''} ${updatedClient.lastName || ''}`.trim();
+        updatedClient.contactPerson = contactPerson;
+        needsFormUpdate = true;
+        console.log('Auto-setting contactPerson:', contactPerson);
+      }
+      
+      // Update form data if needed
+      if (needsFormUpdate) {
+        setFormData(prev => ({
+          ...prev,
+          client: updatedClient
+        }));
+        console.log('Updated form data with synchronized client info:', updatedClient);
+      }
+      
+      // Use the updated client data for validation
+      // If we have a selectedCustomer (existing customer), use that data for validation
+      let clientToValidate = needsFormUpdate ? updatedClient : formData.client;
+      
+      // If using existing customer mode and we have selectedCustomer data, use that for validation
+      if (quoteMode === "existing" && selectedCustomer) {
+        console.log('=== SELECTED CUSTOMER DEBUG ===');
+        console.log('selectedCustomer object:', selectedCustomer);
+        console.log('selectedCustomer.email:', selectedCustomer.email);
+        console.log('selectedCustomer.phone:', selectedCustomer.phone);
+        console.log('selectedCustomer.contactPerson:', selectedCustomer.contactPerson);
+        
+        // For existing customers, use the selectedCustomer data directly for validation
+        clientToValidate = {
+          ...clientToValidate,
+          email: selectedCustomer.email,
+          phone: selectedCustomer.phone || '',
+          contactPerson: selectedCustomer.contactPerson,
+          clientType: selectedCustomer.clientType,
+          companyName: selectedCustomer.companyName || '',
+          role: selectedCustomer.role || '',
+          address: selectedCustomer.address || '',
+          city: selectedCustomer.city || '',
+          state: selectedCustomer.state || '',
+          postalCode: selectedCustomer.postalCode || '',
+          country: selectedCustomer.country || '',
+          countryCode: selectedCustomer.countryCode || '+971'
+        };
+        console.log('Using selectedCustomer data for validation:', clientToValidate);
+      }
+      
+      // Debug: Log the client data being validated
+      console.log('=== CLIENT VALIDATION DEBUG ===');
+      console.log('Client data being validated:', clientToValidate);
+      console.log('Email:', clientToValidate.email);
+      console.log('Phone:', clientToValidate.phone);
+      console.log('Contact Person:', clientToValidate.contactPerson);
+      console.log('Address:', clientToValidate.address);
+      console.log('City:', clientToValidate.city);
+      console.log('State:', clientToValidate.state);
+      console.log('Postal Code:', clientToValidate.postalCode);
+      console.log('Country:', clientToValidate.country);
+      
+      // Validate essential fields only
+      // Skip validation for existing customers since we know the data is valid
+      if (quoteMode === "existing" && selectedCustomer) {
+        console.log('Skipping validation for existing customer - data is pre-validated');
+      } else if (!clientToValidate.email || !clientToValidate.phone) {
+        console.error('Missing essential client fields:', {
+          email: clientToValidate.email,
+          phone: clientToValidate.phone
+        });
+        throw new Error('Missing required client information: email and phone are required');
+      }
+      
+      // Check if we have either contactPerson OR both firstName and lastName
+      const hasContactPerson = clientToValidate.contactPerson && clientToValidate.contactPerson.trim() !== '';
+      const hasFullName = clientToValidate.firstName && clientToValidate.firstName.trim() !== '' && 
+                         clientToValidate.lastName && clientToValidate.lastName.trim() !== '';
+      
+      if (!hasContactPerson && !hasFullName) {
+        console.error('Missing name information:', {
+          contactPerson: clientToValidate.contactPerson,
+          firstName: clientToValidate.firstName,
+          lastName: clientToValidate.lastName
+        });
+        throw new Error('Contact person name is required (or first name and last name)');
+      }
+      
+      // Ensure contactPerson is set if we have firstName and lastName
+      if (!hasContactPerson && hasFullName) {
+        clientToValidate.contactPerson = `${clientToValidate.firstName} ${clientToValidate.lastName}`.trim();
+        console.log('Auto-generated contactPerson from firstName and lastName:', clientToValidate.contactPerson);
+      }
+      
+      // Company validation only if company type
+      if (clientToValidate.clientType === "Company" && !clientToValidate.companyName) {
+        throw new Error('Company name is required for company clients');
+      }
+      
+      // Address fields are optional but if provided, should be complete
+      const hasPartialAddress = clientToValidate.address || clientToValidate.city || clientToValidate.state || clientToValidate.postalCode || clientToValidate.country;
+      const hasCompleteAddress = clientToValidate.address && clientToValidate.city && clientToValidate.state && clientToValidate.postalCode && clientToValidate.country;
+      
+      if (hasPartialAddress && !hasCompleteAddress) {
+        console.warn('Partial address provided - some address fields are missing');
+        // Don't throw error, just warn - address is optional
+      }
+      
       // First, save the client if it's a new client
       let clientId = selectedCustomer?.id;
       
+      // If no selectedCustomer ID, we need to create a new client from form data
       if (!clientId) {
         // Create new client - Fix the data mapping
         const clientData = {
-          clientType: formData.client.clientType,
-          companyName: formData.client.clientType === "Company" ? formData.client.companyName : null,
-          contactPerson: formData.client.contactPerson || `${formData.client.firstName || ''} ${formData.client.lastName || ''}`.trim(),
-          email: formData.client.email,
-          phone: formData.client.phone,
-          countryCode: formData.client.countryCode,
-          role: formData.client.clientType === "Company" ? formData.client.role : null,
+          clientType: clientToValidate.clientType,
+          companyName: clientToValidate.clientType === "Company" ? clientToValidate.companyName : null,
+          contactPerson: clientToValidate.contactPerson || `${clientToValidate.firstName || ''} ${clientToValidate.lastName || ''}`.trim(),
+          email: clientToValidate.email,
+          phone: clientToValidate.phone,
+          countryCode: clientToValidate.countryCode,
+          role: clientToValidate.clientType === "Company" ? clientToValidate.role : null,
+          address: clientToValidate.address || '',
+          city: clientToValidate.city || '',
+          state: clientToValidate.state || '',
+          postalCode: clientToValidate.postalCode || '',
+          country: clientToValidate.country || '',
+          additionalInfo: clientToValidate.additionalInfo || '',
         };
-
-        // Validate client data before sending to API
-        if (!clientData.contactPerson || !clientData.email || !clientData.phone) {
-          throw new Error('Missing required client information: contact person, email, or phone');
-        }
-
-        if (clientData.clientType === "Company" && !clientData.companyName) {
-          throw new Error('Company name is required for company clients');
-        }
 
         console.log('Creating new client with data:', clientData);
 
@@ -558,11 +1154,72 @@ function CreateQuoteContent() {
 
         const newClient = await clientResponse.json();
         clientId = newClient.id;
+        
+        // Update the selectedCustomer state with the newly created client
+        const newCustomerData = {
+          id: newClient.id,
+          clientType: newClient.clientType,
+          companyName: newClient.companyName,
+          contactPerson: newClient.contactPerson,
+          email: newClient.email,
+          phone: newClient.phone,
+          countryCode: newClient.countryCode,
+          role: newClient.role,
+          address: newClient.address,
+          city: newClient.city,
+          state: newClient.state,
+          postalCode: newClient.postalCode,
+          country: newClient.country,
+          additionalInfo: newClient.additionalInfo,
+          firstName: formData.client.firstName || '',
+          lastName: formData.client.lastName || '',
+        };
+        
+        setSelectedCustomer(newCustomerData);
+        console.log('Updated selectedCustomer with new client:', newCustomerData);
+        
+        // Also update the form data with the new customer information to ensure Step 5 displays correctly
+        setFormData(prev => ({
+          ...prev,
+          client: {
+            ...prev.client,
+            // Update with the new customer data to ensure consistency
+            contactPerson: newCustomerData.contactPerson,
+            email: newCustomerData.email,
+            phone: newCustomerData.phone,
+            address: newCustomerData.address,
+            city: newCustomerData.city,
+            state: newCustomerData.state,
+            postalCode: newCustomerData.postalCode,
+            country: newCustomerData.country,
+            additionalInfo: newCustomerData.additionalInfo,
+            // Also ensure firstName and lastName are set if they exist
+            firstName: newCustomerData.firstName || prev.client.firstName || '',
+            lastName: newCustomerData.lastName || prev.client.lastName || '',
+          }
+        }));
+        
+        console.log('Updated form data with new customer information for Step 5 display');
+        
+        // Log the final state for debugging
+        console.log('=== FINAL STATE AFTER CLIENT CREATION ===');
+        console.log('New client ID:', clientId);
+        console.log('Updated selectedCustomer:', newCustomerData);
+        console.log('Updated formData.client:', formData.client);
+        
         console.log('Client created successfully:', newClient);
       }
 
       // Get current user ID
       const currentUserId = await getCurrentUserId();
+
+      // Debug: Log the customer information being used
+      console.log('Creating quote with customer info:', {
+        clientId,
+        selectedCustomer,
+        formDataClient: formData.client,
+        newCustomerData: clientId ? 'Using existing customer' : 'Created new customer'
+      });
 
       // Prepare quote data for API - Fix the data structure to match DatabaseService expectations
       const quoteData = {
@@ -576,11 +1233,16 @@ function CreateQuoteContent() {
         printing: formData.products[0]?.printingSelection || "Digital",
       };
 
+      // Debug: Log the quote data being sent
+      console.log('Quote data being sent:', quoteData);
+      console.log('Customer ID being used:', clientId);
+      console.log('Selected customer state:', selectedCustomer);
+
       let quoteResponse;
       let savedQuote;
 
       // Check if we're actually editing an existing quote (has selectedQuoteId)
-      if (selectedQuoteId) {
+      if (selectedQuoteId && isUpdate) {
         // Update existing quote - we have a specific quote ID to edit
         console.log('Updating existing quote:', selectedQuoteId);
         console.log('Quote data being sent:', quoteData);
@@ -588,21 +1250,50 @@ function CreateQuoteContent() {
         // For updates, we can include additional data like papers, finishing, amounts
         const updateData = {
           ...quoteData,
-          papers: formData.products[0]?.papers || [],
-          finishing: formData.products[0]?.finishing || [],
+          papers: formData.operational.papers.map((operationalPaper, index) => {
+            // Get the corresponding paper name and gsm from product papers
+            const productPaper = formData.products[0]?.papers[index] || { name: "Standard Paper", gsm: "150" };
+            return {
+              name: productPaper.name || "Standard Paper",
+              gsm: productPaper.gsm || "150",
+              inputWidth: operationalPaper.inputWidth || null,
+              inputHeight: operationalPaper.inputHeight || null,
+              pricePerPacket: operationalPaper.pricePerPacket || null,
+              pricePerSheet: operationalPaper.pricePerSheet || null,
+              sheetsPerPacket: operationalPaper.sheetsPerPacket || null,
+              recommendedSheets: operationalPaper.recommendedSheets || null,
+              enteredSheets: operationalPaper.enteredSheets || null,
+              outputWidth: operationalPaper.outputWidth || null,
+              outputHeight: operationalPaper.outputHeight || null,
+              selectedColors: operationalPaper.selectedColors || null,
+            };
+          }) || [],
+          finishing: formData.operational.finishing.map(finish => ({
+            name: finish.name || "Standard Finishing",
+            cost: finish.cost || 0,
+          })) || [],
           amounts: {
             base: formData.calculation.basePrice || 0,
             vat: formData.calculation.vatAmount || 0,
             total: formData.calculation.totalPrice || 0
+          },
+          operational: {
+            plates: formData.operational.plates || null,
+            units: formData.operational.units || null
           }
         };
+        
+        // Validate and clean the update data before sending
+        const cleanedUpdateData = validateAndCleanQuoteData(updateData);
+        
+        console.log('Quote data being sent for update:', cleanedUpdateData);
         
         quoteResponse = await fetch(`/api/quotes/${selectedQuoteId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(updateData),
+          body: JSON.stringify(cleanedUpdateData),
         });
 
         if (!quoteResponse.ok) {
@@ -613,6 +1304,10 @@ function CreateQuoteContent() {
 
         savedQuote = await quoteResponse.json();
         console.log('Quote updated successfully:', savedQuote);
+        
+        // Show success message for update
+        alert('Quote updated successfully!');
+        return;
       } else {
         // Create new quote - even if using existing customer, this is a new quote
         console.log('Creating new quote with complete details');
@@ -629,23 +1324,50 @@ function CreateQuoteContent() {
         const completeQuoteData = {
           ...quoteData,
           quoteId: quoteId,
-          papers: formData.products[0]?.papers || [],
-          finishing: formData.products[0]?.finishing || [],
+          papers: formData.operational.papers.map((operationalPaper, index) => {
+            // Get the corresponding paper name and gsm from product papers
+            const productPaper = formData.products[0]?.papers[index] || { name: "Standard Paper", gsm: "150" };
+            return {
+              name: productPaper.name || "Standard Paper",
+              gsm: productPaper.gsm || "150",
+              inputWidth: operationalPaper.inputWidth || null,
+              inputHeight: operationalPaper.inputHeight || null,
+              pricePerPacket: operationalPaper.pricePerPacket || null,
+              pricePerSheet: operationalPaper.pricePerSheet || null,
+              sheetsPerPacket: operationalPaper.sheetsPerPacket || null,
+              recommendedSheets: operationalPaper.recommendedSheets || null,
+              enteredSheets: operationalPaper.enteredSheets || null,
+              outputWidth: operationalPaper.outputWidth || null,
+              outputHeight: operationalPaper.outputHeight || null,
+              selectedColors: operationalPaper.selectedColors || null,
+            };
+          }) || [],
+          finishing: formData.operational.finishing.map(finish => ({
+            name: finish.name || "Standard Finishing",
+            cost: finish.cost || 0,
+          })) || [],
           amounts: {
             base: formData.calculation.basePrice || 0,
             vat: formData.calculation.vatAmount || 0,
             total: formData.calculation.totalPrice || 0
+          },
+          operational: {
+            plates: formData.operational.plates || null,
+            units: formData.operational.units || null
           }
         };
         
-        console.log('Complete quote data being sent:', completeQuoteData);
+        // Validate and clean the data before sending
+        const cleanedQuoteData = validateAndCleanQuoteData(completeQuoteData);
+        
+        console.log('Complete quote data being sent:', cleanedQuoteData);
         
         quoteResponse = await fetch('/api/quotes', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(completeQuoteData),
+          body: JSON.stringify(cleanedQuoteData),
         });
 
         if (!quoteResponse.ok) {
@@ -658,13 +1380,15 @@ function CreateQuoteContent() {
         console.log('Quote created successfully with all details:', savedQuote);
       }
 
-      // Show success modal
-      setSaveModalOpen(true);
+      // Show success modal only for new quotes
+      if (!isUpdate) {
+        setSaveModalOpen(true);
+      }
     } catch (error) {
       console.error('Error saving quote:', error);
       // Use a more user-friendly error message
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      const action = selectedQuoteId ? 'updating' : 'creating';
+      const action = selectedQuoteId && isUpdate ? 'updating' : 'creating';
       alert(`Error ${action} quote: ${errorMessage}`);
     } finally {
       setIsSaving(false);
@@ -836,6 +1560,8 @@ function CreateQuoteContent() {
                 setSaveModalOpen(true);
               }
             }}
+            isEditMode={!!selectedQuoteId}
+            selectedQuoteId={selectedQuoteId}
           />
         );
       default:
@@ -883,39 +1609,7 @@ function CreateQuoteContent() {
             </div>
           )}
 
-          {currentStep === 2 && (
-            <div className="mt-6">
-              {!canProceedFromStep2() ? (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">!</span>
-                    </div>
-                    <p className="text-yellow-700 font-medium">
-                      {quoteMode === "new" 
-                        ? "Please fill in all required customer information fields to continue" 
-                        : "Please select an existing quote to continue"
-                      }
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">✓</span>
-                    </div>
-                    <p className="text-green-700 font-medium">
-                      {quoteMode === "new" 
-                        ? "All required customer information is complete. You can proceed to the next step." 
-                        : "Quote selected successfully. You can proceed to the next step."
-                      }
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+
 
           <div className="mt-12 pt-8 border-t border-slate-200 flex justify-between items-center">
             <Button
@@ -926,7 +1620,7 @@ function CreateQuoteContent() {
             >
               Previous
             </Button>
-            {currentStep < 5 ? (
+            {currentStep < 5 && (
               <div className="relative">
                 <Button
                   onClick={nextStep}
@@ -960,12 +1654,25 @@ function CreateQuoteContent() {
                   </div>
                 )}
               </div>
-            ) : (
+            )}
+            
+            {currentStep === 5 && (
               <Button
-                onClick={() => handleSaveQuote(!!selectedQuoteId)}
+                onClick={() => handleSaveQuote(false)}
+                disabled={isSaving}
                 className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                {selectedQuoteId ? "Update Quote" : "Save Quote"}
+                {isSaving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5 mr-2" />
+                    Submit Quote
+                  </>
+                )}
               </Button>
             )}
           </div>
@@ -976,13 +1683,10 @@ function CreateQuoteContent() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
             <h3 className="text-2xl font-bold text-slate-900 mb-3">
-              {selectedQuoteId ? "Quote Updated Successfully!" : "Quote Saved Successfully!"}
+              Quote Submitted Successfully!
             </h3>
             <p className="text-slate-600 mb-6">
-              {selectedQuoteId 
-                ? "Your quote has been updated and will appear in the Quote Management page."
-                : "Your quote has been saved and will appear in the Quote Management page."
-              }
+              Your quote has been submitted and will appear in the Quote Management page.
             </p>
             <div className="space-y-4">
               <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
@@ -1002,21 +1706,15 @@ function CreateQuoteContent() {
               >
                 Download Operations Copy
               </Button>
-                              <Button
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                  onClick={() => {
-                    setSaveModalOpen(false);
-                    router.push("/quote-management");
-                  }}
-                >
-                  {selectedQuoteId ? "View Updated Quote" : "View in Quote Management"}
-                </Button>
               <Button
                 variant="outline"
-                onClick={handleCloseAndGoHome}
+                onClick={() => {
+                  setSaveModalOpen(false);
+                  router.push("/");
+                }}
                 className="w-full py-3 rounded-xl border-slate-300 hover:border-slate-400 hover:bg-slate-400 transition-all duration-300"
               >
-                Close
+                Close & Go to Dashboard
               </Button>
             </div>
           </div>

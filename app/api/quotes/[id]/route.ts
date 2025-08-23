@@ -1,6 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DatabaseService } from '@/lib/database';
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    console.log('Getting quote with ID:', id);
+    
+    const quote = await DatabaseService.getQuoteById(id);
+    if (!quote) {
+      return NextResponse.json(
+        { error: 'Quote not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json(quote);
+  } catch (error) {
+    console.error('Error getting quote:', error);
+    return NextResponse.json(
+      { error: 'Failed to get quote' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

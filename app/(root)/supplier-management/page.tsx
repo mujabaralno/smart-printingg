@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ interface MaterialRow {
   id: string;
   materialId: string;
   name: string;
+  gsm?: string;
   supplier: {
     id: string;
     name: string;
@@ -80,7 +82,8 @@ const createFallbackData = () => {
     {
       id: "fallback-m-1",
       materialId: "M-001",
-      name: "Art Paper 300gsm",
+      name: "Art Paper",
+      gsm: "300",
       supplier: suppliers[0],
       cost: 0.5,
       unit: "per_sheet",
@@ -90,7 +93,8 @@ const createFallbackData = () => {
     {
       id: "fallback-m-2",
       materialId: "M-002", 
-      name: "Art Paper 150gsm",
+      name: "Art Paper",
+      gsm: "150",
       supplier: suppliers[0],
       cost: 0.18,
       unit: "per_sheet",
@@ -109,6 +113,8 @@ const createFallbackData = () => {
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
 });
 
 const fmtDate = (iso?: string) =>
@@ -132,7 +138,9 @@ const unitLabel = (unit: string) => {
 const PAGE_SIZE = 20;
 type Mode = "add" | "edit";
 
-export default function SupplierManagementPage() {
+// Component that uses useSearchParams - must be wrapped in Suspense
+function SupplierManagementContent() {
+  const searchParams = useSearchParams();
   const [suppliers, setSuppliers] = useState<SupplierRow[]>([]);
   const [materials, setMaterials] = useState<MaterialRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,6 +153,10 @@ export default function SupplierManagementPage() {
   const [unitFilter, setUnitFilter] = useState<"all" | string>("all");
   const [page, setPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
+  
+  // Handle search params for material highlighting
+  const [highlightedMaterialId, setHighlightedMaterialId] = useState<string | null>(null);
+  const highlightedMaterialRef = useRef<HTMLTableRowElement>(null);
 
   // modal
   const [open, setOpen] = useState(false);
@@ -152,12 +164,33 @@ export default function SupplierManagementPage() {
   const [draft, setDraft] = useState<Partial<MaterialRow>>({
     materialId: "",
     name: "",
+    gsm: "",
     supplier: { id: "", name: "" },
     cost: 0,
     unit: "per_sheet",
     lastUpdated: new Date().toISOString().slice(0, 10),
     status: "Active",
   });
+
+  // Handle URL parameters for material highlighting
+  useEffect(() => {
+    const materialId = searchParams.get('materialId');
+    if (materialId) {
+      setHighlightedMaterialId(materialId);
+      // Clear the highlight after 5 seconds
+      setTimeout(() => setHighlightedMaterialId(null), 5000);
+      
+      // Scroll to the highlighted material after a short delay to ensure it's rendered
+      setTimeout(() => {
+        if (highlightedMaterialRef.current) {
+          highlightedMaterialRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }
+      }, 100);
+    }
+  }, [searchParams]);
 
   // Load data from database
   useEffect(() => {
@@ -280,6 +313,7 @@ export default function SupplierManagementPage() {
       const materialData = {
         materialId: draft.materialId!,
         name: draft.name!,
+        gsm: draft.gsm || undefined,
         supplierId: draft.supplier.id,
         cost: Number(draft.cost),
         unit: draft.unit!,
@@ -435,66 +469,128 @@ export default function SupplierManagementPage() {
             )}
           </div>
 
+          {/* Search Result Highlight Banner */}
+          {highlightedMaterialId && (
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <span className="text-yellow-800">🔍</span>
+                <span className="text-yellow-800 font-medium">
+                  Material found from search! The highlighted row will automatically scroll into view.
+                </span>
+                <button
+                  onClick={() => setHighlightedMaterialId(null)}
+                  className="ml-auto text-yellow-600 hover:text-yellow-800 text-sm underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Table */}
           <div className="overflow-hidden border border-slate-200 rounded-2xl">
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow className="border-slate-200">
-                  <TableHead className="text-slate-700 font-semibold p-6">Material ID</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Material</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Supplier</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Cost</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Unit</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Last Updated</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Actions</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Material ID</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-40">Material</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-24">GSM</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-36">Supplier</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-28">Cost</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-24">Unit</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Last Updated</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-24">Status</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-16 text-slate-500">
+                    <TableCell colSpan={9} className="text-center py-16 text-slate-500">
                       Loading materials...
                     </TableCell>
                   </TableRow>
                 ) : current.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-16 text-slate-500">
+                    <TableCell colSpan={9} className="text-center py-16 text-slate-500">
                       No materials found with current filters.
                     </TableCell>
                   </TableRow>
                 ) : (
                   current.map((r) => (
-                    <TableRow key={r.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
-                      <TableCell className="font-medium text-slate-900 p-6">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                          {r.materialId}
-                        </span>
+                    <TableRow 
+                      key={r.id} 
+                      ref={(highlightedMaterialId === r.id || highlightedMaterialId === r.materialId) ? highlightedMaterialRef : null}
+                      className={`hover:bg-slate-50/80 transition-colors duration-200 border-slate-100 ${
+                        highlightedMaterialId === r.id || highlightedMaterialId === r.materialId 
+                          ? 'bg-yellow-50 border-yellow-200 shadow-md' 
+                          : ''
+                      }`}
+                    >
+                      <TableCell className="font-medium text-slate-900 p-6 w-32">
+                        <div className="truncate">
+                          <div className="flex items-center space-x-2">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                              {r.materialId}
+                            </span>
+                            {(highlightedMaterialId === r.id || highlightedMaterialId === r.materialId) && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 animate-pulse">
+                                🔍 Found
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-slate-700 p-6">{r.name}</TableCell>
-                      <TableCell className="text-slate-700 p-6">{r.supplier.name}</TableCell>
-                      <TableCell className="text-slate-700 p-6">{currency.format(r.cost)}</TableCell>
-                      <TableCell className="text-slate-700 p-6">{unitLabel(r.unit)}</TableCell>
-                      <TableCell className="text-slate-700 p-6">{fmtDate(r.lastUpdated)}</TableCell>
-                      <TableCell className="p-6">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                          r.status === "Active" 
-                            ? "bg-green-100 text-green-800" 
-                            : "bg-red-100 text-red-800"
-                        }`}>
-                          {r.status}
-                        </span>
+                      <TableCell className="text-slate-700 p-6 w-40">
+                        <div className="truncate">{r.name}</div>
                       </TableCell>
-                      <TableCell className="p-6">
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => onEdit(r)}
-                            className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
+                      <TableCell className="text-slate-700 p-6 w-24">
+                        <div className="truncate">
+                          {r.gsm ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                              {r.gsm} gsm
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-700 p-6 w-36">
+                        <div className="truncate">{r.supplier.name}</div>
+                      </TableCell>
+                      <TableCell className="text-slate-700 p-6 w-28">
+                        <div className="truncate">{currency.format(r.cost)}</div>
+                      </TableCell>
+                      <TableCell className="text-slate-700 p-6 w-24">
+                        <div className="truncate">{unitLabel(r.unit)}</div>
+                      </TableCell>
+                      <TableCell className="text-slate-700 p-6 w-32">
+                        <div className="truncate">{fmtDate(r.lastUpdated)}</div>
+                      </TableCell>
+                      <TableCell className="p-6 w-24">
+                        <div className="truncate">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                            r.status === "Active" 
+                              ? "bg-green-100 text-green-800" 
+                              : "bg-red-100 text-red-800"
+                          }`}>
+                            {r.status}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-6 w-32">
+                        <div className="truncate">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Edit Material"
+                              onClick={() => onEdit(r)}
+                              className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -582,11 +678,22 @@ export default function SupplierManagementPage() {
                 <Label htmlFor="name" className="text-sm font-medium text-slate-700">Material Name</Label>
                 <Input
                   id="name"
-                  placeholder="e.g. Art Paper 300gsm"
+                  placeholder="e.g. Art Paper"
                   value={draft.name}
                   onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                   className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                 />
+              </div>
+              <div>
+                <Label htmlFor="gsm" className="text-sm font-medium text-slate-700">GSM (Paper Weight)</Label>
+                <Input
+                  id="gsm"
+                  placeholder="e.g. 300, 150, 80"
+                  value={draft.gsm || ""}
+                  onChange={(e) => setDraft({ ...draft, gsm: e.target.value })}
+                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                />
+                <p className="text-xs text-slate-500 mt-1">Leave empty for non-paper materials</p>
               </div>
               <div>
                 <Label htmlFor="supplier" className="text-sm font-medium text-slate-700">Supplier</Label>
@@ -673,5 +780,21 @@ export default function SupplierManagementPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// Main wrapper component with Suspense boundary
+export default function SupplierManagementPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-slate-600">Loading supplier management...</p>
+        </div>
+      </div>
+    }>
+      <SupplierManagementContent />
+    </Suspense>
   );
 }

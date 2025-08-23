@@ -7,12 +7,27 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
+    console.log('🔍 API: Updating client with data:', body);
+    console.log('🔍 API: Client ID:', params.id);
+    
     const client = await DatabaseService.updateClient(params.id, body);
+    console.log('✅ API: Client updated successfully:', client);
+    
     return NextResponse.json(client);
-  } catch (error) {
-    console.error('Error updating client:', error);
+  } catch (error: any) {
+    console.error('❌ API: Error updating client:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
     return NextResponse.json(
-      { error: 'Failed to update client' },
+      { 
+        error: 'Failed to update client', 
+        details: error.message,
+        stack: error.stack 
+      },
       { status: 500 }
     );
   }

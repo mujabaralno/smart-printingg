@@ -29,13 +29,37 @@ type UserFilter = "all" | string;
 
 
 type Row = (typeof QUOTES)[number] & {
-  quoteId?: string; // Add formatted quote ID for display
+  quoteId?: string;
   productName?: string;
   product?: string; // This field is used in the table display
   quantity?: number;
+  // New Step 3 fields
+  printingSelection?: string;
+  printing?: string; // Keep for backward compatibility
+  sides?: string;
+  flatSize?: {
+    width: number | null;
+    height: number | null;
+    spine: number | null;
+  };
+  closeSize?: {
+    width: number | null;
+    height: number | null;
+    spine: number | null;
+  };
+  useSameAsFlat?: boolean;
+  colors?: {
+    front?: string;
+    back?: string;
+  } | null;
 };
 
-const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+const currency = new Intl.NumberFormat("en-US", { 
+  style: "currency", 
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" });
 
@@ -120,9 +144,24 @@ export default function QuoteManagementPage() {
             amount: quote.amounts?.total || 0,
             status: quote.status as Status,
             userId: quote.user?.id || "cmejqfk3s0000x5a98slufy9n", // Use real admin user ID as fallback
-            product: quote.product || (quote.papers && quote.papers.length > 0 ? quote.papers[0].name : "Printing Product"), // Use paper name if available
-            productName: quote.product || (quote.papers && quote.papers.length > 0 ? quote.papers[0].name : "Printing Product"), // Keep for backward compatibility
+            product: quote.productName || quote.product || (quote.papers && quote.papers.length > 0 ? quote.papers[0].name : "Printing Product"), // Use productName if available
+            productName: quote.productName || quote.product || (quote.papers && quote.papers.length > 0 ? quote.papers[0].name : "Printing Product"), // Keep for backward compatibility
             quantity: quote.quantity || 0,
+            // New Step 3 fields
+            sides: quote.sides || "1", // Map the sides field
+            printingSelection: quote.printingSelection || quote.printing || "Digital",
+            flatSize: {
+              width: quote.flatSizeWidth,
+              height: quote.flatSizeHeight,
+              spine: quote.flatSizeSpine
+            },
+            closeSize: {
+              width: quote.closeSizeWidth,
+              height: quote.closeSizeHeight,
+              spine: quote.closeSizeSpine
+            },
+            useSameAsFlat: quote.useSameAsFlat || false,
+            colors: quote.colors ? (typeof quote.colors === 'string' ? JSON.parse(quote.colors) : quote.colors) : null,
           }));
           console.log('Transformed quotes:', transformedQuotes);
           setRows(transformedQuotes);
@@ -147,7 +186,7 @@ export default function QuoteManagementPage() {
   // This page will be updated to use the database service in future iterations
 
   const filtered = React.useMemo(() => {
-    return rows.filter((q) => {
+    const filteredQuotes = rows.filter((q) => {
       const s = search.trim().toLowerCase();
       // Enhanced search to include quote number, client name, and person name as per requirements
       const hitSearch =
@@ -165,24 +204,40 @@ export default function QuoteManagementPage() {
 
       return hitSearch && hitStatus && hitContactPerson && hitAmount && hitFrom && hitTo;
     });
-      }, [rows, search, from, to, status, contactPerson, minAmount]);
+
+    // Sort by newest first (most recent date first)
+    const sorted = [...filteredQuotes].sort((a, b) => {
+      const dateA = new Date(a.date || 0);
+      const dateB = new Date(b.date || 0);
+      return dateB.getTime() - dateA.getTime(); // Newest first
+    });
+
+    return sorted;
+  }, [rows, search, from, to, status, contactPerson, minAmount]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const start = (page - 1) * PAGE_SIZE;
   const current = showAll ? filtered : filtered.slice(start, start + PAGE_SIZE);
 
 
-  const [openEdit, setOpenEdit] = React.useState(false);
   const [draft, setDraft] = React.useState<{
     id: string;
     clientName: string;
     contactPerson: string;
-    date: string; // YYYY-MM-DD
+    date: string;
     amount: number | "";
     status: Status;
     userId: string;
     productName?: string;
     quantity?: number | "";
+    // New Step 3 fields
+    printingSelection?: string;
+    sides?: string;
+    flatSize: { width: number | null; height: number | null; spine: number | null };
+    closeSize: { width: number | null; height: number | null; spine: number | null };
+    useSameAsFlat?: boolean;
+    colors?: { front?: string; back?: string } | null;
+    originalClientId?: string | null; // Added for client relationship tracking
   }>({
     id: "",
     clientName: "",
@@ -193,22 +248,144 @@ export default function QuoteManagementPage() {
     userId: "cmejqfk3s0000x5a98slufy9n", // Use real admin user ID instead of dummy data
     productName: "",
     quantity: "",
+    // Initialize Step 3 fields
+    printingSelection: "Digital",
+    sides: "1",
+    flatSize: { width: null, height: null, spine: null },
+    closeSize: { width: null, height: null, spine: null },
+    useSameAsFlat: true,
+    colors: { front: "", back: "" },
+    originalClientId: null
   });
+
+  const [openEdit, setOpenEdit] = React.useState(false);
 
   const onEdit = (id: string) => {
     const q = rows.find((r) => r.id === id);
     if (!q) return;
-    setDraft({
-      id: q.id,
-      clientName: q.clientName,
-      contactPerson: q.contactPerson,
-      date: q.date,
-      amount: q.amount,
-      status: q.status,
-      userId: q.userId,
-      productName: q.product ?? q.productName ?? "",
-      quantity: typeof q.quantity === "number" ? q.quantity : "",
-    });
+    
+    // Get the original quote data from the database to ensure we have all the correct relationships
+    const loadQuoteData = async () => {
+      try {
+        console.log('Loading quote data for editing, quote ID:', id);
+        console.log('Current row data:', q);
+        
+        const response = await fetch(`/api/quotes/${id}`);
+        if (response.ok) {
+          const quoteData = await response.json();
+          console.log('Raw quote data from API:', quoteData);
+          
+          // Parse colors if it's a string
+          let parsedColors = { front: "", back: "" };
+          if (quoteData.colors) {
+            try {
+              if (typeof quoteData.colors === 'string') {
+                parsedColors = JSON.parse(quoteData.colors);
+              } else {
+                parsedColors = quoteData.colors;
+              }
+            } catch (e) {
+              console.warn('Failed to parse colors:', e);
+              parsedColors = { front: "", back: "" };
+            }
+          }
+          console.log('Parsed colors:', parsedColors);
+          
+          // Ensure size fields are properly handled
+          const flatSize = {
+            width: quoteData.flatSizeWidth || q.flatSize?.width || null,
+            height: quoteData.flatSizeHeight || q.flatSize?.height || null,
+            spine: quoteData.flatSizeSpine || q.flatSize?.spine || null
+          };
+          console.log('Flat size data:', flatSize);
+          
+          const closeSize = {
+            width: quoteData.closeSizeWidth || q.closeSize?.width || flatSize.width,
+            height: quoteData.closeSizeHeight || q.closeSize?.height || flatSize.height,
+            spine: quoteData.closeSizeSpine || q.closeSize?.spine || flatSize.spine
+          };
+          console.log('Close size data:', closeSize);
+          
+          // Determine if useSameAsFlat should be true based on whether sizes are the same
+          const useSameAsFlat = quoteData.useSameAsFlat !== undefined 
+            ? quoteData.useSameAsFlat 
+            : (flatSize.width === closeSize.width && 
+               flatSize.height === closeSize.height && 
+               flatSize.spine === closeSize.spine);
+          console.log('Use same as flat:', useSameAsFlat);
+          
+          const draftData = {
+            id: quoteData.id,
+            clientName: quoteData.client?.companyName || quoteData.client?.contactPerson || q.clientName,
+            contactPerson: quoteData.client?.contactPerson || q.contactPerson,
+            date: quoteData.date ? new Date(quoteData.date).toISOString().split('T')[0] : q.date,
+            amount: quoteData.amounts?.total || q.amount,
+            status: quoteData.status || q.status,
+            userId: quoteData.userId || q.userId,
+            productName: quoteData.product || quoteData.productName || q.productName || "",
+            quantity: quoteData.quantity || q.quantity || "",
+            // New Step 3 fields
+            printingSelection: quoteData.printingSelection || quoteData.printing || q.printingSelection || "Digital",
+            sides: quoteData.sides || q.sides || "1",
+            flatSize,
+            closeSize,
+            useSameAsFlat,
+            colors: parsedColors,
+            // Store the original client ID to prevent foreign key issues
+            originalClientId: quoteData.clientId
+          };
+          
+          console.log('Setting draft with data:', draftData);
+          setDraft(draftData);
+        } else {
+          // Fallback to row data if API call fails
+          console.warn('API call failed, using row data as fallback');
+          setDraft({
+            id: q.id,
+            clientName: q.clientName,
+            contactPerson: q.contactPerson,
+            date: q.date,
+            amount: q.amount,
+            status: q.status,
+            userId: q.userId,
+            productName: q.product ?? q.productName ?? "",
+            quantity: typeof q.quantity === "number" ? q.quantity : "",
+            // New Step 3 fields
+            printingSelection: q.printingSelection || q.printing || "Digital",
+            sides: q.sides || "1",
+            flatSize: q.flatSize || { width: null, height: null, spine: null },
+            closeSize: q.closeSize || { width: null, height: null, spine: null },
+            useSameAsFlat: q.useSameAsFlat || false,
+            colors: q.colors || { front: "", back: "" },
+            originalClientId: null
+          });
+        }
+      } catch (error) {
+        console.error('Error loading quote data for editing:', error);
+        // Fallback to row data
+        setDraft({
+          id: q.id,
+          clientName: q.clientName,
+          contactPerson: q.contactPerson,
+          date: q.date,
+          amount: q.amount,
+          status: q.status,
+          userId: q.userId,
+          productName: q.product ?? q.productName ?? "",
+          quantity: typeof q.quantity === "number" ? q.quantity : "",
+          // New Step 3 fields
+          printingSelection: q.printingSelection || q.printing || "Digital",
+          sides: q.sides || "1",
+          flatSize: q.flatSize || { width: null, height: null, spine: null },
+          closeSize: q.closeSize || { width: null, height: null, spine: null },
+          useSameAsFlat: q.useSameAsFlat || false,
+          colors: q.colors || { front: "", back: "" },
+          originalClientId: null
+        });
+      }
+    };
+    
+    loadQuoteData();
     setOpenEdit(true);
   };
 
@@ -224,48 +401,54 @@ export default function QuoteManagementPage() {
       // First, we need to find or create the client
       let clientId = "";
       
-      // Try to find existing client by email (using a default email since we don't have it in the form)
-      console.log('Searching for existing client...');
-      const clientResponse = await fetch('/api/clients');
-      if (clientResponse.ok) {
-        const clients = await clientResponse.json();
-        console.log('Found clients:', clients.length);
-        const existingClient = clients.find((c: any) => 
-          c.contactPerson === draft.contactPerson || 
-          c.companyName === draft.clientName
-        );
-        if (existingClient) {
-          clientId = existingClient.id;
-          console.log('Using existing client:', clientId);
+      // If originalClientId exists, it means the client was found in the database
+      if (draft.originalClientId) {
+        clientId = draft.originalClientId;
+        console.log('Using existing client:', clientId);
+      } else {
+        // Otherwise, try to find existing client by email (using a default email since we don't have it in the form)
+        console.log('Searching for existing client...');
+        const clientResponse = await fetch('/api/clients');
+        if (clientResponse.ok) {
+          const clients = await clientResponse.json();
+          console.log('Found clients:', clients.length);
+          const existingClient = clients.find((c: any) => 
+            c.contactPerson === draft.contactPerson || 
+            c.companyName === draft.clientName
+          );
+          if (existingClient) {
+            clientId = existingClient.id;
+            console.log('Using existing client:', clientId);
+          }
         }
-      }
 
-      // If no existing client found, create a new one
-      if (!clientId) {
-        console.log('Creating new client...');
-        const createClientResponse = await fetch('/api/clients', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            clientType: "Company",
-            companyName: draft.clientName,
-            contactPerson: draft.contactPerson,
-            email: "customer@example.com", // Default email since not in form
-            phone: "123456789", // Default phone since not in form
-            countryCode: "+971",
-            role: "Customer"
-          }),
-        });
+        // If no existing client found, create a new one
+        if (!clientId) {
+          console.log('Creating new client...');
+          const createClientResponse = await fetch('/api/clients', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              clientType: "Company",
+              companyName: draft.clientName,
+              contactPerson: draft.contactPerson,
+              email: "customer@example.com", // Default email since not in form
+              phone: "123456789", // Default phone since not in form
+              countryCode: "+971",
+              role: "Customer"
+            }),
+          });
 
-        if (createClientResponse.ok) {
-          const newClient = await createClientResponse.json();
-          clientId = newClient.id;
-          console.log('Created new client:', clientId);
-        } else {
-          const errorData = await createClientResponse.json();
-          throw new Error(`Failed to create client: ${errorData.error || 'Unknown error'}`);
+          if (createClientResponse.ok) {
+            const newClient = await createClientResponse.json();
+            clientId = newClient.id;
+            console.log('Created new client:', clientId);
+          } else {
+            const errorData = await createClientResponse.json();
+            throw new Error(`Failed to create client: ${errorData.error || 'Unknown error'}`);
+          }
         }
       }
 
@@ -277,13 +460,23 @@ export default function QuoteManagementPage() {
         userId: draft.userId || null, // Allow null if no user assigned
         product: draft.productName?.trim() || "Printing Product",
         quantity: draft.quantity === "" ? 0 : Number(draft.quantity),
-        sides: "1", // Default to 1 side since not in edit form
-        printing: "Digital", // Default to Digital printing since not in edit form
+        sides: draft.sides || "1", // Default to 1 side since not in edit form
+        printing: draft.printingSelection || "Digital", // Default to Digital printing since not in edit form
+        // New Step 3 fields - map to the correct database schema fields
+        printingSelection: draft.printingSelection,
+        flatSizeWidth: draft.flatSize?.width || null,
+        flatSizeHeight: draft.flatSize?.height || null,
+        flatSizeSpine: draft.flatSize?.spine || null,
+        closeSizeWidth: draft.closeSize?.width || null,
+        closeSizeHeight: draft.closeSize?.height || null,
+        closeSizeSpine: draft.closeSize?.spine || null,
+        useSameAsFlat: draft.useSameAsFlat,
+        colors: draft.colors ? JSON.stringify(draft.colors) : null,
         amounts: {
           base: Number(draft.amount) * 0.8, // Calculate base amount (80% of total)
           vat: Number(draft.amount) * 0.2,  // Calculate VAT (20% of total)
           total: Number(draft.amount)        // Total amount from form
-        }
+        },
       };
       
       console.log('Updating quote with data:', updateData);
@@ -320,6 +513,12 @@ export default function QuoteManagementPage() {
                 productName: draft.productName?.trim() || r.productName,
                 quantity:
                   draft.quantity === "" ? r.quantity : Number(draft.quantity),
+                // New Step 3 fields
+                printingSelection: draft.printingSelection || r.printingSelection,
+                flatSize: draft.flatSize || r.flatSize,
+                closeSize: draft.closeSize || r.closeSize,
+                useSameAsFlat: draft.useSameAsFlat || r.useSameAsFlat,
+                colors: draft.colors || r.colors,
               }
             : r
         )
@@ -593,14 +792,14 @@ export default function QuoteManagementPage() {
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow className="border-slate-200">
-                  <TableHead className="text-slate-700 font-semibold p-6">Quote ID</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Client Details</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Date</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Product</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Quantity</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Amount</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6">Actions</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Quote ID</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-48">Client Details</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-28">Date</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Product</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-24">Quantity</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Amount</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-24">Status</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -610,94 +809,98 @@ export default function QuoteManagementPage() {
                       Loading quotes...
                     </TableCell>
                   </TableRow>
-                ) : current.map((q) => (
-                  <TableRow key={q.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
-                    <TableCell className="font-medium text-slate-900 p-6">{q.quoteId}</TableCell>
-                    <TableCell className="text-slate-700 p-6">
-                      <div className="space-y-1">
-                        <div className="font-medium text-slate-900">{q.clientName}</div>
-                        <div className="text-sm text-slate-600">{q.contactPerson}</div>
-                        <Link 
-                          href="/client-management" 
-                          className="text-xs text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1"
-                        >
-                          <User className="w-3 h-3" />
-                          View Client
-                        </Link>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-6">{fmtDate(q.date)}</TableCell>
-                    <TableCell className="text-slate-700 p-6">{q.product || 'N/A'}</TableCell>
-                    <TableCell className="text-slate-700 p-6">{q.quantity || 'N/A'}</TableCell>
-                    <TableCell className="tabular-nums font-semibold text-slate-900 p-6">{currency.format(q.amount)}</TableCell>
-                    <TableCell className="p-6"><StatusBadge value={q.status} /></TableCell>
-                    <TableCell className="p-6">
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          title="View Details" 
-                          onClick={() => onView(q)}
-                          className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          title="Edit Quote" 
-                          onClick={() => onEdit(q.id)}
-                          className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        {q.status === "Approved" && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                title="Download PDF" 
-                                disabled={downloadingPDF?.startsWith(q.id)}
-                                className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 border border-blue-200 text-blue-700 disabled:opacity-50"
-                              >
-                                {downloadingPDF?.startsWith(q.id) ? (
-                                  <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                  <Download className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem 
-                                onClick={() => handleDownloadPDF(q, 'customer')}
-                                disabled={downloadingPDF === `${q.id}-customer`}
-                                className="text-green-700 hover:text-green-800 hover:bg-green-50"
-                              >
-                                <Download className="h-3 w-3 mr-2" />
-                                Customer PDF
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDownloadPDF(q, 'operations')}
-                                disabled={downloadingPDF === `${q.id}-operations`}
-                                className="text-orange-700 hover:text-orange-800 hover:bg-orange-50"
-                              >
-                                <Download className="h-3 w-3 mr-2" />
-                                Operations PDF
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {current.length === 0 && (
+                ) : current.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-16 text-slate-500">
+                    <TableCell colSpan={8} className="text-center py-16 text-slate-500">
                       No quotes found with current filters.
                     </TableCell>
                   </TableRow>
+                ) : (
+                  current.map((q) => (
+                    <TableRow key={q.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
+                      <TableCell className="font-medium text-slate-900 p-6 w-32">
+                        <div className="truncate">{q.quoteId}</div>
+                      </TableCell>
+                      <TableCell className="text-slate-700 p-6 w-48">
+                        <div className="space-y-1">
+                          <div className="font-medium text-slate-900 truncate">{q.clientName}</div>
+                          <div className="text-sm text-slate-500 truncate">{q.contactPerson}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-700 p-6 w-28">
+                        <div className="truncate">{fmtDate(q.date)}</div>
+                      </TableCell>
+                      <TableCell className="text-slate-700 p-6 w-32">
+                        <div className="truncate">{q.product || 'N/A'}</div>
+                      </TableCell>
+                      <TableCell className="text-slate-700 p-6 w-24">
+                        <div className="truncate">{q.quantity || 'N/A'}</div>
+                      </TableCell>
+                      <TableCell className="tabular-nums font-semibold text-slate-900 p-6 w-32">
+                        <div className="truncate">{currency.format(q.amount)}</div>
+                      </TableCell>
+                      <TableCell className="p-6 w-24"><StatusBadge value={q.status} /></TableCell>
+                      <TableCell className="p-6 w-32">
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            title="View Details" 
+                            onClick={() => onView(q)}
+                            className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            title="Edit Quote" 
+                            onClick={() => onEdit(q.id)}
+                            className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          {q.status === "Approved" && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  title="Download PDF" 
+                                  disabled={downloadingPDF?.startsWith(q.id)}
+                                  className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 border border-blue-200 text-blue-700 disabled:opacity-50"
+                                >
+                                  {downloadingPDF?.startsWith(q.id) ? (
+                                    <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Download className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem 
+                                  onClick={() => handleDownloadPDF(q, 'customer')}
+                                  disabled={downloadingPDF === `${q.id}-customer`}
+                                  className="text-green-700 hover:text-green-800 hover:bg-green-50"
+                                >
+                                  <Download className="h-3 w-3 mr-2" />
+                                  Customer PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleDownloadPDF(q, 'operations')}
+                                  disabled={downloadingPDF === `${q.id}-operations`}
+                                  className="text-orange-700 hover:text-orange-800 hover:bg-orange-50"
+                                >
+                                  <Download className="h-3 w-3 mr-2" />
+                                  Operations PDF
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
@@ -757,38 +960,137 @@ export default function QuoteManagementPage() {
         </CardContent>
       </Card>
 
-      {/* ===== Modal View (Eye) ===== */}
+      {/* ===== Modal View ===== */}
       <Dialog open={openView} onOpenChange={setOpenView}>
-        <DialogContent className="sm:max-w-[560px] rounded-2xl">
+        <DialogContent className="sm:max-w-[800px] rounded-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-slate-900">
-              {viewRow ? `Details for ${viewRow.id}` : "Details"}
-            </DialogTitle>
+            <DialogTitle className="text-xl font-bold text-slate-900">Quote Details</DialogTitle>
           </DialogHeader>
 
-          <div className="rounded-xl border border-slate-200 overflow-hidden">
-            <div className="grid grid-cols-3 gap-0 text-sm">
-              <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Client:</div>
-              <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">{viewRow?.clientName ?? "—"}</div>
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Basic Information</h3>
+              <div className="rounded-xl border border-slate-200 overflow-hidden">
+                <div className="grid grid-cols-3 gap-0 text-sm">
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Quote ID:</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">{viewRow?.quoteId ?? "—"}</div>
 
-              <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Date:</div>
-              <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
-                {viewRow?.date ? fmtDate(viewRow.date) : "—"}
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Client:</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">{viewRow?.clientName ?? "—"}</div>
+
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Contact Person:</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">{viewRow?.contactPerson ?? "—"}</div>
+
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Date:</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                    {viewRow?.date ? fmtDate(viewRow.date) : "—"}
+                  </div>
+
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Status:</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                    <StatusBadge status={viewRow?.status as Status} />
+                  </div>
+
+                  <div className="col-span-1 px-4 py-3 text-slate-500 bg-slate-50">Total Amount:</div>
+                  <div className="col-span-2 px-4 py-3 border-slate-200 font-semibold text-slate-900 text-green-600">
+                    {viewRow?.amount ? currency.format(viewRow.amount) : "—"}
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Product:</div>
-              <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
-                {viewRow?.product ?? viewRow?.productName ?? "—"}
+            {/* Product Specifications */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Product Specifications</h3>
+              <div className="rounded-xl border border-slate-200 overflow-hidden">
+                <div className="grid grid-cols-3 gap-0 text-sm">
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Product Name:</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                    {viewRow?.productName ?? viewRow?.product ?? "—"}
+                  </div>
+
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Quantity:</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                    {typeof viewRow?.quantity === "number" ? viewRow?.quantity.toLocaleString() : "—"}
+                  </div>
+
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Printing Method:</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                    {viewRow?.printingSelection ?? viewRow?.printing ?? "—"}
+                  </div>
+
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Sides:</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                    {viewRow?.sides === "1" ? "1 Side" : viewRow?.sides === "2" ? "2 Sides" : "—"}
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Quantity:</div>
-              <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
-                {typeof viewRow?.quantity === "number" ? viewRow?.quantity : "—"}
+            {/* Size Specifications */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Size Specifications</h3>
+              <div className="rounded-xl border border-slate-200 overflow-hidden">
+                <div className="grid grid-cols-3 gap-0 text-sm">
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Flat Size (Open):</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                    {viewRow?.flatSize?.width && viewRow?.flatSize?.height 
+                      ? `${viewRow.flatSize.width}cm × ${viewRow.flatSize.height}cm${viewRow.flatSize.spine ? ` + ${viewRow.flatSize.spine}cm spine` : ''}`
+                      : "—"
+                    }
+                  </div>
+
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Close Size (Closed):</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                    {viewRow?.useSameAsFlat 
+                      ? "Same as Flat Size"
+                      : viewRow?.closeSize?.width && viewRow?.closeSize?.height
+                        ? `${viewRow.closeSize.width}cm × ${viewRow.closeSize.height}cm${viewRow.closeSize.spine ? ` + ${viewRow.closeSize.spine}cm spine` : ''}`
+                        : "—"
+                    }
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <div className="col-span-1 px-4 py-3 text-slate-500 bg-slate-50">Total:</div>
-              <div className="col-span-2 px-4 py-3 border-slate-200 font-semibold text-slate-900">
-                {viewRow?.amount ? currency.format(viewRow.amount) : "—"}
+            {/* Color Specifications */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Color Specifications</h3>
+              <div className="rounded-xl border border-slate-200 overflow-hidden">
+                <div className="grid grid-cols-3 gap-0 text-sm">
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Front Side:</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                    {viewRow?.colors?.front || "—"}
+                  </div>
+
+                  {viewRow?.sides === "2" && (
+                    <>
+                      <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">Back Side:</div>
+                      <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                        {viewRow?.colors?.back || "—"}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Details */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Additional Details</h3>
+              <div className="rounded-xl border border-slate-200 overflow-hidden">
+                <div className="grid grid-cols-3 gap-0 text-sm">
+                  <div className="col-span-1 px-4 py-3 text-slate-500 border-b border-slate-200 bg-slate-50">User ID:</div>
+                  <div className="col-span-2 px-4 py-3 border-b border-slate-200 font-semibold text-slate-900">
+                    {viewRow?.userId ?? "—"}
+                  </div>
+
+                  <div className="col-span-1 px-4 py-3 text-slate-500 bg-slate-50">Created:</div>
+                  <div className="col-span-2 px-4 py-3 border-slate-200 font-semibold text-slate-900">
+                    {viewRow?.date ? new Date(viewRow.date).toLocaleDateString() : "—"}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -806,115 +1108,391 @@ export default function QuoteManagementPage() {
 
       {/* ===== Modal Edit ===== */}
       <Dialog open={openEdit} onOpenChange={setOpenEdit}>
-        <DialogContent className="sm:max-w-[640px] rounded-2xl">
+        <DialogContent className="sm:max-w-[800px] rounded-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900">Edit Quote</DialogTitle>
           </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Basic Information</h3>
+              <div className="grid gap-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm text-slate-600 font-medium">Quote ID</label>
+                  <Input className="col-span-3 bg-slate-100 border-slate-300 rounded-xl" readOnly value={draft.quoteId || draft.id} />
+                </div>
 
-          <div className="grid gap-4 py-2">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm text-slate-600 font-medium">Quote ID</label>
-              <Input className="col-span-3 bg-slate-100 border-slate-300 rounded-xl" readOnly value={draft.id} />
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Client Name</label>
+                  <Input
+                    className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    value={draft.clientName}
+                    onChange={(e) => setDraft((d) => ({ ...d, clientName: e.target.value }))}
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Contact Person</label>
+                  <Input
+                    className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    value={draft.contactPerson}
+                    onChange={(e) => setDraft((d) => ({ ...d, contactPerson: e.target.value }))}
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Date</label>
+                  <Input
+                    className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    type="date"
+                    value={draft.date}
+                    onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Amount</label>
+                  <Input
+                    className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={draft.amount}
+                    onChange={(e) =>
+                      setDraft((d) => ({ ...d, amount: e.target.value === "" ? "" : Number(e.target.value) }))
+                    }
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Status</label>
+                  <Select
+                    value={draft.status}
+                    onValueChange={(v: Status) => setDraft((d) => ({ ...d, status: v }))}
+                  >
+                    <SelectTrigger className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Approved">Approved</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium text-slate-700">Client Name</label>
-              <Input
-                className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-                value={draft.clientName}
-                onChange={(e) => setDraft((d) => ({ ...d, clientName: e.target.value }))}
-              />
+            {/* Product Specifications */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Product Specifications</h3>
+              <div className="grid gap-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Product Name</label>
+                  <Input
+                    className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    value={draft.productName ?? ""}
+                    onChange={(e) => setDraft((d) => ({ ...d, productName: e.target.value }))}
+                    placeholder="e.g. Business Card"
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Quantity</label>
+                  <Input
+                    className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    type="number"
+                    min={0}
+                    value={draft.quantity ?? ""}
+                    onChange={(e) =>
+                      setDraft((d) => ({ ...d, quantity: e.target.value === "" ? "" : Number(e.target.value) }))
+                    }
+                    placeholder="e.g. 1000"
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Printing Method</label>
+                  <Select
+                    value={draft.printingSelection ?? draft.printing ?? "Digital"}
+                    onValueChange={(v) => setDraft((d) => ({ ...d, printingSelection: v, printing: v }))}
+                  >
+                    <SelectTrigger className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Digital">Digital</SelectItem>
+                      <SelectItem value="Offset">Offset</SelectItem>
+                      <SelectItem value="Either">Either</SelectItem>
+                      <SelectItem value="Both">Both</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Sides</label>
+                  <Select
+                    value={draft.sides ?? "1"}
+                    onValueChange={(v) => setDraft((d) => ({ ...d, sides: v }))}
+                  >
+                    <SelectTrigger className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 Side</SelectItem>
+                      <SelectItem value="2">2 Sides</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium text-slate-700">Contact Person</label>
-              <Input
-                className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-                value={draft.contactPerson}
-                onChange={(e) => setDraft((d) => ({ ...d, contactPerson: e.target.value }))}
-              />
+            {/* Size Specifications */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Size Specifications (cm)</h3>
+              <div className="grid gap-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Flat Size Width</label>
+                  <Input
+                    className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    type="number"
+                    min={0}
+                    step="0.1"
+                    value={draft.flatSize?.width ?? ""}
+                    onChange={(e) => {
+                      const newWidth = e.target.value === "" ? null : Number(e.target.value);
+                      setDraft((d) => ({ 
+                        ...d, 
+                        flatSize: { 
+                          ...d.flatSize, 
+                          width: newWidth 
+                        } 
+                      }));
+                      
+                      // If useSameAsFlat is true, also update close size
+                      if (draft.useSameAsFlat) {
+                        setDraft((d) => ({ 
+                          ...d, 
+                          closeSize: { 
+                            ...d.closeSize, 
+                            width: newWidth 
+                          } 
+                        }));
+                      }
+                    }}
+                    placeholder="e.g. 9.0"
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Flat Size Height</label>
+                  <Input
+                    className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    type="number"
+                    min={0}
+                    step="0.1"
+                    value={draft.flatSize?.height ?? ""}
+                    onChange={(e) => {
+                      const newHeight = e.target.value === "" ? null : Number(e.target.value);
+                      setDraft((d) => ({ 
+                        ...d, 
+                        flatSize: { 
+                          ...d.flatSize, 
+                          height: newHeight 
+                        } 
+                      }));
+                      
+                      // If useSameAsFlat is true, also update close size
+                      if (draft.useSameAsFlat) {
+                        setDraft((d) => ({ 
+                          ...d, 
+                          closeSize: { 
+                            ...d.closeSize, 
+                            height: newHeight 
+                          } 
+                        }));
+                      }
+                    }}
+                    placeholder="e.g. 5.5"
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Flat Size Spine</label>
+                  <Input
+                    className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    type="number"
+                    min={0}
+                    step="0.1"
+                    value={draft.flatSize?.spine ?? ""}
+                    onChange={(e) => {
+                      const newSpine = e.target.value === "" ? null : Number(e.target.value);
+                      setDraft((d) => ({ 
+                        ...d, 
+                        flatSize: { 
+                          ...d.flatSize, 
+                          spine: newSpine 
+                        } 
+                      }));
+                      
+                      // If useSameAsFlat is true, also update close size
+                      if (draft.useSameAsFlat) {
+                        setDraft((d) => ({ 
+                          ...d, 
+                          closeSize: { 
+                            ...d.closeSize, 
+                            spine: newSpine 
+                          } 
+                        }));
+                      }
+                    }}
+                    placeholder="e.g. 0.0"
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Use Same as Flat</label>
+                  <div className="col-span-3 flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={draft.useSameAsFlat ?? false}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setDraft((d) => ({ 
+                          ...d, 
+                          useSameAsFlat: checked,
+                          // If checking the box, copy flat size to close size
+                          closeSize: checked ? d.flatSize : d.closeSize
+                        }));
+                      }}
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-slate-600">Close size uses same dimensions as flat size</span>
+                  </div>
+                </div>
+
+                {!draft.useSameAsFlat && (
+                  <>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <label className="text-right text-sm font-medium text-slate-700">Close Size Width</label>
+                      <Input
+                        className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                        type="number"
+                        min={0}
+                        step="0.1"
+                        value={draft.closeSize?.width ?? ""}
+                        onChange={(e) =>
+                          setDraft((d) => ({ 
+                            ...d, 
+                            closeSize: { 
+                              ...d.closeSize, 
+                              width: e.target.value === "" ? null : Number(e.target.value) 
+                            } 
+                          }))
+                        }
+                        placeholder="e.g. 9.0"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <label className="text-right text-sm font-medium text-slate-700">Close Size Height</label>
+                      <Input
+                        className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                        type="number"
+                        min={0}
+                        step="0.1"
+                        value={draft.closeSize?.height ?? ""}
+                        onChange={(e) =>
+                          setDraft((d) => ({ 
+                            ...d, 
+                            closeSize: { 
+                              ...d.closeSize, 
+                              height: e.target.value === "" ? null : Number(e.target.value) 
+                            } 
+                          }))
+                        }
+                        placeholder="e.g. 5.5"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <label className="text-right text-sm font-medium text-slate-700">Close Size Spine</label>
+                      <Input
+                        className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                        type="number"
+                        min={0}
+                        step="0.1"
+                        value={draft.closeSize?.spine ?? ""}
+                        onChange={(e) =>
+                          setDraft((d) => ({ 
+                            ...d, 
+                            closeSize: { 
+                              ...d.closeSize, 
+                              spine: e.target.value === "" ? null : Number(e.target.value) 
+                            } 
+                          }))
+                        }
+                        placeholder="e.g. 0.0"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium text-slate-700">Date</label>
-              <Input
-                className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-                type="date"
-                value={draft.date}
-                onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
-              />
-            </div>
+            {/* Color Specifications */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Color Specifications</h3>
+              <div className="grid gap-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label className="text-right text-sm font-medium text-slate-700">Front Side Colors</label>
+                  <Select
+                    value={draft.colors?.front ?? ""}
+                    onValueChange={(v) => setDraft((d) => ({ 
+                      ...d, 
+                      colors: { ...d.colors, front: v } 
+                    }))}
+                  >
+                    <SelectTrigger className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                      <SelectValue placeholder="Select colors" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1 Color">1 Color</SelectItem>
+                      <SelectItem value="2 Colors">2 Colors</SelectItem>
+                      <SelectItem value="3 Colors">3 Colors</SelectItem>
+                      <SelectItem value="4 Colors (CMYK)">4 Colors (CMYK)</SelectItem>
+                      <SelectItem value="4+1 Colors">4+1 Colors</SelectItem>
+                      <SelectItem value="4+2 Colors">4+2 Colors</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium text-slate-700">Amount</label>
-              <Input
-                className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-                type="number"
-                min={0}
-                step="0.01"
-                value={draft.amount}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, amount: e.target.value === "" ? "" : Number(e.target.value) }))
-                }
-              />
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium text-slate-700">Status</label>
-              <Select
-                value={draft.status}
-                onValueChange={(v: Status) => setDraft((d) => ({ ...d, status: v }))}
-              >
-                <SelectTrigger className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium text-slate-700">User</label>
-              <Select
-                value={draft.userId}
-                onValueChange={(v) => setDraft((d) => ({ ...d, userId: v }))}
-              >
-                <SelectTrigger className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {filterContactPersons.map((cp) => (
-                    <SelectItem key={cp.id} value={cp.id}>{cp.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Optional fields agar View modal punya data */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium text-slate-700">Product</label>
-              <Input
-                className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-                value={draft.productName ?? ""}
-                onChange={(e) => setDraft((d) => ({ ...d, productName: e.target.value }))}
-                placeholder="e.g. Business Card"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium text-slate-700">Quantity</label>
-              <Input
-                className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-                type="number"
-                min={0}
-                value={draft.quantity ?? ""}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, quantity: e.target.value === "" ? "" : Number(e.target.value) }))
-                }
-                placeholder="e.g. 1000"
-              />
+                {draft.sides === "2" && (
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label className="text-right text-sm font-medium text-slate-700">Back Side Colors</label>
+                    <Select
+                      value={draft.colors?.back ?? ""}
+                      onValueChange={(v) => setDraft((d) => ({ 
+                        ...d, 
+                        colors: { ...d.colors, back: v } 
+                      }))}
+                    >
+                      <SelectTrigger className="col-span-3 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                        <SelectValue placeholder="Select colors" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1 Color">1 Color</SelectItem>
+                        <SelectItem value="2 Colors">2 Colors</SelectItem>
+                        <SelectItem value="3 Colors">3 Colors</SelectItem>
+                        <SelectItem value="4 Colors (CMYK)">4 Colors (CMYK)</SelectItem>
+                        <SelectItem value="4+1 Colors">4+1 Colors</SelectItem>
+                        <SelectItem value="4+2 Colors">4+2 Colors</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

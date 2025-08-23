@@ -33,61 +33,52 @@ export default function ClientManagementPage() {
     const loadClients = async () => {
       try {
         setLoading(true);
+        // Fetch clients from database
         const response = await fetch('/api/clients');
         if (response.ok) {
           const clientsData = await response.json();
-          if (clientsData.length > 0) {
-            // Transform database clients to match ClientRow format
-            const transformedClients = clientsData.map((client: any, index: number) => ({
-              id: client.id, // Keep database ID for operations
-              displayId: `C-${String(index + 1).padStart(3, "0")}`, // Display ID for UI
-              clientType: client.clientType as "Individual" | "Company",
-              companyName: client.companyName || "",
-              contactPerson: client.contactPerson,
-              firstName: client.clientType === "Individual" ? client.contactPerson.split(" ")[0] || "" : "",
-              lastName: client.clientType === "Individual" ? client.contactPerson.split(" ").slice(1).join(" ") || "" : "",
-              email: client.email,
-              phone: client.phone,
-              countryCode: client.countryCode,
-              role: client.role || "",
-              addressLine1: "",
-              addressLine2: "",
-              city: "",
-              state: "",
-              postalCode: "",
-              country: "",
-              additionalInfo: "",
-              status: "Active" as const,
-              createdAt: client.createdAt,
-              updatedAt: client.updatedAt,
-            }));
-            setRows(transformedClients);
-            
-            // Load quotes for these clients
-            try {
-              const quotesResponse = await fetch('/api/quotes');
-              if (quotesResponse.ok) {
-                const quotesData = await quotesResponse.json();
-                setQuotes(quotesData);
-              }
-            } catch (error) {
-              console.error('Error loading quotes:', error);
-            }
-          } else {
-            // If no clients in database, use seed clients
-            console.log('No clients in database, using seed clients');
-            setRows(CLIENTS);
-          }
+          console.log('Loaded clients from database:', clientsData.length);
+          console.log('Sample client data:', clientsData[0]);
+          console.log('Sample client address fields:', {
+            address: clientsData[0]?.address,
+            city: clientsData[0]?.city,
+            state: clientsData[0]?.state,
+            postalCode: clientsData[0]?.postalCode,
+            country: clientsData[0]?.country
+          });
+          
+          // Check if address fields are present
+          const hasAddressFields = clientsData[0] && (
+            clientsData[0].address !== undefined || 
+            clientsData[0].city !== undefined || 
+            clientsData[0].state !== undefined || 
+            clientsData[0].postalCode !== undefined || 
+            clientsData[0].country !== undefined
+          );
+          console.log('Address fields present:', hasAddressFields);
+          
+          setRows(clientsData);
         } else {
-          console.error('Failed to load clients');
-          // Fallback to dummy data if API fails
+          console.error('Failed to load clients, falling back to seed data');
           setRows(CLIENTS);
         }
+        
+        // Load quotes for these clients
+        try {
+          const quotesResponse = await fetch('/api/quotes');
+          if (quotesResponse.ok) {
+            const quotesData = await quotesResponse.json();
+            setQuotes(quotesData);
+            console.log('Loaded quotes:', quotesData.length);
+          }
+        } catch (error) {
+          console.error('Error loading quotes:', error);
+        }
+        
+        setLoading(false);
       } catch (error) {
         console.error('Error loading clients:', error);
-        // Fallback to dummy data if API fails
         setRows(CLIENTS);
-      } finally {
         setLoading(false);
       }
     };
@@ -116,8 +107,7 @@ export default function ClientManagementPage() {
     phone: "",
     countryCode: "+971",
     role: "",
-    addressLine1: "",
-    addressLine2: "",
+    address: "",
     city: "",
     state: "",
     postalCode: "",
@@ -153,6 +143,8 @@ export default function ClientManagementPage() {
   
   React.useEffect(() => setPage(1), [search, statusFilter, clientTypeFilter]); // reset page saat search berubah
 
+
+
   // helpers
   const newId = React.useCallback(() => {
     const n = rows.length + 1;
@@ -173,8 +165,7 @@ export default function ClientManagementPage() {
       phone: "",
       countryCode: "+971",
       role: "",
-      addressLine1: "",
-      addressLine2: "",
+      address: "",
       city: "",
       state: "",
       postalCode: "",
@@ -187,23 +178,40 @@ export default function ClientManagementPage() {
 
   // open Edit
   const onEdit = (r: ClientRow) => {
+    console.log('Editing client:', r); // Debug log
+    console.log('Client address fields:', {
+      address: r.address,
+      city: r.city,
+      state: r.state,
+      postalCode: r.postalCode,
+      country: r.country
+    });
+    console.log('Client data type check:', {
+      addressType: typeof r.address,
+      cityType: typeof r.city,
+      stateType: typeof r.state,
+      postalCodeType: typeof r.postalCode,
+      countryType: typeof r.country
+    });
     setMode("edit");
-    // Ensure all required fields are present
-    setDraft({
+    
+    // Use the actual saved data from the database, don't auto-fill
+    const draftData = {
       ...r,
       clientType: r.clientType || "Company",
       firstName: r.firstName || "",
       lastName: r.lastName || "",
       countryCode: r.countryCode || "+971",
       role: r.role || "",
-      addressLine1: r.addressLine1 || "",
-      addressLine2: r.addressLine2 || "",
+      address: r.address || "",
       city: r.city || "",
       state: r.state || "",
       postalCode: r.postalCode || "",
       country: r.country || "",
       additionalInfo: r.additionalInfo || "",
-    });
+    };
+    console.log('Setting draft to:', draftData); // Debug log
+    setDraft(draftData);
     setOpen(true);
   };
 
@@ -231,6 +239,11 @@ export default function ClientManagementPage() {
           phone: draft.phone,
           countryCode: draft.countryCode,
           role: draft.role || "",
+          address: draft.address || "",
+          city: draft.city || "",
+          state: draft.state || "",
+          postalCode: draft.postalCode || "",
+          country: draft.country || "",
         };
 
         // Save to database
@@ -274,12 +287,19 @@ export default function ClientManagementPage() {
             phone: draft.phone,
             countryCode: draft.countryCode,
             role: draft.role,
+            address: draft.address || "",
+            city: draft.city || "",
+            state: draft.state || "",
+            postalCode: draft.postalCode || "",
+            country: draft.country || "",
             // Don't send displayId, createdAt, updatedAt to the API
           }),
         });
 
         if (!response.ok) {
-          throw new Error('Failed to update client');
+          const errorData = await response.json();
+          console.error('Update client failed:', errorData);
+          throw new Error(errorData.details || errorData.error || 'Failed to update client');
         }
 
         // Update local state
@@ -405,15 +425,15 @@ export default function ClientManagementPage() {
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow className="border-slate-200">
-                  <TableHead className="text-slate-700 font-semibold p-4">Client ID</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4">Type</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4">Company Name</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4">Contact Person</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4">Email</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4">Phone</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4">Quotes</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4">Status</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4">Actions</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-28">Client ID</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-24">Type</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-40">Company Name</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-36">Contact Person</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-40">Email</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-32">Phone</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-28">Quotes</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-24">Status</TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-32">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -425,77 +445,104 @@ export default function ClientManagementPage() {
                   </TableRow>
                 ) : current.map((r) => (
                   <TableRow key={r.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
-                    <TableCell className="font-medium text-slate-900 p-4">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                        {r.displayId}
-                      </span>
-                    </TableCell>
-                    <TableCell className="p-4">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        r.clientType === "Company" 
-                          ? "bg-purple-100 text-purple-800" 
-                          : "bg-green-100 text-green-800"
-                      }`}>
-                        {r.clientType === "Company" ? (
-                          <>
-                            <Building className="w-3 h-3 mr-1" />
-                            Company
-                          </>
-                        ) : (
-                          <>
-                            <User className="w-3 h-3 mr-1" />
-                            Individual
-                          </>
-                        )}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 font-medium">
-                      {r.clientType === "Company" ? r.companyName : "-"}
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4">{r.contactPerson}</TableCell>
-                    <TableCell className="text-slate-700 p-4">
-                      <a href={`mailto:${r.email}`} className="text-blue-600 hover:text-blue-700 hover:underline">
-                        {r.email}
-                      </a>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4">
-                      <a href={`tel:${r.countryCode}${r.phone}`} className="text-slate-600 hover:text-slate-800">
-                        {r.countryCode} {r.phone}
-                      </a>
-                    </TableCell>
-                    <TableCell className="p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                          {quotes.filter(q => q.clientId === r.id).length}
+                    <TableCell className="font-medium text-slate-900 p-4 w-28">
+                      <div className="truncate">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                          {r.id ? `C-${r.id.slice(-6).toUpperCase()}` : 'N/A'}
                         </span>
-                        <Link 
-                          href="/quote-management" 
-                          className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
-                        >
-                          View Quotes
-                        </Link>
                       </div>
                     </TableCell>
-                    <TableCell className="p-4">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        r.status === "Active" 
-                          ? "bg-green-100 text-green-800" 
-                          : "bg-red-100 text-red-800"
-                      }`}>
-                        {r.status}
-                      </span>
+                    <TableCell className="p-4 w-24">
+                      <div className="truncate">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          r.clientType === "Company" 
+                            ? "bg-purple-100 text-purple-800" 
+                            : "bg-green-100 text-green-800"
+                        }`}>
+                          {r.clientType === "Company" ? (
+                            <>
+                              <Building className="w-3 h-3 mr-1" />
+                              Company
+                            </>
+                          ) : (
+                            <>
+                              <User className="w-3 h-3 mr-1" />
+                              Individual
+                            </>
+                          )}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell className="p-4">
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => onEdit(r)}
-                          className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                          title="Edit client"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                    <TableCell className="text-slate-700 p-4 w-40">
+                      <div className="truncate font-medium">
+                        {r.clientType === "Company" ? r.companyName : "-"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-slate-700 p-4 w-36">
+                      <div className="truncate">{r.contactPerson}</div>
+                    </TableCell>
+                    <TableCell className="text-slate-700 p-4 w-40">
+                      <div className="truncate">
+                        <a href={`mailto:${r.email}`} className="text-blue-600 hover:text-blue-700 hover:underline">
+                          {r.email}
+                        </a>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-slate-700 p-4 w-32">
+                      <div className="truncate">
+                        <a href={`tel:${r.countryCode}${r.phone}`} className="text-slate-600 hover:text-slate-800">
+                          {r.countryCode} {r.phone}
+                        </a>
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-4 w-28">
+                      <div className="truncate">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            {r._count?.quotes || r.quotes?.length || 0}
+                          </span>
+                          <Link 
+                            href="/quote-management" 
+                            className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                          >
+                            View Quotes
+                          </Link>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-4 w-24">
+                      <div className="truncate">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          r.status === "Active" 
+                            ? "bg-green-100 text-green-800" 
+                            : "bg-red-100 text-red-800"
+                        }`}>
+                          {r.status}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-4 w-32">
+                      <div className="truncate">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="View Details"
+                            onClick={() => onView(r)}
+                            className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Edit Client"
+                            onClick={() => onEdit(r)}
+                            className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -517,12 +564,13 @@ export default function ClientManagementPage() {
       </Card>
 
       {/* ===== Modal Add/Edit Client ===== */}
-      <Dialog open={open} onOpenChange={setOpen}>
+                <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[600px] rounded-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900">
               {mode === "add" ? "Add New Client" : "Edit Client"}
             </DialogTitle>
+
           </DialogHeader>
 
           <div className="space-y-6">
@@ -667,32 +715,26 @@ export default function ClientManagementPage() {
                 <div className="flex space-x-2">
                   <Select
                     value={draft.countryCode}
-                    onValueChange={(value) => setDraft({ ...draft, countryCode: value })}
+                    onValueChange={(value) => {
+                      setDraft({ ...draft, countryCode: value });
+                      // Auto-update country based on country code
+                      let country = "";
+                      if (value === "+971") country = "Dubai";
+                      else if (value === "+91") country = "India";
+                      else if (value === "+62") country = "Indonesia";
+                      
+                      if (country) {
+                        setDraft(prev => ({ ...prev, country }));
+                      }
+                    }}
                   >
                     <SelectTrigger className="w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
                       <SelectValue placeholder="Code" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="+971">+971</SelectItem>
-                      <SelectItem value="+62">+62</SelectItem>
-                      <SelectItem value="+1">+1</SelectItem>
-                      <SelectItem value="+44">+44</SelectItem>
-                      <SelectItem value="+49">+49</SelectItem>
-                      <SelectItem value="+31">+31</SelectItem>
-                      <SelectItem value="+65">+65</SelectItem>
-                      <SelectItem value="+60">+60</SelectItem>
-                      <SelectItem value="+852">+852</SelectItem>
-                      <SelectItem value="+34">+34</SelectItem>
-                      <SelectItem value="+82">+82</SelectItem>
-                      <SelectItem value="+33">+33</SelectItem>
-                      <SelectItem value="+46">+46</SelectItem>
-                      <SelectItem value="+358">+358</SelectItem>
-                      <SelectItem value="+61">+61</SelectItem>
-                      <SelectItem value="+32">+32</SelectItem>
-                      <SelectItem value="+81">+81</SelectItem>
-                      <SelectItem value="+353">+353</SelectItem>
-                      <SelectItem value="+39">+39</SelectItem>
-                      <SelectItem value="+41">+41</SelectItem>
+                      <SelectItem value="+971">+971 (UAE)</SelectItem>
+                      <SelectItem value="+91">+91 (India)</SelectItem>
+                      <SelectItem value="+62">+62 (Indonesia)</SelectItem>
                     </SelectContent>
                   </Select>
                   <Input
@@ -701,6 +743,77 @@ export default function ClientManagementPage() {
                     value={draft.phone}
                     onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
                     className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                  />
+                </div>
+              </div>
+
+              {/* Address Fields */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold text-gray-700">Address Information</Label>
+                
+                <div>
+                  <Label htmlFor="country" className="text-sm font-medium text-slate-700">Country *</Label>
+                  <Select 
+                    value={draft.country || ""} 
+                    onValueChange={(value) => {
+                      console.log('Country changed to:', value); // Debug log
+                      // Only update the country field, don't auto-fill address
+                      setDraft({ ...draft, country: value });
+                    }}
+                  >
+                    <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Dubai">🇦🇪 Dubai</SelectItem>
+                      <SelectItem value="India">🇮🇳 India (Mumbai)</SelectItem>
+                      <SelectItem value="Indonesia">🇮🇩 Indonesia (Jakarta)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="address" className="text-sm font-medium text-slate-700">Address</Label>
+                  <Input
+                    id="address"
+                    placeholder="Enter street address"
+                    value={draft.address || ""}
+                    onChange={(e) => setDraft({ ...draft, address: e.target.value })}
+                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="city" className="text-sm font-medium text-slate-700">City</Label>
+                    <Input
+                      id="city"
+                      placeholder="Enter city"
+                      value={draft.city || ""}
+                      onChange={(e) => setDraft({ ...draft, city: e.target.value })}
+                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state" className="text-sm font-medium text-slate-700">State/Province</Label>
+                    <Input
+                      id="state"
+                      placeholder="Enter state or province"
+                      value={draft.state || ""}
+                      onChange={(e) => setDraft({ ...draft, state: e.target.value })}
+                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="postalCode" className="text-sm font-medium text-slate-700">Postal Code</Label>
+                  <Input
+                    id="postalCode"
+                    placeholder="Enter postal code"
+                    value={draft.postalCode || ""}
+                    onChange={(e) => setDraft({ ...draft, postalCode: e.target.value })}
+                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                   />
                 </div>
               </div>

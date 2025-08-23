@@ -17,7 +17,7 @@ import {
   Bell,
   X
 } from "lucide-react";
-import { getUser, clearUser, updatePassword, updateUserProfile, updateProfilePicture } from "@/lib/auth";
+import { getUser, clearUser, updatePassword, updateUserProfile, updateProfilePicture, forceUpdateUserDisplayId, refreshUserData, debugUserState } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -342,7 +342,24 @@ export default function Navbar({ className = "" }: NavbarProps) {
             </div>
             
             <div className="text-sm text-gray-600">
-              User ID: {user?.id ?? "EMP001"}
+              User ID: {user?.displayId ?? "EMP001"}
+              <button 
+                onClick={() => {
+                  forceUpdateUserDisplayId();
+                  window.location.reload();
+                }}
+                className="ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                title="Refresh User ID"
+              >
+                🔄
+              </button>
+              <button 
+                onClick={() => debugUserState()}
+                className="ml-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                title="Debug User State"
+              >
+                🐛
+              </button>
             </div>
           </div>
 
@@ -375,7 +392,7 @@ export default function Navbar({ className = "" }: NavbarProps) {
                     <span className="text-sm text-muted-foreground">{user?.email ?? "-"}</span>
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-xs text-muted-foreground">Role: <b className="capitalize">{user?.role}</b></span>
-                      <span className="text-xs text-muted-foreground">ID: <b>{user?.id}</b></span>
+                      <span className="text-xs text-muted-foreground">ID: <b>{user?.displayId}</b></span>
                     </div>
                   </div>
                 </DropdownMenuLabel>

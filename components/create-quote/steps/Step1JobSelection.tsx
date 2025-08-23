@@ -23,7 +23,12 @@ const dataRecentQuote: PreviousQuote[] = [
 ];
 
 
-const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+const currency = new Intl.NumberFormat("en-US", { 
+  style: "currency", 
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
 
 const Step1JobSelection: FC<Step1Props> = ({ quoteMode, setQuoteMode, onSelectQuote, onStartNew }) => {
   const [search, setSearch] = useState("");

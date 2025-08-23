@@ -169,8 +169,15 @@ export default function DashboardPage() {
       ? allQuotes 
       : allQuotes.filter(q => q.status === statusFilter);
     
-    console.log('filteredQuotes recalculated:', filtered);
-    return filtered;
+    // Sort by newest first (most recent createdDate first)
+    const sorted = [...filtered].sort((a, b) => {
+      const dateA = new Date(a.createdDate || a.date || 0);
+      const dateB = new Date(b.createdDate || b.date || 0);
+      return dateB.getTime() - dateA.getTime(); // Newest first
+    });
+    
+    console.log('filteredQuotes recalculated:', sorted);
+    return sorted;
   }, [allQuotes, statusFilter]);
 
   // Calculate metrics - these will now update automatically when allQuotes changes
@@ -613,15 +620,15 @@ export default function DashboardPage() {
         <Card className="border-0 shadow-lg">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full table-fixed" style={{ tableLayout: 'fixed' }}>
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="text-left p-4 font-semibold text-slate-700">Quote ID</th>
-                    <th className="text-left p-4 font-semibold text-slate-700">Client Name</th>
-                    <th className="text-left p-4 font-semibold text-slate-700">Date</th>
-                    <th className="text-left p-4 font-semibold text-slate-700">Amount</th>
-                    <th className="text-left p-4 font-semibold text-slate-700">Status</th>
-                    <th className="text-left p-4 font-semibold text-slate-700">Actions</th>
+                  <tr className="border-b border-slate-200 bg-slate-50">
+                    <th className="text-left p-4 font-semibold text-slate-700 w-32">Quote ID</th>
+                    <th className="text-left p-4 font-semibold text-slate-700 w-48">Client Name</th>
+                    <th className="text-left p-4 font-semibold text-slate-700 w-32">Date</th>
+                    <th className="text-left p-4 font-semibold text-slate-700 w-32">Amount</th>
+                    <th className="text-left p-4 font-semibold text-slate-700 w-24">Status</th>
+                    <th className="text-left p-4 font-semibold text-slate-700 w-40">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -643,80 +650,92 @@ export default function DashboardPage() {
                   ) : (
                     filteredQuotes.map((quote: any, index: number) => (
                     <tr key={`${quote.id}-${quote.status}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors duration-200">
-                      <td className="p-4">
-                        <span className="font-mono text-sm text-slate-900">{quote.quoteId}</span>
+                      <td className="p-4 w-32">
+                        <div className="truncate">
+                          <span className="font-mono text-sm text-slate-900">{quote.quoteId}</span>
+                        </div>
                       </td>
-                      <td className="p-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                            <Users className="w-4 h-4 text-white" />
+                      <td className="p-4 w-48">
+                        <div className="truncate">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                              <Users className="w-4 h-4 text-white" />
+                            </div>
+                            <span className="font-medium text-slate-900">{quote.customerName}</span>
                           </div>
-                          <span className="font-medium text-slate-900">{quote.customerName}</span>
                         </div>
                       </td>
-                      <td className="p-4">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4 text-slate-500" />
-                          <span className="text-slate-700">{formatDate(quote.createdDate)}</span>
+                      <td className="p-4 w-32">
+                        <div className="truncate">
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="w-4 h-4 text-slate-500" />
+                            <span className="text-slate-700">{formatDate(quote.createdDate)}</span>
+                          </div>
                         </div>
                       </td>
-                      <td className="p-4">
-                        <span className="font-semibold text-slate-900">${isNaN(quote.totalAmount) ? 0 : (quote.totalAmount || 0)}</span>
+                      <td className="p-4 w-32">
+                        <div className="truncate">
+                          <span className="font-semibold text-slate-900">${isNaN(quote.totalAmount) ? '0.00' : (quote.totalAmount || 0).toFixed(2)}</span>
+                        </div>
                       </td>
-                      <td className="p-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          quote.status === "Approved" 
-                            ? "bg-blue-100 text-blue-700 border-blue-200"
-                            : quote.status === "Pending"
-                            ? "bg-yellow-100 text-yellow-700 border-yellow-200"
-                            : "bg-red-100 text-red-700 border-red-200"
-                        }`}>
-                          {quote.status}
-                        </span>
+                      <td className="p-4 w-24">
+                        <div className="truncate">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            quote.status === "Approved" 
+                              ? "bg-blue-100 text-blue-700 border-blue-200"
+                              : quote.status === "Pending"
+                              ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+                              : "bg-red-100 text-red-700 border-red-200"
+                          }`}>
+                            {quote.status}
+                          </span>
+                        </div>
                       </td>
-                      <td className="p-4">
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewQuote(quote)}
-                            className="h-8 px-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transition-all duration-200 rounded-lg border-0 font-medium text-xs"
-                          >
-                            <Eye className="w-3 h-3 mr-1" />
-                            <span>View</span>
-                          </Button>
-                          
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 px-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all duration-200 rounded-lg border-0 font-medium text-xs"
-                              >
-                                <Edit className="w-3 h-3 mr-1" />
-                                <span>Update</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-48">
-                              <DropdownMenuItem 
-                                onClick={() => handleUpdateQuote(quote)}
-                                className="flex items-center space-x-2 p-3 hover:bg-blue-50 cursor-pointer"
-                              >
-                                <CheckCircle className="w-4 h-4 text-blue-600" />
-                                <span>Change Status</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => {
-                                  // Navigate to step 2 customer detail choose
-                                  window.location.href = `/create-quote?step=2&edit=${quote.quoteId}`;
-                                }}
-                                className="flex items-center space-x-2 p-3 hover:bg-green-50 cursor-pointer"
-                              >
-                                <Edit className="w-4 h-4 text-green-600" />
-                                <span>Edit Details</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                      <td className="p-4 w-40">
+                        <div className="truncate">
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewQuote(quote)}
+                              className="h-8 px-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transition-all duration-200 rounded-lg border-0 font-medium text-xs"
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              <span>View</span>
+                            </Button>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 px-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all duration-200 rounded-lg border-0 font-medium text-xs"
+                                >
+                                  <Edit className="w-3 h-3 mr-1" />
+                                  <span>Update</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="w-48">
+                                <DropdownMenuItem 
+                                  onClick={() => handleUpdateQuote(quote)}
+                                  className="flex items-center space-x-2 p-3 hover:bg-blue-50 cursor-pointer"
+                                >
+                                  <CheckCircle className="w-4 h-4 text-blue-600" />
+                                  <span>Change Status</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    // Navigate to step 2 customer detail choose
+                                    window.location.href = `/create-quote?step=2&edit=${quote.quoteId}`;
+                                  }}
+                                  className="flex items-center space-x-2 p-3 hover:bg-green-50 cursor-pointer"
+                                >
+                                  <Edit className="w-4 h-4 text-green-600" />
+                                  <span>Edit Details</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                       </td>
                     </tr>

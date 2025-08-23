@@ -3,9 +3,10 @@ import { DatabaseService } from '@/lib/database';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     
     // Remove password if it's undefined to avoid overwriting with undefined
@@ -13,7 +14,7 @@ export async function PUT(
       delete body.password;
     }
     
-    const user = await DatabaseService.updateUser(params.id, body);
+    const user = await DatabaseService.updateUser(id, body);
     return NextResponse.json(user);
   } catch (error) {
     console.error('Error updating user:', error);

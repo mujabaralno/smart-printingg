@@ -1,19 +1,20 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Search, Clock, TrendingUp, X } from "lucide-react";
+import { Search, Clock, TrendingUp, X, User, Building, FileText, Package } from "lucide-react";
 import { Button } from "./button";
-
+import { useRouter } from "next/navigation";
 
 interface SearchResult {
   id: string;
-  type: 'quote' | 'client' | 'product';
+  type: 'quote' | 'client' | 'supplier' | 'material' | 'user';
   title: string;
   subtitle: string;
   data: any;
 }
 
 export default function GlobalSearch() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -197,27 +198,63 @@ export default function GlobalSearch() {
   const getResultIcon = (type: string) => {
     switch (type) {
       case 'quote':
-        return <TrendingUp className="w-4 h-4 text-blue-600" />;
+        return <FileText className="w-4 h-4 text-blue-600" />;
       case 'client':
-        return <Clock className="w-4 h-4 text-green-600" />;
+        return <Building className="w-4 h-4 text-green-600" />;
+      case 'supplier':
+        return <Package className="w-4 h-4 text-purple-600" />;
+      case 'material':
+        return <Package className="w-4 h-4 text-orange-600" />;
+      case 'user':
+        return <User className="w-4 h-4 text-indigo-600" />;
       default:
         return <Search className="w-4 h-4 text-gray-600" />;
     }
   };
 
+  const getResultTypeLabel = (type: string) => {
+    switch (type) {
+      case 'quote':
+        return 'Quote';
+      case 'client':
+        return 'Client';
+      case 'supplier':
+        return 'Supplier';
+      case 'material':
+        return 'Material';
+      case 'user':
+        return 'User';
+      default:
+        return 'Item';
+    }
+  };
+
   const handleResultClick = (result: SearchResult) => {
-    // Handle result click based on type
+    // Handle result click based on type with proper navigation
     switch (result.type) {
       case 'quote':
-        // Navigate to quote details or open quote modal
-        console.log('Navigate to quote:', result.data.quoteId);
+        // Navigate to quote management page with the specific quote
+        router.push(`/quote-management?quoteId=${result.data.quoteId || result.data.id}`);
         break;
       case 'client':
-        // Navigate to client details
-        console.log('Navigate to client:', result.data.id);
+        // Navigate to client management page with the specific client
+        router.push(`/client-management?clientId=${result.data.id}`);
+        break;
+      case 'supplier':
+        // Navigate to supplier management page with the specific supplier
+        router.push(`/supplier-management?supplierId=${result.data.id}`);
+        break;
+      case 'material':
+        // Navigate to supplier management page with the specific material
+        router.push(`/supplier-management?materialId=${result.data.id}`);
+        break;
+      case 'user':
+        // Navigate to user management page with the specific user
+        router.push(`/user-management?userId=${result.data.id}`);
         break;
     }
     
+    // Close search modal
     setIsOpen(false);
     setQuery("");
     setResults([]);
@@ -233,7 +270,7 @@ export default function GlobalSearch() {
         onClick={() => setIsOpen(true)}
       >
         <Search className="mr-3 h-4 w-4 text-gray-400" />
-        <span className="text-gray-600">Search quotes, clients, products...</span>
+        <span className="text-gray-600">Search quotes, clients, suppliers, materials...</span>
         <kbd className="ml-auto hidden md:inline-flex items-center px-2 py-1 text-xs font-mono text-gray-500 bg-gray-100 rounded border border-gray-200">
           /
         </kbd>
@@ -256,7 +293,7 @@ export default function GlobalSearch() {
             {/* Search Input */}
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Search</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Global Search</h3>
                 <button
                   type="button"
                   onClick={() => {
@@ -277,7 +314,7 @@ export default function GlobalSearch() {
                   <input
                     ref={inputRef}
                     type="text"
-                    placeholder="Search quotes, clients, products..."
+                    placeholder="Search quotes, clients, suppliers, materials, users..."
                     value={query}
                     onChange={(e) => {
                       setQuery(e.target.value);
@@ -367,9 +404,14 @@ export default function GlobalSearch() {
                         {getResultIcon(result.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
-                          {result.title}
-                        </p>
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                            {getResultTypeLabel(result.type)}
+                          </span>
+                          <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                            {result.title}
+                          </p>
+                        </div>
                         <p className="text-sm text-gray-500 truncate">
                           {result.subtitle}
                         </p>

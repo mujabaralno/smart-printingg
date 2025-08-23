@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DatabaseService } from '@/lib/database';
+import { convertToEmpFormat } from '@/lib/auth';
 
 export async function GET() {
   try {
@@ -15,7 +16,13 @@ export async function GET() {
         quotes: quotes.length
       },
       sampleData: {
-        users: users.slice(0, 3).map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role })),
+        users: users.slice(0, 3).map(u => ({ 
+          id: u.id, 
+          displayId: convertToEmpFormat(u.id), 
+          name: u.name, 
+          email: u.email, 
+          role: u.role 
+        })),
         clients: clients.slice(0, 3).map(c => ({ id: c.id, contactPerson: c.contactPerson, companyName: c.companyName, email: c.email })),
         quotes: quotes.slice(0, 3).map(q => ({ id: q.id, quoteId: q.quoteId, status: q.status }))
       }
