@@ -94,10 +94,10 @@ export class DatabaseService {
       // Use raw SQL with proper CUID generation
       const clientId = cuid();
       const result = await db.$executeRaw`
-        INSERT INTO Client (
-          id, clientType, companyName, contactPerson, email, phone, countryCode, 
-          role, address, city, state, postalCode, country, userId, 
-          createdAt, updatedAt, status
+        INSERT INTO "Client" (
+          id, "clientType", "companyName", "contactPerson", email, phone, "countryCode", 
+          role, address, city, state, "postalCode", country, "userId", 
+          "createdAt", "updatedAt", status
         ) VALUES (
           ${clientId},
           ${clientData.clientType},
@@ -121,7 +121,7 @@ export class DatabaseService {
       
       // Get the ID of the newly created client
       const newClient = await db.$queryRaw`
-        SELECT * FROM Client WHERE id = ${clientId}
+        SELECT * FROM "Client" WHERE id = ${clientId}
       `;
       
       return (newClient as any[])[0];
@@ -163,24 +163,24 @@ export class DatabaseService {
         const rawClients = await db.$queryRaw`
           SELECT 
             id,
-            clientType,
-            companyName,
-            contactPerson,
+            "clientType",
+            "companyName",
+            "contactPerson",
             email,
             phone,
-            countryCode,
+            "countryCode",
             role,
             address,
             city,
             state,
-            postalCode,
+            "postalCode",
             country,
             status,
-            createdAt,
-            updatedAt,
-            userId
-          FROM Client
-          ORDER BY createdAt DESC
+            "createdAt",
+            "updatedAt",
+            "userId"
+          FROM "Client"
+          ORDER BY "createdAt" DESC
         `;
         
         clients = (rawClients as any[]).map(client => ({
@@ -238,21 +238,21 @@ export class DatabaseService {
     try {
       // Use raw SQL to update client with address fields
       const result = await db.$executeRaw`
-        UPDATE Client 
+        UPDATE "Client" 
         SET 
-          clientType = ${data.clientType},
-          companyName = ${data.companyName || ''},
-          contactPerson = ${data.contactPerson || ''},
+          "clientType" = ${data.clientType},
+          "companyName" = ${data.companyName || ''},
+          "contactPerson" = ${data.contactPerson || ''},
           email = ${data.email},
           phone = ${data.phone || ''},
-          countryCode = ${data.countryCode || '+971'},
+          "countryCode" = ${data.countryCode || '+971'},
           role = ${data.role || ''},
           address = ${data.address || ''},
           city = ${data.city || ''},
           state = ${data.state || ''},
-          postalCode = ${data.postalCode || ''},
+          "postalCode" = ${data.postalCode || ''},
           country = ${data.country || ''},
-          updatedAt = ${new Date()}
+          "updatedAt" = ${new Date()}
         WHERE id = ${id}
       `;
       
