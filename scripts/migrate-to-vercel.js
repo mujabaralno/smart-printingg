@@ -74,46 +74,74 @@ async function migrateToVercel() {
           switch (table) {
             case 'User':
               for (const user of data) {
+                const cleanUser = {
+                  ...user,
+                  createdAt: user.createdAt ? new Date(user.createdAt) : new Date(),
+                  updatedAt: user.updatedAt ? new Date(user.updatedAt) : new Date()
+                };
                 await prisma.user.upsert({
                   where: { id: user.id },
-                  update: user,
-                  create: user
+                  update: cleanUser,
+                  create: cleanUser
                 });
               }
               break;
             case 'Client':
               for (const client of data) {
+                const cleanClient = {
+                  ...client,
+                  createdAt: client.createdAt ? new Date(client.createdAt) : new Date(),
+                  updatedAt: client.updatedAt ? new Date(client.updatedAt) : new Date()
+                };
                 await prisma.client.upsert({
                   where: { id: client.id },
-                  update: client,
-                  create: client
+                  update: cleanClient,
+                  create: cleanClient
                 });
               }
               break;
             case 'Supplier':
               for (const supplier of data) {
+                const cleanSupplier = {
+                  ...supplier,
+                  createdAt: supplier.createdAt ? new Date(supplier.createdAt) : new Date(),
+                  updatedAt: supplier.updatedAt ? new Date(supplier.updatedAt) : new Date()
+                };
                 await prisma.supplier.upsert({
                   where: { id: supplier.id },
-                  update: supplier,
-                  create: supplier
+                  update: cleanSupplier,
+                  create: cleanSupplier
                 });
               }
               break;
             case 'Material':
               for (const material of data) {
+                const cleanMaterial = {
+                  ...material,
+                  lastUpdated: material.lastUpdated ? new Date(material.lastUpdated) : new Date(),
+                  createdAt: material.createdAt ? new Date(material.createdAt) : new Date(),
+                  updatedAt: material.updatedAt ? new Date(material.updatedAt) : new Date()
+                };
                 await prisma.material.upsert({
                   where: { id: material.id },
-                  update: material,
-                  create: material
+                  update: cleanMaterial,
+                  create: cleanMaterial
                 });
               }
               break;
             case 'Quote':
               for (const quote of data) {
+                const cleanQuote = {
+                  ...quote,
+                  date: quote.date ? new Date(quote.date) : new Date(),
+                  createdAt: quote.createdAt ? new Date(quote.createdAt) : new Date(),
+                  updatedAt: quote.updatedAt ? new Date(quote.updatedAt) : new Date(),
+                  useSameAsFlat: quote.useSameAsFlat === 1 ? true : false
+                };
                 await prisma.quote.upsert({
                   where: { id: quote.id },
-                  update: quote,
-                  create: quote
+                  update: cleanQuote,
+                  create: cleanQuote
                 });
               }
               break;
@@ -155,19 +183,27 @@ async function migrateToVercel() {
               break;
             case 'SearchHistory':
               for (const history of data) {
+                const cleanHistory = {
+                  ...history,
+                  timestamp: history.timestamp ? new Date(history.timestamp) : new Date()
+                };
                 await prisma.searchHistory.upsert({
                   where: { id: history.id },
-                  update: history,
-                  create: history
+                  update: cleanHistory,
+                  create: cleanHistory
                 });
               }
               break;
             case 'SearchAnalytics':
               for (const analytics of data) {
+                const cleanAnalytics = {
+                  ...analytics,
+                  timestamp: analytics.timestamp ? new Date(analytics.timestamp) : new Date()
+                };
                 await prisma.searchAnalytics.upsert({
                   where: { id: analytics.id },
-                  update: analytics,
-                  create: analytics
+                  update: cleanAnalytics,
+                  create: cleanAnalytics
                 });
               }
               break;
