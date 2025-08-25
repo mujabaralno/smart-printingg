@@ -580,7 +580,7 @@ export default function LoginPage() {
           closeOtpModal();
         }
       }}>
-        <DialogContent className="sm:max-w-md mx-4">
+        <DialogContent className="sm:max-w-md mx-4" showCloseButton={false}>
           <DialogHeader className="relative">
             <button 
               onClick={closeOtpModal}
@@ -662,7 +662,7 @@ export default function LoginPage() {
               <Button 
                 onClick={handleOtpVerification}
                 disabled={!otp || otp.length !== 6 || isLoading}
-                className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 shadow-lg disabled:from-gray-400 disabled:to-gray-400"
+                className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 shadow-lg disabled:from-gray-400 disabled:to-gray-400 text-white"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
