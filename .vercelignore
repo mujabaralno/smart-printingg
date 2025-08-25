@@ -1,6 +1,5 @@
 # Ignore Prisma cache and generated files
 node_modules/.prisma
-prisma/generated
 .prisma
 
 # Ignore local database
