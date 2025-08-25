@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL_POSTGRES_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -150,7 +150,7 @@ model Material {
   status      String   @default("Active")
   lastUpdated DateTime @default(now())
   createdAt   DateTime @default(now())
-  updatedAt   DateTime   @updatedAt
+  updatedAt   DateTime @updatedAt
   supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 }
 

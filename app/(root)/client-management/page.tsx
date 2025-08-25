@@ -215,6 +215,16 @@ export default function ClientManagementPage() {
     setOpen(true);
   };
 
+  // open View
+  const onView = (r: ClientRow) => {
+    console.log('Viewing client:', r);
+    // For now, just open the edit modal in view mode
+    // You can create a separate view modal later if needed
+    setMode("edit");
+    setDraft(r);
+    setOpen(true);
+  };
+
   // submit modal
   const onSubmit = async () => {
     // Validation based on client type
