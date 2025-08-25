@@ -5,9 +5,7 @@ const nextConfig = {
     BUILD_TIMESTAMP: Date.now().toString(),
   },
   // Ensure Prisma client is properly generated
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
-  },
+  serverExternalPackages: ['@prisma/client'],
 }
 
 module.exports = nextConfig
