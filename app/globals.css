@@ -66,6 +66,29 @@
   --chart-5: var(--sp-accent);
 }
 
+/* Ensure Dialog components have proper background */
+:root {
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-primary: #5b5bd6;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f3f6ff;
+  --color-secondary-foreground: #0f172a;
+  --color-muted: #64748b;
+  --color-muted-foreground: #94a3b8;
+  --color-accent: #8b5cf6;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #ef4444;
+  --color-border: #e5e9f2;
+  --color-input: #ffffff;
+  --color-ring: #5b5bd6;
+  --radius: 16px;
+}
+
 /* Typography Stack - SF Pro Rounded Feel */
 @font-face {
   font-family: 'SF Pro Rounded';
@@ -273,4 +296,30 @@
     --sp-text: #000000;
     --sp-muted: #333333;
   }
+}
+
+/* Fix Dialog transparency issues */
+[data-slot="dialog-content"] {
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+[data-slot="dialog-overlay"] {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Ensure modal content is fully opaque */
+.dialog-content,
+[role="dialog"] {
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Force white background on all dialog elements */
+[data-slot="dialog-content"] * {
+  background-color: transparent;
+}
+
+[data-slot="dialog-content"] > * {
+  background-color: #ffffff !important;
 }

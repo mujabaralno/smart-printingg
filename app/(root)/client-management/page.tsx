@@ -576,8 +576,7 @@ export default function ClientManagementPage() {
       {/* ===== Modal Add/Edit Client ===== */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent 
-          className="sm:max-w-[600px] rounded-2xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl border-0"
-          style={{ backgroundColor: 'white', opacity: 1 }}
+          className="sm:max-w-[600px] rounded-2xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl border-0 dialog-content"
         >
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900">
