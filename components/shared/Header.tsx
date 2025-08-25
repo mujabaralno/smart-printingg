@@ -53,7 +53,7 @@ export default function Header() {
     }
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     setErr("");
     if (!newPass || newPass.length < 6) {
       setErr("Password min 6 karakter.");
@@ -63,10 +63,23 @@ export default function Header() {
       setErr("Konfirmasi password tidak sama.");
       return;
     }
-    updatePassword(newPass);
-    setOpenChangePass(false);
-    setNewPass("");
-    setConfirmPass("");
+    
+    try {
+      const success = await updatePassword(newPass);
+      if (success) {
+        // Show small notification and close form
+        console.log('Password updated successfully');
+        setOpenChangePass(false);
+        // Reset form fields
+        setNewPass("");
+        setConfirmPass("");
+      } else {
+        setErr("Failed to update password. Please try again.");
+      }
+    } catch (error) {
+      console.error('Error updating password:', error);
+      setErr("Failed to update password. Please try again.");
+    }
   };
 
   const formatDate = (date: Date) => {

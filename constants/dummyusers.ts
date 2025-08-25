@@ -43,6 +43,7 @@ export interface AppUser {
   role: AppUserRole;
   password?: string
   status: AppUserStatus;
+  profilePicture?: string | null; // Profile picture URL or base64 data
 }
 
 export const seedUsers: AppUser[] = [

@@ -266,12 +266,12 @@ export default function GlobalSearch() {
       {/* Search Trigger Button */}
       <Button
         variant="outline"
-        className="w-full justify-start text-sm text-muted-foreground md:w-auto lg:w-[400px] bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 rounded-lg shadow-sm"
+        className="w-full justify-start text-sm text-muted-foreground bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 rounded-2xl shadow-sm hover:shadow-md"
         onClick={() => setIsOpen(true)}
       >
         <Search className="mr-3 h-4 w-4 text-gray-400" />
-        <span className="text-gray-600">Search quotes, clients, suppliers, materials...</span>
-        <kbd className="ml-auto hidden md:inline-flex items-center px-2 py-1 text-xs font-mono text-gray-500 bg-gray-100 rounded border border-gray-200">
+        <span className="text-gray-600">Search quotes, clients, suppliers...</span>
+        <kbd className="ml-auto hidden md:inline-flex items-center px-2 py-1 text-xs font-mono text-gray-500 bg-gray-100 rounded-lg border border-gray-200">
           /
         </kbd>
       </Button>
@@ -335,7 +335,7 @@ export default function GlobalSearch() {
                         setSearchError(null);
                       }
                     }}
-                    className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder:text-gray-500"
+                    className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder:text-gray-500"
                   />
                   {query && (
                     <button

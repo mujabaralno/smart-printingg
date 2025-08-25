@@ -147,135 +147,186 @@ export async function downloadCustomerPdf(
       creator: "Smart Printing Quotation System"
     });
 
-    // Header Section with Company Branding
-    doc.setFillColor(41, 128, 185); // Professional blue
-    doc.rect(0, 0, 210, 30, 'F');
+    // ============================================================================
+    // PROFESSIONAL HEADER SECTION - CLEAN DESIGN
+    // ============================================================================
+    // Clean header background
+    doc.setFillColor(248, 250, 252); // Light gray background
+    doc.rect(0, 0, 210, 50, 'F');
     
-    // Company Logo/Name (centered)
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
+    // Professional accent line
+    doc.setFillColor(30, 64, 175); // Professional blue
+    doc.rect(0, 0, 210, 3, 'F');
+    
+    // Company branding
+    doc.setTextColor(30, 64, 175);
+    doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
-    doc.text("SMART PRINTING SOLUTIONS", 105, 15, { align: 'center' });
+    doc.text("SMART PRINTING SOLUTIONS", 20, 20);
     
-    // Tagline
+    // Professional tagline
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text("Professional Printing & Design Services", 20, 28);
+    
+    // Quote information box
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(140, 10, 55, 30, 3, 3, 'FD');
+    
+    doc.setTextColor(30, 64, 175);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text("QUOTATION", 167.5, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Quote #: Q-001`, 167.5, 28, { align: 'center' });
+    doc.text(`Date: ${formattedDate}`, 167.5, 35, { align: 'center' });
+
+    // Clean separator line
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(20, 50, 190, 50);
+
+    // ============================================================================
+    // CLIENT INFORMATION SECTION - CLEAN CARD DESIGN
+    // ============================================================================
+    let currentY = 65;
+    
+    // Clean card background
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(20, currentY, 170, 50, 5, 5, 'FD');
+    
+    // Section title
+    doc.setTextColor(30, 64, 175);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text("CLIENT INFORMATION", 25, currentY + 12);
+    
+    // Client details with clean layout
+    doc.setTextColor(71, 85, 105);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text("Professional Printing & Design Services", 105, 23, { align: 'center' });
-
-    // Document Title
-    doc.setTextColor(41, 128, 185);
-    doc.setFontSize(16);
+    
+    const clientDetailsY = currentY + 22;
+    
+    // Left column - labels
     doc.setFont('helvetica', 'bold');
-    doc.text("QUOTATION - CUSTOMER COPY", 105, 38, { align: 'center' });
-
-    // Date and Quote Number
-    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Company:', 25, clientDetailsY);
+    doc.text('Contact Person:', 25, clientDetailsY + 7);
+    doc.text('Email:', 25, clientDetailsY + 14);
+    doc.text('Phone:', 25, clientDetailsY + 21);
+    
+    // Right column - values
     doc.setFont('helvetica', 'normal');
-    doc.text(`Date: ${formattedDate}`, 20, 50);
+    doc.setTextColor(15, 23, 42);
+    doc.text(formData.client.companyName || '—', 70, clientDetailsY);
+    doc.text(formData.client.contactPerson || '—', 70, clientDetailsY + 7);
+    doc.text(formData.client.email || '—', 70, clientDetailsY + 14);
+    doc.text(`${formData.client.countryCode || ''} ${formData.client.phone || '—'}`, 70, clientDetailsY + 21);
     
-    // Generate quote number
-    const quoteNumber = `QT-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
-    doc.text(`Quote #: ${quoteNumber}`, 120, 50);
-
-    // Client Information Section
-    doc.setFillColor(248, 249, 250); // Light gray background
-    doc.rect(20, 58, 170, 35, 'F'); // Increased height for more details
-    
-    doc.setTextColor(52, 73, 94); // Dark text
-    doc.setFontSize(11);
+    // Address in right column
     doc.setFont('helvetica', 'bold');
-    doc.text("CLIENT INFORMATION", 25, 67);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Address:', 110, clientDetailsY);
+    doc.text('City, State:', 110, clientDetailsY + 7);
     
-    const c = formData.client;
-    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    
-    // Basic client info
-    doc.text(`Company: ${c.clientType === "Company" ? c.companyName : "Individual Client"}`, 25, 75);
-    doc.text(`Contact Person: ${c.contactPerson || "-"}`, 25, 82);
-    doc.text(`Email: ${c.email || "-"}`, 120, 75);
-    doc.text(`Phone: ${c.countryCode} ${c.phone || "-"}`, 120, 82);
-    
-    // Additional client details
-    if (c.clientType === "Company") {
-      doc.text(`Company Name: ${c.companyName || "-"}`, 25, 89);
+    doc.setTextColor(15, 23, 42);
+    const address = formData.client.address || '—';
+    if (address.length > 25) {
+      doc.text(address.substring(0, 25) + '...', 140, clientDetailsY);
     } else {
-      doc.text(`First Name: ${c.firstName || "-"}`, 25, 89);
-      doc.text(`Last Name: ${c.lastName || "-"}`, 120, 89);
+      doc.text(address, 140, clientDetailsY);
     }
     
-    doc.text(`Role: ${c.role || "-"}`, 25, 96);
-    
-    // Address information if available
-    if (c.address || c.city || c.state || c.postalCode || c.country) {
-      doc.text(`Address: ${c.address || "-"}`, 25, 103);
-      const locationParts = [c.city, c.state, c.postalCode, c.country].filter(Boolean);
-      if (locationParts.length > 0) {
-        doc.text(`Location: ${locationParts.join(", ")}`, 120, 103);
-      }
-    }
-    
-    // Additional information if available
-    if (c.additionalInfo) {
-      doc.text(`Notes: ${c.additionalInfo}`, 25, 110);
-    }
+    const location = `${formData.client.city || '—'}, ${formData.client.state || '—'}`;
+    doc.text(location, 140, clientDetailsY + 7);
 
-    // Product Specifications Section - Enhanced with Step 3 data
-    doc.setFillColor(240, 248, 255); // Light blue background
-    doc.rect(20, 103, 170, 45, 'F'); // Increased height for more details
+    // ============================================================================
+    // PRODUCT SPECIFICATIONS SECTION
+    // ============================================================================
+    currentY += 60;
     
-    doc.setTextColor(52, 73, 94);
-    doc.setFontSize(11);
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(20, currentY, 170, 45, 5, 5, 'FD');
+    
+    doc.setTextColor(30, 64, 175);
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text("PRODUCT SPECIFICATIONS", 25, 112);
-
-    // Enhanced product details table with comprehensive information
+    doc.text("PRODUCT SPECIFICATIONS", 25, currentY + 12);
+    
+    // Clean product specs table
     const productSpecsBody = formData.products.flatMap((product, index) => [
-      [`Product ${index + 1} Name`, product.productName || "—"],
-      [`Product ${index + 1} Quantity`, String(product.quantity || 0)],
-      [`Product ${index + 1} Printing Method`, product.printingSelection || "—"],
-      [`Product ${index + 1} Sides`, product.sides || "—"],
+      [`Product ${index + 1}`, product.productName || "—"],
+      [`Quantity`, String(product.quantity || 0)],
+      [`Printing Method`, product.printingSelection || "—"],
+      [`Sides`, product.sides || "—"],
       [
-        `Product ${index + 1} Flat Size (Open)`,
-        `${product.flatSize?.width ?? "—"} × ${product.flatSize?.height ?? "—"} cm (spine: ${product.flatSize?.spine ?? 0} cm)`,
+        `Flat Size (Open)`,
+        `${product.flatSize?.width ?? "—"} × ${product.flatSize?.height ?? "—"} cm`,
       ],
       [
-        `Product ${index + 1} Close Size (Closed)`,
-        product.useSameAsFlat ? "Same as Flat Size" : `${product.closeSize?.width ?? "—"} × ${product.closeSize?.height ?? "—"} cm (spine: ${product.closeSize?.spine ?? 0} cm)`,
+        `Close Size (Closed)`,
+        product.useSameAsFlat ? "Same as Flat Size" : `${product.closeSize?.width ?? "—"} × ${product.closeSize?.height ?? "—"} cm`,
       ],
-      [`Product ${index + 1} Colors - Front`, product.colors?.front || "—"],
-      [`Product ${index + 1} Colors - Back`, product.colors?.back || "—"],
-      [`Product ${index + 1} Paper Type`, product.paperName || "—"],
-      [`Product ${index + 1} Finishing`, product.finishing?.length ? product.finishing.join(", ") : "—"],
+      [`Front Colors`, product.colors?.front || "—"],
+      [`Back Colors`, product.colors?.back || "—"],
+      [`Paper Type`, product.paperName || "—"],
+      [`Finishing`, product.finishing?.length ? product.finishing.join(", ") : "—"],
     ]);
 
     autoTable(doc, {
-      startY: 158, // Adjusted start position
-      head: [["Specification", "Value"]],
+      startY: currentY + 20,
+      head: [["Specification", "Details"]],
       body: productSpecsBody,
       styles: { 
-        fontSize: 8,
-        cellPadding: 3,
-        lineColor: [41, 128, 185],
-        lineWidth: 0.1
+        fontSize: 9,
+        cellPadding: 4,
+        lineColor: [226, 232, 240],
+        lineWidth: 0.3,
+        textColor: [71, 85, 105],
+        halign: 'left'
       },
       headStyles: { 
-        fillColor: [41, 128, 185],
-        textColor: [255, 255, 255],
+        fillColor: [248, 250, 252],
+        textColor: [30, 64, 175],
         fontStyle: 'bold',
-        fontSize: 9
+        fontSize: 10,
+        halign: 'left'
       },
       alternateRowStyles: {
-        fillColor: [248, 249, 250]
+        fillColor: [249, 250, 251]
       },
-      margin: { left: 20, right: 20 },
+      margin: { left: 25, right: 25 },
       columnStyles: {
-        0: { cellWidth: 70, halign: 'left' },
-        1: { cellWidth: 90, halign: 'left' }
-      }
+        0: { cellWidth: 55, fontStyle: 'bold', textColor: [100, 116, 139] },
+        1: { cellWidth: 100, textColor: [15, 23, 42] }
+      },
+      tableWidth: 'wrap'
     });
 
-    // Main Products Pricing Table
+    // ============================================================================
+    // PRICING TABLE - CLEAN AND PROFESSIONAL
+    // ============================================================================
+    const pricingY = getFinalY(doc, currentY + 20) + 15;
+    
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(20, pricingY, 170, 35, 5, 5, 'FD');
+    
+    doc.setTextColor(30, 64, 175);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text("PRICING BREAKDOWN", 25, pricingY + 12);
+
     const mainProductsBody = formData.products.map(product => {
       try {
         const prices = calculateMainProductPrice(formData, product);
@@ -299,138 +350,171 @@ export async function downloadCustomerPdf(
     });
 
     autoTable(doc, {
-      startY: getFinalY(doc, 158) + 8, // Adjusted start position
-      head: [["Product Name", "Quantity", "Base Price", "VAT (5%)", "Total"]],
+      startY: pricingY + 20,
+      head: [["Product", "Qty", "Base Price", "VAT (5%)", "Total"]],
       body: mainProductsBody,
       styles: { 
-        fontSize: 8,
-        cellPadding: 4,
-        lineColor: [41, 128, 185],
-        lineWidth: 0.1
+        fontSize: 10,
+        cellPadding: 5,
+        lineColor: [226, 232, 240],
+        lineWidth: 0.3,
+        textColor: [71, 85, 105]
       },
       headStyles: { 
-        fillColor: [41, 128, 185],
-        textColor: [255, 255, 255],
+        fillColor: [248, 250, 252],
+        textColor: [30, 64, 175],
         fontStyle: 'bold',
-        fontSize: 9
+        fontSize: 11,
+        halign: 'center'
       },
       alternateRowStyles: {
-        fillColor: [248, 249, 250]
+        fillColor: [249, 250, 251]
       },
-      margin: { left: 20, right: 20 },
+      margin: { left: 25, right: 25 },
       columnStyles: {
-        0: { cellWidth: 45 }, // Product Name
-        1: { cellWidth: 22, halign: 'center' }, // Quantity
-        2: { cellWidth: 28, halign: 'right' }, // Base Price
-        3: { cellWidth: 22, halign: 'right' }, // VAT
-        4: { cellWidth: 28, halign: 'right' }  // Total
+        0: { cellWidth: 50, halign: 'left', fontStyle: 'bold' },
+        1: { cellWidth: 25, halign: 'center' },
+        2: { cellWidth: 30, halign: 'right', textColor: [16, 185, 129] },
+        3: { cellWidth: 25, halign: 'right', textColor: [239, 68, 68] },
+        4: { cellWidth: 30, halign: 'right', fontStyle: 'bold', textColor: [30, 64, 175] }
       }
     });
 
-    // Paper Specifications Section - Added for customer PDF
+    // ============================================================================
+    // PAPER SPECIFICATIONS TABLE - IF AVAILABLE
+    // ============================================================================
     if (formData.operational.papers?.length) {
-      const paperY = getFinalY(doc, 158) + 8;
-      doc.setFontSize(11);
+      const paperY = getFinalY(doc, pricingY + 20) + 15;
+      
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(20, paperY, 170, 35, 5, 5, 'FD');
+      
+      doc.setTextColor(30, 64, 175);
+      doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(52, 152, 219);
-      doc.text("PAPER SPECIFICATIONS", 20, paperY + 15);
+      doc.text("PAPER SPECIFICATIONS", 25, paperY + 12);
 
       autoTable(doc, {
         startY: paperY + 20,
-        head: [["Paper #", "Type", "Dimensions", "Sheets/Packet", "Price/Packet", "Required Sheets", "Output Size"]],
+        head: [["Paper", "Type", "Dimensions", "Sheets/Pack", "Price/Pack", "Required", "Output"]],
         body: formData.operational.papers.map((pp, i) => [
           String(i + 1),
-          // Get paper name from product's papers array if available
-          formData.products[0]?.papers[i]?.name || "Standard Paper",
+          formData.products[0]?.papers?.[i]?.name || "Standard",
           `${pp.inputWidth ?? "—"} × ${pp.inputHeight ?? "—"} cm`,
           String(pp.sheetsPerPacket ?? "—"),
-          typeof pp.pricePerPacket === "number"
-            ? currency(pp.pricePerPacket)
-            : "—",
+          typeof pp.pricePerPacket === "number" ? currency(pp.pricePerPacket) : "—",
           String(pp.enteredSheets ?? "—"),
           `${pp.outputWidth ?? "—"} × ${pp.outputHeight ?? "—"} cm`,
         ]),
         styles: { 
           fontSize: 8,
           cellPadding: 3,
-          lineColor: [52, 152, 219],
-          lineWidth: 0.1
+          lineColor: [226, 232, 240],
+          lineWidth: 0.3,
+          textColor: [71, 85, 105]
         },
         headStyles: { 
-          fillColor: [52, 152, 219],
-          textColor: [255, 255, 255],
+          fillColor: [248, 250, 252],
+          textColor: [30, 64, 175],
           fontStyle: 'bold',
-          fontSize: 9
+          fontSize: 9,
+          halign: 'center'
         },
         alternateRowStyles: {
-          fillColor: [240, 248, 255]
+          fillColor: [249, 250, 251]
         },
-        margin: { left: 20, right: 20 },
+        margin: { left: 25, right: 25 },
         columnStyles: {
-          0: { cellWidth: 15, halign: 'center' }, // Paper #
-          1: { cellWidth: 25, halign: 'left' },   // Type
-          2: { cellWidth: 30, halign: 'center' }, // Dimensions
-          3: { cellWidth: 25, halign: 'center' }, // Sheets/Packet
-          4: { cellWidth: 25, halign: 'right' },  // Price/Packet
-          5: { cellWidth: 25, halign: 'center' }, // Required Sheets
-          6: { cellWidth: 30, halign: 'center' }  // Output Size
+          0: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
+          1: { cellWidth: 25, halign: 'left' },
+          2: { cellWidth: 25, halign: 'center' },
+          3: { cellWidth: 20, halign: 'center' },
+          4: { cellWidth: 22, halign: 'right', textColor: [16, 185, 129] },
+          5: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
+          6: { cellWidth: 25, halign: 'center' }
         }
       });
     }
 
-    // Finishing Specifications Section - Added for customer PDF
+    // ============================================================================
+    // FINISHING SPECIFICATIONS TABLE - IF AVAILABLE
+    // ============================================================================
     if (formData.operational.finishing?.length) {
-      const finishingY = getFinalY(doc, 158) + 8;
+      const finishingY = getFinalY(doc, pricingY + 20) + 15;
       const selectedFin = formData.operational.finishing.filter((f) => 
         formData.products.some(product => product.finishing.includes(f.name))
       );
       
       if (selectedFin.length) {
-        doc.setFontSize(11);
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(20, finishingY, 170, 35, 5, 5, 'FD');
+        
+        doc.setTextColor(30, 64, 175);
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(155, 89, 182);
-        doc.text("FINISHING SPECIFICATIONS", 20, finishingY + 15);
+        doc.text("FINISHING SPECIFICATIONS", 25, finishingY + 12);
 
         autoTable(doc, {
           startY: finishingY + 20,
-          head: [["Finishing Process", "Cost per Unit", "Total Cost"]],
+          head: [["Process", "Cost/Unit", "Units", "Total Cost", "Notes"]],
           body: selectedFin.map((f) => [
             f.name,
             typeof f.cost === "number" ? currency(f.cost) : "—",
+            formData.operational.units ? String(formData.operational.units) : "—",
             typeof f.cost === "number" && formData.operational.units
               ? currency(f.cost * formData.operational.units)
-              : "—"
+              : "—",
+            getFinishingInstructions(f.name)
           ]),
           styles: { 
             fontSize: 8,
-            cellPadding: 4,
-            lineColor: [155, 89, 182],
-            lineWidth: 0.1
+            cellPadding: 3,
+            lineColor: [226, 232, 240],
+            lineWidth: 0.3,
+            textColor: [71, 85, 105]
           },
           headStyles: { 
-            fillColor: [155, 89, 182],
-            textColor: [255, 255, 255],
+            fillColor: [248, 250, 252],
+            textColor: [30, 64, 175],
             fontStyle: 'bold',
-            fontSize: 9
+            fontSize: 9,
+            halign: 'center'
           },
           alternateRowStyles: {
-            fillColor: [248, 240, 255]
+            fillColor: [249, 250, 251]
           },
-          margin: { left: 20, right: 20 },
+          margin: { left: 25, right: 25 },
           columnStyles: {
-            0: { cellWidth: 55, halign: 'left' },   // Finishing Process
-            1: { cellWidth: 37, halign: 'right' },  // Cost per Unit
-            2: { cellWidth: 37, halign: 'right' }   // Total Cost
+            0: { cellWidth: 35, halign: 'left', fontStyle: 'bold' },
+            1: { cellWidth: 25, halign: 'right', textColor: [16, 185, 129] },
+            2: { cellWidth: 20, halign: 'center' },
+            3: { cellWidth: 25, halign: 'right', fontStyle: 'bold', textColor: [30, 64, 175] },
+            4: { cellWidth: 50, halign: 'left', fontSize: 7 }
           }
         });
       }
     }
 
-    // Other Quantities Table
+    // ============================================================================
+    // OTHER QUANTITIES TABLE - IF AVAILABLE
+    // ============================================================================
     if (otherQuantities.length > 0) {
+      const otherQtyY = getFinalY(doc, pricingY + 20) + 15;
+      
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(20, otherQtyY, 170, 35, 5, 5, 'FD');
+      
+      doc.setTextColor(30, 64, 175);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text("ADDITIONAL QUANTITIES", 25, otherQtyY + 12);
+      
       autoTable(doc, {
-        startY: getFinalY(doc, getFinalY(doc, 158) + 8) + 8,
-        head: [["Additional Quantities", "Quantity", "Base Price", "VAT (5%)", "Total"]],
+        startY: otherQtyY + 20,
+        head: [["Product", "Quantity", "Base Price", "VAT (5%)", "Total"]],
         body: otherQuantities.map((o) => {
           try {
             const prices = calculateOtherQtyPrice(formData, o);
@@ -453,32 +537,36 @@ export async function downloadCustomerPdf(
           }
         }),
         styles: { 
-          fontSize: 8,
-          cellPadding: 4,
-          lineColor: [52, 152, 219],
-          lineWidth: 0.1
+          fontSize: 10,
+          cellPadding: 5,
+          lineColor: [226, 232, 240],
+          lineWidth: 0.3,
+          textColor: [71, 85, 105]
         },
         headStyles: { 
-          fillColor: [52, 152, 219],
-          textColor: [255, 255, 255],
+          fillColor: [248, 250, 252],
+          textColor: [30, 64, 175],
           fontStyle: 'bold',
-          fontSize: 9
+          fontSize: 11,
+          halign: 'center'
         },
         alternateRowStyles: {
-          fillColor: [240, 248, 255]
+          fillColor: [249, 250, 251]
         },
-        margin: { left: 20, right: 20 },
+        margin: { left: 25, right: 25 },
         columnStyles: {
-          0: { cellWidth: 45 }, // Additional Quantities
-          1: { cellWidth: 22, halign: 'center' }, // Quantity
-          2: { cellWidth: 28, halign: 'right' }, // Base Price
-          3: { cellWidth: 22, halign: 'right' }, // VAT
-          4: { cellWidth: 28, halign: 'right' }  // Total
+          0: { cellWidth: 50, halign: 'left', fontStyle: 'bold' },
+          1: { cellWidth: 25, halign: 'center' },
+          2: { cellWidth: 30, halign: 'right', textColor: [16, 185, 129] },
+          3: { cellWidth: 25, halign: 'right', textColor: [239, 68, 68] },
+          4: { cellWidth: 30, halign: 'right', fontStyle: 'bold', textColor: [30, 64, 175] }
         }
       });
     }
 
-    // Summary Section
+    // ============================================================================
+    // PRICING SUMMARY SECTION - PROFESSIONAL
+    // ============================================================================
     let mainProductsTotal = 0;
     let otherQuantitiesTotal = 0;
     let grandTotal = 0;
@@ -524,86 +612,109 @@ export async function downloadCustomerPdf(
       grandTotal = mainProductsTotal + otherQuantitiesTotal;
     }
 
-    // Summary table with professional styling
-    const summaryStartY = getFinalY(doc, getFinalY(doc, getFinalY(doc, 158) + 8) + 8) + 8;
+    // Professional pricing summary
+    const summaryStartY = getFinalY(doc, pricingY + 20) + 15;
+    
+    // Summary box
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(30, 64, 175);
+    doc.setLineWidth(1);
+    doc.roundedRect(20, summaryStartY, 170, 50, 5, 5, 'FD');
+    
+    doc.setTextColor(30, 64, 175);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text("PRICING SUMMARY", 105, summaryStartY + 15, { align: 'center' });
+    
     autoTable(doc, {
-      startY: summaryStartY,
+      startY: summaryStartY + 25,
       head: [["Description", "Amount"]],
       body: [
-        ["Subtotal", currency(mainProductsTotal)],
-        ["VAT (5%)", currency(mainProductsTotal * 0.05)],
-        ["Total", currency(mainProductsTotal)],
+        ["Subtotal", currency(mainProductsTotal * 0.952)], // Remove VAT from total to show subtotal
+        ["VAT (5%)", currency(mainProductsTotal * 0.048)], // 5% VAT
+        ["Main Products Total", currency(mainProductsTotal)],
         ...(otherQuantities.length > 0 ? [
           ["Additional Quantities", currency(otherQuantitiesTotal)],
           ["Grand Total", currency(grandTotal)]
         ] : [])
       ],
       styles: { 
-        fontSize: 10,
+        fontSize: 11,
         cellPadding: 6,
-        lineColor: [41, 128, 185],
-        lineWidth: 0.2
+        lineColor: [226, 232, 240],
+        lineWidth: 0.3,
+        textColor: [71, 85, 105]
       },
       headStyles: { 
-        fillColor: [41, 128, 185],
+        fillColor: [30, 64, 175],
         textColor: [255, 255, 255],
         fontStyle: 'bold',
-        fontSize: 11
+        fontSize: 12,
+        halign: 'center'
       },
-      margin: { left: 20, right: 20 },
+      alternateRowStyles: {
+        fillColor: [255, 255, 255]
+      },
+      margin: { left: 25, right: 25 },
       columnStyles: {
-        0: { cellWidth: 120, halign: 'left' },
-        1: { cellWidth: 50, halign: 'right' }
+        0: { cellWidth: 100, halign: 'left', fontStyle: 'bold', textColor: [71, 85, 105] },
+        1: { cellWidth: 65, halign: 'right', fontStyle: 'bold', fontSize: 12, textColor: [30, 64, 175] }
       }
     });
 
-    // Additional Information Section
-    const additionalY = getFinalY(doc, summaryStartY) + 15;
-    doc.setFillColor(248, 249, 250);
-    doc.rect(20, additionalY + 10, 170, 40, 'F');
+    // ============================================================================
+    // TERMS & CONDITIONS SECTION - PROFESSIONAL
+    // ============================================================================
+    const termsY = getFinalY(doc, summaryStartY + 25) + 15;
     
-    doc.setTextColor(52, 73, 94);
-    doc.setFontSize(11);
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(20, termsY, 170, 45, 5, 5, 'FD');
+    
+    doc.setTextColor(30, 64, 175);
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text("ADDITIONAL INFORMATION", 25, additionalY + 20);
+    doc.text("TERMS & CONDITIONS", 25, termsY + 12);
     
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text("• Production Time: 5-7 business days", 25, additionalY + 27);
-    doc.text("• Rush Orders: 2-3 business days (+25% cost)", 25, additionalY + 32);
-    doc.text("• Express Orders: 1 business day (+50% cost)", 25, additionalY + 37);
-    doc.text("• Quality Guarantee: 100% satisfaction or reprint", 120, additionalY + 27);
-    doc.text("• Proof Copy: Available upon request", 120, additionalY + 32);
-    doc.text("• Payment Terms: 50% upfront, 50% before delivery", 120, additionalY + 37);
-
-    // Terms and Conditions Section
-    const termsY = additionalY + 60;
-    doc.setFillColor(255, 248, 220);
-    doc.rect(20, termsY + 10, 170, 25, 'F');
+    doc.setTextColor(71, 85, 105);
     
-    doc.setTextColor(52, 73, 94);
-    doc.setFontSize(10);
+    // Professional terms in organized layout
+    doc.text("• Quote valid for 30 days from date of issue", 25, termsY + 22);
+    doc.text("• Production time: 5-7 business days", 25, termsY + 28);
+    doc.text("• Rush orders: 2-3 business days (+25% cost)", 25, termsY + 34);
+    doc.text("• Payment terms: 50% upfront, 50% before delivery", 25, termsY + 40);
+    
+    doc.text("• Quality guarantee: 100% satisfaction or reprint", 110, termsY + 22);
+    doc.text("• Free delivery within Dubai city limits", 110, termsY + 28);
+    doc.text("• Final approval required before delivery", 110, termsY + 34);
+    doc.text("• Changes to specifications may affect pricing", 110, termsY + 40);
+
+    // ============================================================================
+    // PROFESSIONAL FOOTER
+    // ============================================================================
+    const footerY = termsY + 55;
+    
+    doc.setFillColor(248, 250, 252);
+    doc.rect(20, footerY, 170, 25, 'F');
+    
+    // Professional accent line
+    doc.setFillColor(30, 64, 175);
+    doc.rect(20, footerY, 170, 2, 'F');
+    
+    doc.setTextColor(30, 64, 175);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text("TERMS & CONDITIONS:", 25, termsY + 20);
+    doc.text("Smart Printing Solutions", 25, footerY + 12);
     
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text("• Quote valid for 30 days from date of issue", 25, termsY + 27);
-    doc.text("• Changes to specifications may affect pricing", 25, termsY + 32);
-    doc.text("• Delivery included within Dubai city limits", 120, termsY + 27);
-    doc.text("• Additional charges for rush/express orders", 120, termsY + 32);
+    doc.setTextColor(71, 85, 105);
+    doc.text("Email: info@smartprinting.ae  |  Phone: +971 123 456 789", 25, footerY + 20);
 
-    // Contact Information in Footer
-    const footerY = termsY + 45;
-    doc.setFillColor(41, 128, 185);
-    doc.rect(20, footerY + 10, 170, 15, 'F');
-    
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text("Smart Printing Solutions | +971 50-123-4567 | info@smartprinting.ae | www.smartprinting.ae", 105, footerY + 18, { align: 'center' });
-
-    doc.save("quotation-customer.pdf");
+    // Save the PDF
+    doc.save(`customer-quote-Q-001.pdf`);
     console.log("Customer PDF generated successfully");
   } catch (error) {
     console.error("Error generating customer PDF:", error);
@@ -640,377 +751,645 @@ export async function downloadOpsPdf(
       creator: "Smart Printing Quotation System"
     });
 
-    // Header Section with Company Branding
-    doc.setFillColor(46, 204, 113); // Professional green for operations
-    doc.rect(0, 0, 210, 30, 'F');
+    // ============================================================================
+    // PROFESSIONAL HEADER - OPERATIONS THEME
+    // ============================================================================
+    // Clean header background
+    doc.setFillColor(248, 250, 252);
+    doc.rect(0, 0, 210, 50, 'F');
     
-    // Company Logo/Name (centered)
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
+    // Professional accent line (different color for ops)
+    doc.setFillColor(16, 185, 129); // Professional green
+    doc.rect(0, 0, 210, 3, 'F');
+    
+    // Company Logo/Name
+    doc.setTextColor(16, 185, 129);
+    doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text("SMART PRINTING SOLUTIONS", 105, 15, { align: 'center' });
+    doc.text("SMART PRINTING SOLUTIONS", 105, 18, { align: 'center' });
     
-    // Tagline
-    doc.setFontSize(9);
+    // Document type
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text("Operations & Production Specifications", 105, 23, { align: 'center' });
+    doc.setTextColor(71, 85, 105);
+    doc.text("Operations & Production Specifications", 105, 26, { align: 'center' });
 
     // Document Title
-    doc.setTextColor(46, 204, 113);
+    doc.setTextColor(16, 185, 129);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text("QUOTATION - OPERATIONS COPY", 105, 38, { align: 'center' });
+    doc.text("OPERATIONAL JOB ORDER", 105, 36, { align: 'center' });
 
-    // Date and Quote Number
-    doc.setFontSize(9);
+    // Info boxes
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(25, 40, 70, 8, 2, 2, 'FD');
+    doc.roundedRect(115, 40, 70, 8, 2, 2, 'FD');
+    
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Date: ${formattedDate}`, 20, 50);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Date: ${formattedDate}`, 30, 45);
     
     // Generate quote number
     const quoteNumber = `QT-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
-    doc.text(`Quote #: ${quoteNumber}`, 120, 50);
+    doc.text(`Quote #: ${quoteNumber}`, 120, 45);
 
-    // Client Information Section
-    doc.setFillColor(240, 248, 240); // Light green background
-    doc.rect(20, 58, 170, 35, 'F'); // Increased height for more details
+    // Clean separator
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(20, 50, 190, 50);
+
+    // ============================================================================
+    // CLIENT INFORMATION SECTION - OPERATIONS LAYOUT
+    // ============================================================================
+    let currentY = 60;
     
-    doc.setTextColor(52, 73, 94);
-    doc.setFontSize(11);
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(20, currentY, 170, 40, 5, 5, 'FD');
+    
+    doc.setTextColor(16, 185, 129);
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text("CLIENT INFORMATION", 25, 67);
+    doc.text("CLIENT INFORMATION", 25, currentY + 12);
     
     const c = formData.client;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
+    doc.setTextColor(71, 85, 105);
     
-    // Basic client info
-    doc.text(`Company: ${c.clientType === "Company" ? c.companyName : "Individual Client"}`, 25, 75);
-    doc.text(`Contact Person: ${c.contactPerson || "-"}`, 25, 82);
-    doc.text(`Email: ${c.email || "-"}`, 120, 75);
-    doc.text(`Phone: ${c.countryCode} ${c.phone || "-"}`, 120, 82);
+    // Clean layout
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Company:`, 25, currentY + 22);
+    doc.text(`Contact:`, 25, currentY + 28);
+    doc.text(`Email:`, 100, currentY + 22);
+    doc.text(`Phone:`, 100, currentY + 28);
     
-    // Additional client details
-    if (c.clientType === "Company") {
-      doc.text(`Company Name: ${c.companyName || "-"}`, 25, 89);
-    } else {
-      doc.text(`First Name: ${c.firstName || "-"}`, 25, 89);
-      doc.text(`Last Name: ${c.lastName || "-"}`, 120, 89);
-    }
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${c.clientType === "Company" ? c.companyName : "Individual Client"}`, 55, currentY + 22);
+    doc.text(`${c.contactPerson || "-"}`, 50, currentY + 28);
+    doc.text(`${c.email || "-"}`, 120, currentY + 22);
+    doc.text(`${c.countryCode} ${c.phone || "-"}`, 120, currentY + 28);
     
-    doc.text(`Role: ${c.role || "-"}`, 25, 96);
-    
-    // Address information if available
-    if (c.address || c.city || c.state || c.postalCode || c.country) {
-      doc.text(`Address: ${c.address || "-"}`, 25, 103);
-      const locationParts = [c.city, c.state, c.postalCode, c.country].filter(Boolean);
-      if (locationParts.length > 0) {
-        doc.text(`Location: ${locationParts.join(", ")}`, 120, 103);
+    // Address
+    if (c.address || c.city || c.state) {
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Address:`, 25, currentY + 34);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(15, 23, 42);
+      const fullAddress = [c.address, c.city, c.state, c.country].filter(Boolean).join(", ");
+      if (fullAddress.length > 80) {
+        doc.text(fullAddress.substring(0, 80) + '...', 55, currentY + 34);
+      } else {
+        doc.text(fullAddress, 55, currentY + 34);
       }
     }
-    
-    // Additional information if available
-    if (c.additionalInfo) {
-      doc.text(`Notes: ${c.additionalInfo}`, 25, 110);
-    }
 
-    // Product Specifications Section - Enhanced with all Step 3 data
-    doc.setFillColor(248, 249, 250);
-    doc.rect(20, 103, 170, 35, 'F'); // Increased height for more details
+    // ============================================================================
+    // PRODUCT SPECIFICATIONS SECTION - OPERATIONS TABLE
+    // ============================================================================
+    currentY += 50;
     
-    doc.setTextColor(52, 73, 94);
-    doc.setFontSize(11);
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(20, currentY, 170, 40, 5, 5, 'FD');
+    
+    doc.setTextColor(16, 185, 129);
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text("PRODUCT SPECIFICATIONS", 25, 112);
+    doc.text("PRODUCT SPECIFICATIONS", 25, currentY + 12);
 
-    // Enhanced product details table - show all Step 3 fields
+    // Comprehensive product details table for operations
     const productDetailsBody = formData.products.flatMap((product, index) => [
       [`Product ${index + 1} Name`, product.productName || "—"],
-      [`Product ${index + 1} Quantity`, String(product.quantity || 0)],
-      [`Product ${index + 1} Printing Method`, product.printingSelection || "—"],
-      [`Product ${index + 1} Sides`, product.sides || "—"],
+      [`Quantity`, String(product.quantity || 0)],
+      [`Printing Method`, product.printingSelection || "—"],
+      [`Sides`, product.sides || "—"],
       [
-        `Product ${index + 1} Flat Size (Open)`,
+        `Flat Size (Open)`,
         `${product.flatSize?.width ?? "—"} × ${product.flatSize?.height ?? "—"} cm (spine: ${product.flatSize?.spine ?? 0} cm)`,
       ],
       [
-        `Product ${index + 1} Close Size (Closed)`,
+        `Close Size (Closed)`,
         product.useSameAsFlat ? "Same as Flat Size" : `${product.closeSize?.width ?? "—"} × ${product.closeSize?.height ?? "—"} cm (spine: ${product.closeSize?.spine ?? 0} cm)`,
       ],
-      [`Product ${index + 1} Colors - Front`, product.colors?.front || "—"],
-      [`Product ${index + 1} Colors - Back`, product.colors?.back || "—"],
-      [`Product ${index + 1} Paper Type`, product.paperName || "—"],
-      [`Product ${index + 1} Finishing`, product.finishing?.length ? product.finishing.join(", ") : "—"],
+      [`Front Colors`, product.colors?.front || "—"],
+      [`Back Colors`, product.colors?.back || "—"],
+      [`Paper Type`, product.paperName || "—"],
+      [`Finishing`, product.finishing?.length ? product.finishing.join(", ") : "—"],
     ]);
 
     autoTable(doc, {
-      startY: 138, // Adjusted start position
-      head: [["Field", "Value"]],
+      startY: currentY + 20,
+      head: [["Specification", "Details"]],
       body: productDetailsBody,
       styles: { 
         fontSize: 8,
         cellPadding: 3,
-        lineColor: [46, 204, 113],
-        lineWidth: 0.1
+        lineColor: [226, 232, 240],
+        lineWidth: 0.3,
+        textColor: [71, 85, 105]
       },
       headStyles: { 
-        fillColor: [46, 204, 113],
-        textColor: [255, 255, 255],
+        fillColor: [248, 250, 252],
+        textColor: [16, 185, 129],
         fontStyle: 'bold',
-        fontSize: 9
+        fontSize: 9,
+        halign: 'left'
       },
       alternateRowStyles: {
-        fillColor: [240, 248, 240]
+        fillColor: [249, 250, 251]
       },
-      margin: { left: 20, right: 20 },
+      margin: { left: 25, right: 25 },
       columnStyles: {
-        0: { cellWidth: 65, halign: 'left' },
-        1: { cellWidth: 95, halign: 'left' }
+        0: { cellWidth: 60, halign: 'left', fontStyle: 'bold', textColor: [100, 116, 139] },
+        1: { cellWidth: 105, halign: 'left', textColor: [15, 23, 42] }
       }
     });
 
-    // Paper Specifications Section
+    // ============================================================================
+    // OPERATIONAL SPECIFICATIONS SECTION
+    // ============================================================================
+    const operationalY = getFinalY(doc, currentY + 20) + 15;
+    
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(20, operationalY, 170, 40, 5, 5, 'FD');
+    
+    doc.setTextColor(16, 185, 129);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text("OPERATIONAL SPECIFICATIONS", 25, operationalY + 12);
+
+    // Operational details table
+    const operationalBody = [
+      ["Plates Required", String(op.plates || 0)],
+      ["Total Units", String(op.units || 0)],
+      ["Production Time", "5-7 business days"],
+      ["Rush Option Available", "2-3 business days (+25% cost)"],
+      ["Express Option Available", "1 business day (+50% cost)"],
+    ];
+
+    autoTable(doc, {
+      startY: operationalY + 20,
+      head: [["Specification", "Value"]],
+      body: operationalBody,
+      styles: { 
+        fontSize: 9,
+        cellPadding: 4,
+        lineColor: [226, 232, 240],
+        lineWidth: 0.3,
+        textColor: [71, 85, 105]
+      },
+      headStyles: { 
+        fillColor: [248, 250, 252],
+        textColor: [16, 185, 129],
+        fontStyle: 'bold',
+        fontSize: 10,
+        halign: 'left'
+      },
+      alternateRowStyles: {
+        fillColor: [249, 250, 251]
+      },
+      margin: { left: 25, right: 25 },
+      columnStyles: {
+        0: { cellWidth: 85, halign: 'left', fontStyle: 'bold', textColor: [100, 116, 139] },
+        1: { cellWidth: 80, halign: 'left', textColor: [15, 23, 42] }
+      }
+    });
+
+    // ============================================================================
+    // PAPER SPECIFICATIONS TABLE - OPERATIONS DETAIL
+    // ============================================================================
     if (op.papers?.length) {
-      doc.setFontSize(11);
+      const paperY = getFinalY(doc, operationalY + 20) + 15;
+      
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(20, paperY, 170, 40, 5, 5, 'FD');
+      
+      doc.setTextColor(16, 185, 129);
+      doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(46, 204, 113);
-      doc.text("PAPER SPECIFICATIONS", 20, getFinalY(doc, 138) + 10);
+      doc.text("PAPER SPECIFICATIONS", 25, paperY + 12);
 
       autoTable(doc, {
-        startY: getFinalY(doc, 138) + 15,
-        head: [["Paper #", "Input Dimensions", "Sheets/Packet", "Price/Packet", "Required Sheets"]],
+        startY: paperY + 20,
+        head: [["#", "Type", "Input Size", "Sheets/Pack", "Price/Pack", "Required", "Output Size"]],
         body: op.papers.map((pp, i) => [
           String(i + 1),
+          formData.products[0]?.papers?.[i]?.name || "Standard Paper",
           `${pp.inputWidth ?? "—"} × ${pp.inputHeight ?? "—"} cm`,
           String(pp.sheetsPerPacket ?? "—"),
-          typeof pp.pricePerPacket === "number"
-            ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-                pp.pricePerPacket
-              )
-            : "—",
+          typeof pp.pricePerPacket === "number" ? currency(pp.pricePerPacket) : "—",
           String(pp.enteredSheets ?? "—"),
+          `${pp.outputWidth ?? "—"} × ${pp.outputHeight ?? "—"} cm`,
         ]),
         styles: { 
           fontSize: 8,
-          cellPadding: 4,
-          lineColor: [52, 152, 219],
-          lineWidth: 0.1
+          cellPadding: 3,
+          lineColor: [226, 232, 240],
+          lineWidth: 0.3,
+          textColor: [71, 85, 105]
         },
         headStyles: { 
-          fillColor: [52, 152, 219],
-          textColor: [255, 255, 255],
+          fillColor: [248, 250, 252],
+          textColor: [16, 185, 129],
           fontStyle: 'bold',
-          fontSize: 9
+          fontSize: 8,
+          halign: 'center'
         },
         alternateRowStyles: {
-          fillColor: [240, 248, 255]
+          fillColor: [249, 250, 251]
         },
-        margin: { left: 20, right: 20 },
+        margin: { left: 25, right: 25 },
         columnStyles: {
-          0: { cellWidth: 18, halign: 'center' }, // Paper #
-          1: { cellWidth: 42, halign: 'center' }, // Input Dimensions
-          2: { cellWidth: 32, halign: 'center' }, // Sheets/Packet
-          3: { cellWidth: 32, halign: 'right' },  // Price/Packet
-          4: { cellWidth: 32, halign: 'center' }  // Required Sheets
+          0: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
+          1: { cellWidth: 25, halign: 'left' },
+          2: { cellWidth: 25, halign: 'center' },
+          3: { cellWidth: 20, halign: 'center' },
+          4: { cellWidth: 22, halign: 'right', textColor: [16, 185, 129] },
+          5: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
+          6: { cellWidth: 25, halign: 'center' }
         }
       });
     }
 
-    // Finishing Specifications Section
-    const selectedFin = op.finishing.filter((f) => 
-      formData.products.some(product => product.finishing.includes(f.name))
-    );
-    if (selectedFin.length) {
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(46, 204, 113);
-      doc.text("FINISHING SPECIFICATIONS", 20, getFinalY(doc, 138) + 15);
+    // ============================================================================
+    // FINISHING SPECIFICATIONS TABLE - OPERATIONS DETAIL
+    // ============================================================================
+    if (op.finishing?.length) {
+      const finishingY = getFinalY(doc, operationalY + 20) + 15;
+      const selectedFin = op.finishing.filter((f) => 
+        formData.products.some(product => product.finishing.includes(f.name))
+      );
+      
+      if (selectedFin.length) {
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(20, finishingY, 170, 40, 5, 5, 'FD');
+        
+        doc.setTextColor(16, 185, 129);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text("FINISHING SPECIFICATIONS", 25, finishingY + 12);
 
-      autoTable(doc, {
-        startY: getFinalY(doc, 138) + 20,
-        head: [["Finishing Process", "Cost per Unit", "Total Cost"]],
-        body: selectedFin.map((f) => [
-          f.name,
-          typeof f.cost === "number"
-            ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(f.cost)
-            : "—",
-          typeof f.cost === "number" && formData.operational.units
-            ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(f.cost * formData.operational.units)
-            : "—"
-        ]),
-        styles: { 
-          fontSize: 8,
-          cellPadding: 4,
-          lineColor: [155, 89, 182],
-          lineWidth: 0.1
-        },
-        headStyles: { 
-          fillColor: [155, 89, 182],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold',
-          fontSize: 9
-        },
-        alternateRowStyles: {
-          fillColor: [248, 240, 255]
-        },
-        margin: { left: 20, right: 20 },
-        columnStyles: {
-          0: { cellWidth: 55, halign: 'left' },   // Finishing Process
-          1: { cellWidth: 37, halign: 'right' },  // Cost per Unit
-          2: { cellWidth: 37, halign: 'right' }   // Total Cost
-        }
-      });
-    }
-
-    // Production Specifications Section
-    const productionY = getFinalY(doc, 138) + 20;
-    doc.setFillColor(248, 249, 250);
-    doc.rect(20, productionY + 10, 170, 25, 'F');
-    
-    doc.setTextColor(52, 73, 94);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text("PRODUCTION SPECIFICATIONS:", 25, productionY + 20);
-    
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`• Plates Required: ${op.plates || 0}`, 25, productionY + 27);
-    doc.text(`• Production Units: ${op.units || formData.products.reduce((sum, p) => sum + (p.quantity || 0), 0)}`, 25, productionY + 32);
-    doc.text(`• Standard production time: 5-7 business days`, 120, productionY + 27);
-    doc.text(`• Rush orders: 2-3 business days (additional 25% cost)`, 120, productionY + 32);
-
-    // Production Notes Section
-    const notesY = productionY + 40;
-    doc.setFillColor(240, 248, 240);
-    doc.rect(20, notesY + 10, 170, 20, 'F');
-    
-    doc.setTextColor(52, 73, 94);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text("PRODUCTION NOTES:", 25, notesY + 20);
-    
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text("• Quality control checkpoints at each production stage", 25, notesY + 27);
-    doc.text("• Final approval required before delivery", 25, notesY + 32);
-    doc.text("• Color matching to client specifications", 120, notesY + 27);
-    doc.text("• Proof copy available upon request", 120, notesY + 32);
-
-    // Production Timeline Section
-    const timelineY = notesY + 40;
-    doc.setFillColor(255, 248, 220); // Light yellow background
-    doc.rect(20, timelineY + 10, 170, 30, 'F');
-    
-    doc.setTextColor(52, 73, 94);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text("PRODUCTION TIMELINE:", 25, timelineY + 20);
-    
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text("• Pre-press & Setup: 1-2 business days", 25, timelineY + 27);
-    doc.text("• Printing & Production: 3-5 business days", 25, timelineY + 32);
-    doc.text("• Finishing & Quality Check: 1-2 business days", 25, timelineY + 37);
-    doc.text("• Rush Orders: 2-3 business days (+25% cost)", 120, timelineY + 27);
-    doc.text("• Express Orders: 1 business day (+50% cost)", 120, timelineY + 32);
-
-    // Quality Assurance Section
-    const qualityY = timelineY + 50;
-    doc.setFillColor(240, 255, 240); // Light green background
-    doc.rect(20, qualityY + 10, 170, 25, 'F');
-    
-    doc.setTextColor(52, 73, 94);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text("QUALITY ASSURANCE:", 25, qualityY + 20);
-    
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text("• Color accuracy within ±2% tolerance", 25, qualityY + 27);
-    doc.text("• Dimensional accuracy ±0.5mm", 25, qualityY + 32);
-    doc.text("• Material quality verification", 120, qualityY + 27);
-    doc.text("• Final inspection & packaging", 120, qualityY + 32);
-
-    // Technical Specifications Section
-    const technicalY = qualityY + 45;
-    doc.setFillColor(248, 240, 255); // Light purple background
-    doc.rect(20, technicalY + 10, 170, 25, 'F');
-    
-    doc.setTextColor(52, 73, 94);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text("TECHNICAL SPECIFICATIONS:", 25, technicalY + 20);
-    
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`• Printing Resolution: ${formData.products[0]?.printingSelection === 'Digital' ? '1200 DPI' : '2400 DPI'}`, 25, technicalY + 27);
-    doc.text(`• Color Mode: ${formData.products[0]?.colors?.front?.includes('CMYK') ? 'CMYK + Spot Colors' : 'CMYK'}`, 25, technicalY + 32);
-    doc.text(`• Paper Weight Range: 80-400 GSM`, 120, technicalY + 27);
-    doc.text(`• Finishing Options: ${formData.operational.finishing.map(f => f.name).join(', ')}`, 120, technicalY + 32);
-
-    // Operational Cost Breakdown Section
-    const costY = technicalY + 45;
-    doc.setFillColor(255, 240, 245); // Light pink background
-    doc.rect(20, costY + 10, 170, 30, 'F');
-    
-    doc.setTextColor(52, 73, 94);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text("OPERATIONAL COST BREAKDOWN:", 25, costY + 20);
-    
-    // Calculate operational costs
-    const paperCosts = formData.operational.papers.reduce((total, p) => {
-      const pricePerSheet = (p.pricePerPacket || 0) / (p.sheetsPerPacket || 1);
-      const actualSheetsNeeded = p.enteredSheets || 0;
-      return total + (pricePerSheet * actualSheetsNeeded);
-    }, 0);
-    
-    const platesCost = (formData.operational.plates || 0) * 35; // $35 per plate
-    const finishingCosts = formData.operational.finishing.reduce((total, f) => {
-      if (formData.products.some(product => product.finishing.includes(f.name))) {
-        return total + ((f.cost || 0) * (formData.operational.units || 0));
+        autoTable(doc, {
+          startY: finishingY + 20,
+          head: [["Process", "Cost/Unit", "Units", "Total", "Production Instructions"]],
+          body: selectedFin.map((f) => [
+            f.name,
+            typeof f.cost === "number" ? currency(f.cost) : "—",
+            op.units ? String(op.units) : "—",
+            typeof f.cost === "number" && op.units
+              ? currency(f.cost * op.units)
+              : "—",
+            getFinishingInstructions(f.name)
+          ]),
+          styles: { 
+            fontSize: 8,
+            cellPadding: 3,
+            lineColor: [226, 232, 240],
+            lineWidth: 0.3,
+            textColor: [71, 85, 105]
+          },
+          headStyles: { 
+            fillColor: [248, 250, 252],
+            textColor: [16, 185, 129],
+            fontStyle: 'bold',
+            fontSize: 8,
+            halign: 'center'
+          },
+          alternateRowStyles: {
+            fillColor: [249, 250, 251]
+          },
+          margin: { left: 25, right: 25 },
+          columnStyles: {
+            0: { cellWidth: 30, halign: 'left', fontStyle: 'bold' },
+            1: { cellWidth: 22, halign: 'right', textColor: [16, 185, 129] },
+            2: { cellWidth: 18, halign: 'center' },
+            3: { cellWidth: 22, halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] },
+            4: { cellWidth: 60, halign: 'left', fontSize: 7 }
+          }
+        });
       }
-      return total;
-    }, 0);
-    
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`• Paper Costs: ${currency(paperCosts)}`, 25, costY + 27);
-    doc.text(`• Plates Cost: ${currency(platesCost)}`, 25, costY + 32);
-    doc.text(`• Finishing Costs: ${currency(finishingCosts)}`, 25, costY + 37);
-    doc.text(`• Total Material Cost: ${currency(paperCosts + platesCost + finishingCosts)}`, 120, costY + 27);
-    doc.text(`• Production Units: ${formData.operational.units || formData.products.reduce((sum, p) => sum + (p.quantity || 0), 0)}`, 120, costY + 32);
-    doc.text(`• Cost per Unit: ${currency((paperCosts + platesCost + finishingCosts) / (formData.operational.units || 1))}`, 120, costY + 37);
+    }
 
-    // Production Workflow Section
-    const workflowY = costY + 50;
-    doc.setFillColor(240, 248, 255); // Light blue background
-    doc.rect(20, workflowY + 10, 170, 25, 'F');
+    // ============================================================================
+    // PRODUCTION NOTES SECTION
+    // ============================================================================
+    const notesY = getFinalY(doc, operationalY + 20) + 15;
     
-    doc.setTextColor(52, 73, 94);
-    doc.setFontSize(10);
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(20, notesY, 170, 35, 5, 5, 'FD');
+    
+    doc.setTextColor(16, 185, 129);
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text("PRODUCTION WORKFLOW:", 25, workflowY + 20);
+    doc.text("PRODUCTION NOTES", 25, notesY + 12);
     
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text("1. File Preparation & Pre-press", 25, workflowY + 27);
-    doc.text("2. Plate Making (if offset)", 25, workflowY + 32);
-    doc.text("3. Printing & Quality Check", 120, workflowY + 27);
-    doc.text("4. Finishing & Final Inspection", 120, workflowY + 32);
-
-    // Footer
-    doc.setFillColor(52, 73, 94);
-    doc.rect(20, workflowY + 40, 170, 12, 'F');
+    doc.setTextColor(71, 85, 105);
     
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text("Operations Team: +971 50-123-4567 | Email: ops@smartprinting.ae", 105, workflowY + 47, { align: 'center' });
+    doc.text("• Quality control checkpoints at each production stage", 25, notesY + 22);
+    doc.text("• Digital proof copy available upon request", 25, notesY + 28);
+    doc.text("• Client approval required before final production", 110, notesY + 22);
+    doc.text("• All materials to meet specified quality standards", 110, notesY + 28);
 
+    // ============================================================================
+    // PROFESSIONAL FOOTER - OPERATIONS
+    // ============================================================================
+    const footerY = notesY + 45;
+    
+    doc.setFillColor(248, 250, 252);
+    doc.rect(20, footerY, 170, 25, 'F');
+    
+    // Professional accent line
+    doc.setFillColor(16, 185, 129);
+    doc.rect(20, footerY, 170, 2, 'F');
+    
+    doc.setTextColor(16, 185, 129);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text("Smart Printing Solutions", 25, footerY + 12);
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text("Email: info@smartprinting.ae  |  Phone: +971 123 456 789  |  OPERATIONS COPY", 25, footerY + 20);
+
+    // Save the PDF
     doc.save("quotation-operations.pdf");
     console.log("Operations PDF generated successfully");
   } catch (error) {
     console.error("Error generating operations PDF:", error);
     alert("Error generating PDF. Please check the console for details.");
   }
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+function getFinishingInstructions(finishingName: string): string {
+  const instructions: { [key: string]: string } = {
+    'UV Spot': 'Apply UV coating to specified areas only',
+    'Foil Stamping': 'Use heat and pressure to apply metallic foil',
+    'Embossing': 'Create raised design using embossing dies',
+    'Die Cutting': 'Cut to specific shape using custom dies',
+    'Lamination': 'Apply protective film coating',
+    'Folding': 'Fold according to specified measurements',
+    'Perforation': 'Create tear-off perforations',
+    'Varnishing': 'Apply protective varnish coating',
+    'Spot Varnish': 'Apply varnish to specific areas',
+    'Window Patching': 'Create window cutouts with clear film'
+  };
+  
+  return instructions[finishingName] || 'Follow standard finishing procedures';
+}
+
+// ============================================================================
+// PROFESSIONAL OPERATIONAL PDF GENERATION
+// ============================================================================
+
+export async function generateOperationalPDF(
+  quoteId: string,
+  formData: QuoteFormData
+): Promise<Uint8Array> {
+  const [JsPDF, autoTableModule] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
+  
+  const autoTable = autoTableModule.default;
+  const doc = new JsPDF.jsPDF() as JsPdfWithAutoTable;
+
+  // ============================================================================
+  // PROFESSIONAL HEADER SECTION - OPERATIONS
+  // ============================================================================
+  doc.setFillColor(248, 250, 252);
+  doc.rect(0, 0, 210, 50, 'F');
+  
+  doc.setFillColor(16, 185, 129);
+  doc.rect(0, 0, 210, 3, 'F');
+  
+  doc.setTextColor(16, 185, 129);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text("OPERATIONAL JOB ORDER", 105, 20, { align: 'center' });
+  
+  doc.setFontSize(12);
+  doc.text(`Quote ID: ${quoteId}`, 105, 30, { align: 'center' });
+  
+  doc.setFontSize(10);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Generated: ${new Date().toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })}`, 105, 40, { align: 'center' });
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.5);
+  doc.line(20, 50, 190, 50);
+
+  // ============================================================================
+  // CLIENT INFORMATION SECTION
+  // ============================================================================
+  let currentY = 60;
+  
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(20, currentY, 170, 35, 5, 5, 'FD');
+  
+  doc.setTextColor(16, 185, 129);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text("CLIENT INFORMATION", 25, currentY + 12);
+  
+  const c = formData.client;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Company:`, 25, currentY + 22);
+  doc.text(`Contact:`, 25, currentY + 28);
+  doc.text(`Email:`, 100, currentY + 22);
+  doc.text(`Phone:`, 100, currentY + 28);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(15, 23, 42);
+  doc.text(`${c.clientType === "Company" ? c.companyName : "Individual Client"}`, 55, currentY + 22);
+  doc.text(`${c.contactPerson || "-"}`, 50, currentY + 28);
+  doc.text(`${c.email || "-"}`, 120, currentY + 22);
+  doc.text(`${c.countryCode} ${c.phone || "-"}`, 120, currentY + 28);
+
+  // ============================================================================
+  // PRODUCT SPECIFICATIONS SECTION
+  // ============================================================================
+  currentY += 45;
+  
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(20, currentY, 170, 40, 5, 5, 'FD');
+  
+  doc.setTextColor(16, 185, 129);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text("PRODUCT SPECIFICATIONS", 25, currentY + 12);
+
+  const productDetailsBody = formData.products.flatMap((product, index) => [
+    [`Product ${index + 1} Name`, product.productName || "—"],
+    [`Quantity`, String(product.quantity || 0)],
+    [`Printing Method`, product.printingSelection || "—"],
+    [`Sides`, product.sides || "—"],
+    [
+      `Flat Size (Open)`,
+      `${product.flatSize?.width ?? "—"} × ${product.flatSize?.height ?? "—"} cm (spine: ${product.flatSize?.spine ?? 0} cm)`,
+    ],
+    [
+      `Close Size (Closed)`,
+      product.useSameAsFlat ? "Same as Flat Size" : `${product.closeSize?.width ?? "—"} × ${product.closeSize?.height ?? "—"} cm (spine: ${product.closeSize?.spine ?? 0} cm)`,
+    ],
+    [`Front Colors`, product.colors?.front || "—"],
+    [`Back Colors`, product.colors?.back || "—"],
+    [`Paper Type`, product.paperName || "—"],
+    [`Finishing`, product.finishing?.length ? product.finishing.join(", ") : "—"],
+  ]);
+
+  autoTable(doc, {
+    startY: currentY + 20,
+    head: [["Specification", "Details"]],
+    body: productDetailsBody,
+    styles: { 
+      fontSize: 8,
+      cellPadding: 3,
+      lineColor: [226, 232, 240],
+      lineWidth: 0.3,
+      textColor: [71, 85, 105]
+    },
+    headStyles: { 
+      fillColor: [248, 250, 252],
+      textColor: [16, 185, 129],
+      fontStyle: 'bold',
+      fontSize: 9,
+      halign: 'left'
+    },
+    alternateRowStyles: {
+      fillColor: [249, 250, 251]
+    },
+    margin: { left: 25, right: 25 },
+    columnStyles: {
+      0: { cellWidth: 60, halign: 'left', fontStyle: 'bold', textColor: [100, 116, 139] },
+      1: { cellWidth: 105, halign: 'left', textColor: [15, 23, 42] }
+    }
+  });
+
+  // ============================================================================
+  // OPERATIONAL SPECIFICATIONS SECTION
+  // ============================================================================
+  const operationalY = getFinalY(doc, currentY + 20) + 15;
+  
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(20, operationalY, 170, 40, 5, 5, 'FD');
+  
+  doc.setTextColor(16, 185, 129);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text("OPERATIONAL SPECIFICATIONS", 25, operationalY + 12);
+
+  const operationalBody = [
+    ["Plates Required", String(formData.operational.plates || 0)],
+    ["Total Units", String(formData.operational.units || 0)],
+    ["Standard Production Time", "5-7 business days"],
+    ["Rush Option", "2-3 business days (+25% cost)"],
+    ["Express Option", "1 business day (+50% cost)"],
+  ];
+
+  autoTable(doc, {
+    startY: operationalY + 20,
+    head: [["Specification", "Value"]],
+    body: operationalBody,
+    styles: { 
+      fontSize: 9,
+      cellPadding: 4,
+      lineColor: [226, 232, 240],
+      lineWidth: 0.3,
+      textColor: [71, 85, 105]
+    },
+    headStyles: { 
+      fillColor: [248, 250, 252],
+      textColor: [16, 185, 129],
+      fontStyle: 'bold',
+      fontSize: 10,
+      halign: 'left'
+    },
+    alternateRowStyles: {
+      fillColor: [249, 250, 251]
+    },
+    margin: { left: 25, right: 25 },
+    columnStyles: {
+      0: { cellWidth: 85, halign: 'left', fontStyle: 'bold', textColor: [100, 116, 139] },
+      1: { cellWidth: 80, halign: 'left', textColor: [15, 23, 42] }
+    }
+  });
+
+  // ============================================================================
+  // PRODUCTION NOTES SECTION
+  // ============================================================================
+  const notesY = getFinalY(doc, operationalY + 20) + 15;
+  
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(20, notesY, 170, 35, 5, 5, 'FD');
+  
+  doc.setTextColor(16, 185, 129);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text("PRODUCTION NOTES", 25, notesY + 12);
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
+  
+  doc.text("• Quality control at each production stage", 25, notesY + 22);
+  doc.text("• Digital proof copy available upon request", 25, notesY + 28);
+  doc.text("• Client approval required before final production", 110, notesY + 22);
+  doc.text("• All materials to meet specified standards", 110, notesY + 28);
+
+  // ============================================================================
+  // PROFESSIONAL FOOTER
+  // ============================================================================
+  const footerY = notesY + 45;
+  
+  doc.setFillColor(248, 250, 252);
+  doc.rect(20, footerY, 170, 25, 'F');
+  
+  doc.setFillColor(16, 185, 129);
+  doc.rect(20, footerY, 170, 2, 'F');
+  
+  doc.setTextColor(16, 185, 129);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text("Smart Printing Solutions", 25, footerY + 12);
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text("Email: info@smartprinting.ae  |  Phone: +971 123 456 789  |  OPERATIONS COPY", 25, footerY + 20);
+
+  return new Uint8Array(doc.output('arraybuffer'));
 }

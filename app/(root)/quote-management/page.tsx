@@ -20,7 +20,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { downloadCustomerPdf, downloadOpsPdf } from "@/lib/quote-pdf";
+import { downloadCustomerPdf, generateOperationalPDF } from "@/lib/quote-pdf";
 
 
 type Status = "Approved" | "Pending" | "Rejected";
@@ -52,6 +52,11 @@ type Row = (typeof QUOTES)[number] & {
     front?: string;
     back?: string;
   } | null;
+  // Papers and finishing for database operations
+  papers?: Array<{ name: string; gsm: string }>;
+  finishing?: string[];
+  // Client relationship tracking
+  originalClientId?: string | null;
 };
 
 const currency = new Intl.NumberFormat("en-US", { 
@@ -162,6 +167,11 @@ export default function QuoteManagementPage() {
             },
             useSameAsFlat: quote.useSameAsFlat || false,
             colors: quote.colors ? (typeof quote.colors === 'string' ? JSON.parse(quote.colors) : quote.colors) : null,
+            // Papers and finishing for database operations
+            papers: quote.papers || [],
+            finishing: quote.finishing || [],
+            // Client relationship tracking
+            originalClientId: quote.clientId || null,
           }));
           console.log('Transformed quotes:', transformedQuotes);
           setRows(transformedQuotes);
@@ -237,6 +247,9 @@ export default function QuoteManagementPage() {
     closeSize: { width: number | null; height: number | null; spine: number | null };
     useSameAsFlat?: boolean;
     colors?: { front?: string; back?: string } | null;
+    // Papers and finishing for database operations
+    papers?: Array<{ name: string; gsm: string }>;
+    finishing?: string[];
     originalClientId?: string | null; // Added for client relationship tracking
   }>({
     id: "",
@@ -255,6 +268,9 @@ export default function QuoteManagementPage() {
     closeSize: { width: null, height: null, spine: null },
     useSameAsFlat: true,
     colors: { front: "", back: "" },
+    // Initialize papers and finishing
+    papers: [],
+    finishing: [],
     originalClientId: null
   });
 
@@ -331,6 +347,9 @@ export default function QuoteManagementPage() {
             closeSize,
             useSameAsFlat,
             colors: parsedColors,
+            // Papers and finishing for database operations
+            papers: quoteData.papers || [],
+            finishing: quoteData.finishing || [],
             // Store the original client ID to prevent foreign key issues
             originalClientId: quoteData.clientId
           };
@@ -357,7 +376,10 @@ export default function QuoteManagementPage() {
             closeSize: q.closeSize || { width: null, height: null, spine: null },
             useSameAsFlat: q.useSameAsFlat || false,
             colors: q.colors || { front: "", back: "" },
-            originalClientId: null
+            // Include papers and finishing from row data
+            papers: q.papers || [],
+            finishing: q.finishing || [],
+            originalClientId: q.originalClientId || null
           });
         }
       } catch (error) {
@@ -380,7 +402,10 @@ export default function QuoteManagementPage() {
           closeSize: q.closeSize || { width: null, height: null, spine: null },
           useSameAsFlat: q.useSameAsFlat || false,
           colors: q.colors || { front: "", back: "" },
-          originalClientId: null
+          // Include papers and finishing from row data
+          papers: q.papers || [],
+          finishing: q.finishing || [],
+          originalClientId: q.originalClientId || null
         });
       }
     };
@@ -398,66 +423,22 @@ export default function QuoteManagementPage() {
     try {
       console.log('Starting quote update for:', draft.id);
       
-      // First, we need to find or create the client
-      let clientId = "";
+      // Get the client ID - this should always exist for existing quotes
+      let clientId = draft.originalClientId;
       
-      // If originalClientId exists, it means the client was found in the database
-      if (draft.originalClientId) {
-        clientId = draft.originalClientId;
-        console.log('Using existing client:', clientId);
-      } else {
-        // Otherwise, try to find existing client by email (using a default email since we don't have it in the form)
-        console.log('Searching for existing client...');
-        const clientResponse = await fetch('/api/clients');
-        if (clientResponse.ok) {
-          const clients = await clientResponse.json();
-          console.log('Found clients:', clients.length);
-          const existingClient = clients.find((c: any) => 
-            c.contactPerson === draft.contactPerson || 
-            c.companyName === draft.clientName
-          );
-          if (existingClient) {
-            clientId = existingClient.id;
-            console.log('Using existing client:', clientId);
-          }
-        }
-
-        // If no existing client found, create a new one
-        if (!clientId) {
-          console.log('Creating new client...');
-          const createClientResponse = await fetch('/api/clients', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              clientType: "Company",
-              companyName: draft.clientName,
-              contactPerson: draft.contactPerson,
-              email: "customer@example.com", // Default email since not in form
-              phone: "123456789", // Default phone since not in form
-              countryCode: "+971",
-              role: "Customer"
-            }),
-          });
-
-          if (createClientResponse.ok) {
-            const newClient = await createClientResponse.json();
-            clientId = newClient.id;
-            console.log('Created new client:', clientId);
-          } else {
-            const errorData = await createClientResponse.json();
-            throw new Error(`Failed to create client: ${errorData.error || 'Unknown error'}`);
-          }
-        }
+      if (!clientId) {
+        throw new Error('Cannot update quote: Client ID not found. Please refresh the page and try again.');
       }
+      
+      console.log('Using existing client:', clientId);
 
       // Update quote in database with correct schema mapping
       const updateData = {
         clientId: clientId,
         date: new Date(draft.date + 'T00:00:00.000Z').toISOString(), // Ensure proper date format
         status: draft.status,
-        userId: draft.userId || null, // Allow null if no user assigned
+        // Temporarily exclude userId to debug foreign key issue
+        // userId: draft.userId || null, // Allow null if no user assigned
         product: draft.productName?.trim() || "Printing Product",
         quantity: draft.quantity === "" ? 0 : Number(draft.quantity),
         sides: draft.sides || "1", // Default to 1 side since not in edit form
@@ -472,6 +453,9 @@ export default function QuoteManagementPage() {
         closeSizeSpine: draft.closeSize?.spine || null,
         useSameAsFlat: draft.useSameAsFlat,
         colors: draft.colors ? JSON.stringify(draft.colors) : null,
+        // Temporarily exclude papers and finishing to debug foreign key issue
+        // papers: draft.papers || [],
+        // finishing: draft.finishing || [],
         amounts: {
           base: Number(draft.amount) * 0.8, // Calculate base amount (80% of total)
           vat: Number(draft.amount) * 0.2,  // Calculate VAT (20% of total)
@@ -479,7 +463,14 @@ export default function QuoteManagementPage() {
         },
       };
       
-      console.log('Updating quote with data:', updateData);
+      console.log('=== QUOTE UPDATE DEBUG ===');
+      console.log('Quote ID:', draft.id);
+      console.log('Client ID:', clientId);
+      console.log('Draft papers:', draft.papers);
+      console.log('Draft finishing:', draft.finishing);
+      console.log('Draft userId:', draft.userId);
+      console.log('Full update data:', JSON.stringify(updateData, null, 2));
+      console.log('=== END DEBUG ===');
       
       const response = await fetch(`/api/quotes/${draft.id}`, {
         method: 'PUT',
@@ -557,25 +548,48 @@ export default function QuoteManagementPage() {
           email: "customer@example.com", // Default email
           phone: "123456789", // Default phone
           countryCode: "+971",
-          role: "Customer"
+          role: "Customer",
+          address: "Sheikh Zayed Road, Business Bay",
+          city: "Dubai",
+          state: "Dubai",
+          postalCode: "12345",
+          country: "UAE"
         },
         products: [{
           productName: quote.product || quote.productName || "Printing Product",
-          paperName: "Standard Paper",
+          paperName: "Premium Paper",
           quantity: quote.quantity || 0,
-          sides: "1" as const,
-          printingSelection: "Digital" as const,
-          flatSize: { width: 10, height: 15, spine: 0 },
-          closeSize: { width: 10, height: 15, spine: 0 },
+          sides: "2" as const,
+          printingSelection: "Offset" as const,
+          flatSize: { width: 21, height: 29.7, spine: 0 },
+          closeSize: { width: 21, height: 29.7, spine: 0 },
           useSameAsFlat: true,
-          papers: [{ name: "Standard", gsm: "150" }],
-          finishing: []
+          papers: [{ name: "Premium Paper", gsm: "350" }],
+          finishing: ['UV Spot', 'Foil Stamping'],
+          colors: { front: '4 Colors (CMYK)', back: '2 Colors (CMYK)' }
         }],
         operational: {
-          papers: [],
-          finishing: [],
-          plates: null,
-          units: null
+          papers: [{
+            inputWidth: 21,
+            inputHeight: 29.7,
+            pricePerPacket: 25.50,
+            pricePerSheet: 0.85,
+            sheetsPerPacket: 30,
+            recommendedSheets: 100,
+            enteredSheets: 120,
+            outputWidth: 21,
+            outputHeight: 29.7,
+            selectedColors: ['CMYK', 'Spot Color']
+          }],
+          finishing: [{
+            name: 'UV Spot',
+            cost: 0.15
+          }, {
+            name: 'Foil Stamping',
+            cost: 0.25
+          }],
+          plates: 2,
+          units: quote.quantity || 100
         },
         calculation: {
           basePrice: quote.amount,
@@ -589,7 +603,17 @@ export default function QuoteManagementPage() {
       if (type === 'customer') {
         await downloadCustomerPdf(mockFormData, []);
       } else {
-        await downloadOpsPdf(mockFormData, []);
+        // Use the operational PDF for operations team
+        const pdfBytes = await generateOperationalPDF(quote.id, mockFormData);
+        
+        // Create and download PDF
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `operational-job-order-${quote.id}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
       }
     } catch (error) {
       console.error('Error downloading PDF:', error);

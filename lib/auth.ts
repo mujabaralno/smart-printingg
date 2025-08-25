@@ -178,50 +178,169 @@ export const clearUser = (): void => {
   logoutUser();
 };
 
-export const updateUserProfile = (updates: Partial<Omit<User, 'id'>>): User | null => {
+export const updateUserProfile = async (updates: Partial<Omit<User, 'id'>>): Promise<User | null> => {
   const user = getUser();
   if (!user) return null;
   
-  const updatedUser = { ...user, ...updates };
-  
-  // Store in localStorage
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
-    if (updatedUser.profilePicture) {
-      localStorage.setItem(PROFILE_PICTURE_KEY, updatedUser.profilePicture);
+  try {
+    console.log('👤 Updating user profile for user:', user.id);
+    console.log('📝 Update data:', updates);
+    console.log('🔗 API endpoint:', `/api/users/${user.id}`);
+    
+    // Update in database via API
+    const response = await fetch(`/api/users/${user.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
+    });
+
+    console.log('📡 API response status:', response.status);
+    console.log('📡 API response ok:', response.ok);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ API error response:', errorText);
+      throw new Error(`Failed to update user profile in database. Status: ${response.status}, Error: ${errorText}`);
     }
+
+    const updatedDbUser = await response.json();
+    console.log('✅ User profile updated successfully in database');
+    
+    // Update local state
+    const updatedUser = { ...user, ...updatedDbUser };
+    
+    // Store in localStorage for immediate UI updates
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+      if (updatedUser.profilePicture) {
+        localStorage.setItem(PROFILE_PICTURE_KEY, updatedUser.profilePicture);
+      }
+    }
+    
+    return updatedUser;
+  } catch (error) {
+    console.error('❌ Error updating user profile:', error);
+    console.error('❌ Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown error'
+    });
+    // Fallback to localStorage only if database update fails
+    const updatedUser = { ...user, ...updates };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+      if (updatedUser.profilePicture) {
+        localStorage.setItem(PROFILE_PICTURE_KEY, updatedUser.profilePicture);
+      }
+    }
+    return updatedUser;
   }
-  
-  return updatedUser;
 };
 
-export const updateProfilePicture = (profilePicture: string): User | null => {
+export const updateProfilePicture = async (profilePicture: string): Promise<User | null> => {
   const user = getUser();
   if (!user) return null;
   
-  const updatedUser = { ...user, profilePicture };
-  
-  // Store in localStorage
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
-    localStorage.setItem(PROFILE_PICTURE_KEY, profilePicture);
+  try {
+    console.log('🖼️ Updating profile picture for user:', user.id);
+    console.log('📏 Profile picture data length:', profilePicture.length);
+    console.log('🔗 API endpoint:', `/api/users/${user.id}`);
+    
+    // Update in database via API
+    const response = await fetch(`/api/users/${user.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ profilePicture }),
+    });
+
+    console.log('📡 API response status:', response.status);
+    console.log('📡 API response ok:', response.ok);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ API error response:', errorText);
+      throw new Error(`Failed to update profile picture in database. Status: ${response.status}, Error: ${errorText}`);
+    }
+
+    const updatedDbUser = await response.json();
+    console.log('✅ Profile picture updated successfully in database');
+    
+    // Update local state
+    const updatedUser = { ...user, profilePicture: updatedDbUser.profilePicture };
+    
+    // Store in localStorage for immediate UI updates
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+      localStorage.setItem(PROFILE_PICTURE_KEY, profilePicture);
+    }
+    
+    return updatedUser;
+  } catch (error) {
+    console.error('❌ Error updating profile picture:', error);
+    console.error('❌ Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown error'
+    });
+    // Fallback to localStorage only if database update fails
+    const updatedUser = { ...user, profilePicture };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+      localStorage.setItem(PROFILE_PICTURE_KEY, profilePicture);
+    }
+    return updatedUser;
   }
-  
-  return updatedUser;
 };
 
-export const updatePassword = (newPassword: string): void => {
+export const updatePassword = async (newPassword: string): Promise<boolean> => {
   const user = getUser();
-  if (!user) return;
+  if (!user) return false;
   
-  // Note: In a real app, this would update the password in the database
-  // For now, we'll just log it for demonstration
-  console.log('Password update requested for user:', user.email);
-  
-  // Store in localStorage for backward compatibility
-  if (typeof window !== 'undefined') {
+  try {
+    console.log('🔐 Updating password for user:', user.id);
+    console.log('🔗 API endpoint:', `/api/users/${user.id}`);
+    
+    // Update password in database via API
+    const response = await fetch(`/api/users/${user.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password: newPassword }),
+    });
+
+    console.log('📡 API response status:', response.status);
+    console.log('📡 API response ok:', response.ok);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ API error response:', errorText);
+      throw new Error(`Failed to update password in database. Status: ${response.status}, Error: ${errorText}`);
+    }
+
+    const updatedDbUser = await response.json();
+    console.log('✅ Password updated successfully in database');
+    
+    // Update local state (without password for security)
     const updatedUser = { ...user };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+    }
+    
+    console.log('Password updated successfully for user:', user.email);
+    return true;
+  } catch (error) {
+    console.error('❌ Error updating password:', error);
+    console.error('❌ Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown error'
+    });
+    return false;
   }
 };
 
@@ -232,10 +351,35 @@ export const convertToEmpFormat = (id: string): string => {
   // If ID is already in EMP format, return as is
   if (id.startsWith('EMP')) return id;
   
-  // Convert numeric ID to EMP format
+  // For CUID format IDs, create a consistent display ID
+  // Extract a hash from the CUID to create a predictable EMP number
+  if (id.length > 20) { // CUID format
+    // Create a simple hash from the CUID to generate a consistent number
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      const char = id.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    // Use absolute value and modulo to get a number between 1-999
+    const numericPart = Math.abs(hash) % 999 + 1;
+    return `EMP${String(numericPart).padStart(3, '0')}`;
+  }
+  
+  // For other numeric IDs, convert to EMP format
   const numericPart = id.replace(/\D/g, '');
-  const paddedNumber = numericPart.padStart(3, '0');
-  return `EMP${paddedNumber}`;
+  if (numericPart) {
+    const paddedNumber = numericPart.padStart(3, '0');
+    return `EMP${paddedNumber}`;
+  }
+  
+  // Fallback
+  return 'EMP000';
+};
+
+// Get a consistent display ID for a user
+export const getDisplayId = (id: string): string => {
+  return convertToEmpFormat(id);
 };
 
 // Server-side functions (these should only be called from API routes or server components)

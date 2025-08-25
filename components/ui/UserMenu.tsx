@@ -52,12 +52,20 @@ export default function UserMenu({ className = "" }: UserMenuProps) {
         return;
       }
 
-      updatePassword(newPass);
-      setOpenChangePass(false);
-      setNewPass("");
-      setConfirmPass("");
-      setError("");
-    } catch {
+      const success = await updatePassword(newPass);
+      if (success) {
+        // Show small notification and close form
+        console.log('Password updated successfully');
+        setOpenChangePass(false);
+        // Reset form fields
+        setNewPass("");
+        setConfirmPass("");
+        setError("");
+      } else {
+        setError("Failed to update password. Please try again.");
+      }
+    } catch (error) {
+      console.error('Error updating password:', error);
       setError("Failed to update password. Please try again.");
     } finally {
       setIsLoading(false);

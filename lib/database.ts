@@ -652,6 +652,8 @@ export class DatabaseService {
   static async updateQuoteWithDetails(id: string, data: any) {
     try {
       console.log('DatabaseService.updateQuoteWithDetails called with:', { id, data });
+      console.log('Data type:', typeof data);
+      console.log('Data keys:', Object.keys(data || {}));
       
       // First, verify the quote exists
       const existingQuote = await this.getQuoteById(id);
@@ -661,6 +663,44 @@ export class DatabaseService {
       }
       
       console.log('Found existing quote:', existingQuote.id);
+      
+      // Verify the client exists if clientId is being updated
+      if (data.clientId && data.clientId !== existingQuote.clientId) {
+        try {
+          const client = await this.checkDatabase().client.findUnique({
+            where: { id: data.clientId }
+          });
+          
+          if (!client) {
+            throw new Error(`Client with ID ${data.clientId} not found in database`);
+          }
+          
+          console.log('Verified client exists:', client.id);
+        } catch (clientError) {
+          console.error('Error verifying client:', clientError);
+          throw new Error(`Failed to verify client: ${clientError instanceof Error ? clientError.message : 'Unknown error'}`);
+        }
+      }
+      
+      // Verify the user exists if userId is being updated
+      if (data.userId && data.userId !== existingQuote.userId) {
+        try {
+          const user = await this.checkDatabase().user.findUnique({
+            where: { id: data.userId }
+          });
+          
+          if (!user) {
+            console.warn(`User with ID ${data.userId} not found, setting userId to null`);
+            data.userId = null;
+          } else {
+            console.log('Verified user exists:', user.id);
+          }
+        } catch (userError) {
+          console.error('Error verifying user:', userError);
+          console.warn('Setting userId to null due to verification error');
+          data.userId = null;
+        }
+      }
       
       // Start a transaction to update quote and all related data
       return await this.checkDatabase().$transaction(async (tx) => {
@@ -708,41 +748,57 @@ export class DatabaseService {
         if (data.papers && Array.isArray(data.papers)) {
           console.log('Updating papers:', data.papers);
           
-          // Delete existing papers
-          await tx.paper.deleteMany({
-            where: { quoteId: id },
-          });
-          
-          // Create new papers
-          if (data.papers.length > 0) {
-            await tx.paper.createMany({
-              data: data.papers.map((paper: any) => ({
-                quoteId: id,
-                name: paper.name || 'Standard Paper',
-                gsm: paper.gsm || '150',
-              })),
+          try {
+            // Delete existing papers
+            await tx.paper.deleteMany({
+              where: { quoteId: id },
             });
+            
+            // Create new papers
+            if (data.papers.length > 0) {
+              await tx.paper.createMany({
+                data: data.papers.map((paper: any) => ({
+                  quoteId: id,
+                  name: paper.name || 'Standard Paper',
+                  gsm: paper.gsm || '150',
+                })),
+              });
+            }
+          } catch (paperError) {
+            console.error('Error updating papers:', paperError);
+            // Don't fail the entire update if papers fail
+            console.log('Continuing with quote update despite papers error');
           }
+        } else {
+          console.log('No papers data provided, skipping papers update');
         }
 
         // Update finishing if provided
         if (data.finishing && Array.isArray(data.finishing)) {
           console.log('Updating finishing:', data.finishing);
           
-          // Delete existing finishing
-          await tx.finishing.deleteMany({
-            where: { quoteId: id },
-          });
-          
-          // Create new finishing
-          if (data.finishing.length > 0) {
-            await tx.finishing.createMany({
-              data: data.finishing.map((finish: any) => ({
-                quoteId: id,
-                name: finish.name || finish, // Handle both object and string formats
-              })),
+          try {
+            // Delete existing finishing
+            await tx.finishing.deleteMany({
+              where: { quoteId: id },
             });
+            
+            // Create new finishing
+            if (data.finishing.length > 0) {
+              await tx.finishing.createMany({
+                data: data.finishing.map((finish: any) => ({
+                  quoteId: id,
+                  name: finish.name || finish, // Handle both object and string formats
+                })),
+              });
+            }
+          } catch (finishingError) {
+            console.error('Error updating finishing:', finishingError);
+            // Don't fail the entire update if finishing fails
+            console.log('Continuing with quote update despite finishing error');
           }
+        } else {
+          console.log('No finishing data provided, skipping finishing update');
         }
 
         // Update amounts if provided
@@ -799,6 +855,18 @@ export class DatabaseService {
       });
     } catch (error) {
       console.error('Error in updateQuoteWithDetails:', error);
+      
+      // Provide more specific error messages for common issues
+      if (error instanceof Error) {
+        if (error.message.includes('Foreign key constraint failed')) {
+          throw new Error('Foreign key constraint failed: The client or user referenced in this quote does not exist. Please check the client and user data.');
+        } else if (error.message.includes('Record to update not found')) {
+          throw new Error('Quote not found: The quote you are trying to update does not exist in the database.');
+        } else if (error.message.includes('Unique constraint failed')) {
+          throw new Error('Duplicate data: The quote ID or client information conflicts with existing data.');
+        }
+      }
+      
       throw error;
     }
   }

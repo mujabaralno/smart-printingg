@@ -37,6 +37,7 @@ import RoleBadge from "@/components/shared/RoleBadge";
 import StatusChip from "@/components/shared/StatusChip";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { getDisplayId } from "@/lib/auth";
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleDateString("id-ID", {
@@ -61,29 +62,42 @@ export default function UserManagementPage() {
             // Transform database users to match AppUser format
             const transformedUsers = usersData.map((user: any, index: number) => ({
               id: user.id, // Keep the database ID for operations
-              displayId: `EMP${String(index + 1).padStart(3, "0")}`, // Display ID for UI
+              displayId: getDisplayId(user.id), // Display ID for UI
               name: user.name,
               email: user.email,
               joined: user.createdAt ? user.createdAt.split('T')[0] : new Date().toISOString().slice(0, 10),
               role: user.role as AppUserRole,
               status: "Active" as const, // Default to Active
               password: "", // Don't load passwords from database for security
+              profilePicture: user.profilePicture || null, // Include profile picture
             }));
             setUsers(transformedUsers);
           } else {
             // If no users in database, use seed users
             console.log('No users in database, using seed users');
-            setUsers(seedUsers);
+            const seedUsersWithDisplayIds = seedUsers.map(user => ({
+              ...user,
+              displayId: getDisplayId(user.id)
+            }));
+            setUsers(seedUsersWithDisplayIds);
           }
         } else {
           console.error('Failed to load users');
           // Fallback to seed users if API fails
-          setUsers(seedUsers);
+          const seedUsersWithDisplayIds = seedUsers.map(user => ({
+            ...user,
+            displayId: getDisplayId(user.id)
+          }));
+          setUsers(seedUsersWithDisplayIds);
         }
       } catch (error) {
         console.error('Error loading users:', error);
         // Fallback to seed users if API fails
-        setUsers(seedUsers);
+        const seedUsersWithDisplayIds = seedUsers.map(user => ({
+          ...user,
+          displayId: getDisplayId(user.id)
+        }));
+        setUsers(seedUsersWithDisplayIds);
       } finally {
         setLoading(false);
       }
@@ -137,6 +151,7 @@ export default function UserManagementPage() {
   const [error, setError] = React.useState("");
   const [active, setActive] = React.useState(true);
   const [editingUserId, setEditingUserId] = React.useState<string | null>(null);
+  const [profilePictureData, setProfilePictureData] = React.useState<string | null>(null);
 
   const resetForm = () => {
     setName("");
@@ -147,6 +162,7 @@ export default function UserManagementPage() {
     setConfirmPassword("");
     setEditingUserId(null);
     setError("");
+    setProfilePictureData(null);
   };
 
   const addUser = async () => {
@@ -180,6 +196,8 @@ export default function UserManagementPage() {
             role,
             // Only update password if a new one is provided
             password: password.trim() || undefined,
+            // Include profile picture if provided
+            profilePicture: profilePictureData || undefined,
           }),
         });
 
@@ -199,6 +217,8 @@ export default function UserManagementPage() {
                   status: active ? "Active" : "Inactive",
                   // Only update password if a new one is provided
                   password: password.trim() || u.password,
+                  // Update profile picture if provided
+                  profilePicture: profilePictureData || u.profilePicture,
                 }
               : u
           )
@@ -213,6 +233,7 @@ export default function UserManagementPage() {
           email: email.trim(),
           role,
           password: password.trim(),
+          profilePicture: profilePictureData || undefined,
         };
 
         // Save to database
@@ -233,12 +254,14 @@ export default function UserManagementPage() {
         // Add to local state for immediate UI update
         const user: AppUser = {
           id: newUser.id || newId,
+          displayId: getDisplayId(newUser.id || newId),
           name: name.trim(),
           email: email.trim(),
           joined,
           role,
           status: "Active", // Default to Active as per feedback
           password: password.trim(),
+          profilePicture: profilePictureData || null,
         };
         setUsers((prev) => [user, ...prev]);
       }
@@ -298,6 +321,7 @@ export default function UserManagementPage() {
     setOpen(true);
     // Store the user being edited
     setEditingUserId(user.id);
+    setProfilePictureData(user.profilePicture || null);
   };
 
   const getRoleIcon = (role: AppUserRole) => {
@@ -455,10 +479,33 @@ export default function UserManagementPage() {
                     {/* User (nama + email) */}
                     <TableCell className="p-6">
                       <div className="flex items-start gap-3">
-                        <div className="mt-1 h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
-                          <span className="text-white text-xs font-medium">
-                            {u.name.charAt(0).toUpperCase()}
-                          </span>
+                        <div className="mt-1 h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden">
+                          {u.profilePicture ? (
+                            <>
+                              <img 
+                                src={u.profilePicture} 
+                                alt={`${u.name}'s profile`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  // Fallback to initial if image fails to load
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const fallback = target.nextElementSibling as HTMLElement;
+                                  if (fallback) fallback.style.display = 'flex';
+                                }}
+                              />
+                              <span 
+                                className="text-white text-xs font-medium absolute"
+                                style={{ display: 'none' }}
+                              >
+                                {u.name.charAt(0).toUpperCase()}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-white text-xs font-medium">
+                              {u.name.charAt(0).toUpperCase()}
+                            </span>
+                          )}
                         </div>
                         <div>
                           <div className="font-medium text-slate-900">{u.name}</div>
@@ -553,6 +600,50 @@ export default function UserManagementPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                 />
+              </div>
+              
+              {/* Profile Picture Upload */}
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">Profile Picture</label>
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center overflow-hidden">
+                    {editingUserId && users.find(u => u.id === editingUserId)?.profilePicture ? (
+                      <img 
+                        src={users.find(u => u.id === editingUserId)?.profilePicture || ''} 
+                        alt="Current profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-8 h-8 text-white" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          // File size validation (max 2MB)
+                          if (file.size > 2 * 1024 * 1024) {
+                            alert('Profile picture must be less than 2MB. Please choose a smaller image.');
+                            return;
+                          }
+                          
+                          const reader = new FileReader();
+                          reader.onload = (e) => {
+                            const result = e.target?.result as string;
+                            // Store the profile picture data for later upload
+                            setProfilePictureData(result);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="w-full text-sm"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">Max 2MB, will be automatically compressed</p>
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700 mb-2 block">

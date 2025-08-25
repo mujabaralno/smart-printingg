@@ -120,6 +120,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [quoteForModal, setQuoteForModal] = useState<Quote | null>(null);
+  const [editingQuote, setEditingQuote] = useState<Quote | null>(null); // New state for editing
   const [quoteItems, setQuoteItems] = useState<Quote[]>([]);
   const [loadingQuoteItems, setLoadingQuoteItems] = useState(false);
   
@@ -221,7 +222,71 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
     event.preventDefault();
     event.stopPropagation();
     setQuoteForModal(quote);
+    // Create a deep copy for editing
+    setEditingQuote(JSON.parse(JSON.stringify(quote)));
     setShowEditModal(true);
+  };
+
+  // Function to update editing quote data
+  const updateEditingQuote = (field: string, value: any, subField?: string) => {
+    if (!editingQuote) return;
+    
+    setEditingQuote(prev => {
+      if (!prev) return prev;
+      
+      if (subField) {
+        // Handle nested fields like client.companyName
+        const currentField = prev[field as keyof Quote] as any;
+        if (currentField && typeof currentField === 'object') {
+          return {
+            ...prev,
+            [field]: {
+              ...currentField,
+              [subField]: value
+            }
+          };
+        }
+      }
+      
+      // Handle direct fields
+      return {
+        ...prev,
+        [field]: value
+      };
+    });
+  };
+
+  // Function to save changes
+  const handleSaveChanges = async () => {
+    if (!editingQuote) return;
+    
+    try {
+      // Update the quote in the database
+      const response = await fetch(`/api/quotes/${editingQuote.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editingQuote),
+      });
+      
+      if (response.ok) {
+        // Update local state
+        setQuotes(prev => prev.map(q => q.id === editingQuote.id ? editingQuote : q));
+        setQuoteForModal(editingQuote);
+        
+        // Close modal
+        setShowEditModal(false);
+        setEditingQuote(null);
+        
+        // Show success message (you can add a toast notification here)
+        console.log('Quote updated successfully');
+      } else {
+        console.error('Failed to update quote');
+      }
+    } catch (error) {
+      console.error('Error updating quote:', error);
+    }
   };
 
   const isSelectionValid = selectedQuote !== null;
@@ -237,7 +302,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
       {/* Select Existing Customer Section - White card container */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <h4 className="text-lg font-semibold text-gray-900">Existing CustomerQuotes</h4>
+          <h4 className="text-lg font-semibold text-gray-900">Existing Customer Quotes</h4>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">
               {loading ? 'Loading...' : `${quotes.length} quote templates available`}
@@ -652,11 +717,11 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <Edit className="w-5 h-5 mr-2 text-blue-600" />
-              Edit Quote - {quoteForModal?.quoteId}
+              Edit Quote - {editingQuote?.quoteId}
             </DialogTitle>
           </DialogHeader>
           
-          {quoteForModal && (
+          {editingQuote && (
             <div className="space-y-6">
               {/* Customer Information Section */}
               <div className="bg-gray-50 rounded-lg p-4">
@@ -665,20 +730,16 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
                     <Input
-                      value={quoteForModal.client.companyName || ''}
-                      onChange={(e) => {
-                        console.log("Company updated:", e.target.value);
-                      }}
+                      value={editingQuote.client.companyName || ''}
+                      onChange={(e) => updateEditingQuote('client', e.target.value, 'companyName')}
                       className="w-full"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
                     <Input
-                      value={quoteForModal.client.contactPerson}
-                      onChange={(e) => {
-                        console.log("Contact updated:", e.target.value);
-                      }}
+                      value={editingQuote.client.contactPerson}
+                      onChange={(e) => updateEditingQuote('client', e.target.value, 'contactPerson')}
                       className="w-full"
                     />
                   </div>
@@ -686,40 +747,32 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <Input
                       type="email"
-                      value={quoteForModal.client.email}
-                      onChange={(e) => {
-                        console.log("Email updated:", e.target.value);
-                      }}
+                      value={editingQuote.client.email}
+                      onChange={(e) => updateEditingQuote('client', e.target.value, 'email')}
                       className="w-full"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <Input
-                      value={quoteForModal.client.phone}
-                      onChange={(e) => {
-                        console.log("Phone updated:", e.target.value);
-                      }}
+                      value={editingQuote.client.phone}
+                      onChange={(e) => updateEditingQuote('client', e.target.value, 'phone')}
                       className="w-full"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Country Code</label>
                     <Input
-                      value={quoteForModal.client.countryCode || '+971'}
-                      onChange={(e) => {
-                        console.log("Country code updated:", e.target.value);
-                      }}
+                      value={editingQuote.client.countryCode || '+971'}
+                      onChange={(e) => updateEditingQuote('client', e.target.value, 'countryCode')}
                       className="w-full"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                     <Input
-                      value={quoteForModal.client.role || ''}
-                      onChange={(e) => {
-                        console.log("Role updated:", e.target.value);
-                      }}
+                      value={editingQuote.client.role || ''}
+                      onChange={(e) => updateEditingQuote('client', e.target.value, 'role')}
                       className="w-full"
                     />
                   </div>
@@ -732,10 +785,8 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     <div>
                       <label className="block text-sm font-medium text-gray-600 mb-1">Address</label>
                       <Input
-                        value={quoteForModal.client.address || ''}
-                        onChange={(e) => {
-                          console.log("Address updated:", e.target.value);
-                        }}
+                        value={editingQuote.client.address || ''}
+                        onChange={(e) => updateEditingQuote('client', e.target.value, 'address')}
                         className="w-full"
                         placeholder="Street address"
                       />
@@ -743,10 +794,8 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     <div>
                       <label className="block text-sm font-medium text-gray-600 mb-1">City</label>
                       <Input
-                        value={quoteForModal.client.city || ''}
-                        onChange={(e) => {
-                          console.log("City updated:", e.target.value);
-                        }}
+                        value={editingQuote.client.city || ''}
+                        onChange={(e) => updateEditingQuote('client', e.target.value, 'city')}
                         className="w-full"
                         placeholder="City"
                       />
@@ -754,10 +803,8 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     <div>
                       <label className="block text-sm font-medium text-gray-600 mb-1">State/Province</label>
                       <Input
-                        value={quoteForModal.client.state || ''}
-                        onChange={(e) => {
-                          console.log("State updated:", e.target.value);
-                        }}
+                        value={editingQuote.client.state || ''}
+                        onChange={(e) => updateEditingQuote('client', e.target.value, 'state')}
                         className="w-full"
                         placeholder="State or province"
                       />
@@ -765,10 +812,8 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     <div>
                       <label className="block text-sm font-medium text-gray-600 mb-1">Postal Code</label>
                       <Input
-                        value={quoteForModal.client.postalCode || ''}
-                        onChange={(e) => {
-                          console.log("Postal code updated:", e.target.value);
-                        }}
+                        value={editingQuote.client.postalCode || ''}
+                        onChange={(e) => updateEditingQuote('client', e.target.value, 'postalCode')}
                         className="w-full"
                         placeholder="Postal code"
                       />
@@ -776,10 +821,8 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     <div>
                       <label className="block text-sm font-medium text-gray-600 mb-1">Country</label>
                       <Input
-                        value={quoteForModal.client.country || ''}
-                        onChange={(e) => {
-                          console.log("Country updated:", e.target.value);
-                        }}
+                        value={editingQuote.client.country || ''}
+                        onChange={(e) => updateEditingQuote('client', e.target.value, 'country')}
                         className="w-full"
                         placeholder="Country"
                       />
@@ -1221,16 +1264,15 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
           <DialogFooter className="pt-4">
             <Button
               variant="outline"
-              onClick={() => setShowEditModal(false)}
+              onClick={() => {
+                setShowEditModal(false);
+                setEditingQuote(null);
+              }}
             >
               Cancel
             </Button>
             <Button
-              onClick={() => {
-                // In a real app, you'd save the changes here
-                console.log("Saving changes...");
-                setShowEditModal(false);
-              }}
+              onClick={handleSaveChanges}
             >
               Save Changes
             </Button>

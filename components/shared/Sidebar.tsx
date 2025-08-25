@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Settings, Shield, UserCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getSidebarItems } from "@/constants";
 import { getUser } from "@/lib/auth";
 
@@ -84,29 +84,6 @@ const Sidebar = () => {
           );
         })}
       </div>
-
-      {/* Account Section */}
-      {!isCollapsed && (
-        <div className="absolute bottom-20 left-4 right-4">
-          <div className="text-purple-200 text-xs font-semibold uppercase tracking-wider mb-2 px-3">
-            ACCOUNT
-          </div>
-          <div className="space-y-1">
-            <button className="w-full flex items-center p-3 rounded-lg text-purple-100 hover:bg-purple-500 hover:text-white transition-colors">
-              <Settings className="w-4 h-4" />
-              <span className="ml-3 text-sm">Account Settings</span>
-            </button>
-            <button className="w-full flex items-center p-3 rounded-lg text-purple-100 hover:bg-purple-500 hover:text-white transition-colors">
-              <Shield className="w-4 h-4" />
-              <span className="text-sm">System Status</span>
-            </button>
-            <button className="w-full flex items-center p-3 rounded-lg text-purple-100 hover:bg-purple-500 hover:text-white transition-colors">
-              <UserCheck className="w-4 h-4" />
-              <span className="ml-3 text-sm">Change Password</span>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Toggle Button */}
       <button

@@ -42,11 +42,80 @@ interface NavbarProps {
 }
 
 interface SystemStatus {
-  status: 'operational' | 'maintenance' | 'degraded' | 'outage';
-  message: string;
-  lastUpdated: string;
+  status: 'healthy' | 'unhealthy';
+  timestamp: string;
   uptime: string;
-  version: string;
+  database: {
+    status: string;
+    responseTime: string;
+    size: string;
+    connections: string;
+    provider: string;
+  };
+  performance: {
+    databaseResponseTime: number;
+    averageQueryTime: string;
+    systemLoad: string;
+  };
+  metrics: {
+    users: {
+      total: number;
+      active: number;
+      newThisMonth: number;
+    };
+    clients: {
+      total: number;
+      active: number;
+      newThisMonth: number;
+    };
+    quotes: {
+      total: number;
+      pending: number;
+      completed: number;
+      recent24h: number;
+      completionRate: string;
+    };
+    suppliers: {
+      total: number;
+      active: number;
+    };
+    materials: {
+      total: number;
+      active: number;
+    };
+    search: {
+      totalHistory: number;
+      totalAnalytics: number;
+      recentSearches: number;
+    };
+  };
+  storage: {
+    projectSize: string;
+    databaseSize: string;
+    availableSpace: string;
+  };
+  tableStorage: {
+    totalTables: number;
+    totalTableSize: string;
+    tables: Array<{
+      name: string;
+      rowCount: number;
+      estimatedSize: string;
+      status: string;
+    }>;
+  };
+  errorSummary: {
+    totalErrors: number;
+    slowQueries: number;
+    connectionIssues: number;
+    lastError: string;
+    errorRate: string;
+  };
+  environment: {
+    nodeEnv: string;
+    databaseUrl: string;
+    version: string;
+  };
 }
 
 export default function Navbar({ className = "" }: NavbarProps) {
@@ -74,25 +143,9 @@ export default function Navbar({ className = "" }: NavbarProps) {
   const [profilePicture, setProfilePicture] = useState<string | null>(user?.profilePicture || null);
   const [isUploadingPicture, setIsUploadingPicture] = useState(false);
 
-  // Mock system status data
-  const systemStatus: SystemStatus = {
-    status: 'operational',
-    message: 'All systems are running normally',
-    lastUpdated: new Date().toISOString(),
-    uptime: '99.9%',
-    version: 'v2.1.0'
-  };
-
-  // Additional system metrics
-  const systemMetrics = {
-    cpuUsage: '23%',
-    memoryUsage: '45%',
-    diskUsage: '67%',
-    activeUsers: '12',
-    totalQuotes: '1,247',
-    pendingQuotes: '23',
-    databaseConnections: '8/10'
-  };
+  // Real system status data
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
+  const [isLoadingSystemStatus, setIsLoadingSystemStatus] = useState(false);
 
   useEffect(() => {
     setUserState(getUser());
@@ -118,8 +171,26 @@ export default function Navbar({ className = "" }: NavbarProps) {
     setOpenAccountSettings(true);
   };
 
+  const fetchSystemMetrics = async () => {
+    try {
+      setIsLoadingSystemStatus(true);
+      const response = await fetch('/api/system-metrics');
+      if (response.ok) {
+        const data = await response.json();
+        setSystemStatus(data);
+      } else {
+        console.error('Failed to fetch system metrics');
+      }
+    } catch (error) {
+      console.error('Error fetching system metrics:', error);
+    } finally {
+      setIsLoadingSystemStatus(false);
+    }
+  };
+
   const handleSystemStatus = () => {
     setOpenSystemStatus(true);
+    fetchSystemMetrics();
   };
 
   const handleChangePassword = () => {
@@ -158,12 +229,10 @@ export default function Navbar({ className = "" }: NavbarProps) {
       
       if (updatedUser) {
         setUserState(updatedUser);
-        setOpenAccountSettings(false);
-        toast({
-          title: "Profile Updated",
-          description: "Your profile information has been updated successfully.",
-          type: "success"
-        });
+        // Don't auto-close - let user see changes and close manually
+        console.log('Profile updated successfully');
+      } else {
+        console.error('Failed to update profile');
       }
     } catch (error) {
       toast({
@@ -201,24 +270,22 @@ export default function Navbar({ className = "" }: NavbarProps) {
     }
     
     try {
-      updatePassword(newPassword);
-      setOpenChangePassword(false);
-      setNewPassword('');
-      setConfirmPassword('');
-      setCurrentPassword('');
-      setPasswordError('');
-      
-      toast({
-        title: "Password Updated",
-        description: "Your password has been changed successfully.",
-        type: "success"
-      });
+      const success = await updatePassword(newPassword);
+      if (success) {
+        // Show small notification and close form
+        console.log('Password updated successfully');
+        setOpenChangePassword(false);
+        // Reset form fields
+        setNewPassword('');
+        setConfirmPassword('');
+        setCurrentPassword('');
+        setPasswordError('');
+      } else {
+        console.error('Failed to update password');
+      }
     } catch (error) {
-      toast({
-        title: "Update Failed",
-        description: "Failed to update password. Please try again.",
-        type: "error"
-      });
+      console.error('Error updating password:', error);
+      console.error('Failed to update password');
     }
   };
 
@@ -285,35 +352,7 @@ export default function Navbar({ className = "" }: NavbarProps) {
     }
   };
 
-  const getStatusIcon = (status: SystemStatus['status']) => {
-    switch (status) {
-      case 'operational':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'maintenance':
-        return <AlertCircle className="w-5 h-5 text-yellow-500" />;
-      case 'degraded':
-        return <AlertCircle className="w-5 h-5 text-orange-500" />;
-      case 'outage':
-        return <X className="w-5 h-5 text-red-500" />;
-      default:
-        return <Info className="w-5 h-5 text-blue-500" />;
-    }
-  };
 
-  const getStatusColor = (status: SystemStatus['status']) => {
-    switch (status) {
-      case 'operational':
-        return 'text-green-600 bg-green-50 border-green-200';
-      case 'maintenance':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'degraded':
-        return 'text-orange-600 bg-orange-50 border-orange-200';
-      case 'outage':
-        return 'text-red-600 bg-red-50 border-red-200';
-      default:
-        return 'text-blue-600 bg-blue-50 border-blue-200';
-    }
-  };
 
   return (
     <>
@@ -372,7 +411,7 @@ export default function Navbar({ className = "" }: NavbarProps) {
               title="System Status & Notifications"
             >
               <Bell className="w-5 h-5 text-gray-600" />
-              {systemStatus.status !== 'operational' && (
+              {systemStatus && systemStatus.status !== 'healthy' && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
               )}
             </button>
@@ -530,128 +569,217 @@ export default function Navbar({ className = "" }: NavbarProps) {
 
       {/* System Status Dialog */}
       <Dialog open={openSystemStatus} onOpenChange={setOpenSystemStatus}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
               <Shield className="w-5 h-5 text-primary" />
-              <span>System Status</span>
+              <span>System Health Check</span>
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-6 py-4">
-            {/* Status Overview */}
-            <div className="flex items-center justify-between p-4 rounded-lg border">
-              <div className="flex items-center space-x-3">
-                {getStatusIcon(systemStatus.status)}
-                <div>
-                  <h3 className="font-semibold capitalize">{systemStatus.status}</h3>
-                  <p className="text-sm text-muted-foreground">{systemStatus.message}</p>
+            {isLoadingSystemStatus ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="ml-2 text-muted-foreground">Loading system metrics...</span>
+              </div>
+            ) : systemStatus ? (
+              <>
+                {/* Database Health Overview */}
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-blue-50 border-blue-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <div>
+                      <h3 className="font-semibold text-blue-800">Database Health Status</h3>
+                      <p className="text-sm text-blue-600">Provider: {systemStatus.database.provider} | Response: {systemStatus.database.responseTime}</p>
+                    </div>
+                  </div>
+                  <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium border border-blue-200">
+                    {systemStatus.database.status.toUpperCase()}
+                  </div>
                 </div>
-              </div>
-              <div className={cn(
-                "px-3 py-1 rounded-full text-xs font-medium border",
-                getStatusColor(systemStatus.status)
-              )}>
-                {systemStatus.status.toUpperCase()}
-              </div>
-            </div>
 
-            {/* System Information */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-sm text-gray-700 mb-2">System Uptime</h4>
-                <p className="text-2xl font-bold text-green-600">{systemStatus.uptime}</p>
-              </div>
-              
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-sm text-gray-700 mb-2">Current Version</h4>
-                <p className="text-2xl font-bold text-blue-600">{systemStatus.version}</p>
-              </div>
-            </div>
+                {/* Database Storage Summary */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">Database Storage Summary</h4>
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="p-3 bg-gray-50 rounded-lg text-center">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Total Tables</div>
+                      <div className="text-xl font-bold text-blue-600">{systemStatus.tableStorage.totalTables}</div>
+                      <div className="text-xs text-gray-500">Active database tables</div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded-lg text-center">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Total Storage</div>
+                      <div className="text-xl font-bold text-green-600">{systemStatus.tableStorage.totalTableSize}</div>
+                      <div className="text-xs text-gray-500">Estimated table data</div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded-lg text-center">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Database File</div>
+                      <div className="text-xl font-bold text-purple-600">{systemStatus.database.size}</div>
+                      <div className="text-xs text-gray-500">Physical file size</div>
+                    </div>
+                  </div>
+                </div>
 
-            {/* Additional Info */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Last Updated</span>
-                <span className="text-sm text-gray-600">
-                  {new Date(systemStatus.lastUpdated).toLocaleString()}
-                </span>
-              </div>
-              
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Database Status</span>
-                <span className="text-sm text-green-600 font-medium">Connected</span>
-              </div>
-              
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">API Status</span>
-                <span className="text-sm text-green-600 font-medium">Healthy</span>
-              </div>
-            </div>
+                {/* Individual Table Details */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900">Table Storage Details</h4>
+                  
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {systemStatus.tableStorage.tables.map((table, index) => (
+                      <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${table.status === 'Active' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                          <span className="text-sm font-medium text-gray-700">{table.name}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-semibold text-gray-900">{table.rowCount.toLocaleString()} rows</div>
+                          <div className="text-xs text-gray-500">{table.estimatedSize}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-            {/* System Metrics */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-gray-900">System Performance</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">CPU Usage</span>
-                    <span className="text-sm font-semibold text-blue-600">{systemMetrics.cpuUsage}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: systemMetrics.cpuUsage }}></div>
+                {/* Business Data Summary */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900">Business Data Summary</h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Users & Clients</div>
+                      <div className="text-lg font-bold text-blue-600">{systemStatus.metrics.users.total} users</div>
+                      <div className="text-sm text-gray-600">{systemStatus.metrics.clients.total} clients</div>
+                      <div className="text-xs text-gray-500">{systemStatus.metrics.users.active} active users</div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Quotes & Orders</div>
+                      <div className="text-lg font-bold text-green-600">{systemStatus.metrics.quotes.total} total</div>
+                      <div className="text-sm text-gray-600">{systemStatus.metrics.quotes.pending} pending</div>
+                      <div className="text-xs text-gray-500">{systemStatus.metrics.quotes.completionRate}% completion</div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Inventory</div>
+                      <div className="text-lg font-bold text-purple-600">{systemStatus.metrics.suppliers.total} suppliers</div>
+                      <div className="text-sm text-gray-600">{systemStatus.metrics.materials.total} materials</div>
+                      <div className="text-xs text-gray-500">All active</div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Search Activity</div>
+                      <div className="text-lg font-bold text-orange-600">{systemStatus.metrics.search.totalHistory} searches</div>
+                      <div className="text-sm text-gray-600">{systemStatus.metrics.search.recentSearches} today</div>
+                      <div className="text-xs text-gray-500">Last 24 hours</div>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Memory Usage</span>
-                    <span className="text-sm font-semibold text-green-600">{systemMetrics.memoryUsage}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: systemMetrics.memoryUsage }}></div>
+
+                                {/* Error Summary & Performance */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900">Error Summary & Performance</h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Error Summary</div>
+                      <div className="text-sm font-semibold text-red-600">{systemStatus.errorSummary.totalErrors} total errors</div>
+                      <div className="text-xs text-gray-500">Rate: {systemStatus.errorSummary.errorRate}</div>
+                      <div className="text-xs text-gray-500">Last: {systemStatus.errorSummary.lastError}</div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Performance Issues</div>
+                      <div className="text-sm font-semibold text-orange-600">{systemStatus.errorSummary.slowQueries} slow queries</div>
+                      <div className="text-xs text-gray-500">{systemStatus.errorSummary.connectionIssues} connection issues</div>
+                      <div className="text-xs text-gray-500">Database health: {systemStatus.performance.averageQueryTime}</div>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Disk Usage</span>
-                    <span className="text-sm font-semibold text-orange-600">{systemMetrics.diskUsage}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-orange-500 h-2 rounded-full" style={{ width: systemMetrics.diskUsage }}></div>
+
+                {/* System Performance Metrics */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">System Performance</h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Database Response</div>
+                      <div className="text-sm font-semibold text-blue-600">{systemStatus.database.responseTime}</div>
+                      <div className="text-xs text-gray-500">Performance: {systemStatus.performance.averageQueryTime}</div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Memory Usage</div>
+                      <div className="text-sm font-semibold text-green-600">{systemStatus.performance.memoryUsage}</div>
+                      <div className="text-xs text-gray-500">Heap allocation</div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Disk Status</div>
+                      <div className="text-sm font-semibold text-orange-600">{systemStatus.performance.diskUsage}</div>
+                      <div className="text-xs text-gray-500">Write access</div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Connection Quality</div>
+                      <div className="text-sm font-semibold text-purple-600">{systemStatus.performance.activeConnections}</div>
+                      <div className="text-xs text-gray-500">Database responsiveness</div>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Active Users</span>
-                    <span className="text-sm font-semibold text-purple-600">{systemMetrics.activeUsers}</span>
+
+                {/* Environment Info */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">Environment Information</h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Environment</div>
+                      <div className="text-sm font-semibold text-gray-900 capitalize">{systemStatus.environment.nodeEnv}</div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Database</div>
+                      <div className="text-sm font-semibold text-gray-900">{systemStatus.environment.databaseUrl}</div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Version</div>
+                      <div className="text-sm font-semibold text-gray-900">{systemStatus.environment.version}</div>
+                    </div>
+                    
+                                         <div className="p-3 bg-gray-50 rounded-lg">
+                       <div className="text-sm font-medium text-gray-700 mb-1">Last Updated</div>
+                       <div className="text-sm font-semibold text-gray-900">
+                         {new Date(systemStatus.timestamp).toLocaleString()}
+                       </div>
+                     </div>
                   </div>
-                  <div className="text-xs text-gray-500">Currently online</div>
                 </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Failed to load system metrics
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="text-sm font-medium text-gray-700 mb-1">Total Quotes</div>
-                  <div className="text-2xl font-bold text-gray-900">{systemMetrics.totalQuotes}</div>
-                  <div className="text-xs text-gray-500">All time</div>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="text-sm font-medium text-gray-700 mb-1">Pending Quotes</div>
-                  <div className="text-2xl font-bold text-yellow-600">{systemMetrics.pendingQuotes}</div>
-                  <div className="text-xs text-gray-500">Awaiting approval</div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
           
           <DialogFooter>
-            <Button onClick={() => setOpenSystemStatus(false)}>
+            <Button variant="outline" onClick={() => setOpenSystemStatus(false)}>
               Close
             </Button>
+            {systemStatus && (
+              <Button 
+                variant="outline" 
+                onClick={fetchSystemMetrics}
+                disabled={isLoadingSystemStatus}
+              >
+                {isLoadingSystemStatus ? 'Refreshing...' : 'Refresh'}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

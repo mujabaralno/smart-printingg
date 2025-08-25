@@ -545,7 +545,7 @@ export default function DashboardPage() {
       {/* Welcome Header */}
       <div className="text-center space-y-3">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Welcome, {user?.name}
+          Welcome Back, {user?.name}
         </h1>
         <div className="max-w-4xl mx-auto">
           <p className="text-lg text-slate-600 italic leading-relaxed">
