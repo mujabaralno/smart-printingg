@@ -1,10 +1,11 @@
+// Temporary SQLite schema to read local data
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = "prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqd3RfaWQiOjEsInNlY3VyZV9rZXkiOiJza18xc0dkeFdBOTFuNW1jNWZTNkpUczAiLCJhcGlfa2V5IjoiMDFLMzRRTVFYTVhDR0VaMkFBS1lTMFo3RUMiLCJ0ZW5hbnRfaWQiOiJjOTFjODU2MWZlOGI2YjM0YTU5ODVmMTdhYzU2NGNhMzY3OTY5ZmU5Mjg1NTdjNGM0ZjZiNWJjNzgwNzMzMjgxIiwiaW50ZXJuYWxfc2VjcmV0IjoiNGY4OWUzMTItMDE4OC00ZjE4LWFhMGQtYTc1OWVhN2EzNGE5In0.lPVxsK7w4PqWlM7f5ErZ-LE7ixz4nL1rVMJIRttzRqs"
 }
 
 model User {
@@ -121,22 +122,6 @@ model QuoteOperational {
   quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 }
 
-model SearchHistory {
-  id        String   @id @default(cuid())
-  query     String
-  timestamp DateTime @default(now())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-}
-
-model SearchAnalytics {
-  id        String   @id @default(cuid())
-  query     String
-  timestamp DateTime @default(now())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-}
-
 model Supplier {
   id          String     @id @default(cuid())
   name        String
@@ -168,4 +153,20 @@ model Material {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+}
+
+model SearchHistory {
+  id        String   @id @default(cuid())
+  query     String
+  timestamp DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model SearchAnalytics {
+  id        String   @id @default(cuid())
+  query     String
+  timestamp DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
 }
