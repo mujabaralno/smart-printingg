@@ -4,11 +4,10 @@ async function testConnection() {
   const prisma = new PrismaClient();
   
   try {
-    console.log('🔌 Testing database connection...');
+    console.log('🔌 Testing database connection with env variable...');
     await prisma.$queryRaw`SELECT 1`;
     console.log('✅ Database connection successful!');
     
-    // Test if we can access the data
     const userCount = await prisma.user.count();
     const clientCount = await prisma.client.count();
     const quoteCount = await prisma.quote.count();

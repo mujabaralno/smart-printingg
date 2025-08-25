@@ -1,6 +1,7 @@
 // Production Schema for Vercel PostgreSQL
 // This schema uses environment variables for database configuration
 // Last updated: 2025-08-25 - Force Prisma client regeneration
+// BUILD TIMESTAMP: 2025-08-25T17:43:00Z - FORCE VERCELL REBUILD
 
 generator client {
   provider = "prisma-client-js"
