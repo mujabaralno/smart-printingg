@@ -1,4 +1,7 @@
-// Temporary SQLite schema to read local data
+// Production Schema for Vercel PostgreSQL
+// This schema uses environment variables for database configuration
+// Last updated: 2025-08-25 - Force Prisma client regeneration
+
 generator client {
   provider = "prisma-client-js"
 }
