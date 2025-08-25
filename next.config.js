@@ -1,8 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Force rebuild by adding timestamp
+  // Force rebuild by adding unique timestamp
   env: {
     BUILD_TIMESTAMP: Date.now().toString(),
+    BUILD_ID: `build-${Date.now()}`,
+    FORCE_REBUILD: 'true'
   },
   // Ensure Prisma client is properly generated
   serverExternalPackages: ['@prisma/client'],
