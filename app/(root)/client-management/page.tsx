@@ -574,8 +574,11 @@ export default function ClientManagementPage() {
       </Card>
 
       {/* ===== Modal Add/Edit Client ===== */}
-                <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[600px] rounded-2xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent 
+          className="sm:max-w-[600px] rounded-2xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl border-0"
+          style={{ backgroundColor: 'white', opacity: 1 }}
+        >
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900">
               {mode === "add" ? "Add New Client" : "Edit Client"}
@@ -583,7 +586,7 @@ export default function ClientManagementPage() {
 
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="space-y-6 bg-white">
             {/* Client Type Selection */}
             <div className="space-y-4">
               <Label className="text-base font-semibold text-gray-700">Client Type</Label>
