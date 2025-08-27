@@ -1795,6 +1795,21 @@ function CreateQuoteContent() {
             }}
             isEditMode={!!selectedQuoteId}
             selectedQuoteId={selectedQuoteId}
+            onSubmitQuote={async (updatedFormData) => {
+              // This function will be called by Step5Quotation to actually submit the quote
+              try {
+                // Update the form data first
+                setFormData(updatedFormData);
+                
+                // Then call the actual save function
+                await handleSaveQuote(false);
+                
+                console.log('Quote submitted successfully from Step5Quotation');
+              } catch (error) {
+                console.error('Error submitting quote from Step5Quotation:', error);
+                throw error; // Re-throw to let Step5Quotation handle the error
+              }
+            }}
           />
         );
       default:

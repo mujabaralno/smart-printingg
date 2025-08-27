@@ -785,7 +785,7 @@ export default function ClientManagementPage() {
                       return (
                         <TableRow key={client.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
                           <TableCell className="p-4">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                            <span className="font-mono text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
                               {getClientDisplayId(client.id)}
                             </span>
                           </TableCell>
@@ -812,24 +812,12 @@ export default function ClientManagementPage() {
                           <TableCell className="p-4">
                             <div className="text-sm text-slate-900">{client.phone}</div>
                           </TableCell>
-                                                  <TableCell className="p-4">
-                          <div className="text-center">
-                            <button 
-                              onClick={() => {
-                                // Show quotes for this client
-                                const clientQuotes = quotes.filter(q => q.clientId === client.id);
-                                if (clientQuotes.length > 0) {
-                                  alert(`Quotes for ${client.clientType === "Company" ? client.companyName : `${client.firstName} ${client.lastName}`}:\n${clientQuotes.map(q => `• ${q.quoteId}: ${q.product || q.productName} - ${q.quantity} units`).join('\n')}`);
-                                }
-                              }}
-                              className="text-lg font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors"
-                              title={`Click to view ${quoteCount} quotes for this client`}
-                            >
-                              {quoteCount}
-                            </button>
-                            <div className="text-xs text-slate-500">quotes</div>
-                          </div>
-                        </TableCell>
+                          <TableCell className="p-4">
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-blue-600">{quoteCount}</div>
+                              <div className="text-xs text-slate-500">quotes</div>
+                            </div>
+                          </TableCell>
                           <TableCell className="p-4">
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                               client.status === "Active" 

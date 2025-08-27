@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import type { FC } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,14 +37,18 @@ interface Step5Props {
   onOpenSave: () => void;
   isEditMode?: boolean;
   selectedQuoteId?: string | null;
+  onSubmitQuote?: (formData: QuoteFormData) => Promise<void>; // Add this prop for actual submission
 }
 
-const Step5Quotation: FC<Step5Props> = ({
+const Step5Quotation: React.FC<Step5Props> = ({
   formData,
   setFormData,
   otherQuantities,
   setOtherQuantities,
   onOpenSave,
+  isEditMode,
+  selectedQuoteId,
+  onSubmitQuote,
 }) => {
   // State for included/excluded products
   const [includedProducts, setIncludedProducts] = React.useState<Set<number>>(
@@ -212,7 +215,7 @@ const Step5Quotation: FC<Step5Props> = ({
   };
 
   // Enhanced save function with validation
-  const handleSaveWithValidation = () => {
+  const handleSaveWithValidation = async () => {
     if (validateFormData()) {
       // Sync discount data with form data before saving
       const updatedFormData = {
@@ -248,7 +251,20 @@ const Step5Quotation: FC<Step5Props> = ({
       // Log the action being taken
       console.log(`Quote ${submissionAction.toLowerCase()}:`, updatedFormData);
       
-      onOpenSave();
+      try {
+        // If we have an onSubmitQuote function, use it to actually submit the quote
+        if (onSubmitQuote) {
+          await onSubmitQuote(updatedFormData);
+          console.log('Quote submitted successfully via onSubmitQuote');
+        } else {
+          // Fallback to the old behavior (opening modal)
+          console.log('No onSubmitQuote function provided, falling back to modal');
+          onOpenSave();
+        }
+      } catch (error) {
+        console.error('Error submitting quote:', error);
+        alert(`Error submitting quote: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     } else {
       console.error('Validation errors:', validationErrors);
     }
@@ -268,11 +284,14 @@ const Step5Quotation: FC<Step5Props> = ({
       total: 0 
     };
 
-    // 1. Paper Costs
+    // 1. Paper Costs - Calculate from operational papers data
     const paperCost = formData.operational.papers.reduce((total, p) => {
-      const pricePerSheet = (p.pricePerPacket || 0) / (p.sheetsPerPacket || 1);
-      const actualSheetsNeeded = p.enteredSheets || 0;
-      return total + (pricePerSheet * actualSheetsNeeded);
+      if (p.pricePerPacket && p.enteredSheets && p.sheetsPerPacket) {
+        const pricePerSheet = p.pricePerPacket / p.sheetsPerPacket;
+        const actualSheetsNeeded = p.enteredSheets;
+        return total + (pricePerSheet * actualSheetsNeeded);
+      }
+      return total;
     }, 0);
 
     // 2. Plates Cost (per plate, typically $25-50 per plate)
@@ -282,7 +301,7 @@ const Step5Quotation: FC<Step5Props> = ({
     // 3. Finishing Costs (cost per unit × actual units needed)
     const actualUnitsNeeded = formData.operational.units || product.quantity || 0;
     const finishingCost = formData.operational.finishing.reduce((total, f) => {
-      if (product.finishing.includes(f.name)) {
+      if (product.finishing && product.finishing.includes(f.name)) {
         return total + ((f.cost || 0) * actualUnitsNeeded);
       }
       return total;
@@ -398,7 +417,7 @@ const Step5Quotation: FC<Step5Props> = ({
         totalPrice: finalTotal
       }
     }));
-  }, [includedProducts, formData.operational.papers, formData.operational.plates, formData.operational.units, formData.operational.finishing]);
+  }, [includedProducts, formData.operational.papers, formData.operational.plates, formData.operational.units, formData.operational.finishing, setFormData]);
 
   // Handle product inclusion/exclusion
   const toggleProductInclusion = (productIndex: number) => {
