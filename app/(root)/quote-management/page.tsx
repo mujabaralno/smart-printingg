@@ -798,14 +798,14 @@ export default function QuoteManagementPage() {
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow className="border-slate-200">
-                    <TableHead className="text-slate-700 font-semibold p-6">Quote ID</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Client Details</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Date</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Product</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Quantity</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Amount</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
-                    <TableHead className="text-center text-slate-700 font-semibold p-6">Actions</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6 w-32">Quote ID</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6 w-48">Client Details</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6 w-28">Date</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6 w-32">Product</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6 w-24">Quantity</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6 w-32">Amount</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6 w-24">Status</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6 w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

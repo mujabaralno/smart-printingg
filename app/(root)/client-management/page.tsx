@@ -717,20 +717,21 @@ export default function ClientManagementPage() {
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow className="border-slate-200">
-                    <TableHead className="text-slate-700 font-semibold p-4">Client ID</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4">Client Info</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4">Contact Details</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4">Location</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4">Type & Role</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4">Quote Count</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4">Status</TableHead>
-                    <TableHead className="text-center text-slate-700 font-semibold p-4">Actions</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-28">Client ID</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-24">Type</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-40">Company Name</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-36">Contact Person</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-40">Email</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-32">Phone</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-28">Quotes</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-24">Status</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-16 text-slate-500">
+                      <TableCell colSpan={9} className="text-center py-16 text-slate-500">
                         <div className="flex items-center justify-center space-x-2">
                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                           <span>Loading clients...</span>
@@ -739,7 +740,7 @@ export default function ClientManagementPage() {
                     </TableRow>
                   ) : current.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-16 text-slate-500">
+                      <TableCell colSpan={9} className="text-center py-16 text-slate-500">
                         {filtered.length === 0 ? "No clients found matching your filters." : "No clients to display."}
                       </TableCell>
                     </TableRow>
@@ -757,58 +758,44 @@ export default function ClientManagementPage() {
                             </div>
                           </TableCell>
                           <TableCell className="p-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                              {client.clientType === "Company" ? (
-                                <Building className="w-5 h-5 text-white" />
-                              ) : (
-                                <User className="w-5 h-5 text-white" />
-                              )}
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              client.clientType === "Company" 
+                                ? "bg-blue-100 text-blue-700 border-blue-200"
+                                : "bg-purple-100 text-purple-700 border-purple-200"
+                            }`}>
+                              {client.clientType}
+                            </span>
+                          </TableCell>
+                          <TableCell className="p-4">
+                            <div className="font-medium text-slate-900">
+                              {client.clientType === "Company" ? client.companyName : `${client.firstName} ${client.lastName}`}
                             </div>
-                            <div>
-                              <div className="font-medium text-slate-900">
-                                {client.clientType === "Company" ? client.companyName : `${client.firstName} ${client.lastName}`}
-                              </div>
-                              <div className="text-sm text-slate-500">
-                                {client.clientType === "Company" ? client.contactPerson : client.role}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="p-6">
-                          <div className="space-y-1">
+                          </TableCell>
+                          <TableCell className="p-4">
+                            <div className="text-sm text-slate-900">{client.contactPerson || client.role || 'N/A'}</div>
+                          </TableCell>
+                          <TableCell className="p-4">
                             <div className="text-sm text-slate-900">{client.email}</div>
-                            <div className="text-sm text-slate-500">{client.phone}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="p-6">
-                          <div className="space-y-1">
-                            <div className="text-sm text-slate-900">{client.city}, {client.state}</div>
-                            <div className="text-sm text-slate-500">{client.area || 'N/A'}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="p-4">
-                          <div className="space-y-1">
-                            <div className="text-sm text-slate-900">{client.clientType}</div>
-                            <div className="text-sm text-slate-500">{client.role}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="p-4">
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-blue-600">{quoteCount}</div>
-                            <div className="text-xs text-slate-500">quotes</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="p-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            client.status === "Active" 
-                              ? "bg-green-100 text-green-700 border-green-200"
-                              : "bg-red-100 text-red-700 border-red-200"
-                          }`}>
-                            {client.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center p-6">
+                          </TableCell>
+                          <TableCell className="p-4">
+                            <div className="text-sm text-slate-900">{client.phone}</div>
+                          </TableCell>
+                          <TableCell className="p-4">
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-blue-600">{quoteCount}</div>
+                              <div className="text-xs text-slate-500">quotes</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="p-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              client.status === "Active" 
+                                ? "bg-green-100 text-green-700 border-green-200"
+                                : "bg-red-100 text-red-700 border-red-200"
+                            }`}>
+                              {client.status}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center p-4">
                           <div className="flex items-center justify-center space-x-2">
                             <Button
                               variant="ghost"
