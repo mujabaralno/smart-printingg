@@ -307,56 +307,56 @@ export default function LoginPage() {
 
 
   return (
-    <div className="h-screen w-screen flex fixed inset-0">
+    <div className="h-screen w-screen flex flex-col lg:flex-row fixed inset-0">
       {/* Left Panel - Login Form */}
-      <div className="w-1/2 h-full flex items-center justify-center p-8 bg-gray-50">
-        <div className="w-full max-w-md space-y-8">
+      <div className="w-full lg:w-1/2 h-full flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-gray-50">
+        <div className="w-full max-w-md space-y-6 sm:space-y-8">
           {/* Logo and Header */}
           <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
-                <Shield className="w-7 h-7 text-white" />
+            <div className="flex items-center justify-center gap-3 mb-6 sm:mb-8">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
+                <Shield className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
+              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
                 SmartPrint
               </span>
             </div>
             
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">Welcome Back</h1>
-            <p className="text-gray-600">Please sign in to your account</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">Welcome Back</h1>
+            <p className="text-sm sm:text-base text-gray-600">Please sign in to your account</p>
           </div>
 
           {/* Location Status Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
             {isLocationChecking ? (
-              <div className="flex items-center gap-3 text-blue-600">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
-                <span className="text-sm font-medium">Verifying location...</span>
+              <div className="flex items-center gap-2 sm:gap-3 text-blue-600">
+                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-blue-600 border-t-transparent"></div>
+                <span className="text-xs sm:text-sm font-medium">Verifying location...</span>
               </div>
             ) : locationError ? (
-              <div className="space-y-3">
-                <div className="flex items-start gap-3 text-red-600">
-                  <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-start gap-2 sm:gap-3 text-red-600">
+                  <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">Access Restricted</p>
+                    <p className="text-xs sm:text-sm font-medium">Access Restricted</p>
                     <p className="text-xs text-red-500 mt-1">{locationError}</p>
                   </div>
                 </div>
                 <button
                   onClick={checkUserLocationOnMount}
-                  className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
+                  className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors text-xs sm:text-sm font-medium"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
                   Retry Verification
                 </button>
               </div>
             ) : locationData ? (
-              <div className="flex items-center gap-3 text-green-600">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5" />
+              <div className="flex items-center gap-2 sm:gap-3 text-green-600">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 sm:w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Location Verified</p>
+                  <p className="text-xs sm:text-sm font-medium">Location Verified</p>
                   <p className="text-xs text-green-500">{locationData.city}, {locationData.country}</p>
                 </div>
               </div>
@@ -365,38 +365,38 @@ export default function LoginPage() {
 
           {/* Error/Success Messages */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-red-700">{error}</p>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs sm:text-sm text-red-700">{error}</p>
               </div>
             </div>
           )}
 
           {success && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-green-700">{success}</p>
+            <div className="bg-green-50 border border-green-200 rounded-xl p-3 sm:p-4">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs sm:text-sm text-green-700">{success}</p>
               </div>
             </div>
           )}
 
           {/* Login Form */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
-            <div className="space-y-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 space-y-4 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Employee ID or Email
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                   <Input
                     type="text"
                     value={employeeId}
                     onChange={(e) => setEmployeeId(e.target.value)}
                     placeholder="Enter your Employee ID or Email"
-                    className="pl-11 h-12 bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-lg transition-colors"
+                    className="pl-10 sm:pl-11 h-11 sm:h-12 bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-lg transition-colors text-sm sm:text-base"
                     disabled={isLoading}
                   />
                 </div>
@@ -407,13 +407,13 @@ export default function LoginPage() {
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                   <Input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="pl-11 pr-11 h-12 bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-lg transition-colors"
+                    className="pl-10 sm:pl-11 pr-10 sm:pr-11 h-11 sm:h-12 bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-lg transition-colors text-sm sm:text-base"
                     disabled={isLoading}
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && isFormValid && !isLoading) {
@@ -427,7 +427,7 @@ export default function LoginPage() {
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                     disabled={isLoading}
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                   </button>
                 </div>
               </div>
@@ -436,17 +436,17 @@ export default function LoginPage() {
             <Button 
               onClick={handleGetOtp}
               disabled={!isFormValid || isLoading}
-              className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none"
+              className="w-full h-11 sm:h-12 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none text-sm sm:text-base"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                  Sending Code...
+                  <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-white border-t-transparent"></div>
+                  <span className="text-sm sm:text-base">Sending Code...</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Smartphone className="w-5 h-5" />
-                  Get Verification Code
+                  <Smartphone className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-sm sm:text-base">Get Verification Code</span>
                 </div>
               )}
             </Button>
@@ -458,14 +458,14 @@ export default function LoginPage() {
           <div className="text-center">
             <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
               <Globe className="w-3 h-3" />
-              Available in Dubai (UAE), India, and Indonesia
+              <span className="text-xs">Available in Dubai (UAE), India, and Indonesia</span>
             </p>
           </div>
         </div>
       </div>
 
       {/* Right Panel - Branding */}
-      <div className="w-1/2 h-full bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 flex items-center justify-center relative overflow-hidden">
+      <div className="hidden lg:flex w-full lg:w-1/2 h-full bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 items-center justify-center relative overflow-hidden">
         {/* Animated Background Pattern */}
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-80 h-80 bg-gradient-to-r from-white/5 to-white/10 rounded-full blur-3xl animate-pulse"></div>
