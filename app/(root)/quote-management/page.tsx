@@ -828,7 +828,9 @@ export default function QuoteManagementPage() {
                     current.map((row, index) => (
                       <TableRow key={row.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
                         <TableCell className="p-6">
-                          <span className="font-mono text-sm text-slate-900">{row.quoteId}</span>
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                            {row.quoteId}
+                          </span>
                         </TableCell>
                         <TableCell className="p-6">
                           <div className="space-y-1">

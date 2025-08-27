@@ -687,7 +687,9 @@ export default function DashboardPage() {
                       <tr key={`${quote.id}-${quote.status}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors duration-200">
                         <td className="p-4 w-32">
                           <div className="truncate">
-                            <span className="font-mono text-sm text-slate-900">{quote.quoteId}</span>
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                              {quote.quoteId}
+                            </span>
                           </div>
                         </td>
                         <td className="p-4 w-48">
