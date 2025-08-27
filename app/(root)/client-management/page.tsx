@@ -16,6 +16,38 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
+// Function to convert client ID to readable format (e.g., "CL001")
+const getClientDisplayId = (id: string): string => {
+  if (!id) return 'CL000';
+  
+  // If ID is already in CL format, return as is
+  if (id.startsWith('CL')) return id;
+  
+  // For CUID format IDs, create a consistent display ID
+  if (id.length > 20) { // CUID format
+    // Create a simple hash from the CUID to generate a consistent number
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      const char = id.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    // Use absolute value and modulo to get a number between 1-999
+    const numericPart = Math.abs(hash) % 999 + 1;
+    return `CL${String(numericPart).padStart(3, '0')}`;
+  }
+  
+  // For other numeric IDs, convert to CL format
+  const numericPart = id.replace(/\D/g, '');
+  if (numericPart) {
+    const paddedNumber = numericPart.padStart(3, '0');
+    return `CL${paddedNumber}`;
+  }
+  
+  // Fallback
+  return 'CL000';
+};
+
 // UAE Areas data for Area dropdown
 const UAE_AREAS = [
   // Dubai Areas
@@ -753,8 +785,8 @@ export default function ClientManagementPage() {
                       return (
                         <TableRow key={client.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
                           <TableCell className="p-4">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                              {client.id}
+                            <span className="font-mono text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                              {getClientDisplayId(client.id)}
                             </span>
                           </TableCell>
                           <TableCell className="p-4">
@@ -840,15 +872,10 @@ export default function ClientManagementPage() {
                 current.map((client) => (
                   <Card key={client.id} className="p-4 border-slate-200">
                     <div className="space-y-3">
-                      {/* Header with Client Type and Status */}
+                      {/* Header with Client ID and Status */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          {client.clientType === "Company" ? (
-                            <Building className="w-4 h-4 text-blue-600" />
-                          ) : (
-                            <User className="w-4 h-4 text-purple-600" />
-                          )}
-                          <span className="text-sm font-medium text-slate-600">{client.clientType}</span>
+                          <span className="text-sm font-medium text-slate-600">{getClientDisplayId(client.id)}</span>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                           client.status === "Active" 
