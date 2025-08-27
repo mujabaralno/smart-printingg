@@ -210,11 +210,11 @@ export default function ClientManagementPage() {
         }
         
         setLoading(false);
-      } catch (error) {
-        console.error('Error loading clients:', error);
-        setRows(CLIENTS);
-        setLoading(false);
-      }
+              } catch (error) {
+          console.error('Error loading clients:', error);
+          setRows([]);
+          setLoading(false);
+        }
     };
 
     loadClients();
@@ -353,7 +353,7 @@ export default function ClientManagementPage() {
   };
 
   // open Edit
-  const onEdit = (r: ClientRow) => {
+  const onEdit = (r: any) => {
     console.log('Editing client:', r); // Debug log
     console.log('Client address fields:', {
       address: r.address,
@@ -412,7 +412,7 @@ export default function ClientManagementPage() {
   };
 
   // open View
-  const onView = (r: ClientRow) => {
+  const onView = (r: any) => {
     console.log('Viewing client:', r);
     // For now, just open the edit modal in view mode
     // You can create a separate view modal later if needed

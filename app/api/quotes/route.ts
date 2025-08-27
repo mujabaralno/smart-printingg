@@ -45,10 +45,7 @@ export async function GET() {
               status: true
             }
           },
-          amounts: true,
-          papers: true,
-          finishing: true,
-          QuoteOperational: true
+          amounts: true
         }
     });
     
@@ -98,10 +95,7 @@ export async function GET() {
           displayName: clientDisplayName
         },
         user: quote.user,
-        amounts: quote.amounts,
-        papers: quote.papers,
-        finishing: quote.finishing,
-        QuoteOperational: quote.QuoteOperational
+        amounts: quote.amounts
       };
     });
     
