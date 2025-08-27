@@ -5,6 +5,18 @@ export async function GET() {
   try {
     console.log('🔍 PRODUCTION API CALLED - Fetching quotes from database...');
     
+    // Check database connection first
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('✅ Database connection successful');
+    } catch (dbError) {
+      console.error('❌ Database connection failed:', dbError);
+      return NextResponse.json(
+        { error: 'Database connection failed', details: dbError.message },
+        { status: 500 }
+      );
+    }
+    
     // Use direct Prisma client with comprehensive query
     const quotes = await prisma.quote.findMany({
       orderBy: { createdAt: 'desc' },
@@ -50,6 +62,17 @@ export async function GET() {
     });
     
     console.log(`✅ PRODUCTION FIXED VERSION - Found ${quotes.length} quotes with amounts`);
+    
+    // Debug: Log first quote amounts
+    if (quotes.length > 0) {
+      console.log('🔍 DEBUG: First quote amounts:', {
+        id: quotes[0].id,
+        quoteId: quotes[0].quoteId,
+        amounts: quotes[0].amounts,
+        amountsType: typeof quotes[0].amounts,
+        amountsKeys: quotes[0].amounts ? Object.keys(quotes[0].amounts) : 'null'
+      });
+    }
     
     // Transform the data to match expected format
     const transformedQuotes = quotes.map(quote => {
@@ -97,6 +120,16 @@ export async function GET() {
         user: quote.user,
         amounts: quote.amounts
       };
+    });
+    
+    // Debug: Log what we're returning
+    console.log('🔍 DEBUG: Returning transformed quotes with amounts:', {
+      totalQuotes: transformedQuotes.length,
+      sampleQuote: transformedQuotes[0] ? {
+        id: transformedQuotes[0].id,
+        quoteId: transformedQuotes[0].quoteId,
+        amounts: transformedQuotes[0].amounts
+      } : 'No quotes'
     });
     
     return NextResponse.json(transformedQuotes);
