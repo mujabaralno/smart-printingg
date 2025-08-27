@@ -96,9 +96,9 @@ async function immediateDatabaseFix() {
       } catch (error) {
         console.log(`📝 Adding ${column} column to User table NOW...`);
         if (column === 'isSalesPerson') {
-          await productionPrisma.$executeRaw`ALTER TABLE "User" ADD COLUMN "${column}" BOOLEAN DEFAULT false`;
+          await productionPrisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN "${column}" BOOLEAN DEFAULT false`);
         } else {
-          await productionPrisma.$executeRaw`ALTER TABLE "User" ADD COLUMN "${column}" TEXT`;
+          await productionPrisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN "${column}" TEXT`);
         }
         console.log(`✅ ${column} column added to User table NOW`);
       }
@@ -113,9 +113,9 @@ async function immediateDatabaseFix() {
       } catch (error) {
         console.log(`📝 Adding ${column} column to Client table NOW...`);
         if (column === 'hasNoTrn') {
-          await productionPrisma.$executeRaw`ALTER TABLE "Client" ADD COLUMN "${column}" INTEGER DEFAULT 0`;
+          await productionPrisma.$executeRawUnsafe(`ALTER TABLE "Client" ADD COLUMN "${column}" INTEGER DEFAULT 0`);
         } else {
-          await productionPrisma.$executeRaw`ALTER TABLE "Client" ADD COLUMN "${column}" TEXT`;
+          await productionPrisma.$executeRawUnsafe(`ALTER TABLE "Client" ADD COLUMN "${column}" TEXT`);
         }
         console.log(`✅ ${column} column added to Client table NOW`);
       }
@@ -136,15 +136,15 @@ async function immediateDatabaseFix() {
       } catch (error) {
         console.log(`📝 Adding ${column} column to Quote table NOW...`);
         if (column === 'requiresApproval' || column === 'customerPdfEnabled' || column === 'sendToCustomerEnabled') {
-          await productionPrisma.$executeRaw`ALTER TABLE "Quote" ADD COLUMN "${column}" BOOLEAN DEFAULT false`;
+          await productionPrisma.$executeRawUnsafe(`ALTER TABLE "Quote" ADD COLUMN "${column}" BOOLEAN DEFAULT false`);
         } else if (column === 'discountPercentage' || column === 'marginPercentage') {
-          await productionPrisma.$executeRaw`ALTER TABLE "Quote" ADD COLUMN "${column}" REAL DEFAULT 0`;
+          await productionPrisma.$executeRawUnsafe(`ALTER TABLE "Quote" ADD COLUMN "${column}" REAL DEFAULT 0`);
         } else if (column === 'discountAmount' || column === 'marginAmount') {
-          await productionPrisma.$executeRaw`ALTER TABLE "Quote" ADD COLUMN "${column}" REAL DEFAULT 0`;
+          await productionPrisma.$executeRawUnsafe(`ALTER TABLE "Quote" ADD COLUMN "${column}" REAL DEFAULT 0`);
         } else if (column === 'approvedAt') {
-          await productionPrisma.$executeRaw`ALTER TABLE "Quote" ADD COLUMN "${column}" TIMESTAMP`;
+          await productionPrisma.$executeRawUnsafe(`ALTER TABLE "Quote" ADD COLUMN "${column}" TIMESTAMP`);
         } else {
-          await productionPrisma.$executeRaw`ALTER TABLE "Quote" ADD COLUMN "${column}" TEXT`;
+          await productionPrisma.$executeRawUnsafe(`ALTER TABLE "Quote" ADD COLUMN "${column}" TEXT`);
         }
         console.log(`✅ ${column} column added to Quote table NOW`);
       }
