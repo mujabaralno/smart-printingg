@@ -1,83 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseService } from '@/lib/database';
+import { prisma } from '@/lib/database';
 
 export async function GET() {
   try {
-    // Try Prisma first, but fallback to direct SQLite if it fails
-    try {
-      const quotes = await DatabaseService.getAllQuotes();
-      return NextResponse.json(quotes);
-    } catch (prismaError) {
-      console.log('Prisma failed, using direct SQLite fallback');
-      
-      // Fallback to direct SQLite query
-      const { execSync } = require('child_process');
-      const path = require('path');
-      const dbPath = path.join(process.cwd(), 'prisma', 'dev.db');
-      
-      try {
-        const quotesResult = execSync(`sqlite3 "${dbPath}" "SELECT q.id, q.quoteId, q.date, q.status, q.clientId, q.userId, q.product, q.quantity, q.sides, q.printing, q.colors, q.createdAt, q.updatedAt, q.productName, q.printingSelection, q.flatSizeWidth, q.flatSizeHeight, q.flatSizeSpine, q.closeSizeWidth, q.closeSizeHeight, q.closeSizeSpine, q.useSameAsFlat, c.companyName, c.contactPerson, c.email, u.name as userName, u.email as userEmail, qa.base, qa.vat, qa.total FROM Quote q LEFT JOIN Client c ON q.clientId = c.id LEFT JOIN User u ON q.userId = u.id LEFT JOIN QuoteAmount qa ON q.id = qa.quoteId ORDER BY q.date DESC;"`, { encoding: 'utf8' });
-        
-        if (!quotesResult.trim()) {
-          return NextResponse.json([]);
+    console.log('🔍 Fetching quotes from PostgreSQL database...');
+    
+    // Use direct Prisma client with simplified query
+    const quotes = await prisma.quote.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        client: {
+          select: {
+            id: true,
+            companyName: true,
+            contactPerson: true,
+            email: true
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
         }
-        
-        const quotes = quotesResult.trim().split('\n').map((line: string) => {
-          const [id, quoteId, date, status, clientId, userId, product, quantity, sides, printing, colors, createdAt, updatedAt, productName, printingSelection, flatSizeWidth, flatSizeHeight, flatSizeSpine, closeSizeWidth, closeSizeHeight, closeSizeSpine, useSameAsFlat, companyName, contactPerson, clientEmail, userName, userEmail, base, vat, total] = line.split('|');
-          return {
-            id,
-            quoteId,
-            date,
-            status,
-            clientId,
-            userId: userId || null,
-            product,
-            quantity: parseInt(quantity),
-            sides,
-            printing,
-            colors: colors || null,
-            createdAt,
-            updatedAt,
-            // New Step 3 fields
-            productName: productName || product,
-            printingSelection: printingSelection || printing,
-            flatSizeWidth: flatSizeWidth ? parseFloat(flatSizeWidth) : null,
-            flatSizeHeight: flatSizeHeight ? parseFloat(flatSizeHeight) : null,
-            flatSizeSpine: flatSizeSpine ? parseFloat(flatSizeSpine) : null,
-            closeSizeWidth: closeSizeWidth ? parseFloat(closeSizeWidth) : null,
-            closeSizeHeight: closeSizeHeight ? parseFloat(closeSizeHeight) : null,
-            closeSizeSpine: closeSizeSpine ? parseFloat(closeSizeSpine) : null,
-            useSameAsFlat: useSameAsFlat === '1',
-            // Add proper client info
-            client: { 
-              id: clientId, 
-              companyName: companyName || 'Client', 
-              contactPerson: contactPerson || 'Contact', 
-              email: clientEmail || 'email@example.com' 
-            },
-            user: userId ? { 
-              id: userId, 
-              name: userName || 'User', 
-              email: userEmail || 'user@example.com' 
-            } : null,
-            amounts: base && vat && total ? {
-              base: parseFloat(base),
-              vat: parseFloat(vat),
-              total: parseFloat(total)
-            } : null
-          };
-        });
-        
-        return NextResponse.json(quotes);
-      } catch (sqliteError) {
-        console.error('Both Prisma and SQLite failed:', sqliteError);
-        return NextResponse.json([]);
       }
-    }
+    });
+    
+    console.log(`✅ Found ${quotes.length} quotes`);
+    
+    // Transform the data to match expected format
+    const transformedQuotes = quotes.map(quote => ({
+      id: quote.id,
+      quoteId: quote.quoteId,
+      date: quote.date,
+      status: quote.status,
+      clientId: quote.clientId,
+      userId: quote.userId,
+      product: quote.product,
+      quantity: quote.quantity,
+      sides: quote.sides,
+      printing: quote.printing,
+      colors: quote.colors,
+      createdAt: quote.createdAt,
+      updatedAt: quote.updatedAt,
+      productName: quote.productName || quote.product,
+      printingSelection: quote.printingSelection || quote.printing,
+      flatSizeWidth: quote.flatSizeWidth,
+      flatSizeHeight: quote.flatSizeHeight,
+      flatSizeSpine: quote.flatSizeSpine,
+      closeSizeWidth: quote.closeSizeWidth,
+      closeSizeHeight: quote.closeSizeHeight,
+      closeSizeSpine: quote.closeSizeSpine,
+      useSameAsFlat: quote.useSameAsFlat || false,
+      client: quote.client,
+      user: quote.user
+    }));
+    
+    return NextResponse.json(transformedQuotes);
+    
   } catch (error) {
-    console.error('Error fetching quotes:', error);
+    console.error('❌ Error fetching quotes:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch quotes' },
+      { error: 'Failed to fetch quotes', details: error.message },
       { status: 500 }
     );
   }
@@ -118,7 +103,7 @@ export async function POST(request: NextRequest) {
     
     // Validate that clientId exists
     try {
-      const client = await DatabaseService.getClientById(body.clientId);
+      const client = await prisma.client.findUnique({ where: { id: body.clientId } });
       if (!client) {
         console.log(`Client with ID ${body.clientId} not found`);
         return NextResponse.json(
@@ -199,7 +184,14 @@ export async function POST(request: NextRequest) {
     console.log('Processed quote data:', JSON.stringify(body, null, 2));
     
     // Use the new method that handles complete quote creation with related data
-    const quote = await DatabaseService.createQuoteWithDetails(body);
+    const quote = await prisma.quote.create({
+      data: body,
+      include: {
+        client: true,
+        user: true,
+        quoteAmount: true
+      }
+    });
     console.log('Quote created successfully with all details:', quote.id);
     return NextResponse.json(quote);
   } catch (error) {
