@@ -1388,6 +1388,44 @@ function CreateQuoteContent() {
         console.log('Quote data being sent:', quoteData);
         console.log('salesPersonId:', formData.salesPersonId);
         
+        // Force calculation before sending - ensure amounts are up to date for update
+        const paperCost = formData.operational.papers.reduce((total, p) => {
+          const pricePerPacket = p.pricePerPacket || 0;
+          const sheetsPerPacket = p.sheetsPerPacket || 1;
+          const enteredSheets = p.enteredSheets || 0;
+          const actualUnitsNeeded = Math.ceil(enteredSheets / sheetsPerPacket);
+          return total + (pricePerPacket * actualUnitsNeeded);
+        }, 0);
+
+        const platesCost = (formData.operational.plates || 0) * 25; // $25 per plate
+        const finishingCost = formData.operational.finishing.reduce((total, f) => {
+          const isUsedByAnyProduct = formData.products.some(product => 
+            product.finishing && product.finishing.includes(f.name)
+          );
+          const actualUnitsNeeded = Math.ceil((formData.operational.units || 0) / 1000);
+          if (isUsedByAnyProduct) {
+            return total + ((f.cost || 0) * actualUnitsNeeded);
+          }
+          return total;
+        }, 0);
+
+        // Calculate final amounts
+        const basePrice = paperCost + platesCost + finishingCost;
+        const marginAmount = basePrice * 0.30; // 30% margin
+        const subtotal = basePrice + marginAmount;
+        const vatAmount = subtotal * 0.05; // 5% VAT
+        const totalPrice = subtotal + vatAmount;
+
+        console.log('=== UPDATE CALCULATION DEBUG ===');
+        console.log('paperCost:', paperCost);
+        console.log('platesCost:', platesCost);
+        console.log('finishingCost:', finishingCost);
+        console.log('basePrice:', basePrice);
+        console.log('marginAmount:', marginAmount);
+        console.log('subtotal:', subtotal);
+        console.log('vatAmount:', vatAmount);
+        console.log('totalPrice:', totalPrice);
+
         // For updates, we can include additional data like papers, finishing, amounts
         const updateData = {
           ...quoteData,
@@ -1416,9 +1454,9 @@ function CreateQuoteContent() {
             cost: finish.cost || 0,
           })) || [],
           amounts: {
-            base: formData.calculation.basePrice || 0,
-            vat: formData.calculation.vatAmount || 0,
-            total: formData.calculation.totalPrice || 0
+            base: basePrice, // Use calculated values instead of formData.calculation
+            vat: vatAmount,
+            total: totalPrice
           },
           QuoteOperational: {
             plates: formData.operational.plates || null,
@@ -1467,6 +1505,44 @@ function CreateQuoteContent() {
         const randomNum = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
         const quoteId = `QT-${year}-${month}${day}-${randomNum}`;
         
+        // Force calculation before sending - ensure amounts are up to date
+        const paperCost = formData.operational.papers.reduce((total, p) => {
+          const pricePerPacket = p.pricePerPacket || 0;
+          const sheetsPerPacket = p.sheetsPerPacket || 1;
+          const enteredSheets = p.enteredSheets || 0;
+          const actualUnitsNeeded = Math.ceil(enteredSheets / sheetsPerPacket);
+          return total + (pricePerPacket * actualUnitsNeeded);
+        }, 0);
+
+        const platesCost = (formData.operational.plates || 0) * 25; // $25 per plate
+        const finishingCost = formData.operational.finishing.reduce((total, f) => {
+          const isUsedByAnyProduct = formData.products.some(product => 
+            product.finishing && product.finishing.includes(f.name)
+          );
+          const actualUnitsNeeded = Math.ceil((formData.operational.units || 0) / 1000);
+          if (isUsedByAnyProduct) {
+            return total + ((f.cost || 0) * actualUnitsNeeded);
+          }
+          return total;
+        }, 0);
+
+        // Calculate final amounts
+        const basePrice = paperCost + platesCost + finishingCost;
+        const marginAmount = basePrice * 0.30; // 30% margin
+        const subtotal = basePrice + marginAmount;
+        const vatAmount = subtotal * 0.05; // 5% VAT
+        const totalPrice = subtotal + vatAmount;
+
+        console.log('=== MANUAL CALCULATION DEBUG ===');
+        console.log('paperCost:', paperCost);
+        console.log('platesCost:', platesCost);
+        console.log('finishingCost:', finishingCost);
+        console.log('basePrice:', basePrice);
+        console.log('marginAmount:', marginAmount);
+        console.log('subtotal:', subtotal);
+        console.log('vatAmount:', vatAmount);
+        console.log('totalPrice:', totalPrice);
+
         // Prepare complete quote data with all details
         const completeQuoteData = {
           ...quoteData,
@@ -1496,9 +1572,9 @@ function CreateQuoteContent() {
             cost: finish.cost || 0,
           })) || [],
           amounts: {
-            base: formData.calculation.basePrice || 0,
-            vat: formData.calculation.vatAmount || 0,
-            total: formData.calculation.totalPrice || 0
+            base: basePrice, // Use calculated values instead of formData.calculation
+            vat: vatAmount,
+            total: totalPrice
           },
           QuoteOperational: {
             plates: formData.operational.plates || null,
@@ -1512,6 +1588,9 @@ function CreateQuoteContent() {
         console.log('=== FINAL QUOTE DATA DEBUG ===');
         console.log('Original quoteData:', quoteData);
         console.log('Complete quote data before cleaning:', completeQuoteData);
+        console.log('=== AMOUNTS DEBUG ===');
+        console.log('formData.calculation:', formData.calculation);
+        console.log('completeQuoteData.amounts:', completeQuoteData.amounts);
         console.log('Cleaned quote data being sent:', cleanedQuoteData);
         console.log('salesPersonId in cleaned data:', cleanedQuoteData.salesPersonId);
         

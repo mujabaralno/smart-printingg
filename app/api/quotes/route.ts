@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Handle amounts - use nested create syntax
+    // Handle amounts - use nested create syntax for QuoteAmount
     if (body.amounts) {
       body.amounts = {
         create: {
@@ -252,6 +252,9 @@ export async function POST(request: NextRequest) {
       };
     }
     
+    console.log('=== API DEBUG: AMOUNTS DATA ===');
+    console.log('Raw amounts from body:', body.amounts);
+    console.log('Processed amounts:', body.amounts);
     console.log('Processed quote data:', JSON.stringify(body, null, 2));
     
     try {
