@@ -531,155 +531,235 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-12">
-      {/* Success Message */}
-      {showSuccessMessage && (
-        <div className="fixed top-4 right-4 z-[9999] bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
-          <div className="flex items-center space-x-2">
-            <CheckCircle className="w-5 h-5" />
-            <span>{successMessage}</span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 lg:space-y-12">
+        {/* Success Message */}
+        {showSuccessMessage && (
+          <div className="fixed top-4 right-4 z-[9999] bg-green-500 text-white px-4 sm:px-6 py-3 rounded-lg shadow-lg max-w-sm sm:max-w-md">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm sm:text-base">{successMessage}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Welcome Header */}
+        <div className="text-center space-y-3">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Welcome Back, {user?.name}
+          </h1>
+          <div className="max-w-4xl mx-auto px-4">
+            <p className="text-base sm:text-lg lg:text-xl text-slate-600 italic leading-relaxed">
+              "{currentMotivationalQuote.split(' - ')[0]}"
+            </p>
+            <p className="text-xs sm:text-sm lg:text-base text-slate-500 mt-1 font-medium">
+              — {currentMotivationalQuote.split(' - ')[1]}
+            </p>
           </div>
         </div>
-      )}
 
-      {/* Welcome Header */}
-      <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Welcome Back, {user?.name}
-        </h1>
-        <div className="max-w-4xl mx-auto">
-          <p className="text-lg text-slate-600 italic leading-relaxed">
-            "{currentMotivationalQuote.split(' - ')[0]}"
-          </p>
-          <p className="text-sm text-slate-500 mt-1 font-medium">
-            — {currentMotivationalQuote.split(' - ')[1]}
-          </p>
-        </div>
-      </div>
-
-      {/* Metric Cards - Now Clickable */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {metricCards.map((metric, index) => {
-          const IconComponent = metric.icon;
-          const isActive = statusFilter === metric.filterValue;
-          return (
-            <Card 
-              key={index} 
-              className={`border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer ${
-                isActive ? 'ring-2 ring-blue-500' : ''
-              }`}
-              onClick={() => handleCardClick(metric.filterValue)}
-            >
-              <CardContent className="p-8">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 mb-2">{metric.title}</p>
-                    <p className="text-3xl font-bold text-slate-900">{metric.value}</p>
-                  </div>
-                  <div className={`w-14 h-14 rounded-xl ${metric.color} flex items-center justify-center`}>
-                    <IconComponent className={`w-7 h-7 ${metric.iconColor}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Recent Quotations Section */}
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-slate-900">Recent Quotations</h2>
-          <div className="flex items-center space-x-4">
-            {/* Status Filter Dropdown */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Status</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Link href="/create-quote">
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+        {/* Metric Cards - Now Clickable */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+          {metricCards.map((metric, index) => {
+            const IconComponent = metric.icon;
+            const isActive = statusFilter === metric.filterValue;
+            return (
+              <Card 
+                key={index} 
+                className={`border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer ${
+                  isActive ? 'ring-2 ring-blue-500' : ''
+                }`}
+                onClick={() => handleCardClick(metric.filterValue)}
               >
-                <Plus className="w-5 h-5 mr-2" />
-                Create a New Quote
-              </Button>
-            </Link>
-          </div>
+                <CardContent className="p-4 sm:p-6 lg:p-8">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs sm:text-sm font-medium text-slate-600 mb-2">{metric.title}</p>
+                      <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">{metric.value}</p>
+                    </div>
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-xl ${metric.color} flex items-center justify-center flex-shrink-0`}>
+                      <IconComponent className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 ${metric.iconColor}`} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
-        {/* Quotations Table */}
-        <Card className="border-0 shadow-lg">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full table-fixed" style={{ tableLayout: 'fixed' }}>
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="text-left p-4 font-semibold text-slate-700 w-32">Quote ID</th>
-                    <th className="text-left p-4 font-semibold text-slate-700 w-48">Client Name</th>
-                    <th className="text-left p-4 font-semibold text-slate-700 w-32">Date</th>
-                    <th className="text-left p-4 font-semibold text-slate-700 w-32">Amount</th>
-                    <th className="text-left p-4 font-semibold text-slate-700 w-24">Status</th>
-                    <th className="text-left p-4 font-semibold text-slate-700 w-40">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-500">
-                        <div className="flex items-center justify-center space-x-2">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                          <span>Loading quotes...</span>
-                        </div>
-                      </td>
+        {/* Recent Quotations Section */}
+        <div className="space-y-6 sm:space-y-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">Recent Quotations</h2>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+              {/* Status Filter Dropdown */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Status</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Link href="/create-quote" className="w-full sm:w-auto">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
+                >
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  <span className="text-sm sm:text-base">Create a New Quote</span>
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Quotations Table - Mobile Responsive */}
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-0">
+              {/* Desktop Table */}
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full table-fixed" style={{ tableLayout: 'fixed' }}>
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50">
+                      <th className="text-left p-4 font-semibold text-slate-700 w-32">Quote ID</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-48">Client Name</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-32">Date</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-32">Amount</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-24">Status</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-40">Actions</th>
                     </tr>
-                  ) : filteredQuotes.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-500">
-                        No quotes found. {statusFilter !== "All" && `No quotes with status "${statusFilter}".`}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredQuotes.map((quote: any, index: number) => (
-                    <tr key={`${quote.id}-${quote.status}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors duration-200">
-                      <td className="p-4 w-32">
-                        <div className="truncate">
-                          <span className="font-mono text-sm text-slate-900">{quote.quoteId}</span>
-                        </div>
-                      </td>
-                      <td className="p-4 w-48">
-                        <div className="truncate">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                              <Users className="w-4 h-4 text-white" />
+                  </thead>
+                  <tbody>
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-slate-500">
+                          <div className="flex items-center justify-center space-x-2">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            <span>Loading quotes...</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : filteredQuotes.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-slate-500">
+                          No quotes found. {statusFilter !== "All" && `No quotes with status "${statusFilter}".`}
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredQuotes.map((quote: any, index: number) => (
+                      <tr key={`${quote.id}-${quote.status}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors duration-200">
+                        <td className="p-4 w-32">
+                          <div className="truncate">
+                            <span className="font-mono text-sm text-slate-900">{quote.quoteId}</span>
+                          </div>
+                        </td>
+                        <td className="p-4 w-48">
+                          <div className="truncate">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                                <Users className="w-4 h-4 text-white" />
+                              </div>
+                              <span className="font-medium text-slate-900">{quote.customerName}</span>
                             </div>
-                            <span className="font-medium text-slate-900">{quote.customerName}</span>
                           </div>
-                        </div>
-                      </td>
-                      <td className="p-4 w-32">
-                        <div className="truncate">
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="w-4 h-4 text-slate-500" />
-                            <span className="text-slate-700">{formatDate(quote.createdDate)}</span>
+                        </td>
+                        <td className="p-4 w-32">
+                          <div className="truncate">
+                            <div className="flex items-center space-x-2">
+                              <Calendar className="w-4 h-4 text-slate-500" />
+                              <span className="text-slate-700">{formatDate(quote.createdDate)}</span>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="p-4 w-32">
-                        <div className="truncate">
-                          <span className="font-semibold text-slate-900">AED {isNaN(quote.totalAmount) ? '0.00' : (quote.totalAmount || 0).toFixed(2)}</span>
-                        </div>
-                      </td>
-                      <td className="p-4 w-24">
-                        <div className="truncate">
+                        </td>
+                        <td className="p-4 w-32">
+                          <div className="truncate">
+                            <span className="font-semibold text-slate-900">AED {isNaN(quote.totalAmount) ? '0.00' : (quote.totalAmount || 0).toFixed(2)}</span>
+                          </div>
+                        </td>
+                        <td className="p-4 w-24">
+                          <div className="truncate">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              quote.status === "Approved" 
+                                ? "bg-blue-100 text-blue-700 border-blue-200"
+                                : quote.status === "Pending"
+                                ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+                                : "bg-red-100 text-red-700 border-red-200"
+                            }`}>
+                              {quote.status}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-4 w-40">
+                          <div className="truncate">
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewQuote(quote)}
+                                className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors duration-200"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleUpdateQuote(quote)}
+                                className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors duration-200"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors duration-200"
+                                  >
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleDownloadPDF(quote)}>
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Download PDF
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="lg:hidden space-y-4 p-4">
+                {isLoading ? (
+                  <div className="text-center py-16 text-slate-500">
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <span>Loading quotes...</span>
+                    </div>
+                  </div>
+                ) : filteredQuotes.length === 0 ? (
+                  <div className="text-center py-16 text-slate-500">
+                    No quotes found. {statusFilter !== "All" && `No quotes with status "${statusFilter}".`}
+                  </div>
+                ) : (
+                  filteredQuotes.map((quote: any, index: number) => (
+                    <Card key={`${quote.id}-${quote.status}`} className="p-4 border-slate-200">
+                      <div className="space-y-3">
+                        {/* Header with Quote ID and Status */}
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-sm font-medium text-slate-900 bg-slate-100 px-2 py-1 rounded">
+                            {quote.quoteId}
+                          </span>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             quote.status === "Approved" 
                               ? "bg-blue-100 text-blue-700 border-blue-200"
@@ -690,62 +770,78 @@ export default function DashboardPage() {
                             {quote.status}
                           </span>
                         </div>
-                      </td>
-                      <td className="p-4 w-40">
-                        <div className="truncate">
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewQuote(quote)}
-                              className="h-8 px-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transition-all duration-200 rounded-lg border-0 font-medium text-xs"
-                            >
-                              <Eye className="w-3 h-3 mr-1" />
-                              <span>View</span>
-                            </Button>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 px-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all duration-200 rounded-lg border-0 font-medium text-xs"
-                                >
-                                  <Edit className="w-3 h-3 mr-1" />
-                                  <span>Update</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent className="w-48">
-                                <DropdownMenuItem 
-                                  onClick={() => handleUpdateQuote(quote)}
-                                  className="flex items-center space-x-2 p-3 hover:bg-blue-50 cursor-pointer"
-                                >
-                                  <CheckCircle className="w-4 h-4 text-blue-600" />
-                                  <span>Change Status</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    // Navigate to step 2 customer detail choose
-                                    window.location.href = `/create-quote?step=2&edit=${quote.quoteId}`;
-                                  }}
-                                  className="flex items-center space-x-2 p-3 hover:bg-green-50 cursor-pointer"
-                                >
-                                  <Edit className="w-4 h-4 text-green-600" />
-                                  <span>Edit Details</span>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                        
+                        {/* Client Info */}
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                            <Users className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-slate-900">{quote.customerName}</div>
+                            <div className="text-sm text-slate-500">Client</div>
                           </div>
                         </div>
-                      </td>
-                    </tr>
+                        
+                        {/* Date and Amount */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="w-4 h-4 text-slate-500" />
+                            <span className="text-sm text-slate-700">{formatDate(quote.createdDate)}</span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-slate-500">Amount:</span>
+                            <div className="font-semibold text-slate-900">AED {isNaN(quote.totalAmount) ? '0.00' : (quote.totalAmount || 0).toFixed(2)}</div>
+                          </div>
+                        </div>
+                        
+                        {/* Actions */}
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewQuote(quote)}
+                              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUpdateQuote(quote)}
+                              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                            >
+                              <Edit className="w-4 h-4 mr-1" />
+                              Edit
+                            </Button>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-slate-600 hover:bg-slate-100"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleDownloadPDF(quote)}>
+                                <Download className="w-4 h-4 mr-2" />
+                                Download PDF
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </Card>
                   ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Modals */}

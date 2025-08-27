@@ -229,6 +229,10 @@ export default function QuoteManagementPage() {
   const start = (page - 1) * PAGE_SIZE;
   const current = showAll ? filtered : filtered.slice(start, start + PAGE_SIZE);
 
+  const approvedCount = filtered.filter(q => q.status === "Approved").length;
+  const pendingCount = filtered.filter(q => q.status === "Pending").length;
+  const rejectedCount = filtered.filter(q => q.status === "Rejected").length;
+
 
   const [draft, setDraft] = React.useState<{
     id: string;
@@ -639,350 +643,386 @@ export default function QuoteManagementPage() {
   };
 
   return (
-    <div className="space-y-12">
-      {/* New Quote Notification */}
-      {showNewQuoteNotification && (
-        <div className="fixed top-4 right-4 bg-green-50 border border-green-200 rounded-xl p-4 shadow-lg z-50 max-w-sm">
-          <div className="flex items-start gap-3">
-            <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-            <div className="text-sm text-green-800">
-              <p className="font-medium mb-1">New Quote Added!</p>
-              <p className="text-green-700">
-                {newQuoteCount} new quote{newQuoteCount > 1 ? 's' : ''} {newQuoteCount > 1 ? 'have' : 'has'} been added to your quote list.
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowNewQuoteNotification(false)}
-              className="w-6 h-6 h-auto p-1 text-green-600 hover:bg-green-100"
-            >
-              ×
-            </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent">
+            Quote Management
+          </h1>
+          <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
+            Manage and track all your printing quotations. View, edit, and monitor quote statuses.
+          </p>
+        </div>
+
+        {/* Search and Create Quote */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="Search by quote number, client name, or person name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 text-base"
+            />
+          </div>
+          <Button
+            onClick={() => setIsCreateQuoteModalOpen(true)}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Create a New Quote
+          </Button>
+        </div>
+
+        {/* Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">From Date</label>
+            <Input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">To Date</label>
+            <Input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Status</label>
+            <Select value={status} onValueChange={(v: StatusFilter) => setStatus(v)}>
+              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Approved">Approved</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Contact Person</label>
+            <Select value={contactPerson} onValueChange={(v: UserFilter) => setContactPerson(v)}>
+              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+                <SelectValue placeholder="All Contact Persons" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Contact Persons</SelectItem>
+                {filterContactPersons.map((person) => (
+                  <SelectItem key={person.id} value={person.id}>
+                    {person.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Minimum Amount</label>
+            <Input
+              type="number"
+              placeholder="AED 0.00"
+              value={minAmount}
+              onChange={(e) => setMinAmount(e.target.value)}
+              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
+            />
           </div>
         </div>
-      )}
 
-      {/* Welcome Header */}
-      <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Quote Management
-        </h1>
-        <p className="text-lg text-slate-600">Manage and track all your printing quotes. View, edit, and monitor the status of customer quotations.</p>
-      </div>
-      
-      {/* Main Content Card */}
-      <Card className="border-0 shadow-lg">
-        <CardContent className="p-10 space-y-8">
-          {/* Search and Create Button */}
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col gap-2 flex-1">
-              <label className="text-sm font-medium text-slate-700">Search</label>
-              <Input
-                placeholder="Search by quote number, client name, or person name"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full"
-              />
-            </div>
-
-            <Button 
-              onClick={() => setIsCreateQuoteModalOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-10 gap-2 flex items-center"
+        {/* Results Summary */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-sm text-slate-600">
+          <span>Showing {current.length} of {filtered.length} quotes</span>
+          {filtered.length > PAGE_SIZE && (
+            <Button
+              variant="ghost"
+              onClick={() => setShowAll(!showAll)}
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl px-4 py-2 transition-all duration-200"
             >
-              <Plus className="h-4 w-4" />
-              Create a New Quote
-            </Button>
-          </div>
-
-          {/* Filters with proper titles as per requirements */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-8 border border-slate-200 rounded-2xl bg-slate-50/50">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">From</label>
-              <Input 
-                type="date" 
-                value={from} 
-                onChange={(e) => setFrom(e.target.value)}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">To</label>
-              <Input 
-                type="date" 
-                value={to} 
-                onChange={(e) => setTo(e.target.value)}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Status</label>
-              <Select value={status} onValueChange={(v: StatusFilter) => setStatus(v)}>
-                <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Contact Person</label>
-              <Select value={contactPerson} onValueChange={(v: UserFilter) => setContactPerson(v)}>
-                <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
-                  <SelectValue placeholder="All Contact Persons" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Contact Persons</SelectItem>
-                  {filterContactPersons.map((cp) => (
-                    <SelectItem key={cp.id} value={cp.id}>{cp.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Minimum Amount</label>
-              <Input
-                type="number"
-                placeholder="AED 0.00"
-                value={minAmount}
-                onChange={(e) => setMinAmount(e.target.value)}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-              />
-            </div>
-          </div>
-
-          {/* Item Counts Summary */}
-          <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
-            <div className="flex items-center gap-4 text-sm text-slate-600">
-              <span>Showing {current.length} of {filtered.length} quotes</span>
-              {filtered.length > PAGE_SIZE && (
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowAll(!showAll)}
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 px-3 text-xs"
-                >
-                  {showAll ? (
-                    <>
-                      <ChevronUp className="h-3 w-3 mr-1" />
-                      Show Less
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-3 w-3 mr-1" />
-                      Show All ({filtered.length})
-                    </>
-                  )}
-                </Button>
+              {showAll ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-2" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-2" />
+                  Show All ({filtered.length})
+                </>
               )}
+            </Button>
+          )}
+        </div>
+
+        {/* Quote Summary */}
+        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="w-3 h-3 bg-green-500 rounded-full mx-auto mb-2"></div>
+              <div className="text-sm text-slate-600">Approved</div>
+              <div className="text-lg font-bold text-slate-900">{approvedCount}</div>
             </div>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-slate-600">
-                  Approved: <span className="font-semibold text-slate-900">{filtered.filter(q => q.status === "Approved").length}</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm text-slate-600">
-                  Pending: <span className="font-semibold text-slate-900">{filtered.filter(q => q.status === "Pending").length}</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span className="text-sm text-slate-600">
-                  Rejected: <span className="font-semibold text-slate-900">{filtered.filter(q => q.status === "Rejected").length}</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-slate-600">
-                <span>Total Items:</span>
-                <span className="font-semibold text-slate-900">{filtered.length}</span>
-              </div>
+            <div className="text-center">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full mx-auto mb-2"></div>
+              <div className="text-sm text-slate-600">Pending</div>
+              <div className="text-lg font-bold text-slate-900">{pendingCount}</div>
+            </div>
+            <div className="text-center">
+              <div className="w-3 h-3 bg-red-500 rounded-full mx-auto mb-2"></div>
+              <div className="text-sm text-slate-600">Rejected</div>
+              <div className="text-lg font-bold text-slate-900">{rejectedCount}</div>
+            </div>
+            <div className="text-center">
+              <div className="w-3 h-3 bg-blue-500 rounded-full mx-auto mb-2"></div>
+              <div className="text-sm text-slate-600">Total Items</div>
+              <div className="text-lg font-bold text-slate-900">{filtered.length}</div>
             </div>
           </div>
+        </div>
 
-
-
-          {/* Table */}
-          <div className="overflow-hidden border border-slate-200 rounded-2xl">
-            <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow className="border-slate-200">
-                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Quote ID</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-48">Client Details</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-28">Date</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Product</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-24">Quantity</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Amount</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-24">Status</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-16 text-slate-500">
-                      Loading quotes...
-                    </TableCell>
+        {/* Quotes Table - Mobile Responsive */}
+        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-0">
+            {/* Desktop Table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-slate-50">
+                  <TableRow className="border-slate-200">
+                    <TableHead className="text-slate-700 font-semibold p-6">Quote ID</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Client Details</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Date</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Product</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Quantity</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Amount</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
+                    <TableHead className="text-center text-slate-700 font-semibold p-6">Actions</TableHead>
                   </TableRow>
-                ) : current.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-16 text-slate-500">
-                      No quotes found with current filters.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  current.map((q) => (
-                    <TableRow key={q.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
-                      <TableCell className="font-medium text-slate-900 p-6 w-32">
-                        <div className="truncate">{q.quoteId}</div>
-                      </TableCell>
-                      <TableCell className="text-slate-700 p-6 w-48">
-                        <div className="space-y-1">
-                          <div className="font-medium text-slate-900 truncate">{q.clientName}</div>
-                          <div className="text-sm text-slate-500 truncate">{q.contactPerson}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-700 p-6 w-28">
-                        <div className="truncate">{fmtDate(q.date)}</div>
-                      </TableCell>
-                      <TableCell className="text-slate-700 p-6 w-32">
-                        <div className="truncate">{q.product || 'N/A'}</div>
-                      </TableCell>
-                      <TableCell className="text-slate-700 p-6 w-24">
-                        <div className="truncate">{q.quantity || 'N/A'}</div>
-                      </TableCell>
-                      <TableCell className="tabular-nums font-semibold text-slate-900 p-6 w-32">
-                        <div className="truncate">{currency.format(q.amount)}</div>
-                      </TableCell>
-                      <TableCell className="p-6 w-24"><StatusBadge value={q.status} /></TableCell>
-                      <TableCell className="p-6 w-32">
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            title="View Details" 
-                            onClick={() => onView(q)}
-                            className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            title="Edit Quote" 
-                            onClick={() => onEdit(q.id)}
-                            className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          {q.status === "Approved" && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  title="Download PDF" 
-                                  disabled={downloadingPDF?.startsWith(q.id)}
-                                  className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 border border-blue-200 text-blue-700 disabled:opacity-50"
-                                >
-                                  {downloadingPDF?.startsWith(q.id) ? (
-                                    <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                                  ) : (
-                                    <Download className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40">
-                                <DropdownMenuItem 
-                                  onClick={() => handleDownloadPDF(q, 'customer')}
-                                  disabled={downloadingPDF === `${q.id}-customer`}
-                                  className="text-green-700 hover:text-green-800 hover:bg-green-50"
-                                >
-                                  <Download className="h-3 w-3 mr-2" />
-                                  Customer PDF
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => handleDownloadPDF(q, 'operations')}
-                                  disabled={downloadingPDF === `${q.id}-operations`}
-                                  className="text-orange-700 hover:text-orange-800 hover:bg-orange-50"
-                                >
-                                  <Download className="h-3 w-3 mr-2" />
-                                  Operations PDF
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-16 text-slate-500">
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                          <span>Loading quotes...</span>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Pagination - Only show when not showing all */}
-          {!showAll && pageCount > 1 && (
-            <div className="flex items-center justify-center gap-2 pb-6">
-              <Button
-                variant="ghost"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="w-10 h-10 rounded-xl hover:bg-slate-100"
-              >
-                ‹
-              </Button>
-
-              {Array.from({ length: pageCount }).slice(0, 5).map((_, i) => {
-                const n = i + 1;
-                if (pageCount > 5 && n === 4) {
-                  return (
-                    <React.Fragment key="dots">
-                      <span className="px-3 text-slate-500">…</span>
-                      <Button
-                        variant={page === pageCount ? "default" : "ghost"}
-                        onClick={() => setPage(pageCount)}
-                        className="w-10 h-10 rounded-xl"
-                      >
-                        {pageCount}
-                      </Button>
-                    </React.Fragment>
-                  );
-                }
-                if (pageCount > 5 && n > 3) return null;
-                return (
-                  <Button
-                    key={n}
-                    variant={page === n ? "default" : "ghost"}
-                    onClick={() => setPage(n)}
-                    className="w-10 h-10 rounded-xl"
-                  >
-                    {n}
-                  </Button>
-                );
-              })}
-
-              <Button
-                variant="ghost"
-                disabled={page >= pageCount}
-                onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-                className="w-10 h-10 rounded-xl hover:bg-slate-100"
-              >
-                ›
-              </Button>
+                  ) : current.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-16 text-slate-500">
+                        {filtered.length === 0 ? "No quotes found matching your filters." : "No quotes to display."}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    current.map((row, index) => (
+                      <TableRow key={row.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
+                        <TableCell className="p-6">
+                          <span className="font-mono text-sm text-slate-900">{row.quoteId}</span>
+                        </TableCell>
+                        <TableCell className="p-6">
+                          <div className="space-y-1">
+                            <div className="font-medium text-slate-900">{row.client?.companyName || 'N/A'}</div>
+                            <div className="text-sm text-slate-500">{row.client?.contactPerson || 'N/A'}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-slate-700 p-6">{fmtDate(row.date)}</TableCell>
+                        <TableCell className="text-sm text-slate-700 p-6">{row.productName || row.product || 'N/A'}</TableCell>
+                        <TableCell className="text-sm text-slate-700 p-6">{row.quantity || 0}</TableCell>
+                        <TableCell className="p-6">
+                          <span className="font-semibold text-slate-900">AED {row.amount ? row.amount.toFixed(2) : '0.00'}</span>
+                        </TableCell>
+                                                 <TableCell className="p-6">
+                           <StatusBadge value={row.status} />
+                         </TableCell>
+                        <TableCell className="text-center p-6">
+                          <div className="flex items-center justify-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onView(row)}
+                              className="text-blue-600 hover:bg-blue-50 rounded-lg p-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onEdit(row.id)}
+                              className="text-green-600 hover:bg-green-50 rounded-lg p-2"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            {row.status === "Approved" && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleDownloadPDF(row, 'customer')}
+                                    className="text-purple-600 hover:bg-purple-50 rounded-lg p-2"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-40">
+                                  <DropdownMenuItem 
+                                    onClick={() => handleDownloadPDF(row, 'customer')}
+                                    disabled={downloadingPDF === `${row.id}-customer`}
+                                    className="text-green-700 hover:text-green-800 hover:bg-green-50"
+                                  >
+                                    <Download className="h-3 w-3 mr-2" />
+                                    Customer PDF
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleDownloadPDF(row, 'operations')}
+                                    disabled={downloadingPDF === `${row.id}-operations`}
+                                    className="text-orange-700 hover:text-orange-800 hover:bg-orange-50"
+                                  >
+                                    <Download className="h-3 w-3 mr-2" />
+                                    Operations PDF
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            {/* Mobile Cards */}
+            <div className="lg:hidden space-y-4 p-4">
+              {loading ? (
+                <div className="text-center py-16 text-slate-500">
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span>Loading quotes...</span>
+                  </div>
+                </div>
+              ) : current.length === 0 ? (
+                <div className="text-center py-16 text-slate-500">
+                  {filtered.length === 0 ? "No quotes found matching your filters." : "No quotes to display."}
+                </div>
+              ) : (
+                current.map((row, index) => (
+                  <Card key={row.id} className="p-4 border-slate-200">
+                    <div className="space-y-3">
+                      {/* Header with Quote ID and Status */}
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-sm font-medium text-slate-900 bg-slate-100 px-2 py-1 rounded">
+                          {row.quoteId}
+                        </span>
+                                                 <StatusBadge value={row.status} />
+                      </div>
+                      
+                      {/* Client Info */}
+                      <div className="space-y-1">
+                        <div className="font-medium text-slate-900">{row.clientName || 'N/A'}</div>
+                        <div className="text-sm text-slate-500">{row.contactPerson || 'N/A'}</div>
+                      </div>
+                      
+                      {/* Product and Quantity */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-sm text-slate-500">Product:</span>
+                          <div className="text-sm text-slate-700">{row.productName || row.product || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <span className="text-sm text-slate-500">Quantity:</span>
+                          <div className="text-sm text-slate-700">{row.quantity || 0}</div>
+                        </div>
+                      </div>
+                      
+                      {/* Date and Amount */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-sm text-slate-500">Date:</span>
+                          <div className="text-sm text-slate-700">{fmtDate(row.date)}</div>
+                        </div>
+                        <div>
+                          <span className="text-sm text-slate-500">Amount:</span>
+                          <div className="font-semibold text-slate-900">AED {row.amount ? row.amount.toFixed(2) : '0.00'}</div>
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onView(row)}
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onEdit(row.id)}
+                            className="text-green-600 border-green-200 hover:bg-green-50"
+                          >
+                            <Pencil className="w-4 h-4 mr-1" />
+                            Edit
+                          </Button>
+                        </div>
+                        {row.status === "Approved" && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadPDF(row, 'customer')}
+                                className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                              >
+                                <Download className="w-4 h-4 mr-1" />
+                                PDF
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem 
+                                onClick={() => handleDownloadPDF(row, 'customer')}
+                                disabled={downloadingPDF === `${row.id}-customer`}
+                                className="text-green-700 hover:text-green-800 hover:bg-green-50"
+                              >
+                                <Download className="h-3 w-3 mr-2" />
+                                Customer PDF
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDownloadPDF(row, 'operations')}
+                                disabled={downloadingPDF === `${row.id}-operations`}
+                                className="text-orange-700 hover:text-orange-800 hover:bg-orange-50"
+                              >
+                                <Download className="h-3 w-3 mr-2" />
+                                Operations PDF
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* ===== Modal View ===== */}
       <Dialog open={openView} onOpenChange={setOpenView}>

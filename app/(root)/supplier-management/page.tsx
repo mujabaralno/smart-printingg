@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Pencil, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -358,299 +358,387 @@ function SupplierManagementContent() {
 
 
   return (
-    <div className="space-y-12">
-      {/* Welcome Header */}
-      <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Supplier Management
-        </h1>
-        <p className="text-lg text-slate-600">Manage and track all your printing suppliers and materials with real-time database operations.</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent">
+            Supplier Management
+          </h1>
+          <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
+            Manage your suppliers and materials. Track costs, monitor inventory, and optimize your supply chain.
+          </p>
+        </div>
 
-      </div>
-      
-      {/* Main Content Card */}
-      <Card className="border-0 shadow-lg">
-        <CardContent className="p-10 space-y-8">
-          {/* Search and Create Button */}
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col gap-2 flex-1">
-              <Label htmlFor="search-input" className="text-sm font-medium text-slate-700">Search</Label>
-              <Input
-                id="search-input"
-                placeholder="Search by material name, supplier, or ID"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full"
-              />
-            </div>
+        {/* Search and Add Supplier */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="Search suppliers or materials..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 text-base"
+            />
+          </div>
+          <Button
+            onClick={() => setOpen(true)}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Add New Material
+          </Button>
+        </div>
 
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-10" 
-              onClick={onAdd}
+        {/* Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Updated From</label>
+            <Input 
+              type="date" 
+              value={from} 
+              onChange={(e) => setFrom(e.target.value)}
+              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 text-base"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Updated To</label>
+            <Input 
+              type="date" 
+              value={to} 
+              onChange={(e) => setTo(e.target.value)}
+              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 text-base"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Status</label>
+            <Select value={statusFilter} onValueChange={(v: "all" | "Active" | "Inactive") => setStatusFilter(v)}>
+              <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Unit</label>
+            <Select value={unitFilter} onValueChange={(v: "all" | string) => setUnitFilter(v)}>
+              <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+                <SelectValue placeholder="All Units" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Units</SelectItem>
+                <SelectItem value="per_sheet">Per Sheet</SelectItem>
+                <SelectItem value="per_packet">Per Packet</SelectItem>
+                <SelectItem value="per_kg">Per KG</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Results Summary */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-sm text-slate-600">
+          <span>Showing {current.length} of {filtered.length} materials</span>
+          {filtered.length > PAGE_SIZE && (
+            <Button
+              variant="ghost"
+              onClick={() => setShowAll(!showAll)}
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl px-4 py-2 transition-all duration-200"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add New Material
+              {showAll ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-2" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-2" />
+                  Show All ({filtered.length})
+                </>
+              )}
             </Button>
-          </div>
-
-          {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-8 border border-slate-200 rounded-2xl bg-slate-50/50">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Updated From</label>
-              <Input 
-                type="date" 
-                value={from} 
-                onChange={(e) => setFrom(e.target.value)}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Updated To</label>
-              <Input 
-                type="date" 
-                value={to} 
-                onChange={(e) => setTo(e.target.value)}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Status</label>
-              <Select value={statusFilter} onValueChange={(v: "all" | "Active" | "Inactive") => setStatusFilter(v)}>
-                <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Unit</label>
-              <Select value={unitFilter} onValueChange={(v: "all" | string) => setUnitFilter(v)}>
-                <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
-                  <SelectValue placeholder="All Units" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Units</SelectItem>
-                  <SelectItem value="per_sheet">Per Sheet</SelectItem>
-                  <SelectItem value="per_packet">Per Packet</SelectItem>
-                  <SelectItem value="per_kg">Per KG</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Results Summary */}
-          <div className="flex items-center justify-between text-sm text-slate-600">
-            <span>Showing {current.length} of {filtered.length} materials</span>
-            {filtered.length > PAGE_SIZE && (
-              <Button
-                variant="ghost"
-                onClick={() => setShowAll(!showAll)}
-                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-              >
-                {showAll ? (
-                  <>
-                    <ChevronUp className="h-4 w-4 mr-2" />
-                    Show Less
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4 mr-2" />
-                    Show All ({filtered.length})
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-
-          {/* Search Result Highlight Banner */}
-          {highlightedMaterialId && (
-            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <span className="text-yellow-800">🔍</span>
-                <span className="text-yellow-800 font-medium">
-                  Material found from search! The highlighted row will automatically scroll into view.
-                </span>
-                <button
-                  onClick={() => setHighlightedMaterialId(null)}
-                  className="ml-auto text-yellow-600 hover:text-yellow-800 text-sm underline"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
           )}
+        </div>
 
-          {/* Table */}
-          <div className="overflow-hidden border border-slate-200 rounded-2xl">
-            <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow className="border-slate-200">
-                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Material ID</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-40">Material</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-24">GSM</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-36">Supplier</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-28">Cost</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-24">Unit</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Last Updated</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-24">Status</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-6 w-32">Actions</TableHead>
+        {/* Search Result Highlight Banner */}
+        {highlightedMaterialId && (
+          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <span className="text-yellow-800">🔍</span>
+              <span className="text-yellow-800 font-medium">
+                Material found from search! The highlighted row will automatically scroll into view.
+              </span>
+              <button
+                onClick={() => setHighlightedMaterialId(null)}
+                className="ml-auto text-yellow-600 hover:text-yellow-800 text-sm underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Desktop Table */}
+        <div className="hidden lg:block overflow-hidden border border-slate-200 rounded-2xl">
+          <Table>
+            <TableHeader className="bg-slate-50">
+              <TableRow className="border-slate-200">
+                <TableHead className="text-slate-700 font-semibold p-6 w-32">Material ID</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-6 w-40">Material</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-6 w-24">GSM</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-6 w-36">Supplier</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-6 w-28">Cost</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-6 w-24">Unit</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-6 w-32">Last Updated</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-6 w-24">Status</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-6 w-32">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-16 text-slate-500">
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <span>Loading materials...</span>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-16 text-slate-500">
-                      Loading materials...
-                    </TableCell>
-                  </TableRow>
-                ) : current.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-16 text-slate-500">
-                      No materials found with current filters.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  current.map((r) => (
-                    <TableRow 
-                      key={r.id} 
-                      ref={(highlightedMaterialId === r.id || highlightedMaterialId === r.materialId) ? highlightedMaterialRef : null}
-                      className={`hover:bg-slate-50/80 transition-colors duration-200 border-slate-100 ${
-                        highlightedMaterialId === r.id || highlightedMaterialId === r.materialId 
-                          ? 'bg-yellow-50 border-yellow-200 shadow-md' 
-                          : ''
-                      }`}
-                    >
-                      <TableCell className="font-medium text-slate-900 p-6 w-32">
-                        <div className="truncate">
-                          <div className="flex items-center space-x-2">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                              {r.materialId}
+              ) : current.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-16 text-slate-500">
+                    No materials found with current filters.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                current.map((r) => (
+                  <TableRow 
+                    key={r.id} 
+                    ref={(highlightedMaterialId === r.id || highlightedMaterialId === r.materialId) ? highlightedMaterialRef : null}
+                    className={`hover:bg-slate-50/80 transition-colors duration-200 border-slate-100 ${
+                      highlightedMaterialId === r.id || highlightedMaterialId === r.materialId 
+                        ? 'bg-yellow-50 border-yellow-200 shadow-md' 
+                        : ''
+                    }`}
+                  >
+                    <TableCell className="font-medium text-slate-900 p-6 w-32">
+                      <div className="truncate">
+                        <div className="flex items-center space-x-2">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            {r.materialId}
+                          </span>
+                          {(highlightedMaterialId === r.id || highlightedMaterialId === r.materialId) && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 animate-pulse">
+                              🔍 Found
                             </span>
-                            {(highlightedMaterialId === r.id || highlightedMaterialId === r.materialId) && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 animate-pulse">
-                                🔍 Found
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-700 p-6 w-40">
-                        <div className="truncate">{r.name}</div>
-                      </TableCell>
-                      <TableCell className="text-slate-700 p-6 w-24">
-                        <div className="truncate">
-                          {r.gsm ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                              {r.gsm} gsm
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">—</span>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell className="text-slate-700 p-6 w-36">
-                        <div className="truncate">{r.supplier.name}</div>
-                      </TableCell>
-                      <TableCell className="text-slate-700 p-6 w-28">
-                        <div className="truncate">{currency.format(r.cost)}</div>
-                      </TableCell>
-                      <TableCell className="text-slate-700 p-6 w-24">
-                        <div className="truncate">{unitLabel(r.unit)}</div>
-                      </TableCell>
-                      <TableCell className="text-slate-700 p-6 w-32">
-                        <div className="truncate">{fmtDate(r.lastUpdated)}</div>
-                      </TableCell>
-                      <TableCell className="p-6 w-24">
-                        <div className="truncate">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                            r.status === "Active" 
-                              ? "bg-green-100 text-green-800" 
-                              : "bg-red-100 text-red-800"
-                          }`}>
-                            {r.status}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-slate-700 p-6 w-40">
+                      <div className="truncate">{r.name}</div>
+                    </TableCell>
+                    <TableCell className="text-slate-700 p-6 w-24">
+                      <div className="truncate">
+                        {r.gsm ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            {r.gsm} gsm
                           </span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-slate-700 p-6 w-36">
+                      <div className="truncate">{r.supplier.name}</div>
+                    </TableCell>
+                    <TableCell className="text-slate-700 p-6 w-28">
+                      <div className="truncate">{currency.format(r.cost)}</div>
+                    </TableCell>
+                    <TableCell className="text-slate-700 p-6 w-24">
+                      <div className="truncate">{unitLabel(r.unit)}</div>
+                    </TableCell>
+                    <TableCell className="text-slate-700 p-6 w-32">
+                      <div className="truncate">{fmtDate(r.lastUpdated)}</div>
+                    </TableCell>
+                    <TableCell className="p-6 w-24">
+                      <div className="truncate">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          r.status === "Active" 
+                            ? "bg-green-100 text-green-800" 
+                            : "bg-red-100 text-red-800"
+                        }`}>
+                          {r.status}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-6 w-32">
+                      <div className="truncate">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Edit Material"
+                            onClick={() => onEdit(r)}
+                            className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </TableCell>
-                      <TableCell className="p-6 w-32">
-                        <div className="truncate">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title="Edit Material"
-                              onClick={() => onEdit(r)}
-                              className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-          {/* Pagination */}
-          <div className="flex items-center justify-center gap-2 pb-6">
-            <Button
-              variant="ghost"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="w-10 h-10 rounded-xl hover:bg-slate-100"
-            >
-              ‹
-            </Button>
+        {/* Pagination */}
+        <div className="flex items-center justify-center gap-2 pb-6">
+          <Button
+            variant="ghost"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="w-10 h-10 rounded-xl hover:bg-slate-100"
+          >
+            ‹
+          </Button>
 
-            {Array.from({ length: Math.min(pageCount, 5) }).map((_, i) => {
-              const n = i + 1;
-              if (pageCount > 5 && n === 4) {
-                return (
-                  <React.Fragment key="dots">
-                    <span className="px-3 text-slate-500">…</span>
-                    <Button
-                      variant={page === pageCount ? "default" : "ghost"}
-                      onClick={() => setPage(pageCount)}
-                      className="w-10 h-10 rounded-xl"
-                    >
-                      {pageCount}
-                    </Button>
-                  </React.Fragment>
-                );
-              }
-              if (pageCount > 5 && n > 3) return null;
+          {Array.from({ length: Math.min(pageCount, 5) }).map((_, i) => {
+            const n = i + 1;
+            if (pageCount > 5 && n === 4) {
               return (
-                <Button
-                  key={n}
-                  variant={page === n ? "default" : "ghost"}
-                  onClick={() => setPage(n)}
-                  className="w-10 h-10 rounded-xl"
-                >
-                  {n}
-                </Button>
+                <React.Fragment key="dots">
+                  <span className="px-3 text-slate-500">…</span>
+                  <Button
+                    variant={page === pageCount ? "default" : "ghost"}
+                    onClick={() => setPage(pageCount)}
+                    className="w-10 h-10 rounded-xl"
+                  >
+                    {pageCount}
+                  </Button>
+                </React.Fragment>
               );
-            })}
+            }
+            if (pageCount > 5 && n > 3) return null;
+            return (
+              <Button
+                key={n}
+                variant={page === n ? "default" : "ghost"}
+                onClick={() => setPage(n)}
+                className="w-10 h-10 rounded-xl"
+              >
+                {n}
+              </Button>
+            );
+          })}
 
-            <Button
-              variant="ghost"
-              disabled={page >= pageCount}
-              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-              className="w-10 h-10 rounded-xl hover:bg-slate-100"
-            >
-              ›
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          <Button
+            variant="ghost"
+            disabled={page >= pageCount}
+            onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+            className="w-10 h-10 rounded-xl hover:bg-slate-100"
+          >
+            ›
+          </Button>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="lg:hidden space-y-4 p-4">
+          {loading ? (
+            <div className="text-center py-16 text-slate-500">
+              <div className="flex items-center justify-center space-x-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span>Loading materials...</span>
+              </div>
+            </div>
+          ) : current.length === 0 ? (
+            <div className="text-center py-16 text-slate-500">
+              No materials found with current filters.
+            </div>
+          ) : (
+            current.map((r) => (
+              <Card key={r.id} className="p-4 border-slate-200">
+                <div className="space-y-3">
+                  {/* Header with Material ID and Status */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        {r.materialId}
+                      </span>
+                      {(highlightedMaterialId === r.id || highlightedMaterialId === r.materialId) && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 animate-pulse">
+                          🔍 Found
+                        </span>
+                      )}
+                    </div>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      r.status === "Active" 
+                        ? "bg-green-100 text-green-800" 
+                        : "bg-red-100 text-red-800"
+                    }`}>
+                      {r.status}
+                    </span>
+                  </div>
+                  
+                  {/* Material Info */}
+                  <div className="space-y-1">
+                    <div className="font-medium text-slate-900 text-lg">{r.name}</div>
+                    {r.gsm && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        {r.gsm} gsm
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Supplier and Cost */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm text-slate-500">Supplier:</span>
+                      <div className="text-sm text-slate-700 font-medium">{r.supplier.name}</div>
+                    </div>
+                    <div>
+                      <span className="text-sm text-slate-500">Cost:</span>
+                      <div className="text-sm text-slate-700 font-medium">{currency.format(r.cost)}</div>
+                    </div>
+                  </div>
+                  
+                  {/* Unit and Last Updated */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm text-slate-500">Unit:</span>
+                      <div className="text-sm text-slate-700">{unitLabel(r.unit)}</div>
+                    </div>
+                    <div>
+                      <span className="text-sm text-slate-500">Updated:</span>
+                      <div className="text-sm text-slate-700">{fmtDate(r.lastUpdated)}</div>
+                    </div>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex items-center justify-center pt-3 border-t border-slate-100">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(r)}
+                      className="text-green-600 border-green-200 hover:bg-green-50"
+                    >
+                      <Pencil className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
 
       {/* ===== Modal Add/Edit Material ===== */}
       <Dialog open={open} onOpenChange={setOpen}>

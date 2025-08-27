@@ -226,6 +226,8 @@ export default function ClientManagementPage() {
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<"all" | "Active" | "Inactive">("all");
   const [clientTypeFilter, setClientTypeFilter] = React.useState<"all" | "Individual" | "Company">("all");
+  const [areaFilter, setAreaFilter] = React.useState("all");
+  const [roleFilter, setRoleFilter] = React.useState("all");
   const [page, setPage] = React.useState(1);
   const [showAll, setShowAll] = React.useState(false);
 
@@ -565,239 +567,359 @@ export default function ClientManagementPage() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Header */}
-      <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Client Management
-        </h1>
-        <p className="text-lg text-slate-600">Manage your client relationships, contact information, and business partnerships for the Smart Printing System.</p>
-      </div>
-      
-      {/* Main Content Card */}
-      <Card className="border-0 shadow-lg">
-        <CardContent className="p-8 space-y-6">
-          {/* Search and Create Button */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex flex-col gap-2 flex-1">
-              <Label htmlFor="search-input" className="text-sm font-medium text-slate-700">Search</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-                <Input
-                  id="search-input"
-                  placeholder="Search by company name, contact person, email, or ID"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full"
-                />
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent">
+            Client Management
+          </h1>
+          <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
+            Manage your client database. Add new clients, update information, and track client relationships.
+          </p>
+        </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="client-type-filter" className="text-sm font-medium text-slate-700">Client Type</Label>
-                <Select value={clientTypeFilter} onValueChange={(v: "all" | "Individual" | "Company") => setClientTypeFilter(v)}>
-                  <SelectTrigger id="client-type-filter" className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-32">
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="Individual">Individual</SelectItem>
-                    <SelectItem value="Company">Company</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="status-filter" className="text-sm font-medium text-slate-700">Status</Label>
-                <Select value={statusFilter} onValueChange={(v: "all" | "Active" | "Inactive") => setStatusFilter(v)}>
-                  <SelectTrigger id="status-filter" className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-32">
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-10" 
-                onClick={onAdd}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add New Client
-              </Button>
-            </div>
+        {/* Search and Add Client */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="Search by company name, contact person, or email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 text-base"
+            />
           </div>
+          <Button
+            onClick={() => setOpen(true)}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Add New Client
+          </Button>
+        </div>
 
-          {/* Results Summary */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-sm text-slate-600">
-            <span className="font-medium">Showing {current.length} of {filtered.length} clients</span>
-            {filtered.length > PAGE_SIZE && (
-              <Button
-                variant="ghost"
-                onClick={() => setShowAll(!showAll)}
-                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-lg"
-              >
-                {showAll ? (
-                  <>
-                    <ChevronUp className="h-4 w-4 mr-2" />
-                    Show Less
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4 mr-2" />
-                    Show All ({filtered.length})
-                  </>
-                )}
-              </Button>
-            )}
+        {/* Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Client Type</label>
+            <Select value={clientTypeFilter} onValueChange={setClientTypeFilter}>
+              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="Individual">Individual</SelectItem>
+                <SelectItem value="Company">Company</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-
-          {/* Table */}
-          <div className="overflow-hidden border border-slate-200 rounded-2xl">
-            <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow className="border-slate-200">
-                  <TableHead className="text-slate-700 font-semibold p-4 w-28">Client ID</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-24">Type</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-40">Company Name</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-36">Contact Person</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-40">Email</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-32">Phone</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-28">Quotes</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-24">Status</TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-32">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-16 text-slate-500">
-                      Loading clients...
-                    </TableCell>
-                  </TableRow>
-                ) : current.map((r) => (
-                  <TableRow key={r.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
-                    <TableCell className="font-medium text-slate-900 p-4 w-28">
-                      <div className="truncate">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                          {r.id ? `C-${r.id.slice(-6).toUpperCase()}` : 'N/A'}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="p-4 w-24">
-                      <div className="truncate">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                          r.clientType === "Company" 
-                            ? "bg-purple-100 text-purple-800" 
-                            : "bg-green-100 text-green-800"
-                        }`}>
-                          {r.clientType === "Company" ? (
-                            <>
-                              <Building className="w-3 h-3 mr-1" />
-                              Company
-                            </>
-                          ) : (
-                            <>
-                              <User className="w-3 h-3 mr-1" />
-                              Individual
-                            </>
-                          )}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-40">
-                      <div className="truncate font-medium">
-                        {r.clientType === "Company" ? r.companyName : "-"}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-36">
-                      <div className="truncate">{r.contactPerson}</div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-40">
-                      <div className="truncate">
-                        <a href={`mailto:${r.email}`} className="text-blue-600 hover:text-blue-700 hover:underline">
-                          {r.email}
-                        </a>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-32">
-                      <div className="truncate">
-                        <a href={`tel:${r.countryCode}${r.phone}`} className="text-slate-600 hover:text-slate-800">
-                          {r.countryCode} {r.phone}
-                        </a>
-                      </div>
-                    </TableCell>
-                    <TableCell className="p-4 w-28">
-                      <div className="truncate">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            {r._count?.quotes || r.quotes?.length || 0}
-                          </span>
-                          <Link 
-                            href="/quote-management" 
-                            className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
-                          >
-                            View Quotes
-                          </Link>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="p-4 w-24">
-                      <div className="truncate">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                          r.status === "Active" 
-                            ? "bg-green-100 text-green-800" 
-                            : "bg-red-100 text-red-800"
-                        }`}>
-                          {r.status}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="p-4 w-32">
-                      <div className="truncate">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="View Details"
-                            onClick={() => onView(r)}
-                            className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Edit Client"
-                            onClick={() => onEdit(r)}
-                            className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Status</label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Area</label>
+            <Select value={areaFilter} onValueChange={setAreaFilter}>
+              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+                <SelectValue placeholder="All Areas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Areas</SelectItem>
+                {UAE_AREAS.map((area) => (
+                  <SelectItem key={area.name} value={area.name}>
+                    {area.name}
+                  </SelectItem>
                 ))}
-                {current.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={9}
-                      className="text-center py-16 text-slate-500"
-                    >
-                      {filtered.length === 0 ? "No clients found matching your filters." : "No clients to display."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+              </SelectContent>
+            </Select>
           </div>
-        </CardContent>
-      </Card>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Role</label>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+                <SelectValue placeholder="All Roles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="Customer">Customer</SelectItem>
+                <SelectItem value="Supplier">Supplier</SelectItem>
+                <SelectItem value="Partner">Partner</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Results Summary */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-sm text-slate-600">
+          <span>Showing {current.length} of {filtered.length} clients</span>
+          {filtered.length > PAGE_SIZE && (
+            <Button
+              variant="ghost"
+              onClick={() => setShowAll(!showAll)}
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl px-4 py-2 transition-all duration-200"
+            >
+              {showAll ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-2" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-2" />
+                  Show All ({filtered.length})
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+
+        {/* Client Summary */}
+        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="w-3 h-3 bg-blue-500 rounded-full mx-auto mb-2"></div>
+              <div className="text-sm text-slate-600">Total Clients</div>
+              <div className="text-lg font-bold text-slate-900">{filtered.length}</div>
+            </div>
+            <div className="text-center">
+              <div className="w-3 h-3 bg-green-500 rounded-full mx-auto mb-2"></div>
+              <div className="text-sm text-slate-600">Active</div>
+              <div className="text-lg font-bold text-slate-900">{filtered.filter(c => c.status === "Active").length}</div>
+            </div>
+            <div className="text-center">
+              <div className="w-3 h-3 bg-purple-500 rounded-full mx-auto mb-2"></div>
+              <div className="text-sm text-slate-600">Companies</div>
+              <div className="text-lg font-bold text-slate-900">{filtered.filter(c => c.clientType === "Company").length}</div>
+            </div>
+            <div className="text-center">
+              <div className="w-3 h-3 bg-orange-500 rounded-full mx-auto mb-2"></div>
+              <div className="text-sm text-slate-600">Individuals</div>
+              <div className="text-lg font-bold text-slate-900">{filtered.filter(c => c.clientType === "Individual").length}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Clients Table - Mobile Responsive */}
+        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-0">
+            {/* Desktop Table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-slate-50">
+                  <TableRow className="border-slate-200">
+                    <TableHead className="text-slate-700 font-semibold p-6">Client Info</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Contact Details</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Location</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Type & Role</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
+                    <TableHead className="text-center text-slate-700 font-semibold p-6">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-16 text-slate-500">
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                          <span>Loading clients...</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : current.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-16 text-slate-500">
+                        {filtered.length === 0 ? "No clients found matching your filters." : "No clients to display."}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    current.map((client) => (
+                      <TableRow key={client.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
+                        <TableCell className="p-6">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                              {client.clientType === "Company" ? (
+                                <Building className="w-5 h-5 text-white" />
+                              ) : (
+                                <User className="w-5 h-5 text-white" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-medium text-slate-900">
+                                {client.clientType === "Company" ? client.companyName : `${client.firstName} ${client.lastName}`}
+                              </div>
+                              <div className="text-sm text-slate-500">
+                                {client.clientType === "Company" ? client.contactPerson : client.role}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-6">
+                          <div className="space-y-1">
+                            <div className="text-sm text-slate-900">{client.email}</div>
+                            <div className="text-sm text-slate-500">{client.phone}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-6">
+                          <div className="space-y-1">
+                            <div className="text-sm text-slate-900">{client.city}, {client.state}</div>
+                            <div className="text-sm text-slate-500">{client.area || 'N/A'}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-6">
+                          <div className="space-y-1">
+                            <div className="text-sm text-slate-900">{client.clientType}</div>
+                            <div className="text-sm text-slate-500">{client.role}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-6">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            client.status === "Active" 
+                              ? "bg-green-100 text-green-700 border-green-200"
+                              : "bg-red-100 text-red-700 border-red-200"
+                          }`}>
+                            {client.status}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center p-6">
+                          <div className="flex items-center justify-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onView(client)}
+                              className="text-blue-600 hover:bg-blue-50 rounded-lg p-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onEdit(client)}
+                              className="text-green-600 hover:bg-green-50 rounded-lg p-2"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="lg:hidden space-y-4 p-4">
+              {loading ? (
+                <div className="text-center py-16 text-slate-500">
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span>Loading clients...</span>
+                  </div>
+                </div>
+              ) : current.length === 0 ? (
+                <div className="text-center py-16 text-slate-500">
+                  {filtered.length === 0 ? "No clients found matching your filters." : "No clients to display."}
+                </div>
+              ) : (
+                current.map((client) => (
+                  <Card key={client.id} className="p-4 border-slate-200">
+                    <div className="space-y-3">
+                      {/* Header with Client Type and Status */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          {client.clientType === "Company" ? (
+                            <Building className="w-4 h-4 text-blue-600" />
+                          ) : (
+                            <User className="w-4 h-4 text-purple-600" />
+                          )}
+                          <span className="text-sm font-medium text-slate-600">{client.clientType}</span>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          client.status === "Active" 
+                            ? "bg-green-100 text-green-700 border-green-200"
+                            : "bg-red-100 text-red-700 border-red-200"
+                        }`}>
+                          {client.status}
+                        </span>
+                      </div>
+                      
+                      {/* Client Info */}
+                      <div className="space-y-1">
+                        <div className="font-medium text-slate-900 text-lg">
+                          {client.clientType === "Company" ? client.companyName : `${client.firstName} ${client.lastName}`}
+                        </div>
+                        <div className="text-sm text-slate-500">
+                          {client.clientType === "Company" ? client.contactPerson : client.role}
+                        </div>
+                      </div>
+                      
+                      {/* Contact Details */}
+                      <div className="grid grid-cols-1 gap-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-slate-500">Email:</span>
+                          <span className="text-sm text-slate-700">{client.email}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-slate-500">Phone:</span>
+                          <span className="text-sm text-slate-700">{client.phone}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Location */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-sm text-slate-500">City:</span>
+                          <div className="text-sm text-slate-700">{client.city}, {client.state}</div>
+                        </div>
+                        <div>
+                          <span className="text-sm text-slate-500">Area:</span>
+                          <div className="text-sm text-slate-700">{client.area || 'N/A'}</div>
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                                                         onClick={() => onView(client)}
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                                                         onClick={() => onEdit(client)}
+                            className="text-green-600 border-green-200 hover:bg-green-50"
+                          >
+                            <Pencil className="w-4 h-4 mr-1" />
+                            Edit
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* ===== Modal Add/Edit Client ===== */}
       <Dialog open={open} onOpenChange={setOpen}>
