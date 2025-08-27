@@ -386,7 +386,7 @@ export default function UserManagementPage() {
                       <TableHead className="text-slate-700 font-semibold p-6">Role</TableHead>
                       <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
                       <TableHead className="text-center text-slate-700 font-semibold p-6">Edit</TableHead>
-                      <TableHead className="text-right pr-8 text-slate-700 font-semibold p-6">Action</TableHead>
+                      <TableHead className="text-center text-slate-700 font-semibold p-6">Status Toggle</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -475,12 +475,17 @@ export default function UserManagementPage() {
                         </TableCell>
 
                         {/* Action switch */}
-                        <TableCell className="text-right pr-8 p-6">
-                          <Switch
-                            checked={u.status === "Active"}
-                            onCheckedChange={() => toggleStatus(u.id)}
-                            className="data-[state=checked]:bg-purple-600"
-                          />
+                        <TableCell className="text-center p-6">
+                          <div className="flex flex-col items-center space-y-2">
+                            <Switch
+                              checked={u.status === "Active"}
+                              onCheckedChange={() => toggleStatus(u.id)}
+                              className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-600 data-[state=checked]:to-purple-600"
+                            />
+                            <span className="text-xs text-slate-500 font-medium">
+                              {u.status === "Active" ? "Active" : "Inactive"}
+                            </span>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -566,13 +571,18 @@ export default function UserManagementPage() {
                           <Edit3 className="h-4 w-4 mr-2" />
                           Edit
                         </Button>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-slate-600">Status:</span>
-                          <Switch
-                            checked={u.status === "Active"}
-                            onCheckedChange={() => toggleStatus(u.id)}
-                            className="data-[state=checked]:bg-purple-600"
-                          />
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-slate-600 font-medium">Status:</span>
+                          <div className="flex flex-col items-center space-y-1">
+                            <Switch
+                              checked={u.status === "Active"}
+                              onCheckedChange={() => toggleStatus(u.id)}
+                              className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-600 data-[state=checked]:to-purple-600"
+                            />
+                            <span className="text-xs text-slate-500 font-medium">
+                              {u.status === "Active" ? "Active" : "Inactive"}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
