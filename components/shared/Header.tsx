@@ -105,7 +105,7 @@ export default function Header() {
       <header className="w-full bg-white border-b border-gray-200 shadow-sm">
         <div className="flex flex-col lg:flex-row items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4 space-y-3 lg:space-y-0">
           {/* Left Section - Logo and Title */}
-          <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="flex items-center space-x-3 sm:space-x-4 w-full lg:w-auto justify-center lg:justify-start">
             {/* Logo */}
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-cyan-500 rounded-lg flex items-center justify-center">
               <img 
@@ -116,8 +116,8 @@ export default function Header() {
             </div>
             
             {/* Title */}
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900">SmartPrint Print Management System</h1>
+            <div className="text-center lg:text-left">
+              <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 leading-tight">SmartPrint Print Management System</h1>
             </div>
           </div>
 
@@ -133,16 +133,17 @@ export default function Header() {
           </div>
 
           {/* Right Section - User Info, Timestamp, and Account */}
-          <div className="flex items-center space-x-3 sm:space-x-6 order-2 lg:order-3">
-            {/* User ID and Timestamp - Hidden on mobile */}
-            <div className="hidden sm:block text-right">
-              <div className="flex items-center space-x-2 text-gray-600">
+          <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6 order-2 lg:order-3 w-full lg:w-auto justify-center lg:justify-end">
+            {/* User ID and Timestamp - Responsive display */}
+            <div className="text-center sm:text-right">
+              <div className="flex items-center justify-center sm:justify-end space-x-2 text-gray-600">
                 <User className="w-4 h-4" />
-                <span className="font-medium text-sm">User ID: {user?.id ?? "EMP001"}</span>
+                <span className="font-medium text-xs sm:text-sm">ID: {user?.id ?? "EMP001"}</span>
               </div>
               {mounted && currentTime && (
-                <div className="text-xs sm:text-sm text-gray-500">
-                  {formatDate(currentTime)} | {formatTime(currentTime)}
+                <div className="text-xs text-gray-500 mt-1">
+                  <div className="sm:hidden">{formatDate(currentTime)}</div>
+                  <div className="hidden sm:block">{formatDate(currentTime)} | {formatTime(currentTime)}</div>
                 </div>
               )}
             </div>
@@ -152,7 +153,7 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center space-x-2 sm:space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
                   <div className="w-7 h-7 sm:w-8 sm:h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-xs sm:text-sm">J</span>
+                    <span className="text-white font-semibold text-xs sm:text-sm">{user?.name?.[0] ?? "J"}</span>
                   </div>
                   <div className="hidden sm:block text-left">
                     <div className="font-medium text-gray-900 text-sm">{user?.name ?? "John Admin"}</div>

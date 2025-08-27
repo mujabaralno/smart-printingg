@@ -100,21 +100,31 @@ export default function DashboardPage() {
         if (response.ok) {
           const quotesData = await response.json();
           // Transform database quotes to match QuoteRow format
-          const transformedQuotes = quotesData.map((quote: any) => ({
-            id: quote.id,
-            quoteId: quote.quoteId, // This should be the proper quote ID
-            customerName: quote.client?.companyName || quote.client?.contactPerson || "Unknown Client",
-            createdDate: quote.date.split('T')[0], // Convert ISO date to YYYY-MM-DD
-            status: quote.status,
-            totalAmount: quote.amounts?.total || 0,
-            userId: quote.user?.id || "u1",
-            // Preserve original data for view modal
-            client: quote.client,
-            amounts: quote.amounts,
-            date: quote.date,
-            product: quote.product,
-            quantity: quote.quantity,
-          }));
+          const transformedQuotes = quotesData.map((quote: any) => {
+            console.log('Quote amounts debug:', {
+              quoteId: quote.quoteId,
+              amounts: quote.amounts,
+              total: quote.amounts?.total,
+              base: quote.amounts?.base,
+              vat: quote.amounts?.vat
+            });
+            
+            return {
+              id: quote.id,
+              quoteId: quote.quoteId, // This should be the proper quote ID
+              customerName: quote.client?.companyName || quote.client?.contactPerson || "Unknown Client",
+              createdDate: quote.date.split('T')[0], // Convert ISO date to YYYY-MM-DD
+              status: quote.status,
+              totalAmount: quote.amounts?.total || 0,
+              userId: quote.user?.id || "u1",
+              // Preserve original data for view modal
+              client: quote.client,
+              amounts: quote.amounts,
+              date: quote.date,
+              product: quote.product,
+              quantity: quote.quantity,
+            };
+          });
           setAllQuotes(transformedQuotes);
         } else {
           console.error('Failed to load quotes');

@@ -379,6 +379,27 @@ const Step5Quotation: FC<Step5Props> = ({
     };
   };
 
+  // Sync calculated amounts back to parent component
+  React.useEffect(() => {
+    const summaryTotals = calculateSummaryTotals();
+    const finalTotal = calculateGrandTotal();
+    
+    // Update formData with calculated amounts
+    setFormData(prev => ({
+      ...prev,
+      calculation: {
+        ...prev.calculation,
+        basePrice: summaryTotals.totalSubtotal,
+        marginAmount: summaryTotals.totalMarginAmount,
+        marginPercentage: 15,
+        subtotal: summaryTotals.totalSubtotal + summaryTotals.totalMarginAmount,
+        finalSubtotal: summaryTotals.totalSubtotal + summaryTotals.totalMarginAmount,
+        vatAmount: summaryTotals.totalVAT,
+        totalPrice: finalTotal
+      }
+    }));
+  }, [includedProducts, formData.operational.papers, formData.operational.plates, formData.operational.units, formData.operational.finishing]);
+
   // Handle product inclusion/exclusion
   const toggleProductInclusion = (productIndex: number) => {
     const newIncluded = new Set(includedProducts);
@@ -611,7 +632,8 @@ const Step5Quotation: FC<Step5Props> = ({
           </h4>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200">
+        {/* Desktop Table - Hidden on mobile */}
+        <div className="hidden lg:block overflow-hidden rounded-xl border border-slate-200">
           <Table>
             <TableHeader className="bg-gradient-to-r from-slate-50 to-blue-50">
               <TableRow className="border-slate-200">
@@ -689,6 +711,72 @@ const Step5Quotation: FC<Step5Props> = ({
               })}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile Cards - Visible only on mobile */}
+        <div className="lg:hidden space-y-4">
+          {formData.products.map((product, index) => {
+            const costs = calculateProductCosts(index);
+            const isIncluded = includedProducts.has(index);
+            
+            return (
+              <div key={index} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                {/* Header with checkbox and product name */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      checked={isIncluded}
+                      onCheckedChange={() => toggleProductInclusion(index)}
+                    />
+                    <h4 className="font-medium text-slate-800">{product.productName}</h4>
+                  </div>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    {product.quantity || 0}
+                  </span>
+                </div>
+                
+                {/* Cost breakdown grid */}
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Paper Cost:</span>
+                    <span className="font-medium">{isIncluded ? currency(costs.paperCost) : "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Plates Cost:</span>
+                    <span className="font-medium">{isIncluded ? currency(costs.platesCost) : "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Finishing Cost:</span>
+                    <span className="font-medium">{isIncluded ? currency(costs.finishingCost) : "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Subtotal:</span>
+                    <span className="font-medium">{isIncluded ? currency(costs.subtotal) : "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Margin (15%):</span>
+                    <span className="font-medium">{isIncluded ? currency(costs.marginAmount) : "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">VAT (5%):</span>
+                    <span className="font-medium">{isIncluded ? (
+                      <span className="text-green-600">{currency(costs.vat)}</span>
+                    ) : "—"}</span>
+                  </div>
+                </div>
+                
+                {/* Total Price */}
+                <div className="mt-3 pt-3 border-t border-slate-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-700 font-semibold">Total Price:</span>
+                    <span className="text-lg font-bold text-blue-600">
+                      {isIncluded ? currency(costs.total) : "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Cost Breakdown Summary */}
