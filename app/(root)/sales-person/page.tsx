@@ -327,17 +327,19 @@ export default function SalesPersonManagementPage() {
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow className="border-slate-200">
-                    <TableHead className="text-slate-700 font-semibold p-6">Sales Person Info</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Contact Details</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Department & Role</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
-                    <TableHead className="text-center text-slate-700 font-semibold p-6">Actions</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">ID</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">Sales Person</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">Email</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">Phone Number</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">Department & Role</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">Status</TableHead>
+                    <TableHead className="text-center text-slate-700 font-semibold p-4">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-16 text-slate-500">
+                      <TableCell colSpan={7} className="text-center py-16 text-slate-500">
                         <div className="flex items-center justify-center space-x-2">
                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                           <span>Loading sales persons...</span>
@@ -346,14 +348,19 @@ export default function SalesPersonManagementPage() {
                     </TableRow>
                   ) : salesPersons.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-16 text-slate-500">
+                      <TableCell colSpan={7} className="text-center py-16 text-slate-500">
                         No sales persons found.
                       </TableCell>
                     </TableRow>
                   ) : (
                     salesPersons.map((person) => (
                       <TableRow key={person.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
-                        <TableCell className="p-6">
+                        <TableCell className="p-4">
+                          <div className="font-mono text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                            {person.salesPersonId}
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-4">
                           <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                               {person.profilePicture ? (
@@ -368,26 +375,25 @@ export default function SalesPersonManagementPage() {
                             </div>
                             <div>
                               <div className="font-medium text-slate-900">{person.name}</div>
-                              <div className="text-sm text-slate-500">{person.salesPersonId}</div>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="p-6">
-                          <div className="space-y-1">
-                            <div className="text-sm text-slate-900">{person.email}</div>
-                            <div className="text-sm text-slate-500">{person.phone}</div>
-                          </div>
+                        <TableCell className="p-4">
+                          <div className="text-sm text-slate-900">{person.email}</div>
                         </TableCell>
-                        <TableCell className="p-6">
+                        <TableCell className="p-4">
+                          <div className="text-sm text-slate-900">{person.phone}</div>
+                        </TableCell>
+                        <TableCell className="p-4">
                           <div className="space-y-1">
                             <div className="text-sm text-slate-900">{person.department}</div>
                             <div className="text-sm text-slate-500">{person.designation}</div>
                           </div>
                         </TableCell>
-                        <TableCell className="p-6">
+                        <TableCell className="p-4">
                           <StatusChip value={person.status} />
                         </TableCell>
-                        <TableCell className="text-center p-6">
+                        <TableCell className="text-center p-4">
                           <div className="flex items-center justify-center space-x-2">
                             <Button
                               variant="ghost"
