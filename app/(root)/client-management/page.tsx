@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Eye, Pencil, Calendar, DollarSign, Copy, ChevronDown, ChevronUp, Search, User, Building, CheckCircle } from "lucide-react";
-import { getQuotes } from "@/lib/dummy-data";
 import Link from "next/link";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -16,7 +15,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { clients as CLIENTS, ClientRow } from "@/constants";
 
 // UAE Areas data for Area dropdown
 const UAE_AREAS = [
@@ -160,7 +158,7 @@ type Mode = "add" | "edit";
 
 export default function ClientManagementPage() {
   // data lokal (mulai dari dummy)
-  const [rows, setRows] = React.useState<ClientRow[]>([]);
+  const [rows, setRows] = React.useState<any[]>([]);
   const [quotes, setQuotes] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   
@@ -195,8 +193,8 @@ export default function ClientManagementPage() {
           
           setRows(clientsData);
         } else {
-          console.error('Failed to load clients, falling back to seed data');
-          setRows(CLIENTS);
+          console.error('Failed to load clients from database');
+          setRows([]);
         }
         
         // Load quotes for these clients
@@ -236,7 +234,7 @@ export default function ClientManagementPage() {
   const [mode, setMode] = React.useState<Mode>("add");
   const [emails, setEmails] = React.useState<string[]>([""]);
   const [hasNoTrn, setHasNoTrn] = React.useState(0);
-  const [draft, setDraft] = React.useState<ClientRow>({
+  const [draft, setDraft] = React.useState<any>({
     id: "",
     clientType: "Company",
     companyName: "",

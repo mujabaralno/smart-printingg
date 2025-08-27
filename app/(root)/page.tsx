@@ -99,6 +99,12 @@ export default function DashboardPage() {
         const response = await fetch('/api/quotes');
         if (response.ok) {
           const quotesData = await response.json();
+          console.log('=== RAW API RESPONSE DEBUG ===');
+          console.log('Total quotes received:', quotesData.length);
+          console.log('First quote structure:', JSON.stringify(quotesData[0], null, 2));
+          console.log('First quote amounts field:', quotesData[0]?.amounts);
+          console.log('First quote amounts type:', typeof quotesData[0]?.amounts);
+          
           // Transform database quotes to match QuoteRow format
           const transformedQuotes = quotesData.map((quote: any) => {
             console.log('Quote amounts debug:', {
