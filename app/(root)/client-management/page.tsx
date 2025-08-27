@@ -717,12 +717,14 @@ export default function ClientManagementPage() {
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow className="border-slate-200">
-                    <TableHead className="text-slate-700 font-semibold p-6">Client Info</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Contact Details</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Location</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Type & Role</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
-                    <TableHead className="text-center text-slate-700 font-semibold p-6">Actions</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">Client ID</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">Client Info</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">Contact Details</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">Location</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">Type & Role</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">Quote Count</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4">Status</TableHead>
+                    <TableHead className="text-center text-slate-700 font-semibold p-4">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -742,9 +744,19 @@ export default function ClientManagementPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    current.map((client) => (
-                      <TableRow key={client.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
-                        <TableCell className="p-6">
+                    current.map((client) => {
+                      // Calculate quote count for this client
+                      const clientQuotes = quotes.filter(q => q.clientId === client.id);
+                      const quoteCount = clientQuotes.length;
+                      
+                      return (
+                        <TableRow key={client.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
+                          <TableCell className="p-4">
+                            <div className="font-mono text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                              {client.id}
+                            </div>
+                          </TableCell>
+                          <TableCell className="p-4">
                           <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                               {client.clientType === "Company" ? (
@@ -775,13 +787,19 @@ export default function ClientManagementPage() {
                             <div className="text-sm text-slate-500">{client.area || 'N/A'}</div>
                           </div>
                         </TableCell>
-                        <TableCell className="p-6">
+                        <TableCell className="p-4">
                           <div className="space-y-1">
                             <div className="text-sm text-slate-900">{client.clientType}</div>
                             <div className="text-sm text-slate-500">{client.role}</div>
                           </div>
                         </TableCell>
-                        <TableCell className="p-6">
+                        <TableCell className="p-4">
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-blue-600">{quoteCount}</div>
+                            <div className="text-xs text-slate-500">quotes</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-4">
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             client.status === "Active" 
                               ? "bg-green-100 text-green-700 border-green-200"
@@ -811,7 +829,8 @@ export default function ClientManagementPage() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
+                    );
+                  })
                   )}
                 </TableBody>
               </Table>

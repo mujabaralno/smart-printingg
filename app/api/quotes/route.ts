@@ -3,7 +3,7 @@ import { prisma } from '@/lib/database';
 
 export async function GET() {
   try {
-    console.log('🔍 Fetching quotes from PostgreSQL database...');
+    console.log('🔍 PRODUCTION API CALLED - Fetching quotes from database...');
     
     // Use direct Prisma client with comprehensive query
     const quotes = await prisma.quote.findMany({
@@ -49,7 +49,7 @@ export async function GET() {
         }
     });
     
-    console.log(`✅ Found ${quotes.length} quotes`);
+    console.log(`✅ PRODUCTION FIXED VERSION - Found ${quotes.length} quotes with amounts`);
     
     // Transform the data to match expected format
     const transformedQuotes = quotes.map(quote => {
