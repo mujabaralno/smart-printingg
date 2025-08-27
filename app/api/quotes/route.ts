@@ -8,48 +8,48 @@ export async function GET() {
     // Use direct Prisma client with comprehensive query
     const quotes = await prisma.quote.findMany({
       orderBy: { createdAt: 'desc' },
-      include: {
-        client: {
-          select: {
-            id: true,
-            clientType: true,
-            companyName: true,
-            contactPerson: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-            countryCode: true,
-            role: true,
-            status: true,
-            address: true,
-            city: true,
-            state: true,
-            postalCode: true,
-            country: true,
-            designation: true,
-            emails: true,
-            trn: true,
-            hasNoTrn: true,
-            area: true,
-            createdAt: true,
-            updatedAt: true
-          }
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            status: true
-          }
-        },
-        amounts: true,
-        papers: true,
-        finishing: true,
-        QuoteOperational: true
-      }
+              include: {
+          client: {
+            select: {
+              id: true,
+              clientType: true,
+              companyName: true,
+              contactPerson: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              countryCode: true,
+              role: true,
+              status: true,
+              address: true,
+              city: true,
+              state: true,
+              postalCode: true,
+              country: true,
+              designation: true,
+              emails: true,
+              trn: true,
+              hasNoTrn: true,
+              area: true,
+              createdAt: true,
+              updatedAt: true
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              status: true
+            }
+          },
+          amounts: true,
+          papers: true,
+          finishing: true,
+          QuoteOperational: true
+        }
     });
     
     console.log(`✅ Found ${quotes.length} quotes`);
