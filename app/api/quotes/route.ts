@@ -127,6 +127,32 @@ export async function POST(request: NextRequest) {
     if (!Array.isArray(body.finishing)) {
       body.finishing = [];
     }
+
+    // Validate and clean papers array
+    if (body.papers && body.papers.length > 0) {
+      body.papers = body.papers.map((paper: any) => ({
+        name: paper.name || "Standard Paper",
+        gsm: paper.gsm ? Number(paper.gsm) : 150, // Convert gsm to number
+        inputWidth: paper.inputWidth ? Number(paper.inputWidth) : null,
+        inputHeight: paper.inputHeight ? Number(paper.inputHeight) : null,
+        pricePerPacket: paper.pricePerPacket ? Number(paper.pricePerPacket) : null,
+        pricePerSheet: paper.pricePerSheet ? Number(paper.pricePerSheet) : null,
+        sheetsPerPacket: paper.sheetsPerPacket ? Number(paper.sheetsPerPacket) : null,
+        recommendedSheets: paper.recommendedSheets ? Number(paper.recommendedSheets) : null,
+        enteredSheets: paper.enteredSheets ? Number(paper.enteredSheets) : null,
+        outputWidth: paper.outputWidth ? Number(paper.outputWidth) : null,
+        outputHeight: paper.outputHeight ? Number(paper.outputHeight) : null,
+        selectedColors: paper.selectedColors ? String(paper.selectedColors) : null,
+      }));
+    }
+
+    // Validate and clean finishing array
+    if (body.finishing && body.finishing.length > 0) {
+      body.finishing = body.finishing.map((finish: any) => ({
+        name: finish.name || "Standard Finishing",
+        cost: finish.cost ? Number(finish.cost) : 0,
+      }));
+    }
     
     // Ensure amounts object exists
     if (!body.amounts) {
@@ -160,9 +186,13 @@ export async function POST(request: NextRequest) {
       
       body.useSameAsFlat = product.useSameAsFlat || false;
       
-      // Map colors if available
+      // Map colors if available - ensure it's a string
       if (product.colors) {
-        body.colors = product.colors;
+        if (typeof product.colors === 'object') {
+          body.colors = JSON.stringify(product.colors);
+        } else {
+          body.colors = String(product.colors);
+        }
       }
       
       // Map papers if available
@@ -183,17 +213,44 @@ export async function POST(request: NextRequest) {
     
     console.log('Processed quote data:', JSON.stringify(body, null, 2));
     
-    // Use the new method that handles complete quote creation with related data
-    const quote = await prisma.quote.create({
-      data: body,
-      include: {
-        client: true,
-        user: true,
-        quoteAmount: true
+    try {
+      // Use the new method that handles complete quote creation with related data
+      const quote = await prisma.quote.create({
+        data: body,
+        include: {
+          client: true,
+          user: true,
+          quoteAmount: true
+        }
+      });
+      console.log('Quote created successfully with all details:', quote.id);
+      return NextResponse.json(quote);
+    } catch (prismaError) {
+      console.error('Prisma error details:', prismaError);
+      
+      // Provide more specific error information for Prisma errors
+      if (prismaError.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'Quote ID already exists. Please try again.' },
+          { status: 400 }
+        );
+      } else if (prismaError.code === 'P2003') {
+        return NextResponse.json(
+          { error: 'Invalid reference. Client or user not found.' },
+          { status: 400 }
+        );
+      } else if (prismaError.code === 'P2011') {
+        return NextResponse.json(
+          { error: 'Null constraint violation. Required fields are missing.' },
+          { status: 400 }
+        );
+      } else {
+        return NextResponse.json(
+          { error: `Database error: ${prismaError.message}` },
+          { status: 500 }
+        );
       }
-    });
-    console.log('Quote created successfully with all details:', quote.id);
-    return NextResponse.json(quote);
+    }
   } catch (error) {
     console.error('Error creating quote:', error);
     

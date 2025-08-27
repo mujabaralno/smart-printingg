@@ -1003,17 +1003,17 @@ function CreateQuoteContent() {
     if (cleanedData.papers && Array.isArray(cleanedData.papers)) {
       cleanedData.papers = cleanedData.papers.map((paper: any) => ({
         name: paper.name || "Standard Paper",
-        gsm: paper.gsm || "150",
-        inputWidth: paper.inputWidth || null,
-        inputHeight: paper.inputHeight || null,
-        pricePerPacket: paper.pricePerPacket || null,
-        pricePerSheet: paper.pricePerSheet || null,
-        sheetsPerPacket: paper.sheetsPerPacket || null,
-        recommendedSheets: paper.recommendedSheets || null,
-        enteredSheets: paper.enteredSheets || null,
-        outputWidth: paper.outputWidth || null,
-        outputHeight: paper.outputHeight || null,
-        selectedColors: paper.selectedColors || null,
+        gsm: paper.gsm ? Number(paper.gsm) : 150, // Convert gsm to number
+        inputWidth: paper.inputWidth ? Number(paper.inputWidth) : null,
+        inputHeight: paper.inputHeight ? Number(paper.inputHeight) : null,
+        pricePerPacket: paper.pricePerPacket ? Number(paper.pricePerPacket) : null,
+        pricePerSheet: paper.pricePerSheet ? Number(paper.pricePerSheet) : null,
+        sheetsPerPacket: paper.sheetsPerPacket ? Number(paper.sheetsPerPacket) : null,
+        recommendedSheets: paper.recommendedSheets ? Number(paper.recommendedSheets) : null,
+        enteredSheets: paper.enteredSheets ? Number(paper.enteredSheets) : null,
+        outputWidth: paper.outputWidth ? Number(paper.outputWidth) : null,
+        outputHeight: paper.outputHeight ? Number(paper.outputHeight) : null,
+        selectedColors: paper.selectedColors ? String(paper.selectedColors) : null,
       }));
     }
 
@@ -1021,7 +1021,7 @@ function CreateQuoteContent() {
     if (cleanedData.finishing && Array.isArray(cleanedData.finishing)) {
       cleanedData.finishing = cleanedData.finishing.map((finish: any) => ({
         name: finish.name || "Standard Finishing",
-        cost: finish.cost || 0,
+        cost: finish.cost ? Number(finish.cost) : 0,
       }));
     }
 
@@ -1081,6 +1081,14 @@ function CreateQuoteContent() {
     
     if (cleanedData.quoteId) {
       cleanedData.quoteId = String(cleanedData.quoteId);
+    }
+
+    // Handle colors field - convert object to string if needed
+    if (cleanedData.colors && typeof cleanedData.colors === 'object') {
+      // If colors is an object with front/back properties, convert to JSON string
+      cleanedData.colors = JSON.stringify(cleanedData.colors);
+    } else if (cleanedData.colors) {
+      cleanedData.colors = String(cleanedData.colors);
     }
 
     return cleanedData;

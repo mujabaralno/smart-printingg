@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import type { QuoteFormData, QuoteDiscount, DiscountApproval, QuoteApproval, QuoteSubmission, SalesPerson } from "@/types";
 import type { OtherQty } from "@/lib/quote-pdf";
 import { formatAED, requiresApproval, getApprovalReason, getApprovalStatusColor, canApproveQuotes, canSendToCustomer } from "@/lib/currency";
+import { downloadCustomerPdf, downloadOpsPdf } from "@/lib/quote-pdf";
 
 // AED Currency formatter
 const currency = (n: number) => formatAED(n);
@@ -1271,9 +1272,13 @@ const Step5Quotation: FC<Step5Props> = ({
             </p>
             <Button
               className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-3 shadow-lg hover:shadow-xl transition-all duration-300"
-              onClick={() => {
-                // TODO: Implement customer PDF download
-                console.log('Downloading customer copy...');
+              onClick={async () => {
+                try {
+                  await downloadCustomerPdf(formData, otherQuantities);
+                } catch (error) {
+                  console.error('Error downloading customer PDF:', error);
+                  alert('Error generating customer PDF. Please check the console for details.');
+                }
               }}
             >
               <Download className="w-4 h-4 mr-2" />
@@ -1295,9 +1300,13 @@ const Step5Quotation: FC<Step5Props> = ({
             </p>
             <Button
               className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-xl py-3 shadow-lg hover:shadow-xl transition-all duration-300"
-              onClick={() => {
-                // TODO: Implement operations PDF download
-                console.log('Downloading operations copy...');
+              onClick={async () => {
+                try {
+                  await downloadOpsPdf(formData, otherQuantities);
+                } catch (error) {
+                  console.error('Error downloading operations PDF:', error);
+                  alert('Error generating operations PDF. Please check the console for details.');
+                }
               }}
             >
               <Download className="w-4 h-4 mr-2" />
