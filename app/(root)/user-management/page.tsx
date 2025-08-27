@@ -293,70 +293,7 @@ export default function UserManagementPage() {
           </p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm font-medium">Total Users</p>
-                  <p className="text-2xl sm:text-3xl font-bold">{users.length}</p>
-                </div>
-                <div className="h-12 w-12 bg-blue-400/20 rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-blue-100" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-sm font-medium">Active Users</p>
-                  <p className="text-2xl sm:text-3xl font-bold">
-                    {users.filter(u => u.status === "Active").length}
-                  </p>
-                </div>
-                <div className="h-12 w-12 bg-purple-400/20 rounded-full flex items-center justify-center">
-                  <Crown className="h-6 w-6 text-purple-100" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow-lg">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100 text-sm font-medium">Admins</p>
-                  <p className="text-2xl sm:text-3xl font-bold">
-                    {users.filter(u => u.role === "admin").length}
-                  </p>
-                </div>
-                <div className="h-12 w-12 bg-green-400/20 rounded-full flex items-center justify-center">
-                  <Crown className="h-6 w-6 text-green-100" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-cyan-500 to-cyan-600 text-white border-0 shadow-lg">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-cyan-100 text-sm font-medium">Estimators</p>
-                  <p className="text-2xl sm:text-3xl font-bold">
-                    {users.filter(u => u.role === "estimator").length}
-                  </p>
-                </div>
-                <div className="h-12 w-12 bg-cyan-400/20 rounded-full flex items-center justify-center">
-                  <Calculator className="h-6 w-6 text-cyan-100" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Main Content */}
         <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
