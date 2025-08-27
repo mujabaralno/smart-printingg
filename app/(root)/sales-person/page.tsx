@@ -234,141 +234,268 @@ export default function SalesPersonManagementPage() {
     });
   };
 
+  const handleEditPerson = (person: SalesPerson) => {
+    setEditingPerson(person);
+    setIsEditModalOpen(true);
+  };
+
   return (
-    <div className="space-y-12">
-      {/* Welcome Header */}
-      <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Sales Person Management
-        </h1>
-        <p className="text-lg text-slate-600">Manage your sales team and their information. Add new sales persons, modify details, and control access to the Smart Printing System.</p>
-      </div>
-      
-      {/* Main Content Card */}
-      <Card className="border-0 shadow-lg">
-        <CardContent className="p-10 space-y-8">
-          {/* Search and Create Button */}
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col gap-2 flex-1">
-              <Label htmlFor="search-input" className="text-sm font-medium text-slate-700">Search</Label>
-                              <Input
-                  id="search-input"
-                  placeholder="Search by name, email, ID, phone, designation, city, state, country..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full"
-                />
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent">
+            Sales Person Management
+          </h1>
+          <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
+            Manage your sales team. Add new sales persons, track performance, and maintain contact information.
+          </p>
+        </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-slate-700">Status</label>
-              <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-                <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-48">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-10" 
-              onClick={() => setShowAddModal(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Sales Person
-            </Button>
+        {/* Search and Add Sales Person */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="Search by name, email, or ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 text-base"
+            />
           </div>
+          <Button
+            onClick={() => setShowAddModal(true)}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Add New Sales Person
+          </Button>
+        </div>
 
-          {/* Sales Persons Table */}
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="text-gray-700 font-semibold p-6">Sales Person ID</TableHead>
-                  <TableHead className="text-gray-700 font-semibold p-6">Name</TableHead>
-                  <TableHead className="text-gray-700 font-semibold p-6">Email</TableHead>
-                  <TableHead className="text-gray-700 font-semibold p-6">Phone</TableHead>
-                  <TableHead className="text-gray-700 font-semibold p-6">Designation</TableHead>
-                  <TableHead className="text-gray-700 font-semibold p-6">Status</TableHead>
-                  <TableHead className="text-gray-700 font-semibold p-6">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="p-8 text-center text-gray-500">
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                        <span>Loading sales persons...</span>
-                      </div>
-                    </TableCell>
+        {/* Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Status</label>
+            <Select value={statusFilter} onValueChange={(value: "all" | "Active" | "Inactive") => setStatusFilter(value)}>
+              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Results Summary */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-sm text-slate-600">
+          <span>Showing {salesPersons.length} sales persons</span>
+        </div>
+
+        {/* Sales Person Summary */}
+        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="w-3 h-3 bg-blue-500 rounded-full mx-auto mb-2"></div>
+              <div className="text-sm text-slate-600">Total Sales Persons</div>
+              <div className="text-lg font-bold text-slate-900">{salesPersons.length}</div>
+            </div>
+            <div className="text-center">
+              <div className="w-3 h-3 bg-green-500 rounded-full mx-auto mb-2"></div>
+              <div className="text-sm text-slate-600">Active</div>
+              <div className="text-lg font-bold text-slate-900">{salesPersons.filter(sp => sp.status === "Active").length}</div>
+            </div>
+            <div className="text-center">
+              <div className="w-3 h-3 bg-purple-500 rounded-full mx-auto mb-2"></div>
+              <div className="text-sm text-slate-600">Managers</div>
+              <div className="text-lg font-bold text-slate-900">{salesPersons.filter(sp => sp.designation.includes("Manager")).length}</div>
+            </div>
+            <div className="text-center">
+              <div className="w-3 h-3 bg-orange-500 rounded-full mx-auto mb-2"></div>
+              <div className="text-sm text-slate-600">Representatives</div>
+              <div className="text-lg font-bold text-slate-900">{salesPersons.filter(sp => sp.designation.includes("Representative")).length}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sales Persons Table - Mobile Responsive */}
+        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-0">
+            {/* Desktop Table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-slate-50">
+                  <TableRow className="border-slate-200">
+                    <TableHead className="text-slate-700 font-semibold p-6">Sales Person Info</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Contact Details</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Department & Role</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
+                    <TableHead className="text-center text-slate-700 font-semibold p-6">Actions</TableHead>
                   </TableRow>
-                ) : filteredSalesPersons.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="p-8 text-center text-gray-500">
-                      No sales persons found. {statusFilter !== "all" && `No sales persons with status "${statusFilter}".`}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredSalesPersons.map((person) => (
-                    <TableRow key={person.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200">
-                      <TableCell className="p-6">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-                          {person.salesPersonId}
-                        </span>
-                      </TableCell>
-                      <TableCell className="p-6">
-                        <div className="truncate">
-                          <span className="font-medium text-gray-900">{person.name}</span>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-16 text-slate-500">
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                          <span>Loading sales persons...</span>
                         </div>
                       </TableCell>
-                      <TableCell className="p-6">
-                        <div className="truncate">
-                          <span className="text-gray-700">{person.email}</span>
-                        </div>
+                    </TableRow>
+                  ) : salesPersons.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-16 text-slate-500">
+                        No sales persons found.
                       </TableCell>
-                      <TableCell className="p-6">
-                        <div className="truncate">
-                          <span className="text-gray-700">{person.countryCode} {person.phone}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="p-6">
-                        <div className="truncate">
-                          <span className="text-gray-700">{person.designation}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="p-6">
-                        <StatusChip value={person.status} />
-                      </TableCell>
-                      <TableCell className="p-6">
+                    </TableRow>
+                  ) : (
+                    salesPersons.map((person) => (
+                      <TableRow key={person.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
+                        <TableCell className="p-6">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                              {person.profilePicture ? (
+                                <img 
+                                  src={person.profilePicture} 
+                                  alt={`${person.name}'s profile`}
+                                  className="w-full h-full object-cover rounded-full"
+                                />
+                              ) : (
+                                <UserCheck className="w-5 h-5 text-white" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-medium text-slate-900">{person.name}</div>
+                              <div className="text-sm text-slate-500">{person.salesPersonId}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-6">
+                          <div className="space-y-1">
+                            <div className="text-sm text-slate-900">{person.email}</div>
+                            <div className="text-sm text-slate-500">{person.phone}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-6">
+                          <div className="space-y-1">
+                            <div className="text-sm text-slate-900">{person.department}</div>
+                            <div className="text-sm text-slate-500">{person.designation}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-6">
+                          <StatusChip value={person.status} />
+                        </TableCell>
+                        <TableCell className="text-center p-6">
+                          <div className="flex items-center justify-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditPerson(person)}
+                              className="text-blue-600 hover:bg-blue-50 rounded-lg p-2"
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="lg:hidden space-y-4 p-4">
+              {loading ? (
+                <div className="text-center py-16 text-slate-500">
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span>Loading sales persons...</span>
+                  </div>
+                </div>
+              ) : salesPersons.length === 0 ? (
+                <div className="text-center py-16 text-slate-500">
+                  No sales persons found.
+                </div>
+              ) : (
+                salesPersons.map((person) => (
+                  <Card key={person.id} className="p-4 border-slate-200">
+                    <div className="space-y-3">
+                      {/* Header with Sales Person ID and Status */}
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-slate-600">{person.salesPersonId}</span>
+                        </div>
+                        <StatusChip value={person.status} />
+                      </div>
+                      
+                      {/* Sales Person Info */}
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                          {person.profilePicture ? (
+                            <img 
+                              src={person.profilePicture} 
+                              alt={`${person.name}'s profile`}
+                              className="w-full h-full object-cover rounded-full"
+                            />
+                          ) : (
+                            <UserCheck className="w-6 h-6 text-white" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-medium text-slate-900 text-lg">{person.name}</div>
+                          <div className="text-sm text-slate-500">{person.designation}</div>
+                        </div>
+                      </div>
+                      
+                      {/* Contact Details */}
+                      <div className="grid grid-cols-1 gap-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-slate-500">Email:</span>
+                          <span className="text-sm text-slate-700">{person.email}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-slate-500">Phone:</span>
+                          <span className="text-sm text-slate-700">{person.phone}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Department and Hire Date */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-sm text-slate-500">Department:</span>
+                          <div className="text-sm text-slate-700">{person.department}</div>
+                        </div>
+                        <div>
+                          <span className="text-sm text-slate-500">Hire Date:</span>
+                          <div className="text-sm text-slate-700">{person.hireDate}</div>
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                        <div className="flex space-x-2">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            onClick={() => {
-                              setEditingPerson(person);
-                              setIsEditModalOpen(true);
-                            }}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={() => handleEditPerson(person)}
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
                           >
                             <Edit3 className="w-4 h-4 mr-1" />
                             Edit
                           </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Add Sales Person Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
@@ -427,7 +554,7 @@ function AddSalesPersonForm({ onSubmit, onCancel }: {
     designation: 'Sales Representative',
     department: 'Sales',
     hireDate: new Date().toISOString().split('T')[0],
-    status: 'Active' as const,
+    status: 'Active' as "Active" | "Inactive",
     address: '',
     city: 'Dubai',
     state: 'Dubai',
@@ -541,7 +668,7 @@ function AddSalesPersonForm({ onSubmit, onCancel }: {
           <Label htmlFor="status" className="text-sm font-medium text-gray-700 mb-2 block">
             Status
           </Label>
-          <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value }))}>
+          <Select value={formData.status} onValueChange={(value: "Active" | "Inactive") => setFormData(prev => ({ ...prev, status: value }))}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -769,7 +896,7 @@ function EditSalesPersonForm({
           <Label htmlFor="edit-status" className="text-sm font-medium text-gray-700 mb-2 block">
             Status
           </Label>
-          <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value }))}>
+          <Select value={formData.status} onValueChange={(value: "Active" | "Inactive") => setFormData(prev => ({ ...prev, status: value }))}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>

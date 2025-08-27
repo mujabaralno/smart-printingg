@@ -1561,34 +1561,34 @@ function CreateQuoteContent() {
         return (
           <div className="space-y-8">
             {/* Step 1 Header */}
-            <div className="text-center space-y-3">
-              <h3 className="text-2xl font-bold text-slate-900">Create A Quote</h3>
-              <p className="text-lg text-slate-600">Choose how you&apos;d like to create your printing quote</p>
+            <div className="text-center space-y-2 sm:space-y-3">
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Create A Quote</h3>
+              <p className="text-base sm:text-lg text-slate-600">Choose how you&apos;d like to create your printing quote</p>
             </div>
 
             {/* Quote Mode Selection Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
               {/* Create New Quote Card */}
               <Card 
                 className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group"
                 onClick={handleStartNew}
               >
-                <CardContent className="p-8 text-center space-y-6">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
-                    <Sparkles className="w-10 h-10 text-white" />
+                <CardContent className="p-4 sm:p-6 lg:p-8 text-center space-y-4 sm:space-y-6">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
+                    <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                   </div>
-                  <div className="space-y-3">
-                    <h3 className="text-2xl font-bold text-slate-900">Create New Quote</h3>
-                    <p className="text-slate-600 leading-relaxed">
+                  <div className="space-y-2 sm:space-y-3">
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Create New Quote</h3>
+                    <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
                       Start a fresh quotation from scratch. Perfect for new projects, custom requirements, or when you need complete control over the quote details.
                     </p>
                   </div>
-                  <div className="pt-4">
+                  <div className="pt-2 sm:pt-4">
                     <Button 
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
                       onClick={handleStartNew}
                     >
-                      <Plus className="w-5 h-5 mr-2" />
+                      <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Start New Quote
                     </Button>
                   </div>
@@ -1610,19 +1610,19 @@ function CreateQuoteContent() {
                   setSelectedCustomer(null);
                 }}
               >
-                <CardContent className="p-8 text-center space-y-6">
-                  <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
-                    <Copy className="w-10 h-10 text-white" />
+                <CardContent className="p-4 sm:p-6 lg:p-8 text-center space-y-4 sm:space-y-6">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
+                    <Copy className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                   </div>
-                  <div className="space-y-3">
-                    <h3 className="text-2xl font-bold text-slate-900">Based on Previous Quote</h3>
-                    <p className="text-slate-600 leading-relaxed">
+                  <div className="space-y-2 sm:space-y-3">
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Based on Previous Quote</h3>
+                    <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
                       Use an existing quote as a template. Save time by modifying previous specifications, pricing, and customer details for similar projects.
                     </p>
                   </div>
-                  <div className="pt-4">
+                  <div className="pt-2 sm:pt-4">
                     <Button 
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
                       onClick={() => {
                         // Clear default product data when entering existing quote mode
                         setFormData((prev) => ({ 
@@ -1635,7 +1635,7 @@ function CreateQuoteContent() {
                         setSelectedCustomer(null);
                       }}
                     >
-                      <FileText className="w-5 h-5 mr-2" />
+                      <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Use Existing Quote
                     </Button>
                   </div>
@@ -1645,7 +1645,7 @@ function CreateQuoteContent() {
 
             {/* Additional Info */}
             <div className="text-center text-slate-500 max-w-2xl mx-auto">
-              <p className="text-sm">
+              <p className="text-xs sm:text-sm">
                 Both options will guide you through the same comprehensive quote creation process, 
                 ensuring accuracy and consistency in your printing estimates.
               </p>
@@ -1656,9 +1656,9 @@ function CreateQuoteContent() {
         return (
           <div className="space-y-6">
             {quoteMode === "new" && (
-              <div className="text-center space-y-3">
-                <h3 className="text-2xl font-bold text-slate-900">Customer Details</h3>
-                <p className="text-slate-600">
+              <div className="text-center space-y-2 sm:space-y-3">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Customer Details</h3>
+                <p className="text-base sm:text-base text-slate-600">
                   Fill in the customer information for your new quote
                 </p>
               </div>
@@ -1715,156 +1715,156 @@ function CreateQuoteContent() {
   };
 
   return (
-    <div className="space-y-12">
-      {/* Main Content Card */}
-      <Card className="border-0 shadow-lg">
-        <CardContent className="p-10 space-y-10">
-          <StepIndicator
-            activeStep={currentStep}
-          />
-          
-          <div className="mt-8">{renderStepContent()}</div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Main Content Card */}
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-10">
+            <StepIndicator
+              activeStep={currentStep}
+            />
+            
+            <div className="mt-4 sm:mt-8">{renderStepContent()}</div>
 
-          {/* Validation Status Indicators */}
-          {currentStep === 1 && (
-            <div className="mt-6">
-              {!canProceedFromStep1() ? (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">!</span>
+            {/* Validation Status Indicators */}
+            {currentStep === 1 && (
+              <div className="mt-4 sm:mt-6">
+                {!canProceedFromStep1() ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">!</span>
+                      </div>
+                      <p className="text-yellow-700 font-medium text-sm sm:text-base">
+                        Please select either "Create New Quote" or "Based on Previous Quote" to continue
+                      </p>
                     </div>
-                    <p className="text-yellow-700 font-medium">
-                      Please select either "Create New Quote" or "Based on Previous Quote" to continue
-                    </p>
                   </div>
-                </div>
-              ) : (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">✓</span>
+                ) : (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">✓</span>
+                      </div>
+                      <p className="text-green-700 font-medium text-sm sm:text-base">
+                        {quoteMode === "new" ? "New quote mode selected. You can proceed to the next step." : "Existing quote mode selected. You can proceed to the next step."}
+                      </p>
                     </div>
-                    <p className="text-green-700 font-medium">
-                      {quoteMode === "new" ? "New quote mode selected. You can proceed to the next step." : "Existing quote mode selected. You can proceed to the next step."}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-
-
-          <div className="mt-12 pt-8 border-t border-slate-200 flex justify-between items-center">
-            <Button
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className="border-slate-300 hover:border-slate-400 hover:bg-slate-50 px-8 py-3 rounded-xl transition-all duration-300"
-            >
-              Previous
-            </Button>
-            {currentStep < 5 && (
-              <div className="relative">
-                <Button
-                  onClick={nextStep}
-                  disabled={isNextButtonDisabled()}
-                  className={`px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ${
-                    isNextButtonDisabled() 
-                      ? "bg-gray-400 cursor-not-allowed" 
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
-                  }`}
-                  title={
-                    isNextButtonDisabled() 
-                      ? currentStep === 1 
-                        ? "Please select a quote mode to continue"
-                        : currentStep === 2 && quoteMode === "existing"
-                        ? "Please select a specific quote to edit"
-                        : "Please complete the required information to continue"
-                      : "Click to proceed to the next step"
-                  }
-                >
-                  Next
-                </Button>
-                {isNextButtonDisabled() && (
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-10">
-                    {currentStep === 1 
-                      ? "Select a quote mode first"
-                      : currentStep === 2 && quoteMode === "existing"
-                      ? "Select a specific quote to edit first"
-                      : "Complete required fields first"
-                    }
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                   </div>
                 )}
               </div>
             )}
-            
-            {currentStep === 5 && (
-              <Button
-                onClick={() => handleSaveQuote(false)}
-                disabled={isSaving}
-                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                {isSaving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5 mr-2" />
-                    Submit Quote
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
-      {saveModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">
-              Quote Submitted Successfully!
-            </h3>
-            <p className="text-slate-600 mb-6">
-              Your quote has been submitted and will appear in the Quote Management page.
-            </p>
-            <div className="space-y-4">
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                <Link href={`mailto:${formData.client.email}`}>
-                  Send to Customer
-                </Link>
-              </Button>
-              <Button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                onClick={handleDownloadCustomerFromModal}
-              >
-                Download for Customer
-              </Button>
-              <Button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                onClick={handleDownloadOpsFromModal}
-              >
-                Download Operations Copy
-              </Button>
+            <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
               <Button
                 variant="outline"
-                onClick={() => {
-                  setSaveModalOpen(false);
-                  router.push("/");
-                }}
-                className="w-full py-3 rounded-xl border-slate-300 hover:border-slate-400 hover:bg-slate-400 transition-all duration-300"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="border-slate-300 hover:border-slate-400 hover:bg-slate-50 px-6 sm:px-8 py-3 rounded-xl transition-all duration-300 w-full sm:w-auto"
               >
-                Close & Go to Dashboard
+                Previous
               </Button>
+              {currentStep < 5 && (
+                <div className="relative w-full sm:w-auto">
+                  <Button
+                    onClick={nextStep}
+                    disabled={isNextButtonDisabled()}
+                    className={`px-6 sm:px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto ${
+                      isNextButtonDisabled() 
+                        ? "bg-gray-400 cursor-not-allowed" 
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                    }`}
+                    title={
+                      isNextButtonDisabled() 
+                        ? currentStep === 1 
+                          ? "Please select a quote mode to continue"
+                          : currentStep === 2 && quoteMode === "existing"
+                          ? "Please select a specific quote to edit"
+                          : "Please complete the required information to continue"
+                        : "Click to proceed to the next step"
+                    }
+                  >
+                    Next
+                  </Button>
+                  {isNextButtonDisabled() && (
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-10">
+                      {currentStep === 1 
+                        ? "Select a quote mode first"
+                        : currentStep === 2 && quoteMode === "existing"
+                        ? "Select a specific quote to edit first"
+                        : "Complete required fields first"
+                      }
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {currentStep === 5 && (
+                <Button
+                  onClick={() => handleSaveQuote(false)}
+                  disabled={isSaving}
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5 mr-2" />
+                      Submit Quote
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {saveModalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-md text-center shadow-2xl">
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3">
+                Quote Submitted Successfully!
+              </h3>
+              <p className="text-slate-600 mb-6 text-sm sm:text-base">
+                Your quote has been submitted and will appear in the Quote Management page.
+              </p>
+              <div className="space-y-4">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                  <Link href={`mailto:${formData.client.email}`}>
+                    Send to Customer
+                  </Link>
+                </Button>
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  onClick={handleDownloadCustomerFromModal}
+                >
+                  Download for Customer
+                </Button>
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  onClick={handleDownloadOpsFromModal}
+                >
+                  Download Operations Copy
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSaveModalOpen(false);
+                    router.push("/");
+                  }}
+                  className="w-full py-3 rounded-xl border-slate-300 hover:border-slate-400 hover:bg-slate-400 transition-all duration-300"
+                >
+                  Close & Go to Dashboard
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
