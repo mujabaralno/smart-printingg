@@ -195,20 +195,61 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      // Map papers if available
+      // Map papers if available - use nested create syntax
       if (product.papers && product.papers.length > 0) {
-        body.papers = product.papers;
+        body.papers = {
+          create: product.papers.map((paper: any) => ({
+            name: paper.name || "Standard Paper",
+            gsm: paper.gsm ? String(paper.gsm) : "150", // Convert to string as per schema
+            inputWidth: paper.inputWidth ? Number(paper.inputWidth) : null,
+            inputHeight: paper.inputHeight ? Number(paper.inputHeight) : null,
+            pricePerPacket: paper.pricePerPacket ? Number(paper.pricePerPacket) : null,
+            pricePerSheet: paper.pricePerSheet ? Number(paper.pricePerSheet) : null,
+            sheetsPerPacket: paper.sheetsPerPacket ? Number(paper.sheetsPerPacket) : null,
+            recommendedSheets: paper.recommendedSheets ? Number(paper.recommendedSheets) : null,
+            enteredSheets: paper.enteredSheets ? Number(paper.enteredSheets) : null,
+            outputWidth: paper.outputWidth ? Number(paper.outputWidth) : null,
+            outputHeight: paper.outputHeight ? Number(paper.outputHeight) : null,
+            selectedColors: paper.selectedColors ? String(paper.selectedColors) : null,
+          }))
+        };
       }
       
-      // Map finishing if available
+      // Map finishing if available - use nested create syntax
       if (product.finishing && product.finishing.length > 0) {
-        body.finishing = product.finishing;
+        body.finishing = {
+          create: product.finishing.map((finish: any) => ({
+            name: finish.name || "Standard Finishing",
+            cost: finish.cost ? Number(finish.cost) : 0,
+          }))
+        };
       }
       
       // Map finishing comments if available
       if (product.finishingComments) {
         body.finishingComments = product.finishingComments;
       }
+    }
+    
+    // Handle amounts - use nested create syntax
+    if (body.amounts) {
+      body.amounts = {
+        create: {
+          base: Number(body.amounts.base) || 0,
+          vat: Number(body.amounts.vat) || 0,
+          total: Number(body.amounts.total) || 0,
+        }
+      };
+    }
+    
+    // Handle QuoteOperational - use nested create syntax
+    if (body.QuoteOperational) {
+      body.QuoteOperational = {
+        create: {
+          plates: Number(body.QuoteOperational.plates) || 0,
+          units: Number(body.QuoteOperational.units) || 0,
+        }
+      };
     }
     
     console.log('Processed quote data:', JSON.stringify(body, null, 2));
@@ -220,7 +261,10 @@ export async function POST(request: NextRequest) {
         include: {
           client: true,
           user: true,
-          quoteAmount: true
+          quoteAmount: true,
+          papers: true,
+          finishing: true,
+          QuoteOperational: true
         }
       });
       console.log('Quote created successfully with all details:', quote.id);

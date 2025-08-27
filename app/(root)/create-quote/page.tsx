@@ -1003,7 +1003,7 @@ function CreateQuoteContent() {
     if (cleanedData.papers && Array.isArray(cleanedData.papers)) {
       cleanedData.papers = cleanedData.papers.map((paper: any) => ({
         name: paper.name || "Standard Paper",
-        gsm: paper.gsm ? Number(paper.gsm) : 150, // Convert gsm to number
+        gsm: paper.gsm ? String(paper.gsm) : "150", // Keep gsm as string as per database schema
         inputWidth: paper.inputWidth ? Number(paper.inputWidth) : null,
         inputHeight: paper.inputHeight ? Number(paper.inputHeight) : null,
         pricePerPacket: paper.pricePerPacket ? Number(paper.pricePerPacket) : null,
