@@ -1591,6 +1591,7 @@ function CreateQuoteContent() {
         console.log('=== AMOUNTS DEBUG ===');
         console.log('formData.calculation:', formData.calculation);
         console.log('completeQuoteData.amounts:', completeQuoteData.amounts);
+        console.log('Cleaned amounts:', cleanedQuoteData.amounts);
         console.log('Cleaned quote data being sent:', cleanedQuoteData);
         console.log('salesPersonId in cleaned data:', cleanedQuoteData.salesPersonId);
         

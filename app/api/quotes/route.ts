@@ -5,57 +5,105 @@ export async function GET() {
   try {
     console.log('🔍 Fetching quotes from PostgreSQL database...');
     
-    // Use direct Prisma client with simplified query
+    // Use direct Prisma client with comprehensive query
     const quotes = await prisma.quote.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
         client: {
           select: {
             id: true,
+            clientType: true,
             companyName: true,
             contactPerson: true,
-            email: true
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            countryCode: true,
+            role: true,
+            status: true,
+            address: true,
+            city: true,
+            state: true,
+            postalCode: true,
+            country: true,
+            designation: true,
+            emails: true,
+            trn: true,
+            hasNoTrn: true,
+            area: true,
+            createdAt: true,
+            updatedAt: true
           }
         },
         user: {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            role: true,
+            status: true
           }
-        }
+        },
+        amounts: true,
+        papers: true,
+        finishing: true,
+        QuoteOperational: true
       }
     });
     
     console.log(`✅ Found ${quotes.length} quotes`);
     
     // Transform the data to match expected format
-    const transformedQuotes = quotes.map(quote => ({
-      id: quote.id,
-      quoteId: quote.quoteId,
-      date: quote.date,
-      status: quote.status,
-      clientId: quote.clientId,
-      userId: quote.userId,
-      product: quote.product,
-      quantity: quote.quantity,
-      sides: quote.sides,
-      printing: quote.printing,
-      colors: quote.colors,
-      createdAt: quote.createdAt,
-      updatedAt: quote.updatedAt,
-      productName: quote.productName || quote.product,
-      printingSelection: quote.printingSelection || quote.printing,
-      flatSizeWidth: quote.flatSizeWidth,
-      flatSizeHeight: quote.flatSizeHeight,
-      flatSizeSpine: quote.flatSizeSpine,
-      closeSizeWidth: quote.closeSizeWidth,
-      closeSizeHeight: quote.closeSizeHeight,
-      closeSizeSpine: quote.closeSizeSpine,
-      useSameAsFlat: quote.useSameAsFlat || false,
-      client: quote.client,
-      user: quote.user
-    }));
+    const transformedQuotes = quotes.map(quote => {
+      // Get client display name
+      let clientDisplayName = "N/A";
+      if (quote.client) {
+        if (quote.client.clientType === "Company" && quote.client.companyName) {
+          clientDisplayName = quote.client.companyName;
+        } else if (quote.client.firstName && quote.client.lastName) {
+          clientDisplayName = `${quote.client.firstName} ${quote.client.lastName}`;
+        } else if (quote.client.contactPerson) {
+          clientDisplayName = quote.client.contactPerson;
+        } else if (quote.client.email) {
+          clientDisplayName = quote.client.email;
+        }
+      }
+
+      return {
+        id: quote.id,
+        quoteId: quote.quoteId,
+        date: quote.date,
+        status: quote.status,
+        clientId: quote.clientId,
+        userId: quote.userId,
+        product: quote.product,
+        quantity: quote.quantity,
+        sides: quote.sides,
+        printing: quote.printing,
+        colors: quote.colors,
+        createdAt: quote.createdAt,
+        updatedAt: quote.updatedAt,
+        productName: quote.productName || quote.product,
+        printingSelection: quote.printingSelection || quote.printing,
+        flatSizeWidth: quote.flatSizeWidth,
+        flatSizeHeight: quote.flatSizeHeight,
+        flatSizeSpine: quote.flatSizeSpine,
+        closeSizeWidth: quote.closeSizeWidth,
+        closeSizeHeight: quote.closeSizeHeight,
+        closeSizeSpine: quote.closeSizeSpine,
+        useSameAsFlat: quote.useSameAsFlat || false,
+        client: {
+          ...quote.client,
+          displayName: clientDisplayName
+        },
+        user: quote.user,
+        amounts: quote.amounts,
+        papers: quote.papers,
+        finishing: quote.finishing,
+        QuoteOperational: quote.QuoteOperational
+      };
+    });
     
     return NextResponse.json(transformedQuotes);
     
@@ -264,7 +312,7 @@ export async function POST(request: NextRequest) {
         include: {
           client: true,
           user: true,
-          quoteAmount: true,
+          amounts: true,
           papers: true,
           finishing: true,
           QuoteOperational: true

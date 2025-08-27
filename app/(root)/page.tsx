@@ -106,13 +106,30 @@ export default function DashboardPage() {
               amounts: quote.amounts,
               total: quote.amounts?.total,
               base: quote.amounts?.base,
-              vat: quote.amounts?.vat
+              vat: quote.amounts?.vat,
+              client: quote.client
             });
+            
+            // Get proper client name
+            let customerName = "Unknown Client";
+            if (quote.client) {
+              if (quote.client.displayName && quote.client.displayName !== "N/A") {
+                customerName = quote.client.displayName;
+              } else if (quote.client.companyName) {
+                customerName = quote.client.companyName;
+              } else if (quote.client.firstName && quote.client.lastName) {
+                customerName = `${quote.client.firstName} ${quote.client.lastName}`;
+              } else if (quote.client.contactPerson) {
+                customerName = quote.client.contactPerson;
+              } else if (quote.client.email) {
+                customerName = quote.client.email;
+              }
+            }
             
             return {
               id: quote.id,
               quoteId: quote.quoteId, // This should be the proper quote ID
-              customerName: quote.client?.companyName || quote.client?.contactPerson || "Unknown Client",
+              customerName: customerName,
               createdDate: quote.date.split('T')[0], // Convert ISO date to YYYY-MM-DD
               status: quote.status,
               totalAmount: quote.amounts?.total || 0,
