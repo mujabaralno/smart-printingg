@@ -9,7 +9,9 @@ export async function GET() {
     const quotes = await prisma.quote.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        amounts: true
+        amounts: true,
+        papers: true,
+        finishing: true
       }
     });
 
@@ -87,7 +89,9 @@ export async function GET() {
           hasNoTrn: client.hasNoTrn,
           area: client.area
         } : null,
-        amounts: quote.amounts || []
+        amounts: quote.amounts || [],
+        papers: quote.papers || [],
+        finishing: quote.finishing || []
       };
     });
 
