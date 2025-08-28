@@ -146,7 +146,7 @@ export default function QuoteManagementPage() {
             clientName: quote.client?.companyName || quote.client?.contactPerson || "N/A",
             contactPerson: quote.client?.contactPerson || "Unknown Contact",
             date: quote.date.split('T')[0], // Convert ISO date to YYYY-MM-DD
-            amount: quote.amounts?.total || (quote.amounts && quote.amounts.length > 0 ? quote.amounts[0]?.total || 0 : 0),
+            amount: quote.amounts?.total || 0,
             status: quote.status as Status,
             userId: quote.user?.id || "cmejqfk3s0000x5a98slufy9n", // Use real admin user ID as fallback
             product: quote.productName || quote.product || (quote.papers && quote.papers.length > 0 ? quote.papers[0].name : "Printing Product"), // Use productName if available
