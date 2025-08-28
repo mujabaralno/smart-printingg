@@ -862,8 +862,8 @@ export default function QuoteManagementPage() {
                         </TableCell>
                         <TableCell className="p-6">
                           <div className="space-y-1">
-                            <div className="font-medium text-slate-900">{row.client?.companyName || 'N/A'}</div>
-                            <div className="text-sm text-slate-500">{row.client?.contactPerson || 'N/A'}</div>
+                            <div className="font-medium text-slate-900">{row.clientName || 'N/A'}</div>
+                            <div className="text-sm text-slate-500">{row.contactPerson || 'N/A'}</div>
                           </div>
                         </TableCell>
                         <TableCell className="text-sm text-slate-700 p-6">{fmtDate(row.date)}</TableCell>
