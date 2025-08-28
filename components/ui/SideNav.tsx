@@ -69,7 +69,7 @@ export default function SideNav({ className = "" }: SideNavProps) {
   return (
     <aside
       className={cn(
-        "sticky top-0 left-0 h-screen transition-all duration-300 ease-in-out",
+        "sticky top-0 left-0 h-screen transition-all duration-300 ease-in-out overflow-hidden",
         "bg-white border-r border-slate-200 shadow-lg",
         isExpanded ? "w-72" : isHovered ? "w-72" : "w-16",
         className

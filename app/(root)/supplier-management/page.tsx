@@ -520,7 +520,7 @@ function SupplierManagementContent() {
                   <TableRow 
                     key={r.id} 
                     ref={(highlightedMaterialId === r.id || highlightedMaterialId === r.materialId) ? highlightedMaterialRef : null}
-                    className={`hover:bg-slate-50/80 transition-colors duration-200 border-slate-100 ${
+                    className={`hover:bg-slate-50 transition-colors duration-200 border-slate-100 ${
                       highlightedMaterialId === r.id || highlightedMaterialId === r.materialId 
                         ? 'bg-yellow-50 border-yellow-200 shadow-md' 
                         : ''

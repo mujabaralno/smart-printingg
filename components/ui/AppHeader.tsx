@@ -338,38 +338,38 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
   return (
     <>
       <header className={cn(
-        "bg-white border-b border-gray-200",
+        "bg-white border-b border-gray-200 overflow-hidden",
         className
       )}>
         {/* Mobile Layout */}
-        <div className="lg:hidden">
+        <div className="lg:hidden overflow-hidden">
           {/* Top Row - Search Bar */}
           <div className="p-4 pb-3">
-            <div className="w-full">
+            <div className="w-full min-w-0">
               <GlobalSearch />
             </div>
           </div>
 
           {/* Bottom Row - User Info and Time */}
           <div className="px-4 pb-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between min-w-0">
               {/* Time Display - Left */}
               {mounted && currentTime && (
-                <div className="text-left">
-                  <div className="text-sm font-medium text-gray-600">{formatDate(currentTime)}</div>
-                  <div className="text-xs text-gray-500">{formatTime(currentTime)}</div>
+                <div className="text-left min-w-0 flex-shrink-0">
+                  <div className="text-sm font-medium text-gray-600 truncate">{formatDate(currentTime)}</div>
+                  <div className="text-xs text-gray-500 truncate">{formatTime(currentTime)}</div>
                 </div>
               )}
 
               {/* User Info and Profile Picture - Right */}
-              <div className="flex items-center space-x-3">
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">{user?.name || "John Admin"}</div>
-                  <div className="text-xs text-gray-500">ID: {convertToEmpFormat(user?.id || "1")}</div>
+              <div className="flex items-center space-x-3 min-w-0 flex-1 justify-end">
+                <div className="text-right min-w-0 flex-shrink-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{user?.name || "John Admin"}</div>
+                  <div className="text-xs text-gray-500 truncate">ID: {convertToEmpFormat(user?.id || "1")}</div>
                 </div>
 
                 {/* Account Dropdown */}
-                <div className="relative account-dropdown">
+                <div className="relative account-dropdown flex-shrink-0">
                   <button 
                     onClick={() => setShowAccountDropdown(!showAccountDropdown)}
                     className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-colors"
@@ -444,34 +444,34 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
         </div>
 
         {/* Desktop Layout */}
-        <div className="hidden lg:flex items-center justify-between p-4">
+        <div className="hidden lg:flex items-center justify-between p-4 overflow-hidden">
           {/* Left Section - Search Bar */}
-          <div className="flex items-center space-x-4">
-            <div className="w-96">
+          <div className="flex items-center space-x-4 min-w-0">
+            <div className="w-96 min-w-0">
               <GlobalSearch />
             </div>
           </div>
 
           {/* Right Section - Timestamp and Account */}
-          <div className="flex items-center space-x-6 ml-auto">
+          <div className="flex items-center space-x-6 ml-auto min-w-0">
             {/* Timestamp with Vertical Separator */}
             {mounted && currentTime && (
-              <div className="flex items-center space-x-3 text-gray-600">
+              <div className="flex items-center space-x-3 text-gray-600 min-w-0">
                 {/* Date on the left */}
-                <div className="text-sm font-medium">
+                <div className="text-sm font-medium truncate">
                   {formatDate(currentTime)}
                 </div>
                 
                 {/* Vertical separator line */}
-                <div className="w-px h-6 bg-gray-300"></div>
+                <div className="w-px h-6 bg-gray-300 flex-shrink-0"></div>
                 
                 {/* Time and Local Time label on the right */}
-                <div className="flex items-center space-x-2">
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-gray-800">
+                <div className="flex items-center space-x-2 min-w-0">
+                  <div className="text-right min-w-0">
+                    <div className="text-lg font-bold text-gray-800 truncate">
                       {formatTime(currentTime)}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 truncate">
                       Local Time
                     </div>
                   </div>
@@ -481,11 +481,11 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
             )}
 
             {/* Account Section */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 min-w-0 flex-shrink-0">
               {/* User Info */}
-              <div className="text-right">
-                <div className="text-sm font-medium text-gray-900">{user?.name || "John Admin"}</div>
-                <div className="text-xs text-gray-500">ID: {convertToEmpFormat(user?.id || "1")}</div>
+              <div className="text-right min-w-0">
+                <div className="text-sm font-medium text-gray-900 truncate">{user?.name || "John Admin"}</div>
+                <div className="text-xs text-gray-500 truncate">ID: {convertToEmpFormat(user?.id || "1")}</div>
               </div>
 
               {/* Account Dropdown */}

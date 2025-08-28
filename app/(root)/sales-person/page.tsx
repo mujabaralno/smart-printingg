@@ -360,7 +360,7 @@ export default function SalesPersonManagementPage() {
                     </TableRow>
                   ) : (
                     salesPersons.map((person) => (
-                      <TableRow key={person.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
+                      <TableRow key={person.id} className="hover:bg-slate-50 transition-colors duration-200 border-slate-100">
                         <TableCell className="p-4">
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
                             {person.salesPersonId}
