@@ -685,7 +685,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                 const isIncluded = includedProducts.has(index);
                 
                 return (
-                  <TableRow key={index} className="border-slate-200 hover:bg-slate-50/50 transition-colors">
+                                      <TableRow key={index} className="border-slate-200 hover:bg-slate-50 transition-colors">
                     <TableCell className="py-4 px-6">
                       <Checkbox
                         checked={isIncluded}

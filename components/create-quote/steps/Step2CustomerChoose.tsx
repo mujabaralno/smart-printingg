@@ -376,7 +376,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                   {currentQuotes.map((quote) => (
                     <tr 
                       key={quote.id} 
-                      className={`hover:bg-slate-50/80 transition-colors duration-200 border-slate-100 cursor-pointer ${
+                      className={`hover:bg-slate-50 transition-colors duration-200 border-slate-100 cursor-pointer ${
                         selectedQuote?.id === quote.id ? 'bg-blue-50 ring-2 ring-blue-200' : ''
                       }`}
                       onClick={() => handleQuoteSelect(quote.id)}

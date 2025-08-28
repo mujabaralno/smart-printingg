@@ -742,7 +742,7 @@ export default function ClientManagementPage() {
         </div>
 
         {/* Clients Table - Mobile Responsive */}
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+        <Card className="shadow-xl border-0 bg-white">
           <CardContent className="p-0">
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto">
@@ -783,7 +783,7 @@ export default function ClientManagementPage() {
                       const quoteCount = clientQuotes.length;
                       
                       return (
-                        <TableRow key={client.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
+                        <TableRow key={client.id} className="hover:bg-slate-50 transition-colors duration-200 border-slate-100">
                           <TableCell className="p-4">
                             <span className="font-mono text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
                               {getClientDisplayId(client.id)}

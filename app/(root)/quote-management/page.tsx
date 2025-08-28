@@ -819,7 +819,7 @@ export default function QuoteManagementPage() {
         </div>
 
         {/* Quotes Table - Mobile Responsive */}
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+        <Card className="shadow-xl border-0 bg-white">
           <CardContent className="p-0">
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto">
@@ -854,7 +854,7 @@ export default function QuoteManagementPage() {
                     </TableRow>
                   ) : (
                     current.map((row, index) => (
-                      <TableRow key={row.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
+                      <TableRow key={row.id} className="hover:bg-slate-50 transition-colors duration-200 border-slate-100">
                         <TableCell className="p-6">
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
                             {row.quoteId}

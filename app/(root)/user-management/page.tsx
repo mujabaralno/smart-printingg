@@ -296,7 +296,7 @@ export default function UserManagementPage() {
 
 
         {/* Main Content */}
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+        <Card className="shadow-xl border-0 bg-white">
           <CardContent className="p-4 sm:p-6 lg:p-8">
             {/* Search and Add User */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -397,7 +397,7 @@ export default function UserManagementPage() {
                         </TableCell>
                       </TableRow>
                     ) : current.map((u) => (
-                      <TableRow key={u.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-slate-100">
+                      <TableRow key={u.id} className="hover:bg-slate-50 transition-colors duration-200 border-slate-100">
                         {/* ID */}
                         <TableCell className="p-6">
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
@@ -728,7 +728,7 @@ export default function UserManagementPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4 bg-slate-50/50">
+                <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4 bg-slate-50">
                   <div>
                     <div className="text-sm text-slate-600">Status</div>
                     <div className="text-sm font-medium text-slate-900">

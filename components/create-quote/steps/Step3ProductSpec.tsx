@@ -1270,7 +1270,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                 {product.papers.map((paper, pIndex) => (
                   <div
                     key={pIndex}
-                    className="border border-slate-200 p-4 rounded-xl bg-slate-50/50"
+                    className="border border-slate-200 p-4 rounded-xl bg-slate-50"
                   >
                     <div className="flex items-center justify-between mb-4">
                       <h5 className="font-medium text-slate-700">Paper {pIndex + 1}</h5>
