@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -21,33 +21,6 @@ model User {
   quotes          Quote[]
   searchAnalytics SearchAnalytics[]
   searchHistory   SearchHistory[]
-  // Sales person specific fields
-  salesPersonId   String?           @unique // Auto-generated sales person ID (EMP001, EMP002, etc.)
-  isSalesPerson   Boolean           @default(false)
-}
-
-model SalesPerson {
-  id              String   @id @default(cuid())
-  salesPersonId   String   @unique // Auto-generated ID (EMP001, EMP002, etc.)
-  name            String
-  email           String   @unique
-  phone           String
-  countryCode     String   @default("+971")
-  designation     String   @default("Sales Representative")
-  department      String   @default("Sales")
-  hireDate        DateTime @default(now())
-  status          String   @default("Active")
-  profilePicture  String?
-  address         String?
-  city            String   @default("Dubai")
-  state           String   @default("Dubai")
-  postalCode      String?
-  country         String   @default("UAE")
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  // Relationships
-  quotes          Quote[]
 }
 
 model Client {
@@ -68,13 +41,6 @@ model Client {
   state         String?
   postalCode    String?
   country       String?
-  firstName     String?
-  lastName      String?
-  designation   String?
-  emails        String?
-  trn           String?
-  hasNoTrn      Int?     @default(0)
-  area          String?
   user          User?    @relation(fields: [userId], references: [id])
   quotes        Quote[]
 }
@@ -85,8 +51,7 @@ model Quote {
   date              DateTime
   status            String            @default("Pending")
   clientId          String
-  userId            String?           // User who created the quote
-  salesPersonId     String?           // Sales person assigned to the quote
+  userId            String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   product           String
@@ -98,71 +63,23 @@ model Quote {
   printingSelection String?
   flatSizeHeight    Float?
   closeSizeSpine    Float?
-  useSameAsFlat     Boolean          @default(false)
+  useSameAsFlat     Boolean?          @default(false)
   flatSizeWidth     Float?
   flatSizeSpine     Float?
   closeSizeHeight   Float?
   closeSizeWidth    Float?
-  finishingComments String?
-  approvalStatus    String            @default("Draft")
-  requiresApproval  Boolean          @default(false)
-  approvalReason    String?
-  approvedBy        String?
-  approvedAt        DateTime?
-  approvalNotes     String?
-  discountPercentage Float?           @default(0)
-  discountAmount     Float?           @default(0)
-  marginPercentage   Float?           @default(15)
-  marginAmount       Float?           @default(0)
-  customerPdfEnabled Boolean          @default(true)
-  sendToCustomerEnabled Boolean       @default(true)
-  // Relationships
-  client            Client            @relation(fields: [clientId], references: [id])
-  user              User?             @relation(fields: [userId], references: [id])
-  salesPerson       SalesPerson?      @relation(fields: [salesPersonId], references: [salesPersonId])
-  amounts           QuoteAmount[]
-  papers            Paper[]
   finishing         Finishing[]
-  operational       QuoteOperational[]
-}
-
-model Supplier {
-  id            String     @id @default(cuid())
-  name          String
-  contact       String
-  email         String
-  phone         String
-  countryCode   String     @default("+971")
-  address       String
-  city          String
-  state         String
-  postalCode    String
-  country       String     @default("UAE")
-  status        String     @default("Active")
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  materials     Material[]
-}
-
-model Material {
-  id            String   @id @default(cuid())
-  materialId    String   @unique
-  name          String
-  gsm           Int
-  supplierId    String
-  cost          Float
-  unit          String
-  status        String   @default("Active")
-  lastUpdated   DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  supplier      Supplier @relation(fields: [supplierId], references: [id])
+  papers            Paper[]
+  user              User?             @relation(fields: [userId], references: [id])
+  client            Client            @relation(fields: [clientId], references: [id])
+  amounts           QuoteAmount?
+  operational       QuoteOperational?
 }
 
 model Paper {
-  id                String   @id @default(cuid())
+  id                String  @id @default(cuid())
   name              String
-  gsm               Int
+  gsm               String
   quoteId           String
   inputWidth        Float?
   inputHeight       Float?
@@ -174,57 +91,81 @@ model Paper {
   outputWidth       Float?
   outputHeight      Float?
   selectedColors    String?
-  quote             Quote    @relation(fields: [quoteId], references: [id])
+  quote             Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 }
 
 model Finishing {
-  id      String   @id @default(cuid())
+  id      String @id @default(cuid())
   name    String
   quoteId String
   cost    Float?
-  quote   Quote    @relation(fields: [quoteId], references: [id])
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 }
 
 model QuoteAmount {
-  id      String   @id @default(cuid())
+  id      String @id @default(cuid())
   base    Float
   vat     Float
   total   Float
-  quoteId String
-  quote   Quote    @relation(fields: [quoteId], references: [id])
+  quoteId String @unique
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 }
 
 model QuoteOperational {
   id        String   @id @default(cuid())
-  quoteId   String
-  plates    Int
-  units     Int
+  quoteId   String   @unique
+  plates    Int?
+  units     Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  quote     Quote    @relation(fields: [quoteId], references: [id])
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+}
+
+model Supplier {
+  id          String     @id @default(cuid())
+  name        String
+  contact     String?
+  email       String?
+  phone       String?
+  countryCode String?    @default("+971")
+  address     String?
+  city        String?
+  state       String?
+  postalCode  String?
+  country     String?    @default("UAE")
+  status      String     @default("Active")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  materials   Material[]
+}
+
+model Material {
+  id          String   @id @default(cuid())
+  materialId  String   @unique
+  name        String
+  gsm         String?
+  supplierId  String
+  cost        Float
+  unit        String
+  status      String   @default("Active")
+  lastUpdated DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime   @updatedAt
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 }
 
 model SearchHistory {
   id        String   @id @default(cuid())
   query     String
   timestamp DateTime @default(now())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
 }
 
 model SearchAnalytics {
   id        String   @id @default(cuid())
   query     String
   timestamp DateTime @default(now())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-model UAEArea {
-  id        String   @id @default(cuid())
-  name      String
-  state     String
-  country   String   @default("UAE")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
 }
