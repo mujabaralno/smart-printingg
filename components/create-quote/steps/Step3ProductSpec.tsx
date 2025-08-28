@@ -522,13 +522,13 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
 
     return (
       <Dialog open={paperDetailsDialogOpen} onOpenChange={setPaperDetailsDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-full sm:max-w-5xl max-h-[85vh] overflow-y-auto mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center">
+            <DialogTitle className="flex items-center space-x-2 text-sm sm:text-base">
+              <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-xs font-bold">P</span>
               </div>
-              <span>
+              <span className="break-words">
                 {paperDetails && paperDetails.browseMode 
                   ? 'Browse Available Papers' 
                   : `Paper Details: ${selectedPaperForDetails}`
@@ -540,26 +540,26 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
           {loadingPaperDetails ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-gray-600">Loading paper details...</span>
+              <span className="ml-2 text-gray-600 text-sm sm:text-base">Loading paper details...</span>
             </div>
           ) : paperDetails ? (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {paperDetails.browseMode && (
-                <div className="space-y-4">
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 sm:p-4 rounded-lg border border-green-200">
                     <div className="text-center">
-                      <h3 className="text-lg font-semibold text-green-800 mb-2">Browse All Available Papers</h3>
-                      <p className="text-sm text-green-700">{paperDetails.message}</p>
+                      <h3 className="text-base sm:text-lg font-semibold text-green-800 mb-2">Browse All Available Papers</h3>
+                      <p className="text-xs sm:text-sm text-green-700">{paperDetails.message}</p>
                     </div>
                   </div>
                   
-                  <div className="grid gap-4">
+                  <div className="grid gap-3 sm:gap-4">
                     {paperDetails.availablePapers?.map((paper, idx) => (
-                      <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start">
+                      <div key={idx} className="border border-gray-200 rounded-lg p-3 sm:p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-start">
                           <div className="flex-1">
-                            <h4 className="font-medium text-gray-900 text-lg mb-2">{paper.name}</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                            <h4 className="font-medium text-gray-900 text-sm sm:text-lg mb-2">{paper.name}</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
                               <div>
                                 <span className="font-medium">Suppliers:</span>
                                 <div className="mt-1">
@@ -588,10 +588,10 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                               </div>
                             </div>
                           </div>
-                          <div className="ml-4">
+                          <div className="flex justify-center sm:ml-4">
                             <Button
                               variant="outline"
-                              className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700"
+                              className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700 w-full sm:w-auto"
                               size="sm"
                               onClick={() => handleAddPaperFromBrowse(paper.name)}
                               title={`Add ${paper.name} to product`}
@@ -610,27 +610,27 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
               {!paperDetails.browseMode && (
                 <>
                   {paperDetails.totalMaterials === 0 && paperDetails.message ? (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4">
                       <div className="flex items-start space-x-3">
-                        <div className="w-6 h-6 bg-yellow-600 rounded mt-1 flex items-center justify-center">
+                        <div className="w-6 h-6 bg-yellow-600 rounded mt-1 flex items-center justify-center flex-shrink-0">
                           <span className="text-white text-xs font-bold">!</span>
                         </div>
-                        <div>
-                          <h4 className="font-medium text-yellow-800 mb-2">Paper Not Found in Database</h4>
-                          <p className="text-sm text-yellow-700 mb-3">{paperDetails.message}</p>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-medium text-yellow-800 mb-2 text-sm sm:text-base">Paper Not Found in Database</h4>
+                          <p className="text-xs sm:text-sm text-yellow-700 mb-3 break-words">{paperDetails.message}</p>
                           
                           {paperDetails.similarPapers && paperDetails.similarPapers.length > 0 && (
                             <div className="mt-4 pt-3 border-t border-yellow-200">
-                              <p className="text-sm font-medium text-yellow-800 mb-2">Similar papers found:</p>
+                              <p className="text-xs sm:text-sm font-medium text-yellow-800 mb-2">Similar papers found:</p>
                               <div className="space-y-2">
                                 {paperDetails.similarPapers.map((paper, idx) => (
                                   <div key={idx} className="bg-yellow-50 p-3 rounded border border-yellow-200">
-                                    <div className="flex justify-between items-start">
-                                      <div>
-                                        <p className="text-xs font-medium text-yellow-900">{paper.name}</p>
+                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-2 sm:space-y-0">
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-medium text-yellow-900 break-words">{paper.name}</p>
                                         <p className="text-xs text-yellow-700">Supplier: {paper.supplier}</p>
                                       </div>
-                                      <div className="text-right">
+                                      <div className="text-left sm:text-right flex-shrink-0">
                                         <p className="font-bold text-yellow-900 text-sm">${paper.cost?.toFixed(2) || '0.00'}</p>
                                         <p className="text-xs text-yellow-700">per {paper.unit}</p>
                                       </div>
@@ -644,10 +644,10 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                           
                           {paperDetails.availableAlternatives && paperDetails.availableAlternatives.length > 0 && (
                             <div className="mt-3 pt-3 border-t border-yellow-200">
-                              <p className="text-sm font-medium text-yellow-800 mb-2">Other available papers:</p>
+                              <p className="text-xs sm:text-sm font-medium text-yellow-800 mb-2">Other available papers:</p>
                               <div className="flex flex-wrap gap-2">
                                 {paperDetails.availableAlternatives.map((alt, idx) => (
-                                  <span key={idx} className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
+                                  <span key={idx} className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs break-words">
                                     {alt.name}
                                   </span>
                                 ))}
@@ -659,28 +659,28 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     </div>
                   ) : (
                     <>
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 sm:p-4 rounded-lg border border-blue-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                           <div className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">{paperDetails.totalMaterials || 0}</div>
-                            <div className="text-sm text-gray-600">Total Materials</div>
+                            <div className="text-xl sm:text-2xl font-bold text-blue-600">{paperDetails.totalMaterials || 0}</div>
+                            <div className="text-xs sm:text-sm text-gray-600">Total Materials</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-2xl font-bold text-green-600">{paperDetails.totalSuppliers || 0}</div>
-                            <div className="text-sm text-gray-600">Available Suppliers</div>
+                            <div className="text-xl sm:text-2xl font-bold text-green-600">{paperDetails.totalSuppliers || 0}</div>
+                            <div className="text-xs sm:text-sm text-gray-600">Available Suppliers</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-2xl font-bold text-purple-600">{paperDetails.gsmDetails?.length || 0}</div>
-                            <div className="text-sm text-gray-600">GSM Options</div>
+                            <div className="text-xl sm:text-2xl font-bold text-purple-600">{paperDetails.gsmDetails?.length || 0}</div>
+                            <div className="text-xs sm:text-sm text-gray-600">GSM Options</div>
                           </div>
                         </div>
                         
                         <div className="mt-4 pt-4 border-t border-blue-200">
                           <div className="text-center">
-                            <p className="text-sm text-gray-600">
+                            <p className="text-xs sm:text-sm text-gray-600">
                               <span className="font-medium">Paper Type:</span> {paperDetails.paperName || 'Unknown'}
                             </p>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1">
                               <span className="font-medium">Database Status:</span> 
                               <span className="text-green-600 font-medium ml-1">Active</span>
                             </p>
@@ -691,24 +691,24 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                   )}
 
                   {paperDetails.gsmDetails && paperDetails.gsmDetails.length > 0 ? (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                    <div className="space-y-3 sm:space-y-4">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
                         Available GSM Options
                       </h3>
                       
                       {paperDetails.gsmDetails.map((gsmDetail, idx) => (
-                        <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-lg font-semibold text-gray-800">
+                        <div key={idx} className="border border-gray-200 rounded-lg p-3 sm:p-4 bg-white shadow-sm">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 space-y-2 sm:space-y-0">
+                            <h4 className="text-base sm:text-lg font-semibold text-gray-800">
                               {gsmDetail.gsm} GSM
                             </h4>
-                            <div className="text-right">
-                              <div className="text-sm text-gray-600">
+                            <div className="text-left sm:text-right">
+                              <div className="text-xs sm:text-sm text-gray-600">
                                 Cost Range: <span className="font-medium text-green-600">
                                   ${gsmDetail.costRange?.min?.toFixed(2) || '0.00'} - ${gsmDetail.costRange?.max?.toFixed(2) || '0.00'}
                                 </span>
                               </div>
-                              <div className="text-sm text-gray-600">
+                              <div className="text-xs sm:text-sm text-gray-600">
                                 Avg: <span className="font-medium text-blue-600">
                                   ${gsmDetail.averageCost?.toFixed(2) || '0.00'}
                                 </span>
@@ -717,31 +717,31 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                           </div>
                           
                           <div className="space-y-3">
-                            <h5 className="font-medium text-gray-700 text-sm">
+                            <h5 className="font-medium text-gray-700 text-xs sm:text-sm">
                               Suppliers ({gsmDetail.suppliers?.length || 0}):
                             </h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                               {gsmDetail.suppliers?.map((supplier, sIdx) => (
                                 <div key={sIdx} className="border border-gray-100 rounded-md p-3 bg-gray-50">
-                                  <div className="flex justify-between items-start mb-2">
-                                    <h6 className="font-medium text-gray-800">{supplier.name}</h6>
-                                    <span className="text-sm font-semibold text-green-600">
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 space-y-1 sm:space-y-0">
+                                    <h6 className="font-medium text-gray-800 text-sm break-words">{supplier.name}</h6>
+                                    <span className="text-xs sm:text-sm font-semibold text-green-600">
                                       ${supplier.cost?.toFixed(2) || '0.00'}/{supplier.unit || 'unit'}
                                     </span>
                                   </div>
                                   
                                   <div className="space-y-1 text-xs text-gray-600">
                                     {supplier.contact && (
-                                      <div>Contact: {supplier.contact}</div>
+                                      <div className="break-words">Contact: {supplier.contact}</div>
                                     )}
                                     {supplier.email && (
-                                      <div>Email: {supplier.email}</div>
+                                      <div className="break-words">Email: {supplier.email}</div>
                                     )}
                                     {supplier.phone && (
                                       <div>Phone: {supplier.countryCode} {supplier.phone}</div>
                                     )}
                                     {supplier.address && (
-                                      <div>Address: {supplier.address}</div>
+                                      <div className="break-words">Address: {supplier.address}</div>
                                     )}
                                     {supplier.city && supplier.state && (
                                       <div>Location: {supplier.city}, {supplier.state}</div>
@@ -765,7 +765,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                       <div className="w-8 h-8 bg-gray-400 rounded mx-auto mb-2 flex items-center justify-center">
                         <span className="text-white text-xs font-bold">P</span>
                       </div>
-                      <p className="text-sm">No GSM options available for this paper</p>
+                      <p className="text-xs sm:text-sm">No GSM options available for this paper</p>
                     </div>
                   )}
                 </>
@@ -780,243 +780,211 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: customDropdownStyles }} />
-      <div className="space-y-8">
-      <div className="text-center space-y-3">
-        <h3 className="text-2xl font-bold text-slate-900">Product Specifications</h3>
-        <p className="text-slate-600">
-          {isTemplateQuote 
-            ? `${formData.products.length} product(s) loaded from selected quote template. You can modify these specifications as needed.`
-            : "Define the product specifications for your quote"
-          }
-        </p>
-      </div>
-
-      {/* Template Quote Indicator */}
-      {isTemplateQuote && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-2">
-              <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center mt-0.5">
-                <span className="text-white text-xs font-bold">📋</span>
-              </div>
-              <div className="text-blue-700">
-                <p className="font-medium mb-1">Quote Template Loaded</p>
-                <p className="text-sm">
-                  Product specifications have been pre-filled from the selected quote template: <strong>{formData.products.length} product(s) loaded</strong>
-                </p>
-                <div className="text-sm mt-1 space-y-1">
-                  {formData.products.map((product, idx) => (
-                    <div key={idx} className="border-l-2 border-blue-300 pl-2">
-                      <strong>{product.productName}</strong>: {product.quantity} units, {product.sides} side(s), 
-                      {product.printingSelection}
-                      {product.papers.length > 0 && product.papers[0].name && 
-                        `, Paper: ${product.papers[0].name} ${product.papers[0].gsm}gsm`
-                      }
-                      {product.finishing.length > 0 && 
-                        `, Finishing: ${product.finishing.join(', ')}`
-                      }
-                      {product.colors && (product.colors.front || product.colors.back) && 
-                        `, Colors: ${product.colors.front || ''}${product.colors.front && product.colors.back ? ' / ' : ''}${product.colors.back || ''}`
-                      }
-                      {(product.flatSize.width || product.flatSize.height) && 
-                        `, Size: ${product.flatSize.width || 0}×${product.flatSize.height || 0}cm`
-                      }
-                    </div>
-                  ))}
-                </div>
-                <p className="text-sm mt-1 text-blue-600">
-                  You can modify any details to customize for your new quote.
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setFormData(prev => ({
-                  ...prev,
-                  products: [createEmptyProduct()]
-                }));
-              }}
-              className="text-blue-600 border-blue-300 hover:bg-blue-50"
-            >
-              Clear Template
-            </Button>
-          </div>
+      <div className="space-y-6 sm:space-y-8 px-4 sm:px-0">
+        <div className="text-center space-y-2 sm:space-y-3">
+          <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Product Specifications</h3>
+          <p className="text-sm sm:text-base text-slate-600">
+            {isTemplateQuote 
+              ? `${formData.products.length} product(s) loaded from selected quote template. You can modify these specifications as needed.`
+              : "Define the product specifications for your quote"
+            }
+          </p>
         </div>
-      )}
 
-      {/* Products */}
-      {formData.products.map((product, idx) => (
-        <Card key={idx} className="border-0 shadow-lg">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                  <div className="w-5 h-5 bg-white rounded flex items-center justify-center">
-                    <span className="text-blue-600 text-xs font-bold">P</span>
+        {/* Template Quote Indicator */}
+        {isTemplateQuote && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+            <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start space-x-2">
+                <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center mt-0.5 flex-shrink-0">
+                  <span className="text-white text-xs font-bold">📋</span>
+                </div>
+                <div className="text-blue-700 min-w-0 flex-1">
+                  <p className="font-medium mb-1 text-sm sm:text-base">Quote Template Loaded</p>
+                  <p className="text-xs sm:text-sm">
+                    Product specifications have been pre-filled from the selected quote template: <strong>{formData.products.length} product(s) loaded</strong>
+                  </p>
+                  <div className="text-xs sm:text-sm mt-1 space-y-1 max-h-32 overflow-y-auto">
+                    {formData.products.map((product, idx) => (
+                      <div key={idx} className="border-l-2 border-blue-300 pl-2 break-words">
+                        <strong>{product.productName}</strong>: {product.quantity} units, {product.sides} side(s), 
+                        {product.printingSelection}
+                        {product.papers.length > 0 && product.papers[0].name && 
+                          `, Paper: ${product.papers[0].name} ${product.papers[0].gsm}gsm`
+                        }
+                        {product.finishing.length > 0 && 
+                          `, Finishing: ${product.finishing.join(', ')}`
+                        }
+                        {product.colors && (product.colors.front || product.colors.back) && 
+                          `, Colors: ${product.colors.front || ''}${product.colors.front && product.colors.back ? ' / ' : ''}${product.colors.back || ''}`
+                        }
+                        {(product.flatSize.width || product.flatSize.height) && 
+                          `, Size: ${product.flatSize.width || 0}×${product.flatSize.height || 0}cm`
+                        }
+                      </div>
+                    ))}
                   </div>
-                </div>
-                <div>
-                  <CardTitle className="text-lg text-slate-900">
-                    {product.productName ? product.productName : `Product ${idx + 1}`}
-                  </CardTitle>
-                  <p className="text-sm text-slate-500">Product specifications and details</p>
+                  <p className="text-xs sm:text-sm mt-1 text-blue-600">
+                    You can modify any details to customize for your new quote.
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                {formData.products.length > 1 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeProduct(idx)}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" /> Remove
-                  </Button>
-                )}
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    products: [createEmptyProduct()]
+                  }));
+                }}
+                className="text-blue-600 border-blue-300 hover:bg-blue-50 w-full sm:w-auto flex-shrink-0"
+              >
+                Clear Template
+              </Button>
             </div>
-          </CardHeader>
-          
-          <CardContent className="space-y-8">
-            {/* Basic Information and Color Options - Two Column Layout */}
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Basic Product Information */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-slate-800 flex items-center">
-                  <FileText className="w-5 h-5 mr-2 text-blue-600" />
-                  Basic Information
-                </h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="mb-2 block text-sm font-medium text-slate-700">Product Name</Label>
-                    <Select
-                      value={product.productName}
-                      onValueChange={(v) => updateProduct(idx, { productName: v })}
-                    >
-                      <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white">
-                        <SelectValue placeholder="Select Product" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
-                        {STANDARD_PRODUCTS.map((productName) => (
-                          <SelectItem key={productName} value={productName}>
-                            {productName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+          </div>
+        )}
 
-                  <div>
-                    <Label className="mb-2 block text-sm font-medium text-slate-700">Quantity</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      placeholder="100"
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-                      value={product.quantity ?? ""}
-                      onChange={(e) =>
-                        updateProduct(idx, {
-                          quantity: e.target.value ? Number(e.target.value) : null,
-                        })
-                      }
-                    />
+        {/* Products */}
+        {formData.products.map((product, idx) => (
+          <Card key={idx} className="border-0 shadow-lg">
+            <CardHeader className="pb-3 sm:pb-4">
+              <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 bg-white rounded flex items-center justify-center">
+                      <span className="text-blue-600 text-xs font-bold">P</span>
+                    </div>
                   </div>
-
-                  <div>
-                    <Label className="mb-2 block text-sm font-medium text-slate-700">Sides</Label>
-                    <Select
-                      value={product.sides}
-                      onValueChange={(v) =>
-                        updateProduct(idx, { sides: v as "1" | "2" })
-                      }
-                    >
-                      <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
-                        <SelectItem value="1">1 Side</SelectItem>
-                        <SelectItem value="2">2 Sides</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-base sm:text-lg text-slate-900 break-words">
+                      {product.productName ? product.productName : `Product ${idx + 1}`}
+                    </CardTitle>
+                    <p className="text-xs sm:text-sm text-slate-500">Product specifications and details</p>
                   </div>
-
-                  <div>
-                    <Label className="mb-2 block text-sm font-medium text-slate-700">Printing Selection</Label>
-                    <Select
-                      value={product.printingSelection}
-                      onValueChange={(v) =>
-                        updateProduct(idx, {
-                          printingSelection: v as Product["printingSelection"],
-                        })
-                      }
+                </div>
+                <div className="flex items-center justify-end space-x-3">
+                  {formData.products.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeProduct(idx)}
+                      className="text-red-500 hover:text-red-600 hover:bg-red-50 w-full sm:w-auto"
                     >
-                      <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white">
-                        <SelectValue placeholder="Select Printing" />
-                      </SelectTrigger>
-                                              <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
+                      <Trash2 className="h-4 w-4 mr-2" /> Remove
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-6 sm:space-y-8">
+              {/* Basic Information and Color Options - Responsive Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                {/* Basic Product Information */}
+                <div className="space-y-3 sm:space-y-4">
+                  <h4 className="text-base sm:text-lg font-semibold text-slate-800 flex items-center">
+                    <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                    Basic Information
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <Label className="mb-2 block text-xs sm:text-sm font-medium text-slate-700">Product Name</Label>
+                      <Select
+                        value={product.productName}
+                        onValueChange={(v) => updateProduct(idx, { productName: v })}
+                      >
+                        <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                          <SelectValue placeholder="Select Product" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
+                          {STANDARD_PRODUCTS.map((productName) => (
+                            <SelectItem key={productName} value={productName}>
+                              {productName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="mb-2 block text-xs sm:text-sm font-medium text-slate-700">Quantity</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        placeholder="100"
+                        className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm"
+                        value={product.quantity ?? ""}
+                        onChange={(e) =>
+                          updateProduct(idx, {
+                            quantity: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="mb-2 block text-xs sm:text-sm font-medium text-slate-700">Sides</Label>
+                      <Select
+                        value={product.sides}
+                        onValueChange={(v) =>
+                          updateProduct(idx, { sides: v as "1" | "2" })
+                        }
+                      >
+                        <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
+                          <SelectItem value="1">1 Side</SelectItem>
+                          <SelectItem value="2">2 Sides</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="mb-2 block text-xs sm:text-sm font-medium text-slate-700">Printing Selection</Label>
+                      <Select
+                        value={product.printingSelection}
+                        onValueChange={(v) =>
+                          updateProduct(idx, {
+                            printingSelection: v as Product["printingSelection"],
+                          })
+                        }
+                      >
+                        <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                          <SelectValue placeholder="Select Printing" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
                           <SelectItem value="Digital">Digital</SelectItem>
                           <SelectItem value="Offset">Offset</SelectItem>
                           <SelectItem value="Either">Either</SelectItem>
                           <SelectItem value="Both">Both</SelectItem>
                         </SelectContent>
-                    </Select>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Color Options */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-slate-800 flex items-center">
-                  <Palette className="w-5 h-5 mr-2 text-blue-600" />
-                  Color Options
-                </h4>
-                <div className="space-y-4">
-                  <div>
-                    <Label className="mb-2 block text-sm font-medium text-slate-700">Front Side</Label>
-                    <Select
-                      value={product.colors?.front || ""}
-                      onValueChange={(v) => updateProduct(idx, { 
-                        colors: { ...product.colors, front: v } 
-                      })}
-                    >
-                      <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white">
-                        <SelectValue placeholder="Select Color" />
-                      </SelectTrigger>
-                                              <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
-                          <SelectItem value="1 Color">1 Color</SelectItem>
-                          <SelectItem value="2 Colors">2 Colors</SelectItem>
-                          <SelectItem value="3 Colors">3 Colors</SelectItem>
-                          <SelectItem value="4 Colors (CMYK)">4 Colors (CMYK)</SelectItem>
-                          <SelectItem value="4+1 Colors">4+1 Colors</SelectItem>
-                          <SelectItem value="4+2 Colors">4+2 Colors</SelectItem>
-                        </SelectContent>
-                    </Select>
-                  </div>
-
-                  {product.sides === "2" && (
+                {/* Color Options */}
+                <div className="space-y-3 sm:space-y-4">
+                  <h4 className="text-base sm:text-lg font-semibold text-slate-800 flex items-center">
+                    <Palette className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                    Color Options
+                  </h4>
+                  <div className="space-y-3 sm:space-y-4">
                     <div>
-                      <Label className="mb-2 block text-sm font-medium text-slate-700">Back Side</Label>
+                      <Label className="mb-2 block text-xs sm:text-sm font-medium text-slate-700">Front Side</Label>
                       <Select
-                        value={product.colors?.back === product.colors?.front ? "Same as Front" : (product.colors?.back || "")}
-                        onValueChange={(v) => {
-                          if (v === "Same as Front") {
-                            updateProduct(idx, { 
-                              colors: { ...product.colors, back: product.colors?.front || "" } 
-                            });
-                          } else {
-                            updateProduct(idx, { 
-                              colors: { ...product.colors, back: v } 
-                            });
-                          }
-                        }}
+                        value={product.colors?.front || ""}
+                        onValueChange={(v) => updateProduct(idx, { 
+                          colors: { ...product.colors, front: v } 
+                        })}
                       >
-                        <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white">
+                        <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
                           <SelectValue placeholder="Select Color" />
                         </SelectTrigger>
                         <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
-                          <SelectItem value="Same as Front">Same as Front</SelectItem>
                           <SelectItem value="1 Color">1 Color</SelectItem>
                           <SelectItem value="2 Colors">2 Colors</SelectItem>
                           <SelectItem value="3 Colors">3 Colors</SelectItem>
@@ -1025,493 +993,520 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                           <SelectItem value="4+2 Colors">4+2 Colors</SelectItem>
                         </SelectContent>
                       </Select>
-                      
-                      {/* Show actual back color when "Same as Front" is selected */}
-                      {product.colors?.back === product.colors?.front && product.colors?.front && (
-                        <div className="text-xs text-gray-600 mt-1">
-                          Back side will use: <span className="font-medium">{product.colors?.front}</span>
-                        </div>
-                      )}
                     </div>
-                  )}
+
+                    {product.sides === "2" && (
+                      <div>
+                        <Label className="mb-2 block text-xs sm:text-sm font-medium text-slate-700">Back Side</Label>
+                        <Select
+                          value={product.colors?.back === product.colors?.front ? "Same as Front" : (product.colors?.back || "")}
+                          onValueChange={(v) => {
+                            if (v === "Same as Front") {
+                              updateProduct(idx, { 
+                                colors: { ...product.colors, back: product.colors?.front || "" } 
+                              });
+                            } else {
+                              updateProduct(idx, { 
+                                colors: { ...product.colors, back: v } 
+                              });
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                            <SelectValue placeholder="Select Color" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
+                            <SelectItem value="Same as Front">Same as Front</SelectItem>
+                            <SelectItem value="1 Color">1 Color</SelectItem>
+                            <SelectItem value="2 Colors">2 Colors</SelectItem>
+                            <SelectItem value="3 Colors">3 Colors</SelectItem>
+                            <SelectItem value="4 Colors (CMYK)">4 Colors (CMYK)</SelectItem>
+                            <SelectItem value="4+1 Colors">4+1 Colors</SelectItem>
+                            <SelectItem value="4+2 Colors">4+2 Colors</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        {/* Show actual back color when "Same as Front" is selected */}
+                        {product.colors?.back === product.colors?.front && product.colors?.front && (
+                          <div className="text-xs text-gray-600 mt-1">
+                            Back side will use: <span className="font-medium">{product.colors?.front}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Size Details */}
-            <div className="space-y-4">
-              <h4 className="text-lg font-semibold text-slate-800 flex items-center">
-                <Ruler className="w-5 h-5 mr-2 text-blue-600" />
-                Size Details (cm)
-              </h4>
-              
-
-              
-              {/* Flat Size (Open) */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium text-slate-700">Flat Size (Open)</Label>
-                <div className={`grid gap-4 ${shouldShowSpine(product.productName) ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                  <div>
-                    <Label className="text-xs text-slate-600 mb-1 block">Width</Label>
-                    <Input
-                      type="number"
-                      placeholder="Width"
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-                      min={0}
-                      step="0.1"
-                      value={product.flatSize.width ?? ""}
-                      onChange={(e) =>
-                        handleSizeChange(
-                          idx,
-                          "flatSize",
-                          "width",
-                          e.target.value
-                        )
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-slate-600 mb-1 block">Height</Label>
-                    <Input
-                      type="number"
-                      placeholder="Height"
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-                      min={0}
-                      step="0.1"
-                      value={product.flatSize.height ?? ""}
-                      onChange={(e) =>
-                        handleSizeChange(
-                          idx,
-                          "flatSize",
-                          "height",
-                          e.target.value
-                        )
-                      }
-                    />
-                  </div>
-                  {shouldShowSpine(product.productName) && (
+              {/* Size Details */}
+              <div className="space-y-3 sm:space-y-4">
+                <h4 className="text-base sm:text-lg font-semibold text-slate-800 flex items-center">
+                  <Ruler className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                  Size Details (cm)
+                </h4>
+                
+                {/* Flat Size (Open) */}
+                <div className="space-y-2 sm:space-y-3">
+                  <Label className="text-xs sm:text-sm font-medium text-slate-700">Flat Size (Open)</Label>
+                  <div className={`grid gap-3 sm:gap-4 ${shouldShowSpine(product.productName) ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
                     <div>
-                      <Label className="text-xs text-slate-600 mb-1 block">Spine</Label>
+                      <Label className="text-xs text-slate-600 mb-1 block">Width</Label>
                       <Input
                         type="number"
-                        placeholder="Spine"
-                        className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
-                        value={product.flatSize.spine ?? ""}
+                        placeholder="Width"
+                        className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm"
                         min={0}
                         step="0.1"
+                        value={product.flatSize.width ?? ""}
                         onChange={(e) =>
                           handleSizeChange(
                             idx,
                             "flatSize",
-                            "spine",
+                            "width",
                             e.target.value
                           )
                         }
                       />
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Close Size (Closed) with Same Dimensions Checkbox */}
-              <div className="space-y-3">
-                <div className="flex items-center space-x-4">
-                  <Label className="text-sm font-medium text-slate-700">Close Size (Closed)</Label>
-                  <div className="flex items-center space-x-2 px-3 py-1.5 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 transition-colors">
-                    <Checkbox
-                      id={`same-${idx}`}
-                      checked={product.useSameAsFlat}
-                      onCheckedChange={(checked) => {
-                        const isChecked = Boolean(checked);
-                        if (isChecked) {
-                          // When checked, sync close size to match flat size
-                          updateProduct(idx, {
-                            useSameAsFlat: isChecked,
-                            closeSize: {
-                              width: product.flatSize.width,
-                              height: product.flatSize.height,
-                              spine: product.flatSize.spine
-                            }
-                          });
-                        } else {
-                          // When unchecked, just update the checkbox
-                          updateProduct(idx, { useSameAsFlat: isChecked });
-                        }
-                      }}
-                      className="border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 h-4 w-4"
-                    />
-                    <Label htmlFor={`same-${idx}`} className="text-xs font-medium text-blue-700 cursor-pointer whitespace-nowrap">
-                      Use same dimensions as Flat Size
-                    </Label>
-                  </div>
-
-                </div>
-                <div className={`grid gap-4 ${shouldShowSpine(product.productName) ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                  <div>
-                    <Label className="text-xs text-slate-600 mb-1 block">Width</Label>
-                    <Input
-                      type="number"
-                      placeholder="Width"
-                      className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl ${
-                        product.useSameAsFlat ? 'bg-gray-50' : ''
-                      }`}
-                      min={0}
-                      step="0.1"
-                      value={product.closeSize.width ?? ""}
-                      onChange={(e) =>
-                        handleSizeChange(
-                          idx,
-                          "closeSize",
-                          "width",
-                          e.target.value
-                        )
-                      }
-                      disabled={product.useSameAsFlat}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-slate-600 mb-1 block">Height</Label>
-                    <Input
-                      type="number"
-                      placeholder="Height"
-                      className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl ${
-                        product.useSameAsFlat ? 'bg-gray-50' : ''
-                      }`}
-                      min={0}
-                      step="0.1"
-                      value={product.closeSize.height ?? ""}
-                      onChange={(e) =>
-                        handleSizeChange(
-                          idx,
-                          "closeSize",
-                          "height",
-                          e.target.value
-                        )
-                      }
-                      disabled={product.useSameAsFlat}
-                    />
-                  </div>
-                  {shouldShowSpine(product.productName) && (
                     <div>
-                      <Label className="text-xs text-slate-600 mb-1 block">Spine</Label>
+                      <Label className="text-xs text-slate-600 mb-1 block">Height</Label>
                       <Input
                         type="number"
-                        placeholder="Spine"
-                        className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl ${
-                          product.useSameAsFlat ? 'bg-gray-50' : ''
-                        }`}
-                        value={product.closeSize.spine ?? ""}
+                        placeholder="Height"
+                        className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm"
                         min={0}
                         step="0.1"
+                        value={product.flatSize.height ?? ""}
+                        onChange={(e) =>
+                          handleSizeChange(
+                            idx,
+                            "flatSize",
+                            "height",
+                            e.target.value
+                          )
+                        }
+                      />
+                    </div>
+                    {shouldShowSpine(product.productName) && (
+                      <div>
+                        <Label className="text-xs text-slate-600 mb-1 block">Spine</Label>
+                        <Input
+                          type="number"
+                          placeholder="Spine"
+                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm"
+                          value={product.flatSize.spine ?? ""}
+                          min={0}
+                          step="0.1"
+                          onChange={(e) =>
+                            handleSizeChange(
+                              idx,
+                              "flatSize",
+                              "spine",
+                              e.target.value
+                            )
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Close Size (Closed) with Same Dimensions Checkbox */}
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
+                    <Label className="text-xs sm:text-sm font-medium text-slate-700">Close Size (Closed)</Label>
+                    <div className="flex items-center space-x-2 px-3 py-1.5 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 transition-colors w-fit">
+                      <Checkbox
+                        id={`same-${idx}`}
+                        checked={product.useSameAsFlat}
+                        onCheckedChange={(checked) => {
+                          const isChecked = Boolean(checked);
+                          if (isChecked) {
+                            // When checked, sync close size to match flat size
+                            updateProduct(idx, {
+                              useSameAsFlat: isChecked,
+                              closeSize: {
+                                width: product.flatSize.width,
+                                height: product.flatSize.height,
+                                spine: product.flatSize.spine
+                              }
+                            });
+                          } else {
+                            // When unchecked, just update the checkbox
+                            updateProduct(idx, { useSameAsFlat: isChecked });
+                          }
+                        }}
+                        className="border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 h-4 w-4"
+                      />
+                      <Label htmlFor={`same-${idx}`} className="text-xs font-medium text-blue-700 cursor-pointer whitespace-nowrap">
+                        Use same dimensions as Flat Size
+                      </Label>
+                    </div>
+                  </div>
+                  <div className={`grid gap-3 sm:gap-4 ${shouldShowSpine(product.productName) ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+                    <div>
+                      <Label className="text-xs text-slate-600 mb-1 block">Width</Label>
+                      <Input
+                        type="number"
+                        placeholder="Width"
+                        className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm ${
+                          product.useSameAsFlat ? 'bg-gray-50' : ''
+                        }`}
+                        min={0}
+                        step="0.1"
+                        value={product.closeSize.width ?? ""}
                         onChange={(e) =>
                           handleSizeChange(
                             idx,
                             "closeSize",
-                            "spine",
+                            "width",
                             e.target.value
                           )
                         }
                         disabled={product.useSameAsFlat}
                       />
                     </div>
-                  )}
-                </div>
-
-              </div>
-            </div>
-
-            {/* Paper Details */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-lg font-semibold text-slate-800 flex items-center">
-                  <div className="w-5 h-5 bg-blue-600 rounded mr-2 flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">P</span>
+                    <div>
+                      <Label className="text-xs text-slate-600 mb-1 block">Height</Label>
+                      <Input
+                        type="number"
+                        placeholder="Height"
+                        className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm ${
+                          product.useSameAsFlat ? 'bg-gray-50' : ''
+                        }`}
+                        min={0}
+                        step="0.1"
+                        value={product.closeSize.height ?? ""}
+                        onChange={(e) =>
+                          handleSizeChange(
+                            idx,
+                            "closeSize",
+                            "height",
+                            e.target.value
+                          )
+                        }
+                        disabled={product.useSameAsFlat}
+                      />
+                    </div>
+                    {shouldShowSpine(product.productName) && (
+                      <div>
+                        <Label className="text-xs text-slate-600 mb-1 block">Spine</Label>
+                        <Input
+                          type="number"
+                          placeholder="Spine"
+                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm ${
+                            product.useSameAsFlat ? 'bg-gray-50' : ''
+                          }`}
+                          value={product.closeSize.spine ?? ""}
+                          min={0}
+                          step="0.1"
+                          onChange={(e) =>
+                            handleSizeChange(
+                              idx,
+                              "closeSize",
+                              "spine",
+                              e.target.value
+                            )
+                          }
+                          disabled={product.useSameAsFlat}
+                        />
+                      </div>
+                    )}
                   </div>
-                  Paper Details
-                </h4>
-                <div className="flex items-center space-x-3">
-                  <Button 
-                    variant="outline" 
-                    className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 hover:from-purple-600 hover:to-purple-700 px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                    onClick={() => {
-                      const paperName = product.papers[0]?.name;
-                      handleViewPaperDetails(paperName || '');
-                    }}
-                    disabled={!product.papers[0]?.name || product.papers[0]?.name === "Select Paper" || product.papers[0]?.name.trim() === ""}
-                    title={product.papers[0]?.name && product.papers[0]?.name !== "Select Paper" && product.papers[0]?.name.trim() !== ""
-                      ? `View details for ${product.papers[0].name.replace(/\s*\(Custom\)$/, '')}` 
-                      : "Select a paper first to view details"
-                    }
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Paper Details
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                    onClick={() => handleBrowseAvailablePapers()}
-                    title="Browse all available papers before selection"
-                  >
-                    <Search className="w-4 h-4 mr-2" />
-                    Browse Available Papers
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-blue-500 text-blue-600 hover:bg-blue-50 rounded-xl"
-                    size="sm"
-                    onClick={() => addPaper(idx)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> Add Paper
-                  </Button>
                 </div>
               </div>
-              
-              <div className="space-y-4">
-                {product.papers.map((paper, pIndex) => (
-                  <div
-                    key={pIndex}
-                    className="border border-slate-200 p-4 rounded-xl bg-slate-50"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <h5 className="font-medium text-slate-700">Paper {pIndex + 1}</h5>
-                      <div className="flex items-center space-x-2">
 
-                        {product.papers.length > 1 && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removePaper(idx, pIndex)}
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl"
-                            title="Remove paper"
+              {/* Paper Details */}
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+                  <h4 className="text-base sm:text-lg font-semibold text-slate-800 flex items-center">
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-600 rounded mr-2 flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">P</span>
+                    </div>
+                    Paper Details
+                  </h4>
+                  <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-3">
+                    <Button 
+                      variant="outline" 
+                      className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 hover:from-purple-600 hover:to-purple-700 px-3 sm:px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm w-full sm:w-auto"
+                      onClick={() => {
+                        const paperName = product.papers[0]?.name;
+                        handleViewPaperDetails(paperName || '');
+                      }}
+                      disabled={!product.papers[0]?.name || product.papers[0]?.name === "Select Paper" || product.papers[0]?.name.trim() === ""}
+                      title={product.papers[0]?.name && product.papers[0]?.name !== "Select Paper" && product.papers[0]?.name.trim() !== ""
+                        ? `View details for ${product.papers[0].name.replace(/\s*\(Custom\)$/, '')}` 
+                        : "Select a paper first to view details"
+                      }
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      View Paper Details
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 px-3 sm:px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm w-full sm:w-auto"
+                      onClick={() => handleBrowseAvailablePapers()}
+                      title="Browse all available papers before selection"
+                    >
+                      <Search className="w-4 h-4 mr-2" />
+                      Browse Available Papers
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-blue-500 text-blue-600 hover:bg-blue-50 rounded-xl text-xs sm:text-sm w-full sm:w-auto"
+                      size="sm"
+                      onClick={() => addPaper(idx)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Add Paper
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-3 sm:space-y-4">
+                  {product.papers.map((paper, pIndex) => (
+                    <div
+                      key={pIndex}
+                      className="border border-slate-200 p-3 sm:p-4 rounded-xl bg-slate-50"
+                    >
+                      <div className="flex items-center justify-between mb-3 sm:mb-4">
+                        <h5 className="font-medium text-slate-700 text-sm sm:text-base">Paper {pIndex + 1}</h5>
+                        <div className="flex items-center space-x-2">
+                          {product.papers.length > 1 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removePaper(idx, pIndex)}
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8"
+                              title="Remove paper"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                        <div>
+                          <Label className="mb-2 block text-xs sm:text-sm font-medium text-slate-700">Paper Name</Label>
+                          <Select
+                            value={paper.name || ""}
+                            onValueChange={(value) => {
+                              // Find the selected paper to get its GSM options
+                              const selectedPaper = availablePapers.find(p => p.name === value);
+                              if (selectedPaper && selectedPaper.gsmOptions.length > 0) {
+                                // Auto-update GSM to the first available option
+                                handlePaperChange(idx, pIndex, "gsm", selectedPaper.gsmOptions[0]);
+                              }
+                              handlePaperChange(idx, pIndex, "name", value);
+                            }}
                           >
-                            <X className="h-4 w-4" />
-                          </Button>
+                            <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                              <SelectValue placeholder="Select paper type" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
+                              {loadingPapers ? (
+                                <SelectItem value="loading" disabled>Loading papers...</SelectItem>
+                              ) : (
+                                <>
+                                  {/* Show current value if it doesn't match available options */}
+                                  {!availablePapers.find(p => p.name === paper.name) && paper.name && paper.name.trim() !== "" && paper.name !== "Select Paper" && (
+                                    <SelectItem value={paper.name}>
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{paper.name} (Custom)</span>
+                                        <span className="text-xs text-gray-500">From quote template</span>
+                                      </div>
+                                    </SelectItem>
+                                  )}
+                                  {/* Show available options */}
+                                  {availablePapers.map((paperOption) => (
+                                    <SelectItem key={paperOption.name} value={paperOption.name || "unknown"}>
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{paperOption.name || "Unknown Paper"}</span>
+                                        <span className="text-xs text-gray-500">
+                                          {paperOption.suppliers.join(', ')}
+                                        </span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="mb-2 block text-xs sm:text-sm font-medium text-slate-700">GSM</Label>
+                          <Select
+                            value={paper.gsm || ""}
+                            onValueChange={(value) => handlePaperChange(idx, pIndex, "gsm", value)}
+                          >
+                            <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                              <SelectValue placeholder="Select GSM" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
+                              {(() => {
+                                // Find the selected paper to get its GSM options
+                                // Handle custom paper names (remove "(Custom)" suffix)
+                                const cleanPaperName = paper.name.replace(/\s*\(Custom\)$/, '');
+                                console.log('GSM Dropdown Debug:', {
+                                  paperName: paper.name,
+                                  cleanPaperName,
+                                  paperGsm: paper.gsm,
+                                  availablePapers: availablePapers.map(p => p.name)
+                                });
+                                
+                                const selectedPaper = availablePapers.find(p => p.name === cleanPaperName) || 
+                                                     availablePapers.find(p => p.name.includes(cleanPaperName)) ||
+                                                     availablePapers.find(p => cleanPaperName.includes(p.name.replace(/\d+gsm$/i, '').trim())) ||
+                                                     // Try to find by base name (e.g., "Premium Card Stock" matches "Premium Card Stock 350gsm")
+                                                     availablePapers.find(p => {
+                                                       const baseName = p.name.replace(/\d+gsm$/i, '').trim();
+                                                       return baseName.toLowerCase() === cleanPaperName.toLowerCase();
+                                                     });
+                                
+                                console.log('Selected paper for GSM:', selectedPaper);
+                                
+                                if (!selectedPaper) {
+                                  // If no match found, show the current GSM value as a custom option
+                                  if (paper.gsm && paper.gsm !== "Select GSM") {
+                                    console.log('Showing custom GSM option:', paper.gsm);
+                                    return (
+                                      <>
+                                        <SelectItem value={paper.gsm}>
+                                          {paper.gsm} gsm (Custom)
+                                        </SelectItem>
+                                        <SelectItem value="no-paper" disabled>Select paper first</SelectItem>
+                                      </>
+                                    );
+                                  }
+                                  console.log('No paper selected, showing disabled message');
+                                  return <SelectItem value="no-paper" disabled>Select paper first</SelectItem>;
+                                }
+                                
+                                console.log('Showing GSM options from selected paper:', selectedPaper.gsmOptions);
+                                return selectedPaper.gsmOptions.map((gsm) => (
+                                  <SelectItem key={gsm} value={gsm || "unknown"}>
+                                    {gsm || "Unknown"} gsm
+                                  </SelectItem>
+                                ));
+                              })()}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Finishing Options */}
+              <div className="space-y-4 sm:space-y-6">
+                <h4 className="text-base sm:text-lg font-semibold text-slate-800 flex items-center">
+                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                  Finishing Options
+                </h4>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {[
+                    "Embossing",
+                    "UV Spot", 
+                    "Lamination",
+                    "Foiling",
+                    "Die Cutting",
+                    "Varnishing",
+                  ].map((option) => (
+                    <div key={option} className="group">
+                      <div className={`flex items-center justify-between px-3 sm:px-4 py-3 rounded-lg transition-all duration-200 cursor-pointer hover:bg-gray-50 ${
+                        product.finishing.some(f => f.startsWith(option))
+                          ? 'bg-blue-50'
+                          : 'bg-transparent'
+                      }`}>
+                        <div className="flex items-center space-x-3 min-w-0 flex-1">
+                          <Checkbox
+                            id={`fin-${idx}-${option}`}
+                            checked={product.finishing.some(f => f.startsWith(option))}
+                            onCheckedChange={(checked) => {
+                              if (!checked) {
+                                // Remove all variants of this finishing option
+                                const updatedFinishing = product.finishing.filter(f => !f.startsWith(option));
+                                updateProduct(idx, { finishing: updatedFinishing });
+                              } else {
+                                // Add default side when checked
+                                const finishingKey = product.sides === "2" ? `${option}-Front` : option;
+                                const updatedFinishing = [...product.finishing.filter(f => !f.startsWith(option)), finishingKey];
+                                updateProduct(idx, { finishing: updatedFinishing });
+                              }
+                            }}
+                            className="border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 h-4 w-4 rounded-md flex-shrink-0"
+                          />
+                          <Label
+                            htmlFor={`fin-${idx}-${option}`}
+                            className="text-xs sm:text-sm font-medium text-gray-700 cursor-pointer group-hover:text-gray-900 transition-colors break-words"
+                          >
+                            {option}
+                          </Label>
+                        </div>
+                        
+                        {product.sides === "2" && product.finishing.some(f => f.startsWith(option)) && (
+                          <Select
+                            value={product.finishing.find(f => f.startsWith(option))?.split('-')[1] || "Front"}
+                            onValueChange={(side) => {
+                              // Remove old variants and add new one
+                              const updatedFinishing = product.finishing.filter(f => !f.startsWith(option));
+                              updatedFinishing.push(`${option}-${side}`);
+                              updateProduct(idx, { finishing: updatedFinishing });
+                            }}
+                          >
+                            <SelectTrigger className="w-16 sm:w-20 h-7 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md text-xs bg-white shadow-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
+                              <SelectItem value="Front">Front</SelectItem>
+                              <SelectItem value="Back">Back</SelectItem>
+                              <SelectItem value="Both">Both</SelectItem>
+                            </SelectContent>
+                          </Select>
                         )}
                       </div>
                     </div>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="mb-2 block text-sm font-medium text-slate-700">Paper Name</Label>
-                        <Select
-                          value={paper.name || ""}
-                          onValueChange={(value) => {
-                            // Find the selected paper to get its GSM options
-                            const selectedPaper = availablePapers.find(p => p.name === value);
-                            if (selectedPaper && selectedPaper.gsmOptions.length > 0) {
-                              // Auto-update GSM to the first available option
-                              handlePaperChange(idx, pIndex, "gsm", selectedPaper.gsmOptions[0]);
-                            }
-                            handlePaperChange(idx, pIndex, "name", value);
-                          }}
-                        >
-                          <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white">
-                            <SelectValue placeholder="Select paper type" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
-                            {loadingPapers ? (
-                              <SelectItem value="loading" disabled>Loading papers...</SelectItem>
-                            ) : (
-                              <>
-                                {/* Show current value if it doesn't match available options */}
-                                {!availablePapers.find(p => p.name === paper.name) && paper.name && paper.name.trim() !== "" && paper.name !== "Select Paper" && (
-                                  <SelectItem value={paper.name}>
-                                    <div className="flex flex-col">
-                                      <span className="font-medium">{paper.name} (Custom)</span>
-                                      <span className="text-xs text-gray-500">From quote template</span>
-                                    </div>
-                                  </SelectItem>
-                                )}
-                                {/* Show available options */}
-                                {availablePapers.map((paperOption) => (
-                                  <SelectItem key={paperOption.name} value={paperOption.name || "unknown"}>
-                                    <div className="flex flex-col">
-                                      <span className="font-medium">{paperOption.name || "Unknown Paper"}</span>
-                                      <span className="text-xs text-gray-500">
-                                        {paperOption.suppliers.join(', ')}
-                                      </span>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label className="mb-2 block text-sm font-medium text-slate-700">GSM</Label>
-                        <Select
-                          value={paper.gsm || ""}
-                          onValueChange={(value) => handlePaperChange(idx, pIndex, "gsm", value)}
-                        >
-                          <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white">
-                            <SelectValue placeholder="Select GSM" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
-                            {(() => {
-                              // Find the selected paper to get its GSM options
-                              // Handle custom paper names (remove "(Custom)" suffix)
-                              const cleanPaperName = paper.name.replace(/\s*\(Custom\)$/, '');
-                              console.log('GSM Dropdown Debug:', {
-                                paperName: paper.name,
-                                cleanPaperName,
-                                paperGsm: paper.gsm,
-                                availablePapers: availablePapers.map(p => p.name)
-                              });
-                              
-                              const selectedPaper = availablePapers.find(p => p.name === cleanPaperName) || 
-                                                   availablePapers.find(p => p.name.includes(cleanPaperName)) ||
-                                                   availablePapers.find(p => cleanPaperName.includes(p.name.replace(/\d+gsm$/i, '').trim())) ||
-                                                   // Try to find by base name (e.g., "Premium Card Stock" matches "Premium Card Stock 350gsm")
-                                                   availablePapers.find(p => {
-                                                     const baseName = p.name.replace(/\d+gsm$/i, '').trim();
-                                                     return baseName.toLowerCase() === cleanPaperName.toLowerCase();
-                                                   });
-                              
-                              console.log('Selected paper for GSM:', selectedPaper);
-                              
-                              if (!selectedPaper) {
-                                // If no match found, show the current GSM value as a custom option
-                                if (paper.gsm && paper.gsm !== "Select GSM") {
-                                  console.log('Showing custom GSM option:', paper.gsm);
-                                  return (
-                                    <>
-                                      <SelectItem value={paper.gsm}>
-                                        {paper.gsm} gsm (Custom)
-                                      </SelectItem>
-                                      <SelectItem value="no-paper" disabled>Select paper first</SelectItem>
-                                    </>
-                                  );
-                                }
-                                console.log('No paper selected, showing disabled message');
-                                return <SelectItem value="no-paper" disabled>Select paper first</SelectItem>;
-                              }
-                              
-                              console.log('Showing GSM options from selected paper:', selectedPaper.gsmOptions);
-                              return selectedPaper.gsmOptions.map((gsm) => (
-                                <SelectItem key={gsm} value={gsm || "unknown"}>
-                                  {gsm || "Unknown"} gsm
-                                </SelectItem>
-                              ));
-                            })()}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                
+                {/* Finishing Comments */}
+                <div className="space-y-2 sm:space-y-3">
+                  <Label className="text-xs sm:text-sm font-medium text-slate-700">
+                    Finishing Comments
+                  </Label>
+                  <textarea
+                    placeholder="Add specific details for finishing options (e.g., 'Gold foil', 'Silver foil', 'Matte lamination', 'Spot UV on logo')"
+                    value={product.finishingComments || ''}
+                    onChange={(e) => updateProduct(idx, { finishingComments: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 resize-none text-sm"
+                    rows={3}
+                  />
+                  <p className="text-xs text-slate-500">
+                    Use this field to specify exact finishing details like foil colors, lamination types, or specific areas for spot treatments.
+                  </p>
+                </div>
               </div>
-            </div>
-
-            {/* Finishing Options */}
-            <div className="space-y-6">
-              <h4 className="text-lg font-semibold text-slate-800 flex items-center">
-                <Settings className="w-5 h-5 mr-2 text-blue-600" />
-                Finishing Options
-              </h4>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[
-                  "Embossing",
-                  "UV Spot", 
-                  "Lamination",
-                  "Foiling",
-                  "Die Cutting",
-                  "Varnishing",
-                ].map((option) => (
-                  <div key={option} className="group">
-                    <div className={`flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 cursor-pointer hover:bg-gray-50 ${
-                      product.finishing.some(f => f.startsWith(option))
-                        ? 'bg-blue-50'
-                        : 'bg-transparent'
-                    }`}>
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id={`fin-${idx}-${option}`}
-                          checked={product.finishing.some(f => f.startsWith(option))}
-                          onCheckedChange={(checked) => {
-                            if (!checked) {
-                              // Remove all variants of this finishing option
-                              const updatedFinishing = product.finishing.filter(f => !f.startsWith(option));
-                              updateProduct(idx, { finishing: updatedFinishing });
-                            } else {
-                              // Add default side when checked
-                              const finishingKey = product.sides === "2" ? `${option}-Front` : option;
-                              const updatedFinishing = [...product.finishing.filter(f => !f.startsWith(option)), finishingKey];
-                              updateProduct(idx, { finishing: updatedFinishing });
-                            }
-                          }}
-                          className="border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 h-4 w-4 rounded-md"
-                        />
-                        <Label
-                          htmlFor={`fin-${idx}-${option}`}
-                          className="text-sm font-medium text-gray-700 cursor-pointer group-hover:text-gray-900 transition-colors"
-                        >
-                          {option}
-                        </Label>
-                      </div>
-                      
-                      {product.sides === "2" && product.finishing.some(f => f.startsWith(option)) && (
-                        <Select
-                          value={product.finishing.find(f => f.startsWith(option))?.split('-')[1] || "Front"}
-                          onValueChange={(side) => {
-                            // Remove old variants and add new one
-                            const updatedFinishing = product.finishing.filter(f => !f.startsWith(option));
-                            updatedFinishing.push(`${option}-${side}`);
-                            updateProduct(idx, { finishing: updatedFinishing });
-                          }}
-                        >
-                          <SelectTrigger className="w-20 h-7 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md text-xs bg-white shadow-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
-                            <SelectItem value="Front">Front</SelectItem>
-                            <SelectItem value="Back">Back</SelectItem>
-                            <SelectItem value="Both">Both</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Finishing Comments */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium text-slate-700">
-                  Finishing Comments
-                </Label>
-                <textarea
-                  placeholder="Add specific details for finishing options (e.g., 'Gold foil', 'Silver foil', 'Matte lamination', 'Spot UV on logo')"
-                  value={product.finishingComments || ''}
-                  onChange={(e) => updateProduct(idx, { finishingComments: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 resize-none"
-                  rows={3}
-                />
-                <p className="text-xs text-slate-500">
-                  Use this field to specify exact finishing details like foil colors, lamination types, or specific areas for spot treatments.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-      
-      {/* Add Product Button */}
-      <div className="text-center">
-        <Button
-          variant="outline"
-          className="py-6 px-8 border-2 border-dashed border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 rounded-xl transition-all duration-300"
-          onClick={addProduct}
-        >
-          <Plus className="h-5 w-5 mr-2" /> Add Another Product
-        </Button>
-      </div>
-
-      {/* Paper Details Dialog */}
-      <PaperDetailsDialog />
+            </CardContent>
+          </Card>
+        ))}
+        
+        {/* Add Product Button */}
+        <div className="text-center">
+          <Button
+            variant="outline"
+            className="py-4 sm:py-6 px-6 sm:px-8 border-2 border-dashed border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 rounded-xl transition-all duration-300 w-full sm:w-auto text-sm sm:text-base"
+            onClick={addProduct}
+          >
+            <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" /> Add Another Product
+          </Button>
         </div>
-      </>
-    );
+
+        {/* Paper Details Dialog */}
+        <PaperDetailsDialog />
+      </div>
+    </>
+  );
 };
 
 export default Step3ProductSpec;

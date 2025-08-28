@@ -75,7 +75,7 @@ export default function DashboardPage() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<{ name: string; role: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; role: string } | null>({ name: "Demo User", role: "admin" });
   
   const router = useRouter();
 
@@ -83,13 +83,14 @@ export default function DashboardPage() {
   useEffect(() => {
     // Remove authentication requirement - allow access without login
     const currentUser = getCurrentUser();
+    
     if (currentUser) {
       setUser({ name: currentUser.name, role: currentUser.role });
     } else {
       // Set a default user for demo purposes
       setUser({ name: "Demo User", role: "admin" });
     }
-  }, [router]);
+  }, []); // Remove router dependency to run immediately
 
   // Load quotes from database on page load
   useEffect(() => {
@@ -266,7 +267,7 @@ export default function DashboardPage() {
     }
   ], [totalQuotes, approvedQuotes, pendingQuotes, rejectedQuotes]);
 
-  // Show loading while checking authentication
+  // Show loading while checking authentication (this should rarely be needed now)
   if (!user) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
@@ -286,6 +287,7 @@ export default function DashboardPage() {
       </div>
     );
   }
+  
 
   // Format date function to match image format
   const formatDate = (dateInput: string | Date) => {
@@ -898,4 +900,4 @@ export default function DashboardPage() {
 
     </div>
   );
-}// Trigger deployment for commit 3a0250e
+}

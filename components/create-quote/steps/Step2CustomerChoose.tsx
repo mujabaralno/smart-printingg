@@ -361,7 +361,62 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
 
             {/* Quote Table - Similar style to quote management */}
             <div className="overflow-hidden border border-slate-200 rounded-2xl">
-              <table className="w-full">
+              {/* Mobile responsive table */}
+              <div className="block md:hidden">
+                {currentQuotes.map((quote) => (
+                  <div 
+                    key={quote.id} 
+                    className={`p-4 border-b border-slate-200 hover:bg-slate-50 transition-colors duration-200 cursor-pointer ${
+                      selectedQuote?.id === quote.id ? 'bg-blue-50 ring-2 ring-blue-200' : ''
+                    }`}
+                    onClick={() => handleQuoteSelect(quote.id)}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-900 text-sm">Quote ID:</span>
+                        <span className="font-medium text-slate-700 text-sm">{quote.quoteId}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-900 text-sm">Product:</span>
+                        <span className="text-slate-700 text-sm">{quote.product}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-900 text-sm">Customer:</span>
+                        <span className="text-slate-700 text-sm">{quote.client?.companyName || quote.client?.contactPerson || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-900 text-sm">Date:</span>
+                        <span className="text-slate-700 text-sm">{new Date(quote.date).toISOString().slice(0, 10)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-900 text-sm">Status:</span>
+                        <span className="text-slate-700 text-sm">{quote.status}</span>
+                      </div>
+                      <div className="flex items-center justify-center w-full pt-3">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={(e) => handleViewQuote(quote, e)}
+                            className="w-10 h-10 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center"
+                            title="View Quote Details"
+                          >
+                            <Eye className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={(e) => handleEditQuote(quote, e)}
+                            className="w-10 h-10 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 p-2 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center"
+                            title="Edit Quote"
+                          >
+                            <Edit className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Desktop table */}
+              <table className="w-full hidden md:table">
                 <thead className="bg-slate-50">
                   <tr className="border-slate-200">
                     <th className="text-slate-700 font-semibold p-6 text-left">Quote ID</th>
@@ -412,15 +467,15 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
 
             {/* Pagination Controls */}
             {totalPages > 1 && !showAll && (
-              <div className="flex items-center justify-between mt-6">
-                <div className="text-sm text-gray-600">
+              <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+                <div className="text-sm text-gray-600 text-center sm:text-left w-full sm:w-auto">
                   Showing {startIndex + 1} to {Math.min(endIndex, filteredQuotes.length)} of {filteredQuotes.length} quotes
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors w-full sm:w-auto ${
                       currentPage === 1
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -429,13 +484,13 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     Previous
                   </button>
                   
-                  {/* Page Numbers */}
-                  <div className="flex items-center space-x-1">
+                  {/* Page Numbers - Mobile friendly */}
+                  <div className="flex items-center justify-center space-x-1 flex-wrap w-full sm:w-auto max-w-full overflow-hidden">
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                        className={`px-2 py-2 text-sm font-medium rounded-md transition-colors min-w-[36px] h-[36px] flex items-center justify-center ${
                           currentPage === page
                             ? 'bg-blue-600 text-white'
                             : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -449,7 +504,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors w-full sm:w-auto ${
                       currentPage === totalPages
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'

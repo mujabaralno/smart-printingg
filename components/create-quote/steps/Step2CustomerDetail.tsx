@@ -312,23 +312,23 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
   };
 
   return (
-    <div className="space-y-8">
-      <h3 className="font-bold text-2xl">Customer Detail</h3>
+    <div className="space-y-6 sm:space-y-8 px-4 sm:px-0">
+      <h3 className="font-bold text-xl sm:text-2xl">Customer Detail</h3>
 
       {/* Customer Status Indicator */}
       {!isNewCustomer && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center space-x-2">
-            <CheckCircle className="w-5 h-5 text-green-500" />
-            <p className="text-green-700 font-medium">
+            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" />
+            <p className="text-green-700 font-medium text-sm sm:text-base">
               Existing customer data loaded automatically
             </p>
           </div>
         </div>
       )}
 
-      {/* Client Type - Compact Modern Button Style */}
-      <div className="space-y-4">
+      {/* Client Type - Mobile-Responsive Button Style */}
+      <div className="space-y-3 sm:space-y-4">
         <Label className="text-base font-semibold text-gray-700">Client Type</Label>
         <RadioGroup
           value={client.clientType}
@@ -343,52 +343,52 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               setClient({ clientType: value as "Company" });
             }
           }}
-          className="flex space-x-4"
+          className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4"
         >
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-initial">
             <RadioGroupItem value="Individual" id="r-individual" className="sr-only" />
             <Label 
               htmlFor="r-individual" 
-              className={`inline-flex items-center px-6 py-3 rounded-xl font-medium cursor-pointer transition-all duration-200 hover:shadow-md ${
+              className={`flex items-center justify-center px-4 sm:px-6 py-3 rounded-xl font-medium cursor-pointer transition-all duration-200 hover:shadow-md w-full ${
                 client.clientType === "Individual"
                   ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl"
                   : "bg-white border-2 border-gray-200 text-gray-600 hover:border-purple-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
               }`}
             >
-              <User className="w-4 h-4 mr-2" />
-              <span>Individual</span>
+              <User className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm sm:text-base">Individual</span>
               {client.clientType === "Individual" && (
-                <CheckCircle className="w-4 h-4 ml-2" />
+                <CheckCircle className="w-4 h-4 ml-2 flex-shrink-0" />
               )}
             </Label>
           </div>
           
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-initial">
             <RadioGroupItem value="Company" id="r-company" className="sr-only" />
             <Label 
               htmlFor="r-company" 
-              className={`inline-flex items-center px-6 py-3 rounded-xl font-medium cursor-pointer transition-all duration-200 hover:shadow-md ${
+              className={`flex items-center justify-center px-4 sm:px-6 py-3 rounded-xl font-medium cursor-pointer transition-all duration-200 hover:shadow-md w-full ${
                 client.clientType === "Company"
                   ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl"
                   : "bg-white border-2 border-gray-200 text-gray-600 hover:border-purple-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
               }`}
             >
-              <Building className="w-4 h-4 mr-2" />
-              <span>Company</span>
+              <Building className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm sm:text-base">Company</span>
               {client.clientType === "Company" && (
-                <CheckCircle className="w-4 h-4 ml-2" />
+                <CheckCircle className="w-4 h-4 ml-2 flex-shrink-0" />
               )}
             </Label>
           </div>
         </RadioGroup>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Company and Designation (Company only) */}
         {client.clientType === "Company" && (
-          <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-x-8 sm:gap-y-6">
             <div className="relative">
-              <Label htmlFor="companyName" className="mb-2 block">
+              <Label htmlFor="companyName" className="mb-2 block text-sm sm:text-base">
                 Company: <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -396,7 +396,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
                 value={client.companyName || ""}
                 onChange={(e) => handleCompanyNameChange(e.target.value)}
                 placeholder="Company"
-                className={`inputForm ${
+                className={`inputForm w-full ${
                   !client.companyName?.trim()
                     ? "border-red-300 focus:border-red-500 focus:ring-red-500"
                     : ""
@@ -411,12 +411,12 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               )}
               
               {!client.companyName?.trim() && (
-                <p className="text-red-500 text-sm mt-1">Company name is required</p>
+                <p className="text-red-500 text-xs sm:text-sm mt-1">Company name is required</p>
               )}
             </div>
 
             <div>
-              <Label htmlFor="designation" className="mb-2 block">
+              <Label htmlFor="designation" className="mb-2 block text-sm sm:text-base">
                 Designation:
               </Label>
               <Input
@@ -424,16 +424,16 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
                 value={client.role || ""}
                 onChange={(e) => setClient({ role: e.target.value })}
                 placeholder="Designation (optional)"
-                className="inputForm"
+                className="inputForm w-full"
               />
             </div>
           </div>
         )}
 
         {/* First Name and Last Name */}
-        <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-x-8 sm:gap-y-6">
           <div>
-            <Label htmlFor="firstName" className="mb-2 block">
+            <Label htmlFor="firstName" className="mb-2 block text-sm sm:text-base">
               First Name: <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -441,19 +441,19 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               value={client.firstName || ""}
               onChange={(e) => handlePersonNameChange("firstName", e.target.value)}
               placeholder="First Name"
-              className={`inputForm ${
+              className={`inputForm w-full ${
                 !client.firstName?.trim()
                   ? "border-red-300 focus:border-red-500 focus:ring-red-500"
                   : ""
               }`}
             />
             {!client.firstName?.trim() && (
-              <p className="text-red-500 text-sm mt-1">First name is required</p>
+              <p className="text-red-500 text-xs sm:text-sm mt-1">First name is required</p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="lastName" className="mb-2 block">
+            <Label htmlFor="lastName" className="mb-2 block text-sm sm:text-base">
               Last Name:
             </Label>
             <Input
@@ -461,15 +461,15 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               value={client.lastName || ""}
               onChange={(e) => handlePersonNameChange("lastName", e.target.value)}
               placeholder="Last Name (optional)"
-              className="inputForm"
+              className="inputForm w-full"
             />
           </div>
         </div>
 
         {/* Contact Person (Auto-generated) */}
-        <div className="grid md:grid-cols-1 gap-y-6">
+        <div className="grid grid-cols-1 gap-y-4 sm:gap-y-6">
           <div>
-            <Label htmlFor="contactPerson" className="mb-2 block">
+            <Label htmlFor="contactPerson" className="mb-2 block text-sm sm:text-base">
               Contact Person:
             </Label>
             <Input
@@ -477,30 +477,30 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               value={client.contactPerson || ""}
               onChange={(e) => setClient({ contactPerson: e.target.value })}
               placeholder="Contact Person (auto-generated from first and last name)"
-              className="inputForm bg-gray-50"
+              className="inputForm bg-gray-50 w-full"
               readOnly
             />
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">
               Auto-generated from first and last name
             </p>
           </div>
         </div>
 
         {/* Multiple Emails */}
-        <div className="space-y-4">
-          <Label className="text-base font-semibold text-gray-700">
-            <Mail className="w-4 h-4 inline mr-2" />
-            Emails (for CC when sending emails): <span className="text-red-500">*</span>
+        <div className="space-y-3 sm:space-y-4">
+          <Label className="text-sm sm:text-base font-semibold text-gray-700 flex items-center">
+            <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span>Emails (for CC when sending emails): <span className="text-red-500">*</span></span>
           </Label>
           
           {emails.map((email, index) => (
-            <div key={index} className="flex space-x-2">
+            <div key={index} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
               <Input
                 type="email"
                 value={email}
                 onChange={(e) => updateEmail(index, e.target.value)}
                 placeholder={`Email ${index + 1}`}
-                className={`inputForm flex-1 ${
+                className={`inputForm flex-1 w-full ${
                   index === 0 && !email.trim()
                     ? "border-red-300 focus:border-red-500 focus:ring-red-500"
                     : ""
@@ -510,9 +510,10 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
                 <button
                   type="button"
                   onClick={() => removeEmail(index)}
-                  className="px-3 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors"
+                  className="px-3 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors flex items-center justify-center sm:flex-shrink-0 w-full sm:w-auto"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4 mr-1 sm:mr-0" />
+                  <span className="sm:hidden">Remove</span>
                 </button>
               )}
             </div>
@@ -521,29 +522,29 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
           <button
             type="button"
             onClick={addEmail}
-            className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors"
+            className="inline-flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Another Email
           </button>
           
           {!emails[0]?.trim() && (
-            <p className="text-red-500 text-sm">At least one email is required</p>
+            <p className="text-red-500 text-xs sm:text-sm">At least one email is required</p>
           )}
         </div>
 
         {/* Phone */}
-        <div className="grid md:grid-cols-1 gap-y-6">
+        <div className="grid grid-cols-1 gap-y-4 sm:gap-y-6">
           <div>
-            <Label htmlFor="phoneWithCountry" className="mb-2 block">
+            <Label htmlFor="phoneWithCountry" className="mb-2 block text-sm sm:text-base">
               Phone (with Country): <span className="text-red-500">*</span>
             </Label>
-            <div className="flex space-x-2">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
               <Select
                 value={client.countryCode || "+971"}
                 onValueChange={(value) => setClient({ countryCode: value })}
               >
-                <SelectTrigger className="w-32 py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors">
+                <SelectTrigger className="w-full sm:w-32 py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors">
                   <SelectValue placeholder="Code" />
                 </SelectTrigger>
                 <SelectContent>
@@ -561,7 +562,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
                   setClient({ phone: v });
                 }}
                 placeholder="Phone Number"
-                className={`inputForm flex-1 ${
+                className={`inputForm flex-1 w-full ${
                   !client.phone?.trim()
                     ? "border-red-300 focus:border-red-500 focus:ring-red-500"
                     : ""
@@ -569,15 +570,15 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               />
             </div>
             {!client.phone?.trim() && (
-              <p className="text-red-500 text-sm mt-1">Phone number is required</p>
+              <p className="text-red-500 text-xs sm:text-sm mt-1">Phone number is required</p>
             )}
           </div>
         </div>
 
         {/* TRN Field */}
-        <div className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <Label className="text-base font-semibold text-gray-700">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+            <Label className="text-sm sm:text-base font-semibold text-gray-700">
               TRN (Tax Registration Number):
             </Label>
             <div className="flex items-center space-x-2">
@@ -588,7 +589,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
                 onChange={(e) => setHasNoTrn(e.target.checked)}
                 className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
               />
-              <Label htmlFor="hasNoTrn" className="text-sm text-gray-600">
+              <Label htmlFor="hasNoTrn" className="text-xs sm:text-sm text-gray-600">
                 No TRN
               </Label>
             </div>
@@ -601,23 +602,23 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
                 value={client.trn || ""}
                 onChange={(e) => setClient({ trn: e.target.value })}
                 placeholder="Enter TRN"
-                className={`inputForm ${
+                className={`inputForm w-full ${
                   !client.trn?.trim()
                     ? "border-red-300 focus:border-red-500 focus:ring-red-500"
                     : ""
                 }`}
               />
               {!client.trn?.trim() && (
-                <p className="text-red-500 text-sm mt-1">TRN is required unless 'No TRN' is selected</p>
+                <p className="text-red-500 text-xs sm:text-sm mt-1">TRN is required unless 'No TRN' is selected</p>
               )}
             </div>
           )}
         </div>
 
         {/* Address Information */}
-        <div className="grid md:grid-cols-1 gap-y-6">
+        <div className="grid grid-cols-1 gap-y-4 sm:gap-y-6">
           <div>
-            <Label htmlFor="address" className="mb-2 block">
+            <Label htmlFor="address" className="mb-2 block text-sm sm:text-base">
               Address:
             </Label>
             <Input
@@ -625,22 +626,22 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               value={client.address || ""}
               onChange={(e) => setClient({ address: e.target.value })}
               placeholder="Street Address, Building, Suite, etc. (optional)"
-              className="inputForm"
+              className="inputForm w-full"
             />
           </div>
         </div>
 
         {/* Area and State */}
-        <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-x-8 sm:gap-y-6">
           <div>
-            <Label htmlFor="area" className="mb-2 block">
+            <Label htmlFor="area" className="mb-2 block text-sm sm:text-base">
               Area: <span className="text-red-500">*</span>
             </Label>
             <Select
               value={client.area || ""}
               onValueChange={(value) => setClient({ area: value })}
             >
-              <SelectTrigger className={`py-5 border rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+              <SelectTrigger className={`py-5 border rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors w-full ${
                 !client.area?.trim()
                   ? "border-red-300"
                   : "border-gray-200"
@@ -660,12 +661,12 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               </SelectContent>
             </Select>
             {!client.area?.trim() && (
-              <p className="text-red-500 text-sm mt-1">Area is required</p>
+              <p className="text-red-500 text-xs sm:text-sm mt-1">Area is required</p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="state" className="mb-2 block">
+            <Label htmlFor="state" className="mb-2 block text-sm sm:text-base">
               State/Province: <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -674,7 +675,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
                 setClient({ state: value, area: "" }); // Reset area when state changes
               }}
             >
-              <SelectTrigger className="py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors">
+              <SelectTrigger className="py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors w-full">
                 <SelectValue placeholder="Select State" />
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 rounded-md shadow-lg z-50">
@@ -691,16 +692,16 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
         </div>
 
         {/* Country */}
-        <div className="grid md:grid-cols-1 gap-y-6">
+        <div className="grid grid-cols-1 gap-y-4 sm:gap-y-6">
           <div>
-            <Label htmlFor="country" className="mb-2 block">
+            <Label htmlFor="country" className="mb-2 block text-sm sm:text-base">
               Country: <span className="text-red-500">*</span>
             </Label>
             <Select
               value={client.country || "UAE"}
               onValueChange={(value) => setClient({ country: value })}
             >
-              <SelectTrigger className="py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors">
+              <SelectTrigger className="py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors w-full">
                 <SelectValue placeholder="Select Country" />
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 rounded-md shadow-lg z-50">
@@ -713,9 +714,9 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
         </div>
 
         {/* Additional Information */}
-        <div className="grid md:grid-cols-1 gap-y-6">
+        <div className="grid grid-cols-1 gap-y-4 sm:gap-y-6">
           <div>
-            <Label htmlFor="additionalInfo" className="mb-2 block">
+            <Label htmlFor="additionalInfo" className="mb-2 block text-sm sm:text-base">
               Additional Information:
             </Label>
             <textarea
@@ -723,7 +724,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               value={client.additionalInfo || ""}
               onChange={(e) => setClient({ additionalInfo: e.target.value })}
               placeholder="Any additional notes, special requirements, or comments..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors min-h-[80px] resize-y"
+              className="w-full px-3 py-2 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors min-h-[80px] resize-y text-sm sm:text-base"
               rows={3}
             />
           </div>
@@ -732,14 +733,14 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
 
       {/* Validation Summary */}
       {!isFormValid && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+          <div className="flex items-start space-x-2">
+            <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0 mt-0.5">
               <span className="text-white text-xs font-bold">!</span>
             </div>
             <div className="text-red-700">
-              <p className="font-medium mb-2">Please fill in the essential fields to proceed:</p>
-              <ul className="text-sm space-y-1">
+              <p className="font-medium mb-2 text-sm sm:text-base">Please fill in the essential fields to proceed:</p>
+              <ul className="text-xs sm:text-sm space-y-1">
                 {!client.firstName?.trim() && <li>• First Name</li>}
                 {!emails[0]?.trim() && <li>• At least one Email</li>}
                 {!client.phone?.trim() && <li>• Phone Number</li>}
@@ -754,12 +755,12 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
 
       {/* Form Complete Indicator */}
       {isFormValid && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center space-x-2">
-            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
               <span className="text-white text-xs font-bold">✓</span>
             </div>
-            <p className="text-green-700 font-medium">
+            <p className="text-green-700 font-medium text-sm sm:text-base">
               Essential customer information is complete. You can now proceed to the next step.
             </p>
           </div>
@@ -768,12 +769,12 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
 
       {/* New Customer Indicator */}
       {isNewCustomer && client.firstName && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center space-x-2">
-            <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
               <span className="text-white text-xs font-bold">+</span>
             </div>
-            <p className="text-blue-700 font-medium">
+            <p className="text-blue-700 font-medium text-sm sm:text-base">
               New customer will be added to database
             </p>
           </div>

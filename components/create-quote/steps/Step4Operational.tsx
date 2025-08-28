@@ -104,54 +104,59 @@ function drawPrintingPattern(
   // Set high DPI for crisp rendering
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
+  
+  // Ensure canvas dimensions are properly set for mobile
+  const canvasWidth = Math.max(rect.width, 200); // Minimum width for mobile
+  const canvasHeight = Math.max(rect.height, 150); // Minimum height for mobile
+  
+  canvas.width = canvasWidth * dpr;
+  canvas.height = canvasHeight * dpr;
   ctx.scale(dpr, dpr);
-  canvas.style.width = rect.width + 'px';
-  canvas.style.height = rect.height + 'px';
+  canvas.style.width = canvasWidth + 'px';
+  canvas.style.height = canvasHeight + 'px';
 
   // Enable ultra-high-quality rendering
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
   // Clear with premium background gradient
-  const bgGradient = ctx.createLinearGradient(0, 0, rect.width, rect.height);
+  const bgGradient = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
   bgGradient.addColorStop(0, '#f8fafc');
   bgGradient.addColorStop(1, '#f1f5f9');
   ctx.fillStyle = bgGradient;
-  ctx.fillRect(0, 0, rect.width, rect.height);
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   // Calculate scaling to fit ONE sheet with maximum size and proper centering
-  const padding = 30; // Increased padding for single sheet display
-  const canvasUsableWidth = rect.width - 2 * padding;
-  const canvasUsableHeight = rect.height - 2 * padding;
+  const padding = Math.min(20, Math.max(15, canvasWidth * 0.05)); // Responsive padding based on canvas size
+  const canvasUsableWidth = canvasWidth - 2 * padding;
+  const canvasUsableHeight = canvasHeight - 2 * padding;
   
   // Calculate scaling to fit ONE sheet with maximum size and proper centering
   const scaleX = canvasUsableWidth / inputWidth;
   const scaleY = canvasUsableHeight / inputHeight;
-  const scale = Math.min(scaleX, scaleY) * 0.9; // 90% of max size for better visual balance
+  const scale = Math.min(scaleX, scaleY) * 0.85; // 85% of max size for better mobile fit
   
   const scaledSheetWidth = inputWidth * scale;
   const scaledSheetHeight = inputHeight * scale;
   
   // Center the single sheet in the canvas
-  const startX = (rect.width - scaledSheetWidth) / 2;
-  const startY = (rect.height - scaledSheetHeight) / 2;
+  const startX = (canvasWidth - scaledSheetWidth) / 2;
+  const startY = (canvasHeight - scaledSheetHeight) / 2;
 
   // Draw professional background grid
   ctx.strokeStyle = 'rgba(148, 163, 184, 0.06)';
   ctx.lineWidth = 0.5;
   const gridSize = 20;
-  for (let x = 0; x < rect.width; x += gridSize) {
+  for (let x = 0; x < canvasWidth; x += gridSize) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
-    ctx.lineTo(x, rect.height);
+    ctx.lineTo(x, canvasHeight);
     ctx.stroke();
   }
-  for (let y = 0; y < rect.height; y += gridSize) {
+  for (let y = 0; y < canvasHeight; y += gridSize) {
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.lineTo(rect.width, y);
+    ctx.lineTo(canvasWidth, y);
     ctx.stroke();
   }
 
@@ -350,14 +355,14 @@ function drawPrintingPattern(
     // Info background
     ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
     ctx.fillRect(
-      rect.width - infoMetrics.width - 15,
+      canvasWidth - infoMetrics.width - 15,
       35,
       infoMetrics.width + 10,
       18
     );
     
     ctx.fillStyle = 'rgba(59, 130, 246, 0.9)';
-    ctx.fillText(infoText, rect.width - 10, 37);
+    ctx.fillText(infoText, canvasWidth - 10, 37);
   }
 
   // Orientation indicator (if rotated)
@@ -412,13 +417,13 @@ function drawCuttingLayout(
   ctx.fillRect(0, 0, rect.width, rect.height);
 
   // Calculate scaling to fit the input sheet
-  const padding = 40;
+  const padding = Math.min(30, Math.max(20, rect.width * 0.08)); // Responsive padding
   const canvasUsableWidth = rect.width - 2 * padding;
   const canvasUsableHeight = rect.height - 2 * padding;
   
   const scaleX = canvasUsableWidth / inputWidth;
   const scaleY = canvasUsableHeight / inputHeight;
-  const scale = Math.min(scaleX, scaleY) * 0.85;
+  const scale = Math.min(scaleX, scaleY) * 0.8; // Better mobile fit
   
   const scaledSheetWidth = inputWidth * scale;
   const scaledSheetHeight = inputHeight * scale;
@@ -693,7 +698,7 @@ function drawFinalPrintingLayout(
   ctx.fillRect(0, 0, rect.width, rect.height);
 
   // Calculate scaling to fit all cut pieces
-  const padding = 40;
+  const padding = Math.min(30, Math.max(20, rect.width * 0.08)); // Responsive padding
   const canvasUsableWidth = rect.width - 2 * padding;
   const canvasUsableHeight = rect.height - 2 * padding;
   
@@ -703,7 +708,7 @@ function drawFinalPrintingLayout(
   
   const scaleX = canvasUsableWidth / (maxPieceWidth * cutPieces.piecesPerRow);
   const scaleY = canvasUsableHeight / (maxPieceHeight * cutPieces.piecesPerCol);
-  const scale = Math.min(scaleX, scaleY) * 0.8;
+  const scale = Math.min(scaleX, scaleY) * 0.75; // Better mobile fit
   
   // Center the layout
   const totalWidth = maxPieceWidth * cutPieces.piecesPerRow * scale;
@@ -2132,26 +2137,26 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
   // ===== Render =====
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8 px-4 md:px-0">
       {/* Header */}
       <div className="text-center space-y-3">
-        <h3 className="text-2xl font-bold text-slate-900">Operational Details</h3>
-        <p className="text-slate-600">Configure paper specifications, costs, and production details</p>
+        <h3 className="text-xl md:text-2xl font-bold text-slate-900">Operational Details</h3>
+        <p className="text-sm md:text-base text-slate-600">Configure paper specifications, costs, and production details</p>
       </div>
 
 
 
       {formData.products.map((product, productIndex) => (
-        <div key={productIndex} className="space-y-8">
+        <div key={productIndex} className="space-y-6 md:space-y-8">
           {/* Product Header */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
-            <div className="flex items-center justify-between">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h4 className="text-xl font-bold text-blue-800 flex items-center">
-                  <Package className="w-6 h-6 mr-3" />
+                <h4 className="text-lg md:text-xl font-bold text-blue-800 flex items-center">
+                  <Package className="w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3" />
                   Product {productIndex + 1}: {product.productName || `Product ${productIndex + 1}`}
                 </h4>
-                <div className="mt-2 text-blue-700">
+                <div className="mt-2 text-blue-700 text-sm md:text-base">
                   Quantity: {product.quantity || 0} | Sides: {product.sides} | Printing: {product.printingSelection}
                 </div>
               </div>
@@ -2163,7 +2168,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 
                 if (totalColors > 0) {
                   return (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-purple-100 border border-purple-300 rounded-full">
+                    <div className="flex items-center gap-2 px-3 md:px-4 py-2 bg-purple-100 border border-purple-300 rounded-full self-start sm:self-auto">
                       <Palette className="w-4 h-4 text-purple-700" />
                       <span className="text-sm font-semibold text-purple-800">
                         {totalColors} color{totalColors !== 1 ? 's' : ''} total
@@ -2217,12 +2222,12 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             );
 
             return (
-              <div key={`${productIndex}-${paperIndex}`} className="space-y-6">
+              <div key={`${productIndex}-${paperIndex}`} className="space-y-4 md:space-y-6">
                                 {/* Paper Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <h4 className="text-lg font-semibold text-slate-800 flex items-center">
-                      <Package className="w-5 h-5 mr-2 text-blue-600" />
+                    <h4 className="text-base md:text-lg font-semibold text-slate-800 flex items-center">
+                      <Package className="w-4 h-4 md:w-5 md:h-5 mr-2 text-blue-600" />
                       <span className="text-blue-600">
                         {paper.name ? `${paper.name}${paper.gsm ? ` ${paper.gsm}gsm` : ""}` : `Paper ${paperIndex + 1}${paper.gsm ? ` ${paper.gsm}gsm` : ""}`}
                       </span>
@@ -2237,24 +2242,26 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setShowPaperPrice(globalPaperIndex)}
-                      className="border-blue-500 text-blue-600 hover:bg-blue-500 rounded-xl"
+                      className="border-blue-500 text-blue-600 hover:bg-blue-500 rounded-xl text-xs sm:text-sm"
                     >
-                      <Calculator className="w-4 h-4 mr-2" />
-                      View Paper Price
+                      <Calculator className="w-4 h-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">View Paper Price</span>
+                      <span className="sm:hidden">Paper Price</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setShowCostBreakdown(true)}
-                      className="border-green-500 text-green-600 hover:bg-green-50 rounded-xl"
+                      className="border-green-500 text-green-600 hover:bg-green-50 rounded-xl text-xs sm:text-sm"
                     >
-                      <BarChart3 className="w-4 h-4 mr-2" />
-                      View Cost Breakdown
+                      <BarChart3 className="w-4 h-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">View Cost Breakdown</span>
+                      <span className="sm:hidden">Cost Breakdown</span>
                     </Button>
                   </div>
                 </div>
@@ -2286,24 +2293,24 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             )}
 
             {/* Three Cards Layout */}
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
               {/* CARD 1: Paper Specifications */}
-              <Card className="border-0 shadow-lg">
+              <Card className="border-0 shadow-lg w-full">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg text-slate-800 flex items-center">
                     <Package className="w-5 h-5 mr-2 text-blue-600" />
                     Paper Specifications
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-4 md:space-y-6">
                   {/* Paper Size Section */}
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
                       <Package className="w-4 h-4 mr-2 text-blue-600" />
                       Input Sheet Size
                       <span className="ml-2 text-xs text-blue-600 font-normal">(Default: 100×70 cm)</span>
                     </h5>
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                       <div className="space-y-2">
                         <Label className="text-sm font-medium text-slate-700">
                           Width (cm)
@@ -2314,7 +2321,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           min={0}
                           step="0.1"
                           value={opPaper?.inputWidth ?? 100}
-                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
+                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full"
                           onChange={(e) =>
                             handlePaperOpChange(globalPaperIndex, "inputWidth", e.target.value)
                           }
@@ -2328,7 +2335,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           placeholder="70"
                           value={opPaper?.inputHeight ?? 70}
-                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
+                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full"
                           min={0}
                           step="0.1"
                           onChange={(e) =>
@@ -2340,13 +2347,13 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   </div>
 
                   {/* Output Size Section - Now Editable */}
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
                       <Edit3 className="w-4 h-4 mr-2 text-blue-600" />
                       Output Item Size
                       <span className="ml-2 text-xs text-blue-600 font-normal">(From Step 3)</span>
                     </h5>
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                       <div className="space-y-2">
                         <Label className="text-sm font-medium text-slate-700">
                           Output Width (cm)
@@ -2356,7 +2363,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           placeholder="Width"
                           min={0}
                           step="0.1"
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 ${
+                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full ${
                             dimensionError ? 'border-red-300 bg-red-50' : ''
                           }`}
                           value={outputDimensions[productIndex]?.width || ""}
@@ -2377,14 +2384,14 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           placeholder="Height"
                           min={0}
                           step="0.1"
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 ${
+                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full ${
                             dimensionError ? 'border-red-300 bg-red-50' : ''
                           }`}
                           value={outputDimensions[productIndex]?.height || ""}
                           onChange={(e) => handleOutputDimensionChange(productIndex, 'height', e.target.value)}
                         />
                         {!outputDimensions[productIndex]?.height && (
-                          <div className="text-amber-600 text-xs mt-1">
+                          <div className="text-xs text-amber-600 mt-1">
                             ⚠️ Please set output dimensions in Step 3 first
                           </div>
                         )}
@@ -2393,12 +2400,12 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   </div>
 
                   {/* Sheet Management Section */}
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
                       <BarChart3 className="w-4 h-4 mr-2 text-blue-600" />
                       Sheet Management
                     </h5>
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                       <div className="space-y-2">
                         <Label className="text-sm font-medium text-slate-700">
                           Recommended Sheets
@@ -2406,7 +2413,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         <Input
                           value={recommendedSheets || ""}
                           readOnly
-                          className="bg-slate-100 border-slate-300 rounded-xl h-10"
+                          className="bg-slate-100 border-slate-300 rounded-xl h-10 w-full"
                         />
                       </div>
                       <div className="space-y-2">
@@ -2422,7 +2429,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           min={recommendedSheets || 0}
                           placeholder={recommendedSheets ? String(recommendedSheets) : "e.g. 125"}
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 ${
+                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full ${
                             !opPaper?.enteredSheets ? 'bg-blue-50 border-blue-200' : ''
                           }`}
                           value={opPaper?.enteredSheets ?? recommendedSheets ?? ""}
@@ -2472,7 +2479,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   </div>
 
                   {/* Color Codes Section */}
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
                       <Palette className="w-4 h-4 mr-2 text-blue-600" />
                       Color Codes
@@ -2483,7 +2490,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                     </div>
                     
                     {/* Color Input */}
-                    <div className="flex gap-2 mb-3">
+                    <div className="flex flex-col sm:flex-row gap-2 mb-3">
                       <div className="flex-1 relative">
                         <Input
                           type="text"
@@ -2495,7 +2502,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                             newColorInputs[productIndex][paperIndex] = e.target.value;
                             setColorInputs(newColorInputs);
                           }}
-                          className="h-8 text-sm pr-10"
+                          className="h-8 text-sm pr-10 w-full"
                         />
                         {/* Color preview */}
                         {colorInputs[productIndex]?.[paperIndex] && (
@@ -2655,34 +2662,34 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               </Card>
 
               {/* CARD 2: Pricing */}
-              <Card className="border-0 shadow-lg">
+              <Card className="border-0 shadow-lg w-full">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg text-slate-800 flex items-center">
                     <Calculator className="w-5 h-5 mr-2 text-blue-600" />
                     Pricing
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-4 md:space-y-6">
                   {/* Pricing Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h5 className="text-md font-semibold text-slate-700 flex items-center">
-                        <BarChart3 className="w-4 h-4 mr-2 text-blue-600" />
-                        Cost Details
-                      </h5>
-                      <div className="flex items-center">
-                        <Info className="w-4 h-4 text-blue-600 mr-1" />
-                        <button
-                          type="button"
-                          onClick={() => setShowPricingLogic(true)}
-                          className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center"
-                        >
-                          <Info className="w-3 h-3 mr-1" />
-                          View Pricing Logic
-                        </button>
+                                      <div className="space-y-3 md:space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <h5 className="text-md font-semibold text-slate-700 flex items-center">
+                          <BarChart3 className="w-4 h-4 mr-2 text-blue-600" />
+                          Cost Details
+                        </h5>
+                        <div className="flex items-center">
+                          <Info className="w-4 h-4 text-blue-600 mr-1" />
+                          <button
+                            type="button"
+                            onClick={() => setShowPricingLogic(true)}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center"
+                          >
+                            <Info className="w-3 h-3 mr-1" />
+                            View Pricing Logic
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-4">
+                      <div className="space-y-3 md:space-y-4">
                       <div className="space-y-2">
                         <Label className="text-sm font-medium text-slate-700">
                           Price per Sheet (Direct)
@@ -2794,17 +2801,17 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               </Card>
 
               {/* CARD 3: Additional Costs */}
-              <Card className="border-0 shadow-lg">
+              <Card className="border-0 shadow-lg w-full">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg text-slate-800 flex items-center">
-                    <Calculator className="w-5 h-5 mr-2 text-blue-600" />
+                    <Calculator className="w-5 h-4 mr-2 text-blue-600" />
                     Additional Costs
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-4 md:space-y-6">
                   {/* Production Costs Section */}
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <h5 className="text-md font-semibold text-slate-700 flex items-center">
                         <Calculator className="w-4 h-4 mr-2 text-blue-600" />
                         Production Costs
@@ -2817,13 +2824,13 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           handlePlatesChange("");
                           handleUnitsChange("");
                         }}
-                        className="text-xs h-8 px-3"
+                        className="text-xs h-8 px-3 self-start sm:self-auto"
                       >
                         <Calculator className="w-3 h-3 mr-1" />
                         Auto-calculate
                       </Button>
                     </div>
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                       <div className="space-y-2">
                         <Label className="text-sm font-medium text-slate-700">
                           No. of plates
@@ -2832,7 +2839,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           min="0"
                           placeholder="e.g. 8"
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 ${
+                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full ${
                             !formData.operational.plates ? 'bg-blue-50 border-blue-200' : 'bg-white'
                           }`}
                           value={formData.operational.plates ?? plates ?? ""} 
@@ -2873,8 +2880,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           min="0"
                           placeholder="e.g. 1000"
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 ${
-                            !formData.operational.units ? 'bg-blue-50 border-blue-200' : 'bg-white'
+                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full ${
+                            !formData.operational.plates ? 'bg-blue-50 border-blue-200' : 'bg-white'
                           }`}
                           value={formData.operational.units ?? units ?? ""} 
                           onChange={(e) => handleUnitsChange(e.target.value)}
@@ -2908,7 +2915,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                       </div>
                       
                       {/* No. of Impressions Field */}
-                      <div className="space-y-2">
+                      <div className="space-y-2 col-span-1 sm:col-span-2">
                         <Label className="text-sm font-medium text-slate-700">
                           No. of Impressions
                         </Label>
@@ -2916,7 +2923,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           min="0"
                           placeholder="e.g. 5000"
-                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
+                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full"
                           value={formData.operational.impressions ?? ""} 
                           onChange={(e) => {
                             const impressions = e.target.value === "" ? null : parseFloat(e.target.value);
@@ -2956,7 +2963,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           })
                           .map((item) => (
                             <div key={item.name} className="bg-slate-50 rounded-lg p-3">
-                              <div className="flex justify-between items-center mb-2">
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
                                 <span className="text-sm font-medium text-slate-700">{item.name}</span>
                                 <div className="flex items-center space-x-2">
                                   <Input
@@ -2964,7 +2971,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                                     placeholder="Cost per unit"
                                     step="0.01"
                                     min="0"
-                                    className="w-24 h-8 text-sm border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+                                    className="w-full sm:w-24 h-8 text-sm border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
                                     value={item.cost ?? ""}
                                     onChange={(e) => handleFinishingCostChange(item.name, e.target.value)}
                                   />
@@ -3014,12 +3021,12 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                     <div className="space-y-4">
                       {additionalCosts.map((cost, index) => (
                         <div key={cost.id} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex-1">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-2">
+                            <div className="flex-1 space-y-2">
                               <Input
                                 type="text"
                                 placeholder="Cost description"
-                                className="w-full mb-2 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+                                className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
                                 value={cost.description}
                                 onChange={(e) => {
                                   const newCosts = [...additionalCosts];
@@ -3032,7 +3039,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                                 placeholder="Cost amount"
                                 step="0.01"
                                 min="0"
-                                className="w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+                                className="w-full sm:w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
                                 value={cost.cost}
                                 onChange={(e) => {
                                   const newCosts = [...additionalCosts];
@@ -3101,23 +3108,24 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             
 
             {/* Cutting Layout Visualization */}
-            <Card className="border-0 shadow-lg w-full mx-0">
+                        <Card className="border-0 shadow-lg w-full mx-0">
               <CardHeader className="pb-3">
-                <CardTitle className="text-2xl font-bold text-slate-800 flex items-center">
-                  <Settings className="w-7 h-7 mr-3 text-red-600" />
+                <CardTitle className="text-xl md:text-2xl font-bold text-slate-800 flex items-center">
+                  <Settings className="w-6 h-6 md:w-7 md:h-7 mr-2 md:mr-3 text-red-600" />
                   Cutting Layout Visualization
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 w-full px-2">
+              <CardContent className="space-y-4 w-full px-2 md:px-4">
                 <div className="space-y-3">
-                  <h5 className="text-lg font-semibold text-slate-700">How the 100×70cm Input Sheet is Cut for Machine Compatibility</h5>
+                                      <h5 className="text-base md:text-lg font-semibold text-slate-700">How the 100×70cm Input Sheet is Cut for Machine Compatibility</h5>
                   
                   {/* Cutting Layout Canvas */}
-                  <div className="w-full h-[500px] bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-lg p-1 shadow-lg">
+                  <div className="w-full h-[250px] sm:h-[350px] md:h-[450px] lg:h-[500px] bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-lg p-1 shadow-lg overflow-hidden">
                     <div className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
                       <canvas
                         id={`cutting-canvas-${productIndex}-${paperIndex}`}
                         className="w-full h-full rounded-lg transition-all duration-500 hover:shadow-md"
+                        style={{ maxWidth: '100%', maxHeight: '100%' }}
                         ref={(canvas) => {
                           if (canvas && opPaper?.inputWidth && opPaper?.inputHeight) {
                             setTimeout(() => {
@@ -3132,11 +3140,11 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         }}
                       />
                       {(!opPaper?.inputWidth || !opPaper?.inputHeight) && (
-                        <div className="absolute inset-0 grid place-items-center text-lg text-slate-500 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
-                          <div className="text-center p-8">
-                            <div className="text-red-400 mb-4 text-5xl">✂️</div>
-                            <div className="font-semibold text-slate-600 text-xl">Input Dimensions Required</div>
-                            <div className="text-sm text-slate-400 mt-3">Set input sheet dimensions to preview cutting layout</div>
+                        <div className="absolute inset-0 grid place-items-center text-sm md:text-lg text-slate-500 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
+                          <div className="text-center p-3 md:p-4 lg:p-8 max-w-[90%]">
+                            <div className="text-red-400 mb-2 md:mb-4 text-2xl md:text-3xl lg:text-5xl">✂️</div>
+                            <div className="font-semibold text-slate-600 text-sm md:text-base lg:text-xl">Input Dimensions Required</div>
+                            <div className="text-xs md:text-sm text-slate-400 mt-2 md:mt-3">Set input sheet dimensions to preview cutting layout</div>
                           </div>
                         </div>
                       )}
@@ -3144,7 +3152,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   </div>
 
                   {/* Cutting Information Cards */}
-                  <div className="grid md:grid-cols-2 gap-4 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                     {/* Cutting Strategy */}
                     <div className="bg-white rounded-xl p-4 border border-red-200 shadow-sm">
                       <h6 className="font-semibold text-slate-800 mb-3 text-center flex items-center justify-center">
@@ -3209,23 +3217,24 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             </Card>
 
             {/* Final Printing Layout Visualization */}
-            <Card className="border-0 shadow-lg w-full mx-0">
+                        <Card className="border-0 shadow-lg w-full mx-0">
               <CardHeader className="pb-3">
-                <CardTitle className="text-2xl font-bold text-slate-800 flex items-center">
-                  <Palette className="w-7 h-7 mr-3 text-green-600" />
+                <CardTitle className="text-xl md:text-2xl font-bold text-slate-800 flex items-center">
+                  <Palette className="w-6 h-6 md:w-7 md:h-7 mr-2 md:mr-3 text-green-600" />
                   Final Printing Layout
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 w-full px-2">
+              <CardContent className="space-y-4 w-full px-2 md:px-4">
                 <div className="space-y-3">
-                  <h5 className="text-lg font-semibold text-slate-700">Final Printing on Cut Pieces (e.g., 50×35cm)</h5>
+                                      <h5 className="text-base md:text-lg font-semibold text-slate-700">Final Printing on Cut Pieces (e.g., 50×35cm)</h5>
                   
                   {/* Final Printing Layout Canvas */}
-                  <div className="w-full h-[500px] bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-1 shadow-lg">
+                  <div className="w-full h-[250px] sm:h-[350px] md:h-[450px] lg:h-[500px] bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-1 shadow-lg overflow-hidden">
                     <div className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
                       <canvas
                         id={`final-printing-canvas-${productIndex}-${paperIndex}`}
                         className="w-full h-full rounded-lg transition-all duration-500 hover:shadow-md"
+                        style={{ maxWidth: '100%', maxHeight: '100%' }}
                         ref={(canvas) => {
                           if (canvas && opPaper?.inputWidth && opPaper?.inputHeight && outputDimensions[productIndex]?.width && outputDimensions[productIndex]?.height) {
                             setTimeout(() => {
@@ -3238,11 +3247,11 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         }}
                       />
                       {(!opPaper?.inputWidth || !opPaper?.inputHeight || !outputDimensions[productIndex]?.width || !outputDimensions[productIndex]?.height) && (
-                        <div className="absolute inset-0 grid place-items-center text-lg text-slate-500 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
-                          <div className="text-center p-8">
-                            <div className="text-green-400 mb-4 text-5xl">🎨</div>
-                            <div className="font-semibold text-slate-600 text-xl">Complete Data Required</div>
-                            <div className="text-sm text-slate-400 mt-3">Set input dimensions and output dimensions to preview final printing layout</div>
+                        <div className="absolute inset-0 grid place-items-center text-sm md:text-lg text-slate-500 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+                          <div className="text-center p-3 md:p-4 lg:p-8 max-w-[90%]">
+                            <div className="text-green-400 mb-2 md:mb-4 text-2xl md:text-3xl lg:text-5xl">🎨</div>
+                            <div className="font-semibold text-slate-600 text-sm md:text-base lg:text-xl">Complete Data Required</div>
+                            <div className="text-xs md:text-sm text-slate-400 mt-2 md:mt-3">Set input dimensions and output dimensions to preview final printing layout</div>
                           </div>
                         </div>
                       )}
@@ -3255,23 +3264,24 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             </Card>
 
             {/* Enhanced Sheet Optimization Preview - MAXIMUM SCALE */}
-            <Card className="border-0 shadow-lg w-full mx-0">
+                        <Card className="border-0 shadow-lg w-full mx-0">
               <CardHeader className="pb-3">
-                <CardTitle className="text-2xl font-bold text-slate-800 flex items-center">
-                  <BarChart3 className="w-7 h-7 mr-3 text-blue-600" />
+                <CardTitle className="text-xl md:text-2xl font-bold text-slate-800 flex items-center">
+                  <BarChart3 className="w-6 h-6 md:w-7 md:h-7 mr-2 md:mr-3 text-blue-600" />
                   Single Sheet Layout Visualization
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 w-full px-2">
+              <CardContent className="space-y-4 w-full px-2 md:px-4">
                 <div className="space-y-3">
-                  <h5 className="text-lg font-semibold text-slate-700">Single Sheet Layout Pattern (All sheets use same pattern)</h5>
+                                      <h5 className="text-base md:text-lg font-semibold text-slate-700">Single Sheet Layout Pattern (All sheets use same pattern)</h5>
                   
                   {/* Single Sheet Canvas Visualization */}
-                  <div className="w-full h-[600px] bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-lg p-1 shadow-lg">
+                  <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-lg p-1 shadow-lg overflow-hidden">
                     <div className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
                       <canvas
                         id={`ultra-canvas-${productIndex}-${paperIndex}`}
                         className="w-full h-full rounded-lg transition-all duration-500 hover:shadow-md"
+                        style={{ maxWidth: '100%', maxHeight: '100%' }}
                         ref={(canvas) => {
                           if (canvas && layout.itemsPerSheet > 0 && opPaper?.inputWidth && opPaper?.inputHeight && outputDimensions[productIndex]?.width && outputDimensions[productIndex]?.height) {
                             setTimeout(() => {
@@ -3283,18 +3293,18 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         }}
                       />
                       {(layout.itemsPerSheet === 0 || dimensionError || !outputDimensions[productIndex]?.width || !outputDimensions[productIndex]?.height) && (
-                        <div className="absolute inset-0 grid place-items-center text-lg text-slate-500 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg">
-                          <div className="text-center p-8">
-                            <div className="text-slate-400 mb-4 text-5xl">
+                        <div className="absolute inset-0 grid place-items-center text-sm md:text-lg text-slate-500 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg">
+                          <div className="text-center p-3 md:p-4 lg:p-8 max-w-[90%]">
+                            <div className="text-slate-400 mb-2 md:mb-4 text-2xl md:text-3xl lg:text-5xl">
                               {dimensionError ? "⚠️" : !outputDimensions[productIndex]?.width || !outputDimensions[productIndex]?.height ? "📏" : "🎯"}
                             </div>
-                            <div className="font-semibold text-slate-600 text-xl">
+                            <div className="font-semibold text-slate-600 text-sm md:text-base lg:text-xl">
                               {dimensionError ? "Invalid Dimensions" : !outputDimensions[productIndex]?.width || !outputDimensions[productIndex]?.height ? "Output Dimensions Required" : "Configure Dimensions"}
                             </div>
-                            <div className="text-sm text-slate-400 mt-3">
+                            <div className="text-xs md:text-sm text-slate-400 mt-2 md:mt-3">
                               {dimensionError ? "Adjust item size to fit sheet" : !outputDimensions[productIndex]?.width || !outputDimensions[productIndex]?.height ? "Set output dimensions in Step 3 to preview" : "Set sheet & item sizes to preview"}
                             </div>
-                            <div className="text-sm text-slate-400">
+                            <div className="text-xs md:text-sm text-slate-400">
                               {dimensionError ? "dimensions properly" : !outputDimensions[productIndex]?.width || !outputDimensions[productIndex]?.height ? "the layout visualization" : "the optimized layout pattern"}
                             </div>
                           </div>
@@ -3304,7 +3314,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   </div>
 
                   {/* Enhanced Information Cards - Below Canvas */}
-                  <div className="grid md:grid-cols-3 gap-4 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
                     {/* Advanced Sheet Analysis */}
                     <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                       <h6 className="font-semibold text-slate-800 mb-3 text-center flex items-center justify-center">

@@ -1,7 +1,8 @@
+// AppHeader.tsx - Updated to work with SideNav
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Printer, Settings, Shield, UserCheck, LogOut, User, X, Activity } from "lucide-react";
+import { Printer, Settings, Shield, UserCheck, LogOut, User, X, Activity, ChevronRight, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import GlobalSearch from "./GlobalSearch";
 import { getCurrentUser, updateUserProfile, updateProfilePicture, updatePassword, convertToEmpFormat } from "@/lib/auth";
@@ -12,9 +13,13 @@ import { Badge } from "@/components/ui/badge";
 
 interface AppHeaderProps {
   className?: string;
+  isNavbarExpanded?: boolean;
+  onNavbarHover?: (isHovering: boolean) => void;
+  onNavbarToggle?: () => void;
+  isNavbarOpen?: boolean;
 }
 
-export default function AppHeader({ className = "" }: AppHeaderProps) {
+export default function AppHeader({ className = "", isNavbarExpanded = false, onNavbarHover, onNavbarToggle, isNavbarOpen }: AppHeaderProps) {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -38,6 +43,18 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
   });
   const [profilePicture, setProfilePicture] = useState<string>("");
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [systemStatus, setSystemStatus] = useState({
+    status: "Loading...",
+    uptime: "Loading...",
+    lastIncident: "Loading...",
+    services: [
+      { name: "Database", status: "Loading...", uptime: "Loading..." },
+      { name: "API Services", status: "Loading...", uptime: "Loading..." },
+      { name: "File Storage", status: "Loading...", uptime: "Loading..." },
+      { name: "Print Queue", status: "Loading...", uptime: "Loading..." }
+    ]
+  });
+  const [isLoadingSystemStatus, setIsLoadingSystemStatus] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -46,7 +63,9 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
     // Load user data
     const loadUser = async () => {
       try {
+        console.log('Loading user data...');
         const u = getCurrentUser();
+        console.log('User data loaded:', u);
         if (u) {
           setUser(u);
           setProfileForm({
@@ -55,6 +74,21 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
             role: u.role || ""
           });
           setProfilePicture(u.profilePicture || "");
+        } else {
+          console.log('No user data found, setting default user');
+          // Set a default user for testing
+          const defaultUser = {
+            id: "1",
+            name: "John Admin",
+            email: "admin@smartprinting.com",
+            role: "admin"
+          };
+          setUser(defaultUser);
+          setProfileForm({
+            name: defaultUser.name,
+            email: defaultUser.email,
+            role: defaultUser.role
+          });
         }
       } catch (error) {
         console.error('Error loading user:', error);
@@ -74,7 +108,7 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (showAccountDropdown && !target.closest('.account-dropdown')) {
+      if (showAccountDropdown && !target.closest('.account-dropdown-container') && !target.closest('.account-dropdown')) {
         setShowAccountDropdown(false);
       }
     };
@@ -104,11 +138,9 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
   };
 
   const handleLogout = () => {
-    // Clear all data
     if (typeof window !== 'undefined') {
       localStorage.clear();
       sessionStorage.clear();
-      // Force redirect
       window.location.href = '/login';
     }
   };
@@ -120,7 +152,6 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
       if (response.ok) {
         const data = await response.json();
         
-        // Transform the API data to match our UI structure
         const transformedStatus = {
           status: data.status === 'healthy' ? 'Operational' : 'Issues Detected',
           uptime: data.database.responseTime,
@@ -163,20 +194,17 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
   const handleProfileUpdate = async () => {
     if (profileForm.name.trim()) {
       try {
-        // Update profile information
         const updatedUser = await updateUserProfile({
           name: profileForm.name,
           email: profileForm.email
         });
         
-        // If profile picture was changed, also update it
         if (profilePicture && profilePicture !== user?.profilePicture) {
           await updateProfilePicture(profilePicture);
         }
         
         if (updatedUser) {
           setUser(updatedUser);
-          // Show small notification and close form
           console.log('Profile updated successfully');
           setShowAccountSettings(false);
           setShowSuccessMessage(true);
@@ -186,7 +214,6 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
         }
       } catch (error) {
         console.error('Error updating profile:', error);
-        console.error('Failed to update profile');
       }
     } else {
       console.error('Please enter a valid name');
@@ -199,14 +226,10 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
       try {
         const success = await updatePassword(passwordForm.newPassword);
         if (success) {
-          // Show small notification
           console.log('Password updated successfully');
-          // Show success message
           setShowSuccessMessage(true);
           setTimeout(() => setShowSuccessMessage(false), 3000);
-          // Close form after successful update
           setShowChangePassword(false);
-          // Reset form fields
           setPasswordForm({
             currentPassword: "",
             newPassword: "",
@@ -217,7 +240,6 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
         }
       } catch (error) {
         console.error('Error updating password:', error);
-        console.error('Failed to update password');
       }
     } else if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       console.error('New passwords do not match');
@@ -229,16 +251,12 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
   const handleProfilePictureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // File size validation (max 2MB to prevent database issues)
       if (file.size > 2 * 1024 * 1024) {
-        // No popup - just log error and return
         console.error('Profile picture must be less than 2MB. Please choose a smaller image.');
         return;
       }
       
-      // File type validation
       if (!file.type.startsWith('image/')) {
-        // No popup - just log error and return
         console.error('Please select an image file.');
         return;
       }
@@ -247,17 +265,13 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
       reader.onload = (e) => {
         const result = e.target?.result as string;
         
-        // Compress the image if it's too large
-        let processedImage = result;
-        if (result.length > 500000) { // If base64 string is longer than ~500KB
+        if (result.length > 500000) {
           try {
-            // Create a canvas to compress the image
             const img = new Image();
             img.onload = () => {
               const canvas = document.createElement('canvas');
               const ctx = canvas.getContext('2d');
               
-              // Calculate new dimensions (max 200x200 pixels)
               const maxSize = 200;
               let { width, height } = img;
               
@@ -276,25 +290,17 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
               canvas.width = width;
               canvas.height = height;
               
-              // Draw and compress
               ctx?.drawImage(img, 0, 0, width, height);
-              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // 70% quality
+              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
               
-              console.log('📏 Original image size:', result.length, 'characters');
-              console.log('📏 Compressed image size:', compressedDataUrl.length, 'characters');
-              console.log('📐 New dimensions:', width, 'x', height);
-              
-              // Store the compressed image for later save - don't update immediately
               setProfilePicture(compressedDataUrl);
             };
             img.src = result;
           } catch (error) {
             console.error('Error compressing image:', error);
-            // Fallback to original image
             setProfilePicture(result);
           }
         } else {
-          // Image is small enough, store for later save - don't update immediately
           setProfilePicture(result);
         }
       };
@@ -302,141 +308,86 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
     }
   };
 
-  const updateProfilePictureWithCompression = async (imageData: string) => {
-    try {
-      const updatedUser = await updateProfilePicture(imageData);
-      if (updatedUser) {
-        // Show small notification
-        console.log('Profile picture updated successfully');
-        // Show success message
-        setShowSuccessMessage(true);
-        setTimeout(() => setShowSuccessMessage(false), 3000);
-        // Close form after successful update
-        setShowAccountSettings(false);
-      } else {
-        console.error('Failed to update profile picture');
-      }
-    } catch (error) {
-      console.error('Error updating profile picture:', error);
-      console.error('Failed to update profile picture');
-    }
-  };
-
-  const [systemStatus, setSystemStatus] = useState({
-    status: "Loading...",
-    uptime: "Loading...",
-    lastIncident: "Loading...",
-    services: [
-      { name: "Database", status: "Loading...", uptime: "Loading..." },
-      { name: "API Services", status: "Loading...", uptime: "Loading..." },
-      { name: "File Storage", status: "Loading...", uptime: "Loading..." },
-      { name: "Print Queue", status: "Loading...", uptime: "Loading..." }
-    ]
-  });
-  const [isLoadingSystemStatus, setIsLoadingSystemStatus] = useState(false);
-
   return (
     <>
-      <header className={cn(
-        "bg-white border-b border-gray-200 overflow-hidden",
-        className
-      )}>
-        {/* Mobile Layout */}
-        <div className="lg:hidden overflow-hidden">
-          {/* Top Row - Search Bar */}
-          <div className="p-4 pb-3">
-            <div className="w-full min-w-0">
-              <GlobalSearch />
+      <header 
+        className={cn(
+          "bg-white border-b border-gray-200 overflow-visible relative z-40 transition-all duration-300 ease-in-out hover:border-gray-300 hover:bg-gray-50/50",
+          // Adjust positioning based on navbar state
+          isNavbarExpanded ? "lg:ml-72" : "lg:ml-16",
+          className
+        )}
+        // Desktop hover detection for navbar auto-expand
+        onMouseEnter={() => onNavbarHover?.(true)}
+        onMouseLeave={() => onNavbarHover?.(false)}
+      >
+        {/* Mobile Layout - Hidden as SideNav handles mobile */}
+        <div className="lg:hidden transition-all duration-300 ease-in-out hover:bg-gray-50/30 active:bg-gray-100/50">
+          {/* Top Row - Navbar Button and Search Bar */}
+          <div className="p-4 pb-3 transition-all duration-300 ease-in-out hover:pb-4 hover:pt-5">
+            <div className="flex items-center space-x-3 w-full min-w-0 transition-all duration-300 ease-in-out hover:space-x-4 active:space-x-2">
+              {/* Mobile Navbar Toggle Button */}
+              <button
+                onClick={onNavbarToggle}
+                className="flex-shrink-0 p-2 rounded-lg hover:bg-gray-50 transition-all duration-300 ease-in-out transform hover:scale-105 active:scale-95"
+                aria-label="Toggle navigation menu"
+              >
+                <div className="relative w-5 h-5 transition-all duration-300 ease-in-out">
+                  {isNavbarOpen ? (
+                    <ChevronLeft className="w-5 h-5 text-gray-600 transition-all duration-300 ease-in-out transform rotate-0 hover:rotate-[-5deg]" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-gray-600 transition-all duration-300 ease-in-out transform rotate-0 hover:rotate-[5deg]" />
+                  )}
+                </div>
+              </button>
+              
+              {/* Search Bar */}
+              <div className="flex-1 min-w-0 transition-all duration-300 ease-in-out hover:scale-[1.02] active:scale-[0.98]">
+                <GlobalSearch />
+              </div>
             </div>
           </div>
 
           {/* Bottom Row - User Info and Time */}
-          <div className="px-4 pb-4">
-            <div className="flex items-center justify-between min-w-0">
-              {/* Time Display - Left */}
+          <div className="px-4 pb-4 transition-all duration-300 ease-in-out hover:px-5 hover:pb-5">
+            <div className="flex items-center justify-between min-w-0 transition-all duration-300 ease-in-out hover:space-x-2 active:space-x-1">
+              {/* Time Display */}
               {mounted && currentTime && (
-                <div className="text-left min-w-0 flex-shrink-0">
-                  <div className="text-sm font-medium text-gray-600 truncate">{formatDate(currentTime)}</div>
-                  <div className="text-xs text-gray-500 truncate">{formatTime(currentTime)}</div>
+                <div className="text-left min-w-0 flex-shrink-0 transition-all duration-300 ease-in-out hover:scale-[1.02]">
+                  <div className="text-sm font-medium text-gray-600 truncate transition-all duration-300 ease-in-out">{formatDate(currentTime)}</div>
+                  <div className="text-xs text-gray-500 truncate transition-all duration-300 ease-in-out">{formatTime(currentTime)}</div>
                 </div>
               )}
 
-              {/* User Info and Profile Picture - Right */}
-              <div className="flex items-center space-x-3 min-w-0 flex-1 justify-end">
-                <div className="text-right min-w-0 flex-shrink-0">
-                  <div className="text-sm font-medium text-gray-900 truncate">{user?.name || "John Admin"}</div>
-                  <div className="text-xs text-gray-500 truncate">ID: {convertToEmpFormat(user?.id || "1")}</div>
+              {/* User Info and Profile Picture */}
+              <div className="flex items-center space-x-3 min-w-0 flex-1 justify-end transition-all duration-300 ease-in-out hover:space-x-4 active:space-x-2">
+                <div className="text-right min-w-0 flex-shrink-0 transition-all duration-300 ease-in-out hover:scale-[1.02]">
+                  <div className="text-sm font-medium text-gray-900 truncate transition-all duration-300 ease-in-out">{user?.name || "John Admin"}</div>
+                  <div className="text-xs text-gray-500 truncate transition-all duration-300 ease-in-out">ID: {convertToEmpFormat(user?.id || "1")}</div>
                 </div>
 
-                {/* Account Dropdown */}
-                <div className="relative account-dropdown flex-shrink-0">
+                <div className="relative account-dropdown-container flex-shrink-0">
                   <button 
-                    onClick={() => setShowAccountDropdown(!showAccountDropdown)}
-                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                    onClick={() => {
+                      console.log('Profile picture clicked, current state:', showAccountDropdown);
+                      setShowAccountDropdown(!showAccountDropdown);
+                    }}
+                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-all duration-300 ease-in-out transform hover:scale-105 active:scale-95"
                   >
-                    <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                    <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl">
                       {profilePicture ? (
                         <img 
                           src={profilePicture} 
                           alt="Profile" 
-                          className="w-8 h-8 rounded-full object-cover"
+                          className="w-8 h-8 rounded-full object-cover transition-all duration-300 ease-in-out"
                         />
                       ) : (
-                        <span className="text-white font-semibold text-xs">
+                        <span className="text-white font-semibold text-xs transition-all duration-300 ease-in-out">
                           {user?.name?.charAt(0)?.toUpperCase() || "J"}
                         </span>
                       )}
                     </div>
                   </button>
-
-                  {/* Dropdown Menu */}
-                  {showAccountDropdown && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                      <button
-                        onClick={() => {
-                          setShowAccountDropdown(false);
-                          setShowSystemStatus(true);
-                          fetchSystemMetrics();
-                        }}
-                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-                      >
-                        <Shield className="w-4 h-4 mr-3 text-blue-600 flex-shrink-0" />
-                        <span className="whitespace-nowrap">System Health Check</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowAccountDropdown(false);
-                          setShowChangePassword(true);
-                        }}
-                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors text-left"
-                      >
-                        <UserCheck className="w-4 h-4 mr-3 text-green-600 flex-shrink-0" />
-                        <span className="whitespace-nowrap">Change Password</span>
-                      </button>
-                      <hr className="my-1 border-gray-200" />
-                      <button
-                        onClick={() => {
-                          setShowAccountDropdown(false);
-                          setShowAccountSettings(true);
-                        }}
-                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-600 transition-colors text-left"
-                      >
-                        <Settings className="w-4 h-4 mr-3 text-gray-600 flex-shrink-0" />
-                        <span className="whitespace-nowrap">Account Settings</span>
-                      </button>
-                      <hr className="my-1 border-gray-200" />
-                      <button
-                        onClick={() => {
-                          setShowAccountDropdown(false);
-                          handleLogout();
-                        }}
-                        className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
-                      >
-                        <LogOut className="w-4 h-4 mr-3 text-red-600 flex-shrink-0" />
-                        <span className="whitespace-nowrap">Logout</span>
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -444,7 +395,7 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
         </div>
 
         {/* Desktop Layout */}
-        <div className="hidden lg:flex items-center justify-between p-4 overflow-hidden">
+        <div className="hidden lg:flex items-center justify-between py-4">
           {/* Left Section - Search Bar */}
           <div className="flex items-center space-x-4 min-w-0">
             <div className="w-96 min-w-0">
@@ -453,19 +404,16 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
           </div>
 
           {/* Right Section - Timestamp and Account */}
-          <div className="flex items-center space-x-6 ml-auto min-w-0">
+          <div className="flex items-center space-x-6 min-w-0 mr-20">
             {/* Timestamp with Vertical Separator */}
             {mounted && currentTime && (
               <div className="flex items-center space-x-3 text-gray-600 min-w-0">
-                {/* Date on the left */}
                 <div className="text-sm font-medium truncate">
                   {formatDate(currentTime)}
                 </div>
                 
-                {/* Vertical separator line */}
                 <div className="w-px h-6 bg-gray-300 flex-shrink-0"></div>
                 
-                {/* Time and Local Time label on the right */}
                 <div className="flex items-center space-x-2 min-w-0">
                   <div className="text-right min-w-0">
                     <div className="text-lg font-bold text-gray-800 truncate">
@@ -475,23 +423,23 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
                       Local Time
                     </div>
                   </div>
-                  {/* Status indicator removed */}
                 </div>
               </div>
             )}
 
             {/* Account Section */}
             <div className="flex items-center space-x-3 min-w-0 flex-shrink-0">
-              {/* User Info */}
               <div className="text-right min-w-0">
                 <div className="text-sm font-medium text-gray-900 truncate">{user?.name || "John Admin"}</div>
                 <div className="text-xs text-gray-500 truncate">ID: {convertToEmpFormat(user?.id || "1")}</div>
               </div>
 
-              {/* Account Dropdown */}
-              <div className="relative account-dropdown">
+              <div className="relative account-dropdown-container">
                 <button 
-                  onClick={() => setShowAccountDropdown(!showAccountDropdown)}
+                  onClick={() => {
+                    console.log('Profile picture clicked, current state:', showAccountDropdown);
+                    setShowAccountDropdown(!showAccountDropdown);
+                  }}
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
@@ -508,60 +456,94 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
                     )}
                   </div>
                 </button>
-
-                {/* Dropdown Menu */}
-                {showAccountDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                    <button
-                      onClick={() => {
-                        setShowAccountDropdown(false);
-                        setShowSystemStatus(true);
-                        fetchSystemMetrics();
-                      }}
-                      className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-                    >
-                      <Shield className="w-4 h-4 mr-3 text-blue-600 flex-shrink-0" />
-                      <span className="whitespace-nowrap">System Health Check</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowAccountDropdown(false);
-                        setShowChangePassword(true);
-                      }}
-                      className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors text-left"
-                    >
-                      <UserCheck className="w-4 h-4 mr-3 text-green-600 flex-shrink-0" />
-                      <span className="whitespace-nowrap">Change Password</span>
-                    </button>
-                    <hr className="my-1 border-gray-200" />
-                    <button
-                      onClick={() => {
-                        setShowAccountDropdown(false);
-                        setShowAccountSettings(true);
-                      }}
-                      className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-600 transition-colors text-left"
-                    >
-                      <Settings className="w-4 h-4 mr-3 text-gray-600 flex-shrink-0" />
-                      <span className="whitespace-nowrap">Account Settings</span>
-                    </button>
-                    <hr className="my-1 border-gray-200" />
-                    <button
-                      onClick={() => {
-                        setShowAccountDropdown(false);
-                        handleLogout();
-                      }}
-                      className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
-                    >
-                      <LogOut className="w-4 h-4 mr-3 text-red-600 flex-shrink-0" />
-                      <span className="whitespace-nowrap">Logout</span>
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Account Dropdown - Single responsive dropdown */}
+      {showAccountDropdown && (
+        <div 
+          className="fixed inset-0 z-40 account-dropdown"
+          style={{ pointerEvents: 'none' }}
+        >
+          {/* Single responsive dropdown */}
+          <div 
+            className={cn(
+              "absolute bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[200px]",
+              "right-4 top-[120px] lg:right-8 lg:top-[80px]"
+            )}
+            style={{ pointerEvents: 'auto' }}
+          >
+            <button
+              onClick={() => {
+                console.log('=== System Health Check Button Clicked ===');
+                console.log('1. Current showSystemStatus:', showSystemStatus);
+                console.log('2. Setting showAccountDropdown to false');
+                setShowAccountDropdown(false);
+                console.log('3. Setting showSystemStatus to true');
+                setShowSystemStatus(true);
+                console.log('4. Calling fetchSystemMetrics');
+                fetchSystemMetrics();
+                console.log('5. Button click handler completed');
+              }}
+              className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+            >
+              <Shield className="w-5 h-5 mr-3 text-blue-600 flex-shrink-0" />
+              <span className="whitespace-nowrap font-medium">System Health Check</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                console.log('=== Change Password Button Clicked ===');
+                console.log('1. Current showChangePassword:', showChangePassword);
+                console.log('2. Setting showAccountDropdown to false');
+                setShowAccountDropdown(false);
+                console.log('3. Setting showChangePassword to true');
+                setShowChangePassword(true);
+                console.log('4. Button click handler completed');
+              }}
+              className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors text-left"
+            >
+              <UserCheck className="w-5 h-5 mr-3 text-green-600 flex-shrink-0" />
+              <span className="whitespace-nowrap font-medium">Change Password</span>
+            </button>
+            
+            <hr className="my-2 border-gray-200" />
+            
+            <button
+              onClick={() => {
+                console.log('=== Account Settings Button Clicked ===');
+                console.log('1. Current showAccountSettings:', showAccountSettings);
+                console.log('2. Setting showAccountDropdown to false');
+                setShowAccountDropdown(false);
+                console.log('3. Setting showAccountSettings to true');
+                setShowAccountSettings(true);
+                console.log('4. Button click handler completed');
+              }}
+              className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-600 transition-colors text-left"
+            >
+              <Settings className="w-5 h-5 mr-3 text-gray-600 flex-shrink-0" />
+              <span className="whitespace-nowrap font-medium">Account Settings</span>
+            </button>
+            
+            <hr className="my-2 border-gray-200" />
+            
+            <button
+              onClick={() => {
+                console.log('=== Logout Button Clicked ===');
+                setShowAccountDropdown(false);
+                handleLogout();
+              }}
+              className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-600 transition-colors text-left"
+            >
+              <LogOut className="w-5 h-5 mr-3 text-red-600 flex-shrink-0" />
+              <span className="whitespace-nowrap font-medium">Logout</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Success Message */}
       {showSuccessMessage && (
@@ -570,6 +552,7 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
         </div>
       )}
 
+      {/* Modals remain the same... */}
       {/* Account Settings Modal */}
       {showAccountSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -589,7 +572,6 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
             </div>
             
             <div className="p-4 space-y-4">
-              {/* Profile Picture */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-gray-700">Profile Picture</Label>
                 <div className="flex items-center space-x-3">
@@ -611,7 +593,6 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
                 </div>
               </div>
               
-              {/* User Information */}
               <div className="space-y-3">
                 <div>
                   <Label htmlFor="name" className="text-xs font-medium text-gray-700">Full Name</Label>
@@ -693,7 +674,6 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
                 </div>
               ) : (
                 <>
-                  {/* Overall Status */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
@@ -706,7 +686,6 @@ export default function AppHeader({ className = "" }: AppHeaderProps) {
                     </div>
                   </div>
                   
-                  {/* Service Status */}
                   <div className="space-y-2">
                     <h4 className="font-medium text-gray-900 text-sm">Database Services</h4>
                     <div className="space-y-2">

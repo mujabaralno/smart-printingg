@@ -34,13 +34,17 @@ export default function GlobalSearch() {
         const response = await fetch('/api/search/history');
         if (response.ok) {
           const history = await response.json();
-          setSearchHistory(history.map((h: any) => h.query));
+          if (Array.isArray(history)) {
+            setSearchHistory(history.map((h: any) => h.query || h));
+          } else {
+            setSearchHistory([]);
+          }
         } else {
-          console.error('Failed to load search history:', response.status);
+          console.warn('Search history not available:', response.status);
           setSearchHistory([]);
         }
       } catch (error) {
-        console.error('Error loading search history:', error);
+        console.warn('Search history not available:', error);
         setSearchHistory([]);
       } finally {
         setIsLoadingHistory(false);
@@ -274,18 +278,18 @@ export default function GlobalSearch() {
       {/* Search Trigger Button */}
       <Button
         variant="outline"
-        className="w-full justify-start text-sm text-muted-foreground bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 rounded-2xl shadow-sm hover:shadow-md"
+        className="w-full justify-start text-xs sm:text-sm text-muted-foreground bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 rounded-2xl shadow-sm hover:shadow-md"
         onClick={() => setIsOpen(true)}
       >
-        <Search className="mr-3 h-4 w-4 text-gray-400" />
-        <span className="text-gray-600">Search quotes, clients, suppliers, sales persons...</span>
+        <Search className="mr-2 sm:mr-3 h-4 w-4 text-gray-400" />
+        <span className="text-gray-600 truncate">Search quotes, clients, suppliers, sales persons...</span>
         {/* Keyboard shortcut indicator removed */}
       </Button>
 
       {/* Search Modal */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-start justify-center pt-20"
+          className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-start justify-center pt-16 sm:pt-20 px-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setIsOpen(false);
@@ -295,9 +299,9 @@ export default function GlobalSearch() {
             }
           }}
         >
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] overflow-hidden border border-gray-100">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-auto max-h-[85vh] sm:max-h-[80vh] overflow-hidden border border-gray-100">
             {/* Search Input */}
-            <div className="p-6 border-b border-gray-100">
+            <div className="p-4 sm:p-6 border-b border-gray-100">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Global Search</h3>
                 <button
@@ -341,7 +345,7 @@ export default function GlobalSearch() {
                         setSearchError(null);
                       }
                     }}
-                    className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder:text-gray-500"
+                    className="w-full pl-12 pr-12 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder:text-gray-500 text-sm sm:text-base"
                   />
                   {query && (
                     <button
@@ -429,7 +433,7 @@ export default function GlobalSearch() {
                   ))}
                 </div>
               ) : showHistory && searchHistory.length > 0 ? (
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-gray-700">Recent Searches</h3>
                     <button
@@ -496,7 +500,7 @@ export default function GlobalSearch() {
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50">
+            <div className="p-3 sm:p-4 border-t border-gray-100 bg-gray-50">
               <div className="text-center text-xs text-gray-500">
                 <span>Press <kbd className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">Esc</kbd> to close or click the <X className="w-3 h-3 inline" /> button</span>
               </div>
