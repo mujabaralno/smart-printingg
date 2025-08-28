@@ -431,7 +431,7 @@ function SupplierManagementContent() {
               <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
                 <SelectValue placeholder="All Units" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 <SelectItem value="all">All Units</SelectItem>
                 <SelectItem value="per_sheet">Per Sheet</SelectItem>
                 <SelectItem value="per_packet">Per Packet</SelectItem>

@@ -745,7 +745,7 @@ export default function QuoteManagementPage() {
               <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
                 <SelectValue placeholder="All Contact Persons" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 <SelectItem value="all">All Contact Persons</SelectItem>
                 {filterContactPersons.map((person) => (
                   <SelectItem key={person.id} value={person.id}>

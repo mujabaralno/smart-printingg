@@ -636,7 +636,7 @@ export default function ClientManagementPage() {
               <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
                 <SelectValue placeholder="All Types" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="Individual">Individual</SelectItem>
                 <SelectItem value="Company">Company</SelectItem>
@@ -650,7 +650,7 @@ export default function ClientManagementPage() {
               <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="Active">Active</SelectItem>
                 <SelectItem value="Inactive">Inactive</SelectItem>
@@ -664,7 +664,7 @@ export default function ClientManagementPage() {
               <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
                 <SelectValue placeholder="All Areas" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 <SelectItem value="all">All Areas</SelectItem>
                 {UAE_AREAS.map((area) => (
                   <SelectItem key={`${area.state}-${area.name}`} value={area.name}>
@@ -681,7 +681,7 @@ export default function ClientManagementPage() {
               <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
                 <SelectValue placeholder="All Roles" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="Customer">Customer</SelectItem>
                 <SelectItem value="Supplier">Supplier</SelectItem>

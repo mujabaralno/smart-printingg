@@ -321,11 +321,11 @@ export default function UserManagementPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Role</label>
-                <Select value={roleFilter} onValueChange={(v: "all" | AppUserRole) => setRoleFilter(v)}>
+                <Select value={roleFilter} onValueChange={(v: "all" | "admin" | "user" | "estimator") => setRoleFilter(v)}>
                   <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12">
                     <SelectValue placeholder="All Roles" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60">
                     <SelectItem value="all">All Roles</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="user">User</SelectItem>
@@ -340,7 +340,7 @@ export default function UserManagementPage() {
                   <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60">
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="Active">Active</SelectItem>
                     <SelectItem value="Inactive">Inactive</SelectItem>
