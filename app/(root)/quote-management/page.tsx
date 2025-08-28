@@ -135,17 +135,18 @@ export default function QuoteManagementPage() {
     const loadQuotes = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/quotes/direct');
+        // Add cache-busting to ensure fresh data
+        const response = await fetch('/api/quotes/direct?t=' + Date.now());
         if (response.ok) {
           const quotes = await response.json();
           console.log('Raw quotes from database:', quotes);
           console.log('🔍 DEBUG: First quote client data:', quotes[0]?.client);
-          console.log('🔍 DEBUG: First quote clientName:', quotes[0]?.client?.companyName);
+          console.log('🔍 DEBUG: First quote clientName should be:', quotes[0]?.client?.companyName || quotes[0]?.client?.contactPerson || "N/A");
           // Transform database quotes to match Row format
           const transformedQuotes = quotes.map((quote: any) => ({
             id: quote.id, // Use database ID for operations
             quoteId: quote.quoteId || `QT-${new Date(quote.date).getFullYear()}-${String(new Date(quote.date).getMonth() + 1).padStart(2, '0')}-${String(new Date(quote.date).getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`, // Generate quote ID if missing
-            clientName: quote.client?.companyName || quote.client?.contactPerson || "N/A",
+            clientName: (quote.client?.companyName && quote.client.companyName.trim() !== "") ? quote.client.companyName : (quote.client?.contactPerson && quote.client.contactPerson.trim() !== "") ? quote.client.contactPerson : "N/A",
             contactPerson: quote.client?.contactPerson || "Unknown Contact",
             date: quote.date.split('T')[0], // Convert ISO date to YYYY-MM-DD
             amount: quote.amounts?.total || 0,
