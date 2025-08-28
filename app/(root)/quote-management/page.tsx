@@ -137,6 +137,7 @@ export default function QuoteManagementPage() {
         setLoading(true);
         // Add cache-busting to ensure fresh data
         const response = await fetch('/api/quotes/direct?t=' + Date.now());
+        console.log('🔍 DEBUG: API Response status:', response.status, response.statusText);
         if (response.ok) {
           const quotes = await response.json();
           console.log('Raw quotes from database:', quotes);
@@ -180,14 +181,14 @@ export default function QuoteManagementPage() {
           console.log('🔍 DEBUG: First transformed quote clientName:', transformedQuotes[0]?.clientName);
           setRows(transformedQuotes);
         } else {
-          console.error('Failed to load quotes');
-          // Fallback to dummy data if API fails
-          setRows(QUOTES);
+          console.error('Failed to load quotes - API returned non-OK status');
+          // Don't fallback to dummy data - show empty state instead
+          setRows([]);
         }
       } catch (error) {
         console.error('Error loading quotes:', error);
-        // Fallback to dummy data if API fails
-        setRows(QUOTES);
+        // Don't fallback to dummy data - show empty state instead
+        setRows([]);
       } finally {
         setLoading(false);
       }
