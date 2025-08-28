@@ -135,7 +135,7 @@ export default function QuoteManagementPage() {
     const loadQuotes = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/quotes');
+        const response = await fetch('/api/quotes/direct');
         if (response.ok) {
           const quotes = await response.json();
           console.log('Raw quotes from database:', quotes);
