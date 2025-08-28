@@ -139,6 +139,8 @@ export default function QuoteManagementPage() {
         if (response.ok) {
           const quotes = await response.json();
           console.log('Raw quotes from database:', quotes);
+          console.log('🔍 DEBUG: First quote client data:', quotes[0]?.client);
+          console.log('🔍 DEBUG: First quote clientName:', quotes[0]?.client?.companyName);
           // Transform database quotes to match Row format
           const transformedQuotes = quotes.map((quote: any) => ({
             id: quote.id, // Use database ID for operations
@@ -174,6 +176,7 @@ export default function QuoteManagementPage() {
             originalClientId: quote.clientId || null,
           }));
           console.log('Transformed quotes:', transformedQuotes);
+          console.log('🔍 DEBUG: First transformed quote clientName:', transformedQuotes[0]?.clientName);
           setRows(transformedQuotes);
         } else {
           console.error('Failed to load quotes');
