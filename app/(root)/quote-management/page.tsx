@@ -143,10 +143,10 @@ export default function QuoteManagementPage() {
           const transformedQuotes = quotes.map((quote: any) => ({
             id: quote.id, // Use database ID for operations
             quoteId: quote.quoteId || `QT-${new Date(quote.date).getFullYear()}-${String(new Date(quote.date).getMonth() + 1).padStart(2, '0')}-${String(new Date(quote.date).getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`, // Generate quote ID if missing
-            clientName: quote.client?.companyName || quote.client?.contactPerson || "Unknown Client",
+            clientName: quote.client?.companyName || quote.client?.contactPerson || "N/A",
             contactPerson: quote.client?.contactPerson || "Unknown Contact",
             date: quote.date.split('T')[0], // Convert ISO date to YYYY-MM-DD
-            amount: quote.amounts?.total || 0,
+            amount: quote.amounts?.total || (quote.amounts && quote.amounts.length > 0 ? quote.amounts[0]?.total || 0 : 0),
             status: quote.status as Status,
             userId: quote.user?.id || "cmejqfk3s0000x5a98slufy9n", // Use real admin user ID as fallback
             product: quote.productName || quote.product || (quote.papers && quote.papers.length > 0 ? quote.papers[0].name : "Printing Product"), // Use productName if available
@@ -538,6 +538,29 @@ export default function QuoteManagementPage() {
   const viewTotal = (row: Row | null) => (row ? currency.format(row.amount) : "—");
 
   // Function to handle PDF download for approved quotes
+  const handleCalculateAmount = async (quoteId: string) => {
+    try {
+      console.log('🔢 Calculating amount for quote:', quoteId);
+      const response = await fetch('/api/quotes/calculate-amounts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quoteId })
+      });
+      
+      if (response.ok) {
+        console.log('✅ Amount calculated successfully');
+        // Refresh the quotes to show updated amounts
+        window.location.reload();
+      } else {
+        console.error('❌ Failed to calculate amount');
+      }
+    } catch (error) {
+      console.error('❌ Error calculating amount:', error);
+    }
+  };
+
   const handleDownloadPDF = async (quote: Row, type: 'customer' | 'operations') => {
     const downloadId = `${quote.id}-${type}`;
     setDownloadingPDF(downloadId);
@@ -957,7 +980,23 @@ export default function QuoteManagementPage() {
                         </div>
                         <div>
                           <span className="text-sm text-slate-500">Amount:</span>
-                          <div className="font-semibold text-slate-900">AED {row.amount ? row.amount.toFixed(2) : '0.00'}</div>
+                          <div className="font-semibold text-slate-900">
+                            {row.amount && row.amount > 0 ? (
+                              `AED ${row.amount.toFixed(2)}`
+                            ) : (
+                              <div className="flex items-center space-x-2">
+                                <span className="text-red-500">AED 0.00</span>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCalculateAmount(row.id)}
+                                  className="text-xs px-2 py-1 h-6"
+                                >
+                                  Calculate
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                       
