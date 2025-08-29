@@ -146,7 +146,12 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
   }>>([]);
   const [loadingPapers, setLoadingPapers] = useState(false);
   
-  // Debug logging for autofill
+  // Refs to prevent infinite loops
+  const hasMatchedPapers = React.useRef(false);
+  const hasInitializedProducts = React.useRef(false);
+  const hasInitializedColors = React.useRef(false);
+  
+  // Debug logging for autofill - run when formData changes
   React.useEffect(() => {
     console.log('Step3ProductSpec received formData:', formData);
     if (formData.products && formData.products.length > 0) {
@@ -160,6 +165,16 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
           colors: product.colors
         });
         
+        // Debug finishing options specifically
+        if (product.finishing && product.finishing.length > 0) {
+          console.log(`  Finishing options for Product ${idx}:`, product.finishing);
+          product.finishing.forEach((finish, fIdx) => {
+            console.log(`    Finishing ${fIdx}: "${finish}"`);
+          });
+        } else {
+          console.log(`  No finishing options for Product ${idx}`);
+        }
+        
         // Debug paper details specifically
         if (product.papers && product.papers.length > 0) {
           product.papers.forEach((paper, pIdx) => {
@@ -172,7 +187,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
         }
       });
     }
-  }, [formData, availablePapers]);
+  }, [formData]); // Run when formData changes
   
   // Helper function to find the best matching paper from available options
   const findBestMatchingPaper = (paperName: string, gsm: string) => {
@@ -220,7 +235,8 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
           console.log('Available papers loaded:', papers);
           
           // After loading papers, try to match existing form data with available options
-          if (formData.products && formData.products.length > 0) {
+          if (formData.products && formData.products.length > 0 && !hasMatchedPapers.current) {
+            hasMatchedPapers.current = true;
             const updatedProducts = formData.products.map(product => ({
               ...product,
               papers: product.papers.map(paper => {
@@ -254,52 +270,60 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
     };
     
     fetchAvailablePapers();
-  }, [formData.products.length]); // Only run when products array length changes
+  }, []); // Only run once on mount
   
 
 
   // Ensure we have at least one product, but don't override auto-filled data
+  
   React.useEffect(() => {
-    // Only create empty product if there are no products OR if the only product is completely empty
-    // This prevents overriding auto-filled data from existing quotes
-    if (formData.products.length === 0 || 
-        (formData.products.length === 1 && 
-         !formData.products[0].productName && 
-         formData.products[0].papers[0]?.name === "Select Paper" &&
-         formData.products[0].quantity === 100)) {
-      console.log('Creating empty product - no meaningful data found');
-      setFormData(prev => ({
-        ...prev,
-        products: [createEmptyProduct()]
-      }));
-    } else {
-      console.log('Skipping empty product creation - meaningful data exists:', {
-        productCount: formData.products.length,
-        firstProduct: formData.products[0] ? {
-          name: formData.products[0].productName,
-          paperName: formData.products[0].papers[0]?.name,
-          quantity: formData.products[0].quantity
-        } : null
-      });
+    if (!hasInitializedProducts.current) {
+      // Only create empty product if there are no products OR if the only product is completely empty
+      // This prevents overriding auto-filled data from existing quotes
+      if (formData.products.length === 0 || 
+          (formData.products.length === 1 && 
+           !formData.products[0].productName && 
+           formData.products[0].papers[0]?.name === "Select Paper" &&
+           formData.products[0].quantity === 100)) {
+        console.log('Creating empty product - no meaningful data found');
+        setFormData(prev => ({
+          ...prev,
+          products: [createEmptyProduct()]
+        }));
+      } else {
+        console.log('Skipping empty product creation - meaningful data exists:', {
+          productCount: formData.products.length,
+          firstProduct: formData.products[0] ? {
+            name: formData.products[0].productName,
+            paperName: formData.products[0].papers[0]?.name,
+            quantity: formData.products[0].quantity
+          } : null
+        });
+      }
+      hasInitializedProducts.current = true;
     }
-  }, [formData.products.length, setFormData]);
+  }, []); // Only run once on mount
 
   // Ensure colors are properly initialized for all products
+  
   React.useEffect(() => {
-    const updatedProducts = formData.products.map(product => {
-      if (!product.colors) {
-        return { ...product, colors: { front: "", back: "" } };
+    if (!hasInitializedColors.current) {
+      const updatedProducts = formData.products.map(product => {
+        if (!product.colors) {
+          return { ...product, colors: { front: "", back: "" } };
+        }
+        return product;
+      });
+      
+      if (updatedProducts.some((p, i) => !p.colors || !formData.products[i].colors)) {
+        setFormData(prev => ({
+          ...prev,
+          products: updatedProducts
+        }));
       }
-      return product;
-    });
-    
-    if (updatedProducts.some((p, i) => !p.colors || !formData.products[i].colors)) {
-      setFormData(prev => ({
-        ...prev,
-        products: updatedProducts
-      }));
+      hasInitializedColors.current = true;
     }
-  }, [formData.products.length]);
+  }, []); // Only run once on mount
 
 
 
@@ -372,19 +396,83 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
   };
 
   // Auto-populate product details for products with default names
+  const hasAutoPopulated = React.useRef(false);
+  
   React.useEffect(() => {
-    if (formData.products && formData.products.length > 0) {
+    if (formData.products && formData.products.length > 0 && !hasAutoPopulated.current) {
+      let shouldUpdate = false;
+      const updates: Array<{ idx: number; productName: string }> = [];
+      
       formData.products.forEach((product, idx) => {
         // If product has a name but sizes are still default (0 or empty), auto-populate
         if (product.productName && 
             (product.flatSize.width === 0 || product.flatSize.height === 0 || 
              product.flatSize.width === null || product.flatSize.height === null)) {
           console.log(`Auto-populating sizes for ${product.productName}`);
-          handleProductNameChange(idx, product.productName);
+          updates.push({ idx, productName: product.productName });
+          shouldUpdate = true;
+        }
+      });
+      
+      if (shouldUpdate) {
+        hasAutoPopulated.current = true;
+        // Apply all updates at once to prevent infinite loops
+        updates.forEach(({ idx, productName }) => {
+          const product = formData.products[idx];
+          const config = getProductConfig(productName);
+          
+          if (config) {
+            const next = [...formData.products];
+            next[idx] = { 
+              ...next[idx], 
+              flatSize: config.defaultSizes,
+              closeSize: config.defaultSizes,
+              useSameAsFlat: true
+            };
+            setFormData((prev): QuoteFormData => ({ ...prev, products: next }));
+          }
+        });
+      }
+    }
+  }, [formData.products]);
+
+  // Debug finishing data changes
+  React.useEffect(() => {
+    console.log('🔄 Step3ProductSpec formData changed:', formData);
+    if (formData.products && formData.products.length > 0) {
+      formData.products.forEach((product, idx) => {
+        console.log(`📦 Product ${idx} data:`, {
+          name: product.productName,
+          finishing: product.finishing,
+          finishingLength: product.finishing?.length || 0,
+          finishingType: typeof product.finishing,
+          isArray: Array.isArray(product.finishing)
+        });
+        
+        if (product.finishing && product.finishing.length > 0) {
+          console.log(`✅ Finishing data updated for Product ${idx}:`, product.finishing);
+        } else {
+          console.log(`❌ No finishing data for Product ${idx}`);
         }
       });
     }
-  }, [formData.products]);
+  }, [formData]);
+
+  // Helper function to check if a finishing option is selected
+  const isFinishingSelected = (product: Product, option: string): boolean => {
+    // Simple, direct check without excessive logging
+    if (!product.finishing || !Array.isArray(product.finishing) || product.finishing.length === 0) {
+      return false;
+    }
+    
+    // Check if any finishing option contains this option name
+    return product.finishing.some(f => {
+      if (typeof f === 'string') {
+        return f.includes(option);
+      }
+      return false;
+    });
+  };
 
   // paper
   const handlePaperChange = (
@@ -525,7 +613,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
         <DialogContent className="max-w-full sm:max-w-5xl max-h-[85vh] overflow-y-auto mx-4 sm:mx-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2 text-sm sm:text-base">
-              <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center flex-shrink-0">
+              <div className="w-5 h-5 bg-[#27aae1] rounded flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-xs font-bold">P</span>
               </div>
               <span className="break-words">
@@ -539,7 +627,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
           
           {loadingPaperDetails ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#27aae1]"></div>
               <span className="ml-2 text-gray-600 text-sm sm:text-base">Loading paper details...</span>
             </div>
           ) : paperDetails ? (
@@ -574,7 +662,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                                 <span className="font-medium">GSM Options:</span>
                                 <div className="mt-1">
                                   {paper.gsmOptions.map((gsm, gIdx) => (
-                                    <div key={gIdx} className="text-xs bg-blue-100 px-2 py-1 rounded mb-1">
+                                    <div key={gIdx} className="text-xs bg-[#27aae1]/20 px-2 py-1 rounded mb-1">
                                       {gsm} gsm
                                     </div>
                                   ))}
@@ -582,7 +670,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                               </div>
                               <div>
                                 <span className="font-medium">Paper Type:</span>
-                                <div className="mt-1 text-xs bg-purple-100 px-2 py-1 rounded">
+                                <div className="mt-1 text-xs bg-[#ea078b]/20 px-2 py-1 rounded">
                                   {paper.paperType || 'Standard'}
                                 </div>
                               </div>
@@ -591,7 +679,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                           <div className="flex justify-center sm:ml-4">
                             <Button
                               variant="outline"
-                              className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700 w-full sm:w-auto"
+                              className="bg-[#27aae1] text-white border-[#27aae1] hover:bg-[#1e8bc3] hover:border-[#1e8bc3] w-full sm:w-auto"
                               size="sm"
                               onClick={() => handleAddPaperFromBrowse(paper.name)}
                               title={`Add ${paper.name} to product`}
@@ -659,10 +747,10 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     </div>
                   ) : (
                     <>
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 sm:p-4 rounded-lg border border-blue-200">
+                      <div className="bg-[#27aae1]/10 p-3 sm:p-4 rounded-lg border border-[#27aae1]/30">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                           <div className="text-center">
-                            <div className="text-xl sm:text-2xl font-bold text-blue-600">{paperDetails.totalMaterials || 0}</div>
+                            <div className="text-xl sm:text-2xl font-bold text-[#27aae1]">{paperDetails.totalMaterials || 0}</div>
                             <div className="text-xs sm:text-sm text-gray-600">Total Materials</div>
                           </div>
                           <div className="text-center">
@@ -670,12 +758,12 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                             <div className="text-xs sm:text-sm text-gray-600">Available Suppliers</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-xl sm:text-2xl font-bold text-purple-600">{paperDetails.gsmDetails?.length || 0}</div>
+                            <div className="text-xl sm:text-2xl font-bold text-[#ea078b]">{paperDetails.gsmDetails?.length || 0}</div>
                             <div className="text-xs sm:text-sm text-gray-600">GSM Options</div>
                           </div>
                         </div>
                         
-                        <div className="mt-4 pt-4 border-t border-blue-200">
+                        <div className="mt-4 pt-4 border-t border-[#27aae1]/30">
                           <div className="text-center">
                             <p className="text-xs sm:text-sm text-gray-600">
                               <span className="font-medium">Paper Type:</span> {paperDetails.paperName || 'Unknown'}
@@ -709,7 +797,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                                 </span>
                               </div>
                               <div className="text-xs sm:text-sm text-gray-600">
-                                Avg: <span className="font-medium text-blue-600">
+                                Avg: <span className="font-medium text-[#27aae1]">
                                   ${gsmDetail.averageCost?.toFixed(2) || '0.00'}
                                 </span>
                               </div>
@@ -793,20 +881,20 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
 
         {/* Template Quote Indicator */}
         {isTemplateQuote && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+          <div className="bg-[#27aae1]/10 border border-[#27aae1]/30 rounded-lg p-3 sm:p-4">
             <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start space-x-2">
-                <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center mt-0.5 flex-shrink-0">
+                <div className="w-5 h-5 rounded-full bg-[#27aae1]/100 flex items-center justify-center mt-0.5 flex-shrink-0">
                   <span className="text-white text-xs font-bold">📋</span>
                 </div>
-                <div className="text-blue-700 min-w-0 flex-1">
+                <div className="text-[#27aae1] min-w-0 flex-1">
                   <p className="font-medium mb-1 text-sm sm:text-base">Quote Template Loaded</p>
                   <p className="text-xs sm:text-sm">
                     Product specifications have been pre-filled from the selected quote template: <strong>{formData.products.length} product(s) loaded</strong>
                   </p>
                   <div className="text-xs sm:text-sm mt-1 space-y-1 max-h-32 overflow-y-auto">
                     {formData.products.map((product, idx) => (
-                      <div key={idx} className="border-l-2 border-blue-300 pl-2 break-words">
+                      <div key={idx} className="border-l-2 border-[#27aae1]/50 pl-2 break-words">
                         <strong>{product.productName}</strong>: {product.quantity} units, {product.sides} side(s), 
                         {product.printingSelection}
                         {product.papers.length > 0 && product.papers[0].name && 
@@ -824,7 +912,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs sm:text-sm mt-1 text-blue-600">
+                  <p className="text-xs sm:text-sm mt-1 text-[#27aae1]">
                     You can modify any details to customize for your new quote.
                   </p>
                 </div>
@@ -838,7 +926,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     products: [createEmptyProduct()]
                   }));
                 }}
-                className="text-blue-600 border-blue-300 hover:bg-blue-50 w-full sm:w-auto flex-shrink-0"
+                className="text-[#27aae1] border-[#27aae1]/50 hover:bg-[#27aae1]/10 w-full sm:w-auto flex-shrink-0"
               >
                 Clear Template
               </Button>
@@ -854,7 +942,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
                     <div className="w-4 h-4 sm:w-5 sm:h-5 bg-white rounded flex items-center justify-center">
-                      <span className="text-blue-600 text-xs font-bold">P</span>
+                      <span className="text-[#27aae1] text-xs font-bold">P</span>
                     </div>
                   </div>
                   <div className="min-w-0 flex-1">
@@ -885,7 +973,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                 {/* Basic Product Information */}
                 <div className="space-y-3 sm:space-y-4">
                   <h4 className="text-base sm:text-lg font-semibold text-slate-800 flex items-center">
-                    <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                    <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-[#27aae1]" />
                     Basic Information
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -895,7 +983,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                         value={product.productName}
                         onValueChange={(v) => updateProduct(idx, { productName: v })}
                       >
-                        <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                        <SelectTrigger className="w-full border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl bg-white text-sm">
                           <SelectValue placeholder="Select Product" />
                         </SelectTrigger>
                         <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
@@ -914,7 +1002,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                         type="number"
                         min={1}
                         placeholder="100"
-                        className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm"
+                        className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl text-sm"
                         value={product.quantity ?? ""}
                         onChange={(e) =>
                           updateProduct(idx, {
@@ -932,7 +1020,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                           updateProduct(idx, { sides: v as "1" | "2" })
                         }
                       >
-                        <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                        <SelectTrigger className="w-full border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl bg-white text-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
@@ -952,7 +1040,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                           })
                         }
                       >
-                        <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                        <SelectTrigger className="w-full border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl bg-white text-sm">
                           <SelectValue placeholder="Select Printing" />
                         </SelectTrigger>
                         <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
@@ -969,7 +1057,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                 {/* Color Options */}
                 <div className="space-y-3 sm:space-y-4">
                   <h4 className="text-base sm:text-lg font-semibold text-slate-800 flex items-center">
-                    <Palette className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                    <Palette className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-[#27aae1]" />
                     Color Options
                   </h4>
                   <div className="space-y-3 sm:space-y-4">
@@ -981,7 +1069,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                           colors: { ...product.colors, front: v } 
                         })}
                       >
-                        <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                        <SelectTrigger className="w-full border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl bg-white text-sm">
                           <SelectValue placeholder="Select Color" />
                         </SelectTrigger>
                         <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
@@ -1012,7 +1100,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                             }
                           }}
                         >
-                          <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                          <SelectTrigger className="w-full border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl bg-white text-sm">
                             <SelectValue placeholder="Select Color" />
                           </SelectTrigger>
                           <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
@@ -1041,7 +1129,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
               {/* Size Details */}
               <div className="space-y-3 sm:space-y-4">
                 <h4 className="text-base sm:text-lg font-semibold text-slate-800 flex items-center">
-                  <Ruler className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                  <Ruler className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-[#27aae1]" />
                   Size Details (cm)
                 </h4>
                 
@@ -1054,7 +1142,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                       <Input
                         type="number"
                         placeholder="Width"
-                        className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm"
+                        className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl text-sm"
                         min={0}
                         step="0.1"
                         value={product.flatSize.width ?? ""}
@@ -1073,7 +1161,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                       <Input
                         type="number"
                         placeholder="Height"
-                        className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm"
+                        className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl text-sm"
                         min={0}
                         step="0.1"
                         value={product.flatSize.height ?? ""}
@@ -1093,7 +1181,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                         <Input
                           type="number"
                           placeholder="Spine"
-                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm"
+                          className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl text-sm"
                           value={product.flatSize.spine ?? ""}
                           min={0}
                           step="0.1"
@@ -1115,7 +1203,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                 <div className="space-y-2 sm:space-y-3">
                   <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
                     <Label className="text-xs sm:text-sm font-medium text-slate-700">Close Size (Closed)</Label>
-                    <div className="flex items-center space-x-2 px-3 py-1.5 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 transition-colors w-fit">
+                    <div className="flex items-center space-x-2 px-3 py-1.5 bg-[#27aae1]/10 rounded-full border border-[#27aae1]/30 hover:bg-[#27aae1]/20 transition-colors w-fit">
                       <Checkbox
                         id={`same-${idx}`}
                         checked={product.useSameAsFlat}
@@ -1136,9 +1224,9 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                             updateProduct(idx, { useSameAsFlat: isChecked });
                           }
                         }}
-                        className="border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 h-4 w-4"
+                        className="border-[#27aae1]/50 data-[state=checked]:bg-[#27aae1] data-[state=checked]:border-[#27aae1] h-4 w-4"
                       />
-                      <Label htmlFor={`same-${idx}`} className="text-xs font-medium text-blue-700 cursor-pointer whitespace-nowrap">
+                      <Label htmlFor={`same-${idx}`} className="text-xs font-medium text-[#27aae1] cursor-pointer whitespace-nowrap">
                         Use same dimensions as Flat Size
                       </Label>
                     </div>
@@ -1149,7 +1237,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                       <Input
                         type="number"
                         placeholder="Width"
-                        className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm ${
+                        className={`border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl text-sm ${
                           product.useSameAsFlat ? 'bg-gray-50' : ''
                         }`}
                         min={0}
@@ -1171,7 +1259,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                       <Input
                         type="number"
                         placeholder="Height"
-                        className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm ${
+                        className={`border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl text-sm ${
                           product.useSameAsFlat ? 'bg-gray-50' : ''
                         }`}
                         min={0}
@@ -1194,7 +1282,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                         <Input
                           type="number"
                           placeholder="Spine"
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-sm ${
+                          className={`border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl text-sm ${
                             product.useSameAsFlat ? 'bg-gray-50' : ''
                           }`}
                           value={product.closeSize.spine ?? ""}
@@ -1220,7 +1308,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
               <div className="space-y-3 sm:space-y-4">
                 <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
                   <h4 className="text-base sm:text-lg font-semibold text-slate-800 flex items-center">
-                    <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-600 rounded mr-2 flex items-center justify-center">
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 bg-[#27aae1] rounded mr-2 flex items-center justify-center">
                       <span className="text-white text-xs font-bold">P</span>
                     </div>
                     Paper Details
@@ -1253,7 +1341,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     </Button>
                     <Button
                       variant="outline"
-                      className="border-blue-500 text-blue-600 hover:bg-blue-50 rounded-xl text-xs sm:text-sm w-full sm:w-auto"
+                      className="border-[#27aae1] text-[#27aae1] hover:bg-[#27aae1]/10 rounded-xl text-xs sm:text-sm w-full sm:w-auto"
                       size="sm"
                       onClick={() => addPaper(idx)}
                     >
@@ -1299,7 +1387,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                               handlePaperChange(idx, pIndex, "name", value);
                             }}
                           >
-                            <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                            <SelectTrigger className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl bg-white text-sm">
                               <SelectValue placeholder="Select paper type" />
                             </SelectTrigger>
                             <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
@@ -1338,7 +1426,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                             value={paper.gsm || ""}
                             onValueChange={(value) => handlePaperChange(idx, pIndex, "gsm", value)}
                           >
-                            <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-white text-sm">
+                            <SelectTrigger className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl bg-white text-sm">
                               <SelectValue placeholder="Select GSM" />
                             </SelectTrigger>
                             <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
@@ -1400,7 +1488,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
               {/* Finishing Options */}
               <div className="space-y-4 sm:space-y-6">
                 <h4 className="text-base sm:text-lg font-semibold text-slate-800 flex items-center">
-                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-[#27aae1]" />
                   Finishing Options
                 </h4>
                 
@@ -1415,15 +1503,16 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                   ].map((option) => (
                     <div key={option} className="group">
                       <div className={`flex items-center justify-between px-3 sm:px-4 py-3 rounded-lg transition-all duration-200 cursor-pointer hover:bg-gray-50 ${
-                        product.finishing.some(f => f.startsWith(option))
-                          ? 'bg-blue-50'
+                        isFinishingSelected(product, option)
+                          ? 'bg-[#27aae1]/10'
                           : 'bg-transparent'
                       }`}>
                         <div className="flex items-center space-x-3 min-w-0 flex-1">
                           <Checkbox
                             id={`fin-${idx}-${option}`}
-                            checked={product.finishing.some(f => f.startsWith(option))}
+                            checked={isFinishingSelected(product, option)}
                             onCheckedChange={(checked) => {
+                              console.log(`🔄 Checkbox ${option} changed to:`, checked);
                               if (!checked) {
                                 // Remove all variants of this finishing option
                                 const updatedFinishing = product.finishing.filter(f => !f.startsWith(option));
@@ -1435,7 +1524,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                                 updateProduct(idx, { finishing: updatedFinishing });
                               }
                             }}
-                            className="border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 h-4 w-4 rounded-md flex-shrink-0"
+                            className="border-gray-300 data-[state=checked]:bg-[#27aae1] data-[state=checked]:border-[#27aae1] h-4 w-4 rounded-md flex-shrink-0"
                           />
                           <Label
                             htmlFor={`fin-${idx}-${option}`}
@@ -1445,7 +1534,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                           </Label>
                         </div>
                         
-                        {product.sides === "2" && product.finishing.some(f => f.startsWith(option)) && (
+                        {product.sides === "2" && isFinishingSelected(product, option) && (
                           <Select
                             value={product.finishing.find(f => f.startsWith(option))?.split('-')[1] || "Front"}
                             onValueChange={(side) => {
@@ -1455,7 +1544,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                               updateProduct(idx, { finishing: updatedFinishing });
                             }}
                           >
-                            <SelectTrigger className="w-16 sm:w-20 h-7 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md text-xs bg-white shadow-sm">
+                            <SelectTrigger className="w-16 sm:w-20 h-7 border-gray-200 focus:border-[#27aae1] focus:ring-1 focus:ring-[#27aae1] rounded-md text-xs bg-white shadow-sm">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto dropdown-scroll">
@@ -1479,13 +1568,17 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     placeholder="Add specific details for finishing options (e.g., 'Gold foil', 'Silver foil', 'Matte lamination', 'Spot UV on logo')"
                     value={product.finishingComments || ''}
                     onChange={(e) => updateProduct(idx, { finishingComments: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 resize-none text-sm"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-[#27aae1] focus:ring-[#27aae1] resize-none text-sm"
                     rows={3}
                   />
                   <p className="text-xs text-slate-500">
                     Use this field to specify exact finishing details like foil colors, lamination types, or specific areas for spot treatments.
                   </p>
                 </div>
+
+
+
+
               </div>
             </CardContent>
           </Card>
@@ -1495,7 +1588,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
         <div className="text-center">
           <Button
             variant="outline"
-            className="py-4 sm:py-6 px-6 sm:px-8 border-2 border-dashed border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 rounded-xl transition-all duration-300 w-full sm:w-auto text-sm sm:text-base"
+            className="py-4 sm:py-6 px-6 sm:px-8 border-2 border-dashed border-[#27aae1]/50 text-[#27aae1] hover:bg-[#27aae1]/10 hover:border-[#27aae1]/70 rounded-xl transition-all duration-300 w-full sm:w-auto text-sm sm:text-base"
             onClick={addProduct}
           >
             <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" /> Add Another Product

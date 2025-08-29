@@ -511,12 +511,12 @@ const Step5Quotation: React.FC<Step5Props> = ({
       <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 lg:p-8 mx-4 sm:mx-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-3 sm:space-x-4">
-            <div className="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
+            <div className="w-3 h-3 bg-[#ea078b] rounded-full mr-3"></div>
             <h4 className="text-xl sm:text-2xl font-bold text-slate-800">Quote To:</h4>
           </div>
           <div className="flex items-center space-x-3">
             <span className="text-sm text-slate-500 font-medium">Quote ID:</span>
-            <div className="px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 text-blue-800 font-mono font-semibold rounded-xl text-xs sm:text-sm border border-blue-200">
+            <div className="px-3 sm:px-4 py-2 bg-[#27aae1]/10 text-[#27aae1] font-mono font-semibold rounded-xl text-xs sm:text-sm border border-[#27aae1]/30">
               {formData.client.companyName ? `Q-${Date.now().toString().slice(-6)}` : 'Pending'}
             </div>
           </div>
@@ -592,7 +592,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                     value={selectedSalesPersonId}
                     onValueChange={setSelectedSalesPersonId}
                   >
-                    <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 bg-white hover:bg-slate-50">
+                    <SelectTrigger className="w-full border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] bg-white hover:bg-slate-50">
                       <SelectValue placeholder="Select Sales Person" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border border-slate-200 shadow-xl rounded-lg max-h-60 overflow-y-auto z-50">
@@ -601,7 +601,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                           <div className="flex items-center space-x-2 py-2 px-2">
                             <User className="h-4 w-4 text-slate-500 flex-shrink-0" />
                             <span className="text-slate-800 font-medium flex-1">{person.name}</span>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200 flex-shrink-0">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ea078b]/20 text-[#ea078b] border border-[#ea078b]/30 flex-shrink-0">
                               {person.salesPersonId}
                             </span>
                           </div>
@@ -612,7 +612,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                   {selectedSalesPersonId && (
                     <p className="text-xs text-slate-500 mt-1">
                       Selected: {salesPersons.find(p => p.salesPersonId === selectedSalesPersonId)?.name} 
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200 ml-2">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ea078b]/20 text-[#ea078b] border border-[#ea078b]/30 ml-2">
                         {selectedSalesPersonId}
                       </span>
                     </p>
@@ -633,7 +633,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
               
               <div className="flex flex-col sm:flex-row sm:items-start py-3">
                 <span className="text-sm font-medium text-slate-600 w-full sm:w-32 flex-shrink-0 mb-1 sm:mb-0">Status</span>
-                <span className="px-3 py-1.5 text-xs font-semibold rounded-full bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300 sm:ml-4 mt-2 sm:mt-0">
+                <span className="px-3 py-1.5 text-xs font-semibold rounded-full bg-[#27aae1]/20 text-[#27aae1] border border-[#27aae1]/50 sm:ml-4 mt-2 sm:mt-0">
                   Draft
                 </span>
               </div>
@@ -646,7 +646,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
       <div className="bg-white rounded-2xl border-0 shadow-lg p-4 sm:p-6 lg:p-8 mx-4 sm:mx-0">
         <div className="flex items-center justify-between mb-6">
           <h4 className="text-lg sm:text-xl font-semibold text-slate-800 flex items-center">
-            <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+            <div className="w-3 h-3 bg-[#27aae1] rounded-full mr-3"></div>
             Price Summary
           </h4>
         </div>
@@ -654,7 +654,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
         {/* Desktop Table - Hidden on mobile */}
         <div className="hidden lg:block overflow-hidden rounded-xl border border-slate-200">
           <Table>
-            <TableHeader className="bg-gradient-to-r from-slate-50 to-blue-50">
+            <TableHeader className="bg-[#27aae1]/10">
               <TableRow className="border-slate-200">
                 <TableHead className="text-slate-700 font-semibold py-4 px-6 w-12">
                   <Checkbox
@@ -696,9 +696,9 @@ const Step5Quotation: React.FC<Step5Props> = ({
                       {product.productName}
                     </TableCell>
                     <TableCell className="text-slate-700 py-4 px-6">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                        {product.quantity || 0}
-                      </span>
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#f89d1d]/20 text-[#f89d1d]">
+                    {product.quantity || 0}
+                  </span>
                     </TableCell>
                     <TableCell className="text-right text-slate-700 py-4 px-6 font-medium">
                       {isIncluded ? currency(costs.paperCost) : "—"}
@@ -722,7 +722,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                     </TableCell>
                     <TableCell className="text-right py-4 px-6">
                       {isIncluded ? (
-                        <span className="text-lg font-bold text-blue-600">{currency(costs.total)}</span>
+                        <span className="text-lg font-bold text-[#ea078b]">{currency(costs.total)}</span>
                       ) : "—"}
                     </TableCell>
                   </TableRow>
@@ -749,7 +749,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                     />
                     <h4 className="font-medium text-slate-800 text-sm sm:text-base">{product.productName}</h4>
                   </div>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-[#f89d1d]/20 text-[#f89d1d]">
                     Qty: {product.quantity || 0}
                   </span>
                 </div>
@@ -788,7 +788,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                 <div className="mt-3 pt-3 border-t border-slate-200">
                   <div className="flex justify-between items-center">
                     <span className="text-slate-700 font-semibold text-sm sm:text-base">Total Price:</span>
-                    <span className="text-base sm:text-lg font-bold text-blue-600">
+                    <span className="text-base sm:text-lg font-bold text-[#ea078b]">
                       {isIncluded ? currency(costs.total) : "—"}
                     </span>
                   </div>
@@ -800,9 +800,9 @@ const Step5Quotation: React.FC<Step5Props> = ({
 
         {/* Cost Breakdown Summary */}
         <div className="mt-8 space-y-4">
-          <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl p-4 sm:p-6 lg:p-8 border border-blue-200 shadow-lg">
+          <div className="bg-[#27aae1]/10 rounded-2xl p-4 sm:p-6 lg:p-8 border border-[#27aae1]/30 shadow-lg">
             <h5 className="text-lg sm:text-xl font-bold text-slate-800 mb-6 flex items-center justify-center text-center">
-              <Calculator className="w-6 h-6 mr-3 text-blue-600" />
+              <Calculator className="w-6 h-6 mr-3 text-[#27aae1]" />
               Cost Breakdown Summary
             </h5>
             
@@ -812,10 +812,10 @@ const Step5Quotation: React.FC<Step5Props> = ({
               <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                    <div className="w-3 h-3 bg-[#27aae1] rounded-full mr-3"></div>
                     <span className="text-xs sm:text-sm font-medium text-slate-600">Paper Cost</span>
                   </div>
-                  <Package className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
+                  <Package className="w-4 h-4 sm:w-5 sm:h-5 text-[#f89d1d]" />
                 </div>
                 <div className="text-lg sm:text-2xl font-bold text-slate-800">{currency(summaryTotals.totalPaperCost)}</div>
                 <div className="text-xs text-slate-500 mt-1">Based on sheets & paper type</div>
@@ -825,10 +825,10 @@ const Step5Quotation: React.FC<Step5Props> = ({
               <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
+                    <div className="w-3 h-3 bg-[#ea078b] rounded-full mr-3"></div>
                     <span className="text-xs sm:text-sm font-medium text-slate-600">Plates Cost</span>
                   </div>
-                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
+                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-[#ea078b]" />
                 </div>
                 <div className="text-lg sm:text-2xl font-bold text-slate-800">{currency(summaryTotals.totalPlatesCost)}</div>
                 <div className="text-xs text-slate-500 mt-1">Printing plates setup</div>
@@ -838,10 +838,10 @@ const Step5Quotation: React.FC<Step5Props> = ({
               <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                    <div className="w-3 h-3 bg-[#f89d1d] rounded-full mr-3"></div>
                     <span className="text-xs sm:text-sm font-medium text-slate-600">Finishing Cost</span>
                   </div>
-                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
+                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-[#f89d1d]" />
                 </div>
                 <div className="text-lg sm:text-2xl font-bold text-slate-800">{currency(summaryTotals.totalFinishingCost)}</div>
                 <div className="text-xs text-slate-500 mt-1">UV, lamination & special effects</div>
@@ -851,10 +851,10 @@ const Step5Quotation: React.FC<Step5Props> = ({
               <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
-                    <div className="w-3 h-3 bg-orange-500 rounded-full mr-3"></div>
+                    <div className="w-3 h-3 bg-[#f89d1d] rounded-full mr-3"></div>
                     <span className="text-xs sm:text-sm font-medium text-slate-600">Margin (15%)</span>
                   </div>
-                  <Percent className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
+                  <Percent className="w-4 h-4 sm:w-5 sm:h-5 text-[#f89d1d]" />
                 </div>
                 <div className="text-lg sm:text-2xl font-bold text-slate-800">{currency(summaryTotals.totalMarginAmount)}</div>
                 <div className="text-xs text-slate-500 mt-1">Standard business margin</div>
@@ -872,7 +872,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                 {/* Paper Cost Detail */}
                 <div className="flex justify-between items-center py-2 border-b border-slate-100">
                   <div className="flex items-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                    <div className="w-2 h-2 bg-[#27aae1] rounded-full mr-3"></div>
                     <span className="text-slate-600">Paper & Materials</span>
                   </div>
                   <span className="font-semibold text-slate-800">{currency(summaryTotals.totalPaperCost)}</span>
@@ -881,7 +881,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                 {/* Plates Cost Detail */}
                 <div className="flex justify-between items-center py-2 border-b border-slate-100">
                   <div className="flex items-center">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
+                    <div className="w-2 h-2 bg-[#ea078b] rounded-full mr-3"></div>
                     <span className="text-slate-600">Printing Plates</span>
                   </div>
                   <span className="font-semibold text-slate-800">{currency(summaryTotals.totalPlatesCost)}</span>
@@ -926,17 +926,17 @@ const Step5Quotation: React.FC<Step5Props> = ({
             <div className="mt-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 sm:p-6 text-white shadow-lg">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 text-center sm:text-left">
                 <div>
-                  <div className="text-sm text-blue-100 mb-1">Total Amount</div>
-                  <div className="text-xl sm:text-2xl font-bold">Grand Total</div>
+                  <div className="text-sm text-white/90 mb-1">Total Amount</div>
+                  <div className="text-xl sm:text-2xl font-bold text-white">Grand Total</div>
                   {discount.isApplied && discount.percentage > 0 && (
-                    <div className="text-sm text-blue-100 mt-2">
+                    <div className="text-sm text-white/90 mt-2">
                       Includes {discount.percentage}% discount
                     </div>
                   )}
                 </div>
                 <div className="sm:text-right">
-                  <div className="text-3xl sm:text-4xl font-bold">{currency(summaryTotals.finalTotal)}</div>
-                  <div className="text-sm text-blue-100 mt-1">
+                  <div className="text-3xl sm:text-4xl font-bold text-white">{currency(summaryTotals.finalTotal)}</div>
+                  <div className="text-sm text-white/90 mt-1">
                     {discount.isApplied && discount.percentage > 0 
                       ? `After ${discount.percentage}% discount`
                       : 'Including VAT & 15% margin'
@@ -963,7 +963,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
       <div className="bg-white rounded-2xl border-0 shadow-lg p-4 sm:p-6 lg:p-8 mx-4 sm:mx-0">
         <div className="flex items-center justify-between mb-6">
           <h4 className="text-lg sm:text-xl font-semibold text-slate-800 flex items-center">
-            <div className="w-3 h-3 bg-orange-500 rounded-full mr-3"></div>
+            <div className="w-3 h-3 bg-[#f89d1d] rounded-full mr-3"></div>
             Discount Management
           </h4>
         </div>
@@ -1187,14 +1187,14 @@ const Step5Quotation: React.FC<Step5Props> = ({
       <div className="bg-white rounded-2xl border-0 shadow-lg p-4 sm:p-6 lg:p-8 mx-4 sm:mx-0">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-3 sm:space-y-0">
           <h4 className="text-lg sm:text-xl font-semibold text-slate-800 flex items-center">
-            <div className="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
+            <div className="w-3 h-3 bg-[#ea078b] rounded-full mr-3"></div>
             Supplementary Information: Other Quantities
           </h4>
         </div>
         
         <Button 
           variant="outline" 
-          className="mb-6 border-blue-500 text-blue-600 hover:bg-blue-50 hover:border-blue-600 rounded-xl px-6 py-3 transition-all duration-200" 
+          className="mb-6 border-[#27aae1] text-[#27aae1] hover:bg-[#27aae1]/10 hover:border-[#27aae1] rounded-xl px-6 py-3 transition-all duration-200" 
           size="sm" 
           onClick={addOtherQty}
           disabled={includedProducts.size === 0}
@@ -1218,7 +1218,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
             return (
               <div
                 key={idx}
-                className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl p-6 border border-slate-200 hover:shadow-md transition-all duration-200"
+                className="bg-[#27aae1]/10 rounded-2xl p-6 border border-slate-200 hover:shadow-md transition-all duration-200"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
                   <div className="lg:col-span-3 sm:col-span-2">
@@ -1229,7 +1229,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                         updateOtherQty(idx, { productName: value })
                       }
                     >
-                      <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                      <SelectTrigger className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl">
                         <SelectValue placeholder="Select product" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1255,7 +1255,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                             e.target.value === "" ? "" : Number(e.target.value),
                         })
                       }
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                      className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl"
                     />
                   </div>
                   <div className="lg:col-span-2 sm:col-span-2">
@@ -1280,7 +1280,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                       <Label className="text-sm font-medium text-slate-700 mb-2 block">Total</Label>
                       <Input
                         readOnly
-                        className="bg-slate-100 border-slate-300 rounded-xl font-bold text-blue-600"
+                        className="bg-slate-100 border-slate-300 rounded-xl font-bold text-[#27aae1]"
                       value={currency(prices.total)}
                       />
                     </div>
@@ -1424,7 +1424,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
       </div>
 
       {/* Summary Footer */}
-      <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl border border-slate-200 p-4 sm:p-6 mx-4 sm:mx-0">
+      <div className="bg-[#27aae1]/10 rounded-2xl border border-slate-200 p-4 sm:p-6 mx-4 sm:mx-0">
         {/* Validation Errors Display */}
         {validationErrors.length > 0 && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
@@ -1450,7 +1450,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
               variant={submissionAction === 'Save Draft' ? 'default' : 'outline'}
               className={`h-10 sm:h-12 text-sm sm:text-base ${
                 submissionAction === 'Save Draft' 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  ? 'bg-[#27aae1] hover:bg-[#1e8bc3] text-white' 
                   : 'border-slate-300 text-slate-700 hover:bg-slate-50'
               }`}
               onClick={() => setSubmissionAction('Save Draft')}
@@ -1462,7 +1462,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
               variant={submissionAction === 'Send for Approval' ? 'default' : 'outline'}
               className={`h-10 sm:h-12 text-sm sm:text-base ${
                 submissionAction === 'Send for Approval' 
-                  ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                  ? 'bg-[#f89d1d] hover:bg-[#e88a0a] text-white' 
                   : 'border-slate-300 text-slate-700 hover:bg-slate-50'
               }`}
               onClick={() => setSubmissionAction('Send for Approval')}
@@ -1474,7 +1474,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
               variant={submissionAction === 'Send to Customer' ? 'default' : 'outline'}
               className={`h-10 sm:h-12 text-sm sm:text-base ${
                 submissionAction === 'Send to Customer' 
-                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  ? 'bg-[#ea078b] hover:bg-[#d4067a] text-white' 
                   : 'border-slate-300 text-slate-700 hover:bg-slate-50'
               }`}
               onClick={() => setSubmissionAction('Send to Customer')}
@@ -1486,13 +1486,13 @@ const Step5Quotation: React.FC<Step5Props> = ({
 
         {/* Conditional Forms Based on Action */}
         {submissionAction === 'Send for Approval' && (
-          <div className="mb-6 bg-orange-50 border border-orange-200 rounded-xl p-6">
-            <h5 className="text-lg font-semibold text-orange-800 mb-4 flex items-center">
+          <div className="mb-6 bg-[#f89d1d]/10 border border-[#f89d1d]/30 rounded-xl p-6">
+            <h5 className="text-lg font-semibold text-black mb-4 flex items-center">
               📋 Approval Request Details
             </h5>
             <div className="space-y-4">
               <div>
-                <Label className="text-sm font-medium text-orange-700 mb-2 block">
+                <Label className="text-sm font-medium text-black mb-2 block">
                   Approval Notes
                 </Label>
                 <textarea
@@ -1501,24 +1501,24 @@ const Step5Quotation: React.FC<Step5Props> = ({
                     ...prev,
                     approvalNotes: e.target.value
                   }))}
-                  className="w-full border-orange-300 focus:border-orange-500 focus:ring-orange-500 rounded-xl p-3 resize-none"
+                  className="w-full border-[#f89d1d]/50 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl p-3 resize-none"
                   rows={3}
                   placeholder="Add any notes or context for the approval request..."
                 />
               </div>
-              <div className="text-sm text-orange-600">
-                <strong>Note:</strong> This quote will be marked as "Pending Approval" and will require manager approval before it can be sent to the customer.
-              </div>
+                              <div className="text-sm text-black">
+                  <strong>Note:</strong> This quote will be marked as "Pending Approval" and will require manager approval before it can be sent to the customer.
+                </div>
             </div>
           </div>
         )}
 
         {submissionAction === 'Send to Customer' && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-6">
-            <h5 className="text-lg font-semibold text-green-800 mb-4 flex items-center">
+          <div className="mb-6 bg-[#ea078b]/10 border border-[#ea078b]/30 rounded-xl p-6">
+            <h5 className="text-lg font-semibold text-black mb-4 flex items-center">
               📧 Customer Communication
             </h5>
-            <div className="text-sm text-green-700">
+            <div className="text-sm text-black">
               <p className="mb-2">
                 <strong>Note:</strong> This quote will be sent directly to the customer.
               </p>
@@ -1547,7 +1547,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
               onClick={handleSaveWithValidation}
               className={`h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold rounded-xl ${
                 submissionAction === 'Save Draft' 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  ? 'bg-[#27aae1] hover:bg-[#1e8bc3] text-white' 
                   : submissionAction === 'Send for Approval'
                   ? 'bg-orange-600 hover:bg-orange-700 text-white'
                   : 'bg-green-600 hover:bg-green-700 text-white'

@@ -237,24 +237,24 @@ export default function DashboardPage() {
       title: "Total Quotes",
       value: totalQuotes.toLocaleString(),
       icon: FileText,
-      color: "bg-blue-50 text-blue-700 border-blue-200",
-      iconColor: "text-blue-600",
+      color: "bg-[#27aae1]/10 text-[#27aae1] border-[#27aae1]/20",
+      iconColor: "text-[#27aae1]",
       filterValue: "All"
     },
     {
       title: "Approved",
       value: approvedQuotes.toLocaleString(),
       icon: CheckCircle,
-      color: "bg-green-50 text-green-700 border-green-200",
-      iconColor: "text-green-600",
+      color: "bg-[#27aae1]/10 text-[#27aae1] border-[#27aae1]/20",
+      iconColor: "text-[#27aae1]",
       filterValue: "Approved"
     },
     {
       title: "Pending",
       value: pendingQuotes.toLocaleString(),
       icon: Clock,
-      color: "bg-yellow-50 text-yellow-700 border-yellow-200",
-      iconColor: "text-yellow-600",
+      color: "bg-[#f89d1d]/10 text-[#f89d1d] border-[#f89d1d]/20",
+      iconColor: "text-[#f89d1d]",
       filterValue: "Pending"
     },
     {
@@ -274,14 +274,14 @@ export default function DashboardPage() {
         <div className="flex flex-col items-center space-y-4">
           <div className="relative">
             <div className="w-16 h-16 border-4 border-slate-200 rounded-full"></div>
-            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
-            <div className="absolute top-2 left-2 w-12 h-12 border-4 border-transparent border-t-purple-500 rounded-full animate-spin" style={{ animationDirection: "reverse", animationDuration: "0.8s" }}></div>
+            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-[#27aae1] rounded-full animate-spin"></div>
+            <div className="absolute top-2 left-2 w-12 h-12 border-4 border-transparent border-t-[#ea078b] rounded-full animate-spin" style={{ animationDirection: "reverse", animationDuration: "0.8s" }}></div>
           </div>
           <div className="flex space-x-1">
             <span className="text-slate-600 animate-pulse">Checking authentication</span>
-            <span className="text-blue-500 animate-bounce">.</span>
-            <span className="text-purple-500 animate-bounce" style={{ animationDelay: "0.1s" }}>.</span>
-            <span className="text-pink-500 animate-bounce" style={{ animationDelay: "0.2s" }}>.</span>
+            <span className="text-[#27aae1] animate-bounce">.</span>
+            <span className="text-[#ea078b] animate-bounce" style={{ animationDelay: "0.1s" }}>.</span>
+            <span className="text-[#f89d1d] animate-bounce" style={{ animationDelay: "0.2s" }}>.</span>
           </div>
         </div>
       </div>
@@ -465,10 +465,10 @@ export default function DashboardPage() {
                 <label className="text-sm font-medium text-gray-600">Status</label>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                   selectedQuote?.status === "Approved" 
-                    ? "bg-blue-100 text-blue-700"
+                    ? "bg-emerald-100 text-emerald-700"
                     : selectedQuote?.status === "Pending"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-red-100 text-red-700"
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-rose-100 text-rose-700"
                 }`}>
                   {selectedQuote?.status}
                 </span>
@@ -598,8 +598,8 @@ export default function DashboardPage() {
         )}
 
         {/* Welcome Header */}
-        <div className="text-center space-y-3">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="text-center space-y-4 pb-6 border-b border-slate-200">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-[#27aae1] to-[#ea078b] bg-clip-text text-transparent">
             Welcome Back, {user?.name}
           </h1>
           <div className="max-w-4xl mx-auto px-4">
@@ -620,8 +620,8 @@ export default function DashboardPage() {
             return (
               <Card 
                 key={index} 
-                className={`border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer ${
-                  isActive ? 'ring-2 ring-blue-500' : ''
+                className={`bg-white border border-[#27aae1]/20 hover:border-[#27aae1]/40 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer ${
+                  isActive ? 'ring-2 ring-[#27aae1] ring-opacity-50 border-[#27aae1]' : ''
                 }`}
                 onClick={() => handleCardClick(metric.filterValue)}
               >
@@ -631,7 +631,7 @@ export default function DashboardPage() {
                       <p className="text-xs sm:text-sm font-medium text-slate-600 mb-2">{metric.title}</p>
                       <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">{metric.value}</p>
                     </div>
-                    <div className={`w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-xl ${metric.color} flex items-center justify-center flex-shrink-0`}>
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-xl ${metric.color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
                       <IconComponent className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 ${metric.iconColor}`} />
                     </div>
                   </div>
@@ -648,7 +648,7 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
               {/* Status Filter Dropdown */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-auto bg-white border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                <SelectTrigger className="w-full sm:w-auto bg-white border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl">
                   <Filter className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
@@ -662,7 +662,7 @@ export default function DashboardPage() {
               
               <Link href="/create-quote" className="w-full sm:w-auto">
                 <Button 
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
+                  className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
                 >
                   <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   <span className="text-sm sm:text-base">Create a New Quote</span>
@@ -693,7 +693,7 @@ export default function DashboardPage() {
                       <tr>
                         <td colSpan={7} className="p-8 text-center text-slate-500">
                           <div className="flex items-center justify-center space-x-2">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#27aae1]"></div>
                             <span>Loading quotes...</span>
                           </div>
                         </td>
@@ -744,10 +744,10 @@ export default function DashboardPage() {
                           <div className="truncate">
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                               quote.status === "Approved" 
-                                ? "bg-blue-100 text-blue-700 border-blue-200"
+                                ? "bg-emerald-100 text-emerald-700"
                                 : quote.status === "Pending"
-                                ? "bg-yellow-100 text-yellow-700 border-yellow-200"
-                                : "bg-red-100 text-red-700 border-red-200"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-rose-100 text-rose-700"
                             }`}>
                               {quote.status}
                             </span>
@@ -760,7 +760,7 @@ export default function DashboardPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleViewQuote(quote)}
-                                className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors duration-200"
+                                className="p-2 hover:bg-[#27aae1]/10 text-[#27aae1] rounded-lg transition-colors duration-200"
                                 title="View Quote"
                               >
                                 <Eye className="w-4 h-4" />
@@ -769,7 +769,7 @@ export default function DashboardPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleUpdateQuote(quote)}
-                                className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors duration-200"
+                                className="p-2 hover:bg-[#ea078b]/10 text-[#ea078b] rounded-lg transition-colors duration-200"
                                 title="Edit Quote"
                               >
                                 <Edit className="w-4 h-4" />
@@ -778,7 +778,7 @@ export default function DashboardPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDownloadPDF(quote)}
-                                className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors duration-200"
+                                className="p-2 hover:bg-[#f89d1d]/10 text-[#f89d1d] rounded-lg transition-colors duration-200"
                                 title="Download PDF"
                               >
                                 <Download className="w-4 h-4" />
@@ -797,7 +797,7 @@ export default function DashboardPage() {
                 {isLoading ? (
                   <div className="text-center py-16 text-slate-500">
                     <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#27aae1]"></div>
                       <span>Loading quotes...</span>
                     </div>
                   </div>
@@ -815,11 +815,11 @@ export default function DashboardPage() {
                             {quote.quoteId}
                           </span>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            quote.status === "Approved" 
-                              ? "bg-blue-100 text-blue-700 border-blue-200"
-                              : quote.status === "Pending"
-                              ? "bg-yellow-100 text-yellow-700 border-yellow-200"
-                              : "bg-red-100 text-red-700 border-red-200"
+                            quote.status === "Pending" 
+                              ? "bg-amber-100 text-amber-700"
+                              : quote.status === "Approved"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-rose-100 text-rose-700"
                           }`}>
                             {quote.status}
                           </span>

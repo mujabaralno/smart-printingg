@@ -145,9 +145,9 @@ export default function UserManagementPage() {
       case "admin":
         return <Crown className="h-4 w-4 text-yellow-600" />;
       case "estimator":
-        return <Calculator className="h-4 w-4 text-blue-600" />;
+        return <Calculator className="h-4 w-4 text-[#f89d1d]" />;
       default:
-        return <User className="h-4 w-4 text-blue-600" />;
+        return <User className="h-4 w-4 text-[#27aae1]" />;
     }
   };
 
@@ -284,7 +284,7 @@ export default function UserManagementPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-[#27aae1] to-[#ea078b] bg-clip-text text-transparent leading-tight py-2">
             User Management
           </h1>
           <p className="text-slate-600 text-lg max-w-2xl mx-auto">
@@ -305,12 +305,12 @@ export default function UserManagementPage() {
                   placeholder="Search users by name, email, or ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 text-base"
+                  className="w-full border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
                 />
               </div>
               <Button
                 onClick={() => setOpen(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12"
+                className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12"
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Add New User
@@ -322,7 +322,7 @@ export default function UserManagementPage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Role</label>
                 <Select value={roleFilter} onValueChange={(v: "all" | "admin" | "user" | "estimator") => setRoleFilter(v)}>
-                  <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12">
+                  <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12">
                     <SelectValue placeholder="All Roles" />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
@@ -337,7 +337,7 @@ export default function UserManagementPage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Status</label>
                 <Select value={statusFilter} onValueChange={(v: "all" | "Active" | "Inactive") => setStatusFilter(v)}>
-                  <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12">
+                  <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
@@ -356,7 +356,7 @@ export default function UserManagementPage() {
                 <Button
                   variant="ghost"
                   onClick={() => setShowAll(!showAll)}
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl px-4 py-2 transition-all duration-200"
+                  className="text-[#27aae1] hover:text-[#1e8bc3] hover:bg-[#27aae1]/10 rounded-xl px-4 py-2 transition-all duration-200"
                 >
                   {showAll ? (
                     <>
@@ -400,7 +400,7 @@ export default function UserManagementPage() {
                       <TableRow key={u.id} className="hover:bg-slate-50 transition-colors duration-200 border-slate-100">
                         {/* ID */}
                         <TableCell className="p-6">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#ea078b]/20 text-[#ea078b]">
                             {u.displayId || u.id}
                           </span>
                         </TableCell>
@@ -408,7 +408,7 @@ export default function UserManagementPage() {
                         {/* User (nama + email) */}
                         <TableCell className="p-6">
                           <div className="flex items-start gap-3">
-                            <div className="mt-1 h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden">
+                            <div className="mt-1 h-8 w-8 rounded-full bg-gradient-to-br from-[#27aae1] to-[#ea078b] flex items-center justify-center overflow-hidden">
                               {u.profilePicture ? (
                                 <>
                                   <img 
@@ -616,7 +616,7 @@ export default function UserManagementPage() {
                     placeholder="e.g. John Doe"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                   />
                 </div>
                 <div>
@@ -626,7 +626,7 @@ export default function UserManagementPage() {
                     placeholder="user@mail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                   />
                 </div>
                 
@@ -682,7 +682,7 @@ export default function UserManagementPage() {
                     placeholder={editingUserId ? "Leave blank to keep current" : "********"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                   />
                 </div>
                 <div>
@@ -694,7 +694,7 @@ export default function UserManagementPage() {
                     placeholder={editingUserId ? "Leave blank to keep current" : "********"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                   />
                 </div>
                 <div>
@@ -703,7 +703,7 @@ export default function UserManagementPage() {
                     value={role}
                     onValueChange={(v) => setRole(v as AppUserRole)}
                   >
-                    <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                    <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -715,13 +715,13 @@ export default function UserManagementPage() {
                       </SelectItem>
                       <SelectItem value="user">
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-blue-600" />
+                          <User className="h-4 w-4 text-[#27aae1]" />
                           User
                         </div>
                       </SelectItem>
                       <SelectItem value="estimator">
                         <div className="flex items-center gap-2">
-                          <Calculator className="h-4 w-4 text-blue-600" />
+                          <Calculator className="h-4 w-4 text-[#f89d1d]" />
                           Estimator
                         </div>
                       </SelectItem>
@@ -741,7 +741,7 @@ export default function UserManagementPage() {
                   <Switch 
                     checked={active} 
                     onCheckedChange={setActive}
-                    className="data-[state=checked]:bg-purple-600"
+                    className="data-[state=checked]:bg-[#ea078b]"
                   />
                 </div>
                 {error && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg border border-red-200">{error}</p>}
@@ -761,7 +761,7 @@ export default function UserManagementPage() {
               </Button>
               <Button 
                 onClick={addUser}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
+                className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-2 rounded-xl"
               >
                 {editingUserId ? "Update User" : "Add User"}
               </Button>

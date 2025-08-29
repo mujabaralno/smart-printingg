@@ -821,6 +821,41 @@ export class DatabaseService {
     return Array.isArray(result) ? result : [];
   }
 
+  // Search history operations
+  static async saveSearchHistory(query: string, userId?: string) {
+    const db = this.checkDatabase();
+    try {
+      return await db.searchHistory.create({
+        data: {
+          query,
+          userId: userId || null,
+          timestamp: new Date(),
+        },
+      });
+    } catch (error) {
+      console.error('Error saving search history:', error);
+      // Return a mock object if the table doesn't exist
+      return { id: Date.now(), query, userId, timestamp: new Date() };
+    }
+  }
+
+  static async getSearchHistory(userId?: string, limit = 10) {
+    const db = this.checkDatabase();
+    try {
+      return await db.searchHistory.findMany({
+        where: {
+          userId: userId || null,
+        },
+        orderBy: { timestamp: 'desc' },
+        take: limit,
+      });
+    } catch (error) {
+      console.error('Error getting search history:', error);
+      // Return empty array if the table doesn't exist
+      return [];
+    }
+  }
+
   // System metrics
   static async getSystemMetrics() {
     const db = this.checkDatabase();

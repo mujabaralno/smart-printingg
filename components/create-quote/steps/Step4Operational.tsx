@@ -2149,14 +2149,14 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
       {formData.products.map((product, productIndex) => (
         <div key={productIndex} className="space-y-6 md:space-y-8">
           {/* Product Header */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-4 md:p-6">
+          <div className="bg-[#27aae1]/10 rounded-xl border border-[#27aae1]/30 p-4 md:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h4 className="text-lg md:text-xl font-bold text-blue-800 flex items-center">
+                <h4 className="text-lg md:text-xl font-bold text-[#27aae1] flex items-center">
                   <Package className="w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3" />
                   Product {productIndex + 1}: {product.productName || `Product ${productIndex + 1}`}
                 </h4>
-                <div className="mt-2 text-blue-700 text-sm md:text-base">
+                <div className="mt-2 text-[#27aae1] text-sm md:text-base">
                   Quantity: {product.quantity || 0} | Sides: {product.sides} | Printing: {product.printingSelection}
                 </div>
               </div>
@@ -2168,9 +2168,9 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 
                 if (totalColors > 0) {
                   return (
-                    <div className="flex items-center gap-2 px-3 md:px-4 py-2 bg-purple-100 border border-purple-300 rounded-full self-start sm:self-auto">
-                      <Palette className="w-4 h-4 text-purple-700" />
-                      <span className="text-sm font-semibold text-purple-800">
+                    <div className="flex items-center gap-2 px-3 md:px-4 py-2 bg-[#ea078b]/20 border border-[#ea078b]/50 rounded-full self-start sm:self-auto">
+                      <Palette className="w-4 h-4 text-[#ea078b]" />
+                      <span className="text-sm font-semibold text-[#ea078b]">
                         {totalColors} color{totalColors !== 1 ? 's' : ''} total
                       </span>
                     </div>
@@ -2227,16 +2227,16 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <h4 className="text-base md:text-lg font-semibold text-slate-800 flex items-center">
-                      <Package className="w-4 h-4 md:w-5 md:h-5 mr-2 text-blue-600" />
-                      <span className="text-blue-600">
+                      <Package className="w-4 h-4 md:w-5 md:h-5 mr-2 text-[#27aae1]" />
+                      <span className="text-[#27aae1]">
                         {paper.name ? `${paper.name}${paper.gsm ? ` ${paper.gsm}gsm` : ""}` : `Paper ${paperIndex + 1}${paper.gsm ? ` ${paper.gsm}gsm` : ""}`}
                       </span>
                     </h4>
                     {/* Color Count Badge */}
                     {paperColors[productIndex]?.[paperIndex]?.length > 0 && (
-                      <div className="flex items-center gap-2 px-3 py-1 bg-purple-50 border border-purple-200 rounded-full">
-                        <Palette className="w-3 h-3 text-purple-600" />
-                        <span className="text-xs font-medium text-purple-700">
+                      <div className="flex items-center gap-2 px-3 py-1 bg-[#ea078b]/10 border border-[#ea078b]/30 rounded-full">
+                        <Palette className="w-3 h-3 text-[#ea078b]" />
+                        <span className="text-xs font-medium text-[#ea078b]">
                           {paperColors[productIndex][paperIndex].length} color{paperColors[productIndex][paperIndex].length !== 1 ? 's' : ''}
                         </span>
                       </div>
@@ -2247,7 +2247,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowPaperPrice(globalPaperIndex)}
-                      className="border-blue-500 text-blue-600 hover:bg-blue-500 rounded-xl text-xs sm:text-sm"
+                      className="border-[#27aae1] text-[#27aae1] hover:bg-[#27aae1]/100 rounded-xl text-xs sm:text-sm"
                     >
                       <Calculator className="w-4 h-4 mr-1 sm:mr-2" />
                       <span className="hidden sm:inline">View Paper Price</span>
@@ -2298,7 +2298,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               <Card className="border-0 shadow-lg w-full">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg text-slate-800 flex items-center">
-                    <Package className="w-5 h-5 mr-2 text-blue-600" />
+                    <Package className="w-5 h-5 mr-2 text-[#27aae1]" />
                     Paper Specifications
                   </CardTitle>
                 </CardHeader>
@@ -2306,9 +2306,9 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   {/* Paper Size Section */}
                   <div className="space-y-3 md:space-y-4">
                     <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
-                      <Package className="w-4 h-4 mr-2 text-blue-600" />
+                      <Package className="w-4 h-4 mr-2 text-[#27aae1]" />
                       Input Sheet Size
-                      <span className="ml-2 text-xs text-blue-600 font-normal">(Default: 100×70 cm)</span>
+                      <span className="ml-2 text-xs text-[#27aae1] font-normal">(Default: 100×70 cm)</span>
                     </h5>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                       <div className="space-y-2">
@@ -2321,7 +2321,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           min={0}
                           step="0.1"
                           value={opPaper?.inputWidth ?? 100}
-                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full"
+                          className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10 w-full"
                           onChange={(e) =>
                             handlePaperOpChange(globalPaperIndex, "inputWidth", e.target.value)
                           }
@@ -2335,7 +2335,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           placeholder="70"
                           value={opPaper?.inputHeight ?? 70}
-                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full"
+                          className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10 w-full"
                           min={0}
                           step="0.1"
                           onChange={(e) =>
@@ -2349,9 +2349,9 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   {/* Output Size Section - Now Editable */}
                   <div className="space-y-3 md:space-y-4">
                     <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
-                      <Edit3 className="w-4 h-4 mr-2 text-blue-600" />
+                      <Edit3 className="w-4 h-4 mr-2 text-[#27aae1]" />
                       Output Item Size
-                      <span className="ml-2 text-xs text-blue-600 font-normal">(From Step 3)</span>
+                      <span className="ml-2 text-xs text-[#27aae1] font-normal">(From Step 3)</span>
                     </h5>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                       <div className="space-y-2">
@@ -2363,7 +2363,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           placeholder="Width"
                           min={0}
                           step="0.1"
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full ${
+                          className={`border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10 w-full ${
                             dimensionError ? 'border-red-300 bg-red-50' : ''
                           }`}
                           value={outputDimensions[productIndex]?.width || ""}
@@ -2384,7 +2384,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           placeholder="Height"
                           min={0}
                           step="0.1"
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full ${
+                          className={`border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10 w-full ${
                             dimensionError ? 'border-red-300 bg-red-50' : ''
                           }`}
                           value={outputDimensions[productIndex]?.height || ""}
@@ -2402,7 +2402,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   {/* Sheet Management Section */}
                   <div className="space-y-3 md:space-y-4">
                     <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
-                      <BarChart3 className="w-4 h-4 mr-2 text-blue-600" />
+                      <BarChart3 className="w-4 h-4 mr-2 text-[#27aae1]" />
                       Sheet Management
                     </h5>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
@@ -2420,7 +2420,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         <Label className="text-sm font-medium text-slate-700">
                           Enter Sheets
                           {!opPaper?.enteredSheets && (
-                            <span className="ml-2 text-xs text-blue-600 font-normal">
+                            <span className="ml-2 text-xs text-[#27aae1] font-normal">
                               (Default: {recommendedSheets})
                             </span>
                           )}
@@ -2429,8 +2429,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           min={recommendedSheets || 0}
                           placeholder={recommendedSheets ? String(recommendedSheets) : "e.g. 125"}
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full ${
-                            !opPaper?.enteredSheets ? 'bg-blue-50 border-blue-200' : ''
+                          className={`border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10 w-full ${
+                            !opPaper?.enteredSheets ? 'bg-[#27aae1]/10 border-[#27aae1]/30' : ''
                           }`}
                           value={opPaper?.enteredSheets ?? recommendedSheets ?? ""}
                           onChange={(e) => {
@@ -2447,7 +2447,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         )}
                         {/* Enhanced auto-selection info */}
                         {!opPaper?.enteredSheets ? (
-                          <div className="text-blue-600 text-xs mt-1">
+                          <div className="text-[#27aae1] text-xs mt-1">
                             ✓ Using recommended sheets as default ({recommendedSheets})
                           </div>
                         ) : opPaper.enteredSheets === recommendedSheets ? (
@@ -2468,7 +2468,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                                 });
                                 handlePaperOpChange(globalPaperIndex, "enteredSheets", String(recommendedSheets));
                               }}
-                              className="text-xs text-blue-600 hover:text-blue-800 underline"
+                              className="text-xs text-[#27aae1] hover:text-[#27aae1] underline"
                             >
                               Reset to recommended
                             </button>
@@ -2481,7 +2481,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   {/* Color Codes Section */}
                   <div className="space-y-3 md:space-y-4">
                     <h5 className="text-md font-semibold text-slate-700 flex items-center mb-3">
-                      <Palette className="w-4 h-4 mr-2 text-blue-600" />
+                      <Palette className="w-4 h-4 mr-2 text-[#27aae1]" />
                       Color Codes
                     </h5>
                     
@@ -2587,7 +2587,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         }}
                         className={`h-8 px-3 text-xs transition-all duration-200 ${
                           colorSaveStatus[productIndex]?.[paperIndex] === 'saving' 
-                            ? 'bg-blue-100 text-blue-700 border-blue-300' 
+                            ? 'bg-[#27aae1]/20 text-[#27aae1] border-[#27aae1]/50' 
                             : colorSaveStatus[productIndex]?.[paperIndex] === 'saved'
                             ? 'bg-green-100 text-green-700 border-green-300'
                             : ''
@@ -2665,7 +2665,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               <Card className="border-0 shadow-lg w-full">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg text-slate-800 flex items-center">
-                    <Calculator className="w-5 h-5 mr-2 text-blue-600" />
+                    <Calculator className="w-5 h-5 mr-2 text-[#27aae1]" />
                     Pricing
                   </CardTitle>
                 </CardHeader>
@@ -2674,15 +2674,15 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                                       <div className="space-y-3 md:space-y-4">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <h5 className="text-md font-semibold text-slate-700 flex items-center">
-                          <BarChart3 className="w-4 h-4 mr-2 text-blue-600" />
+                          <BarChart3 className="w-4 h-4 mr-2 text-[#27aae1]" />
                           Cost Details
                         </h5>
                         <div className="flex items-center">
-                          <Info className="w-4 h-4 text-blue-600 mr-1" />
+                          <Info className="w-4 h-4 text-[#27aae1] mr-1" />
                           <button
                             type="button"
                             onClick={() => setShowPricingLogic(true)}
-                            className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center"
+                            className="text-xs text-[#27aae1] hover:text-[#27aae1] underline flex items-center"
                           >
                             <Info className="w-3 h-3 mr-1" />
                             View Pricing Logic
@@ -2698,7 +2698,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           placeholder="$ 0.00"
                           step="0.0001"
-                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
+                          className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10"
                           value={opPaper?.pricePerSheet ?? ""}
                           onChange={(e) =>
                             handlePaperOpChange(globalPaperIndex, "pricePerSheet", e.target.value)
@@ -2719,7 +2719,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                             <Input
                               type="number"
                               placeholder="e.g. 500"
-                              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
+                              className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10"
                               min={0}
                               value={opPaper?.sheetsPerPacket ?? ""}
                               onChange={(e) =>
@@ -2738,7 +2738,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                             </Label>
                             <Input
                               type="number"
-                              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
+                              className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10"
                               placeholder="$ 0.00"
                               value={opPaper?.pricePerPacket ?? ""}
                               onChange={(e) =>
@@ -2750,8 +2750,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                       </div>
                       
                       {/* Enhanced Pricing Summary */}
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-                        <h6 className="text-sm font-semibold text-blue-800 mb-3 flex items-center">
+                      <div className="bg-[#27aae1]/10 rounded-lg p-4 border border-[#27aae1]/30">
+                        <h6 className="text-sm font-semibold text-[#27aae1] mb-3 flex items-center">
                           <Calculator className="w-4 h-4 mr-2" />
                           Pricing Summary
                         </h6>
@@ -2773,15 +2773,15 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                               {breakdown.map((item, index) => (
                                 <div key={index} className="flex justify-between items-center text-sm">
                                   <span className="text-slate-600">{item.description}</span>
-                                  <span className="font-semibold text-blue-700">{fmt(item.total)}</span>
+                                  <span className="font-semibold text-[#27aae1]">{fmt(item.total)}</span>
                                 </div>
                               ))}
                               <div className="border-t pt-2 mt-2">
                                 <div className="flex justify-between items-center">
-                                  <span className="font-semibold text-blue-800">Total Cost:</span>
-                                  <span className="text-lg font-bold text-blue-800">{fmt(totalCost)}</span>
+                                  <span className="font-semibold text-[#27aae1]">Total Cost:</span>
+                                  <span className="text-lg font-bold text-[#27aae1]">{fmt(totalCost)}</span>
                                 </div>
-                                <div className="text-xs text-blue-600 mt-1">
+                                <div className="text-xs text-[#27aae1] mt-1">
                                   Cost per sheet: {fmt(totalCost / actualSheetsNeeded)}
                                 </div>
                                 <div className="text-xs text-green-600 mt-1">
@@ -2804,7 +2804,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               <Card className="border-0 shadow-lg w-full">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg text-slate-800 flex items-center">
-                    <Calculator className="w-5 h-4 mr-2 text-blue-600" />
+                    <Calculator className="w-5 h-4 mr-2 text-[#27aae1]" />
                     Additional Costs
                   </CardTitle>
                 </CardHeader>
@@ -2813,7 +2813,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   <div className="space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <h5 className="text-md font-semibold text-slate-700 flex items-center">
-                        <Calculator className="w-4 h-4 mr-2 text-blue-600" />
+                        <Calculator className="w-4 h-4 mr-2 text-[#27aae1]" />
                         Production Costs
                       </h5>
                       <Button
@@ -2839,14 +2839,14 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           min="0"
                           placeholder="e.g. 8"
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full ${
-                            !formData.operational.plates ? 'bg-blue-50 border-blue-200' : 'bg-white'
+                          className={`border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10 w-full ${
+                            !formData.operational.plates ? 'bg-[#27aae1]/10 border-[#27aae1]/30' : 'bg-white'
                           }`}
                           value={formData.operational.plates ?? plates ?? ""} 
                           onChange={(e) => handlePlatesChange(e.target.value)}
                         />
                         {!formData.operational.plates ? (
-                          <div className="text-blue-600 text-xs mt-1">
+                          <div className="text-[#27aae1] text-xs mt-1">
                             ✓ Using calculated value: {plates}
                           </div>
                         ) : (
@@ -2855,7 +2855,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                             <button
                               type="button"
                               onClick={() => handlePlatesChange("")}
-                              className="text-xs text-blue-600 hover:text-blue-800 underline"
+                              className="text-xs text-[#27aae1] hover:text-[#27aae1] underline"
                             >
                               Reset to calculated
                             </button>
@@ -2867,7 +2867,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           </div>
                         )}
                         {formData.operational.plates && formData.operational.plates === 0 && plates > 0 && (
-                          <div className="text-blue-600 text-xs mt-1">
+                          <div className="text-[#27aae1] text-xs mt-1">
                             ℹ️ Note: Set to 0 (Digital printing - no plates needed)
                           </div>
                         )}
@@ -2880,14 +2880,14 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           min="0"
                           placeholder="e.g. 1000"
-                          className={`border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full ${
-                            !formData.operational.plates ? 'bg-blue-50 border-blue-200' : 'bg-white'
+                          className={`border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10 w-full ${
+                            !formData.operational.plates ? 'bg-[#27aae1]/10 border-[#27aae1]/30' : 'bg-white'
                           }`}
                           value={formData.operational.units ?? units ?? ""} 
                           onChange={(e) => handleUnitsChange(e.target.value)}
                         />
                         {!formData.operational.units ? (
-                          <div className="text-blue-600 text-xs mt-1">
+                          <div className="text-[#27aae1] text-xs mt-1">
                             ✓ Using calculated value: {units}
                           </div>
                         ) : (
@@ -2896,7 +2896,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                             <button
                               type="button"
                               onClick={() => handleUnitsChange("")}
-                              className="text-xs text-blue-600 hover:text-blue-800 underline"
+                              className="text-xs text-[#27aae1] hover:text-[#27aae1] underline"
                             >
                               Reset to calculated
                             </button>
@@ -2908,7 +2908,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           </div>
                         )}
                         {formData.operational.units && formData.operational.units === 0 && units > 0 && (
-                          <div className="text-blue-600 text-xs mt-1">
+                          <div className="text-[#27aae1] text-xs mt-1">
                             ℹ️ Note: Set to 0 (No units specified)
                           </div>
                         )}
@@ -2923,7 +2923,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           min="0"
                           placeholder="e.g. 5000"
-                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 w-full"
+                          className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10 w-full"
                           value={formData.operational.impressions ?? ""} 
                           onChange={(e) => {
                             const impressions = e.target.value === "" ? null : parseFloat(e.target.value);
@@ -2945,7 +2945,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   {product.finishing.length > 0 && (
                     <div className="space-y-4">
                       <h5 className="text-md font-semibold text-slate-700 flex items-center">
-                        <Settings className="w-4 h-4 mr-2 text-blue-600" />
+                        <Settings className="w-4 h-4 mr-2 text-[#27aae1]" />
                         Finishing Costs 
                         <span className="ml-2 text-xs text-slate-500">(Editable)</span>
                       </h5>
@@ -2971,7 +2971,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                                     placeholder="Cost per unit"
                                     step="0.01"
                                     min="0"
-                                    className="w-full sm:w-24 h-8 text-sm border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+                                    className="w-full sm:w-24 h-8 text-sm border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-lg"
                                     value={item.cost ?? ""}
                                     onChange={(e) => handleFinishingCostChange(item.name, e.target.value)}
                                   />
@@ -3014,7 +3014,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   {/* Additional Costs Section */}
                   <div className="space-y-4">
                     <h5 className="text-md font-semibold text-slate-700 flex items-center">
-                      <DollarSign className="w-4 h-4 mr-2 text-blue-600" />
+                      <DollarSign className="w-4 h-4 mr-2 text-[#27aae1]" />
                       Additional Costs
                       <span className="ml-2 text-xs text-slate-500">(Unique project costs)</span>
                     </h5>
@@ -3026,7 +3026,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                               <Input
                                 type="text"
                                 placeholder="Cost description"
-                                className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+                                className="w-full border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-lg"
                                 value={cost.description}
                                 onChange={(e) => {
                                   const newCosts = [...additionalCosts];
@@ -3039,7 +3039,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                                 placeholder="Cost amount"
                                 step="0.01"
                                 min="0"
-                                className="w-full sm:w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+                                className="w-full sm:w-32 border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-lg"
                                 value={cost.cost}
                                 onChange={(e) => {
                                   const newCosts = [...additionalCosts];
@@ -3064,7 +3064,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           <Input
                             type="text"
                             placeholder="Comment (mandatory)"
-                            className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+                            className="w-full border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-lg"
                             value={cost.comment}
                             onChange={(e) => {
                               const newCosts = [...additionalCosts];
@@ -3168,13 +3168,13 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-600">Machine Max:</span>
-                          <span className="font-semibold text-blue-600">
+                          <span className="font-semibold text-[#27aae1]">
                             52 × 72 cm
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-600">Alternative:</span>
-                          <span className="font-semibold text-blue-600">
+                          <span className="font-semibold text-[#27aae1]">
                             50 × 35 cm
                           </span>
                         </div>
@@ -3197,7 +3197,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-600">Layout:</span>
-                          <span className="font-semibold text-blue-600">
+                          <span className="font-semibold text-[#27aae1]">
                             {opPaper?.inputWidth && opPaper?.inputHeight ? 
                               `${calculateCutPieces(opPaper.inputWidth!, opPaper.inputHeight!, 52, 72).piecesPerRow}×${calculateCutPieces(opPaper.inputWidth!, opPaper.inputHeight!, 52, 72).piecesPerCol}` : "–"}
                           </span>
@@ -3267,7 +3267,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         <Card className="border-0 shadow-lg w-full mx-0">
               <CardHeader className="pb-3">
                 <CardTitle className="text-xl md:text-2xl font-bold text-slate-800 flex items-center">
-                  <BarChart3 className="w-6 h-6 md:w-7 md:h-7 mr-2 md:mr-3 text-blue-600" />
+                  <BarChart3 className="w-6 h-6 md:w-7 md:h-7 mr-2 md:mr-3 text-[#27aae1]" />
                   Single Sheet Layout Visualization
                 </CardTitle>
               </CardHeader>
@@ -3318,7 +3318,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                     {/* Advanced Sheet Analysis */}
                     <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                       <h6 className="font-semibold text-slate-800 mb-3 text-center flex items-center justify-center">
-                        <Package className="w-4 h-4 mr-2 text-blue-600" />
+                        <Package className="w-4 h-4 mr-2 text-[#27aae1]" />
                         Advanced Sheet Analysis
                       </h6>
                       <div className="space-y-3">
@@ -3330,7 +3330,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-600">Sheet Area:</span>
-                          <span className="font-semibold text-blue-600">
+                          <span className="font-semibold text-[#27aae1]">
                             {inputWidth && inputHeight ? (inputWidth * inputHeight).toFixed(1) : "–"} cm²
                           </span>
                         </div>
@@ -3365,7 +3365,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         <div className="bg-slate-50 p-2 rounded-lg">
                           <div className="flex justify-between items-center">
                             <span className="text-sm font-medium text-slate-700 flex items-center">
-                              <BarChart3 className="w-4 h-4 mr-2 text-blue-600" />
+                              <BarChart3 className="w-4 h-4 mr-2 text-[#27aae1]" />
                               Performance:
                             </span>
                             <div className="flex items-center space-x-1">
@@ -3391,19 +3391,19 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                     {/* Production Intelligence */}
                     <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                       <h6 className="font-semibold text-slate-800 mb-3 text-center flex items-center justify-center">
-                        <Edit3 className="w-4 h-4 mr-2 text-blue-600" />
+                        <Edit3 className="w-4 h-4 mr-2 text-[#27aae1]" />
                         Production Intelligence
                       </h6>
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-slate-600">Item Size:</span>
-                          <span className="font-semibold text-blue-600">
+                          <span className="font-semibold text-[#27aae1]">
                             {outputDimensions[productIndex]?.width?.toFixed(1) ?? "–"} × {outputDimensions[productIndex]?.height?.toFixed(1) ?? "–"} cm
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-600">Layout Strategy:</span>
-                          <span className={`font-semibold ${layout.orientation === 'rotated' ? 'text-purple-600' : 'text-green-600'}`}>
+                          <span className={`font-semibold ${layout.orientation === 'rotated' ? 'text-[#ea078b]' : 'text-green-600'}`}>
                             {layout.orientation === 'rotated' ? '↻ Optimized Rotation' : '→ Standard Layout'}
                           </span>
                         </div>
@@ -3418,7 +3418,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         <div className="border-t pt-2 mt-2">
                           <div className="flex justify-between text-sm">
                             <span className="text-slate-600">Items per Sheet:</span>
-                            <span className="font-bold text-blue-600 text-lg">{layout.itemsPerSheet}</span>
+                            <span className="font-bold text-[#27aae1] text-lg">{layout.itemsPerSheet}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-slate-600">Space Utilization:</span>
@@ -3433,8 +3433,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         </div>
 
                         {/* Optimization Recommendations */}
-                        <div className="bg-blue-50 p-2 rounded-lg">
-                          <p className="text-xs text-blue-800 font-medium">
+                        <div className="bg-[#27aae1]/10 p-2 rounded-lg">
+                          <p className="text-xs text-[#27aae1] font-medium">
                             {layout.efficiency > 85 
                               ? "✓ Optimal layout achieved"
                               : layout.efficiency > 70
@@ -3448,15 +3448,15 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                     {/* Operations Dashboard */}
                     <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                       <h6 className="font-semibold text-slate-800 mb-3 text-center flex items-center justify-center">
-                        <BarChart3 className="w-4 h-4 mr-2 text-blue-600" />
+                        <BarChart3 className="w-4 h-4 mr-2 text-[#27aae1]" />
                         Operations Dashboard
                       </h6>
                       <div className="space-y-3">
                         {/* Production Metrics */}
                         <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div className="bg-blue-50 p-2 rounded">
-                            <div className="text-blue-600 font-medium">Required</div>
-                            <div className="font-bold text-blue-800">{qty || 0}</div>
+                          <div className="bg-[#27aae1]/10 p-2 rounded">
+                            <div className="text-[#27aae1] font-medium">Required</div>
+                            <div className="font-bold text-[#27aae1]">{qty || 0}</div>
                           </div>
                           <div className="bg-orange-50 p-2 rounded">
                             <div className="text-orange-600 font-medium">Sheets</div>
@@ -3465,9 +3465,9 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         </div>
 
                         {enteredSheets && (
-                          <div className="flex justify-between bg-purple-50 p-2 rounded">
-                            <span className="text-purple-700 font-medium">Planned Sheets:</span>
-                            <span className="font-bold text-purple-800">{enteredSheets}</span>
+                          <div className="flex justify-between bg-[#ea078b]/10 p-2 rounded">
+                            <span className="text-[#ea078b] font-medium">Planned Sheets:</span>
+                            <span className="font-bold text-[#ea078b]">{enteredSheets}</span>
                           </div>
                         )}
 
@@ -3560,7 +3560,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                   <Label htmlFor="material-search" className="text-sm font-medium text-slate-700 flex items-center">
-                    <Search className="w-4 h-4 mr-2 text-blue-600" />
+                    <Search className="w-4 h-4 mr-2 text-[#27aae1]" />
                     Search Materials
                   </Label>
                   <Input
@@ -3573,12 +3573,12 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                     </div>
                 <div>
                   <Label htmlFor="supplier-filter" className="text-sm font-medium text-slate-700 flex items-center">
-                    <Building className="w-4 h-4 mr-2 text-blue-600" />
+                    <Building className="w-4 h-4 mr-2 text-[#27aae1]" />
                     Supplier
                   </Label>
                   <select
                     id="supplier-filter"
-                    className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#27aae1]"
                     value={selectedSupplier}
                     onChange={(e) => setSelectedSupplier(e.target.value)}
                   >
@@ -3592,12 +3592,12 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   </div>
                 <div>
                   <Label htmlFor="gsm-filter" className="text-sm font-medium text-slate-700 flex items-center">
-                    <BarChart3 className="w-4 h-4 mr-2 text-blue-600" />
+                    <BarChart3 className="w-4 h-4 mr-2 text-[#27aae1]" />
                     GSM Range
                   </Label>
                   <select
                     id="gsm-filter"
-                    className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#27aae1]"
                     value={selectedGSM}
                     onChange={(e) => setSelectedGSM(e.target.value)}
                   >
@@ -3664,7 +3664,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         const isEco = material.name.toLowerCase().includes('recycled') || material.name.toLowerCase().includes('eco');
                         const isStandard = !isPremium && !isEco;
                         
-                        let statusColor = 'bg-blue-100 text-blue-800';
+                        let statusColor = 'bg-[#27aae1]/20 text-[#27aae1]';
                         let statusText = 'Standard';
                         
                         if (isPremium) {
@@ -3684,7 +3684,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#27aae1]/20 text-[#27aae1]">
                                 {material.gsm} gsm
                               </span>
                             </td>
@@ -3722,7 +3722,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             {/* Additional Information */}
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
               <h5 className="font-semibold text-slate-800 mb-3 flex items-center">
-                <Info className="w-4 h-4 mr-2 text-blue-600" />
+                <Info className="w-4 h-4 mr-2 text-[#27aae1]" />
                 Material Selection Guidelines
               </h5>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-600">
@@ -3779,8 +3779,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 {/* Sheet Specifications Card */}
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                   <div className="flex items-center mb-4">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                      <Package className="w-4 h-4 text-blue-600" />
+                    <div className="w-8 h-8 bg-[#27aae1]/20 rounded-lg flex items-center justify-center mr-3">
+                      <Package className="w-4 h-4 text-[#27aae1]" />
                     </div>
                     <h6 className="text-lg font-semibold text-slate-800">Sheet Specifications</h6>
                   </div>
@@ -3797,9 +3797,9 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           {openData.calc?.layout.usableW?.toFixed(1) ?? "—"} × {openData.calc?.layout.usableH?.toFixed(1) ?? "—"} cm
                         </span>
                       </div>
-                      <div className="flex justify-between items-center py-3 px-4 bg-blue-50 rounded-xl">
+                      <div className="flex justify-between items-center py-3 px-4 bg-[#27aae1]/10 rounded-xl">
                         <span className="text-slate-600 font-medium">Total Cost</span>
-                        <span className="font-bold text-blue-700 text-lg">
+                        <span className="font-bold text-[#27aae1] text-lg">
                           {(() => {
                             const totalCost = calculateTotalCost(openData.op, openData.op?.enteredSheets ?? openData.calc?.recommendedSheets ?? 0);
                             return totalCost > 0 ? fmt(totalCost) : "—";
@@ -3818,8 +3818,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 {/* Layout Details Card */}
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                   <div className="flex items-center mb-4">
-                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                      <BarChart3 className="w-4 h-4 text-purple-600" />
+                    <div className="w-8 h-8 bg-[#ea078b]/20 rounded-lg flex items-center justify-center mr-3">
+                      <BarChart3 className="w-4 h-4 text-[#ea078b]" />
                     </div>
                     <h6 className="text-lg font-semibold text-slate-800">Layout Details</h6>
                   </div>
@@ -3830,15 +3830,15 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         {openData.calc?.layout.itemsPerRow} × {openData.calc?.layout.itemsPerCol}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-3 px-4 bg-blue-50 rounded-xl">
+                    <div className="flex justify-between items-center py-3 px-4 bg-[#27aae1]/10 rounded-xl">
                       <span className="text-slate-600 font-medium">Items per Sheet</span>
-                      <span className="font-bold text-blue-700 text-lg">
+                      <span className="font-bold text-[#27aae1] text-lg">
                         {openData.calc?.layout.itemsPerSheet}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-3 px-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
                       <span className="text-slate-600 font-medium">Orientation</span>
-                      <span className={`font-bold text-lg flex items-center ${openData.calc?.layout.orientation === 'rotated' ? 'text-purple-600' : 'text-green-600'}`}>
+                      <span className={`font-bold text-lg flex items-center ${openData.calc?.layout.orientation === 'rotated' ? 'text-[#ea078b]' : 'text-green-600'}`}>
                         {openData.calc?.layout.orientation === 'rotated' ? (
                           <>
                             <span className="mr-2">↻</span> Rotated
@@ -3857,8 +3857,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               {/* Cost Breakdown Section */}
               <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl border border-slate-200 p-8">
                 <div className="flex items-center mb-6">
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mr-4">
-                    <Calculator className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-[#27aae1]/20 rounded-xl flex items-center justify-center mr-4">
+                    <Calculator className="w-5 h-5 text-[#27aae1]" />
                   </div>
                   <h6 className="text-xl font-bold text-slate-800">Cost Breakdown</h6>
                 </div>
@@ -3867,13 +3867,13 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   {/* Paper Cost Breakdown */}
                   <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
                     <h6 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-                      <Package className="w-5 h-5 mr-2 text-blue-600" />
+                      <Package className="w-5 h-5 mr-2 text-[#27aae1]" />
                       Paper Costs
                     </h6>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center py-2">
                         <span className="text-slate-600">Price per Sheet</span>
-                        <span className="font-semibold text-blue-600">
+                        <span className="font-semibold text-[#27aae1]">
                           {openData.op?.pricePerSheet != null
                             ? fmt(openData.op.pricePerSheet)
                             : "—"}
@@ -3888,7 +3888,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                       <div className="border-t pt-3 mt-4">
                         <div className="flex justify-between items-center">
                           <span className="text-lg font-semibold text-slate-800">Total Paper Cost</span>
-                          <span className="text-2xl font-bold text-blue-600">
+                          <span className="text-2xl font-bold text-[#27aae1]">
                             {(() => {
                               const totalCost = calculateTotalCost(openData.op, openData.op?.enteredSheets ?? openData.calc?.recommendedSheets ?? 0);
                               return totalCost > 0 ? fmt(totalCost) : "—";
@@ -3946,13 +3946,13 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
               {/* Enhanced Production Summary */}
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200 p-6 text-center">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-[#27aae1]/30 p-6 text-center">
                   <div className="w-12 h-12 bg-blue-200 rounded-xl flex items-center justify-center mx-auto mb-3">
-                    <Package className="w-6 h-6 text-blue-700" />
+                    <Package className="w-6 h-6 text-[#27aae1]" />
                   </div>
-                  <div className="text-blue-700 font-medium mb-1">Plates Required</div>
-                  <div className="text-3xl font-bold text-blue-800">{plates}</div>
-                  <div className="text-xs text-blue-600 mt-1">Printing plates</div>
+                  <div className="text-[#27aae1] font-medium mb-1">Plates Required</div>
+                  <div className="text-3xl font-bold text-[#27aae1]">{plates}</div>
+                  <div className="text-xs text-[#27aae1] mt-1">Printing plates</div>
                 </div>
                 
                 <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 p-6 text-center">
@@ -3964,15 +3964,15 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   <div className="text-xs text-green-600 mt-1">Final items</div>
                 </div>
                 
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl border border-purple-200 p-6 text-center">
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl border border-[#ea078b]/30 p-6 text-center">
                   <div className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center mx-auto mb-3">
-                    <Calculator className="w-6 h-6 text-purple-700" />
+                    <Calculator className="w-6 h-6 text-[#ea078b]" />
                   </div>
-                  <div className="text-purple-700 font-medium mb-1">Efficiency</div>
+                  <div className="text-[#ea078b] font-medium mb-1">Efficiency</div>
                   <div className={`text-3xl font-bold ${(openData.calc?.layout.efficiency ?? 0) > 80 ? 'text-green-600' : (openData.calc?.layout.efficiency ?? 0) > 60 ? 'text-yellow-600' : 'text-red-600'}`}>
                     {openData.calc?.layout.efficiency?.toFixed(1) ?? "—"}%
                   </div>
-                  <div className="text-xs text-purple-600 mt-1">Layout optimization</div>
+                  <div className="text-xs text-[#ea078b] mt-1">Layout optimization</div>
                 </div>
 
                 <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl border border-orange-200 p-6 text-center">
@@ -4013,9 +4013,9 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           )}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center py-3 px-4 bg-blue-50 rounded-xl">
+                      <div className="flex justify-between items-center py-3 px-4 bg-[#27aae1]/10 rounded-xl">
                         <span className="text-slate-600">Finishing Cost per Unit</span>
-                        <span className="font-semibold text-blue-600">
+                        <span className="font-semibold text-[#27aae1]">
                           {fmt(
                             (formData.products[0]?.finishing ? formData.operational.finishing
                               .filter((f) => formData.products[0].finishing.includes(f.name))
@@ -4054,9 +4054,9 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         <span className="text-slate-600">Setup Time</span>
                         <span className="font-semibold text-slate-800">2-3 hours</span>
                       </div>
-                      <div className="flex justify-between items-center py-3 px-4 bg-blue-50 rounded-xl">
+                      <div className="flex justify-between items-center py-3 px-4 bg-[#27aae1]/10 rounded-xl">
                         <span className="text-slate-600">Printing Time</span>
-                        <span className="font-semibold text-blue-600">
+                        <span className="font-semibold text-[#27aae1]">
                           {Math.ceil((openData.op?.enteredSheets ?? openData.calc?.recommendedSheets ?? 0) / 100)} hours
                         </span>
                       </div>
@@ -4131,8 +4131,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
           
           <div className="space-y-6">
             {/* Paper Costs Breakdown */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-              <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+            <div className="bg-[#27aae1]/10 rounded-xl p-6 border border-[#27aae1]/30">
+              <h3 className="text-lg font-semibold text-[#27aae1] mb-4 flex items-center">
                 <Package className="w-5 h-5 mr-2" />
                 Paper Costs
               </h3>
@@ -4143,10 +4143,10 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   const paperCost = calculateTotalCost(opPaper, actualSheetsNeeded);
                   
                   return (
-                    <div key={index} className="bg-white rounded-lg p-3 border border-blue-200">
+                    <div key={index} className="bg-white rounded-lg p-3 border border-[#27aae1]/30">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium text-slate-700">Paper {index + 1}</span>
-                        <span className="font-semibold text-blue-700">{fmt(paperCost)}</span>
+                        <span className="font-semibold text-[#27aae1]">{fmt(paperCost)}</span>
                       </div>
                       <div className="text-xs text-slate-500 mt-1">
                         {actualSheetsNeeded} sheets × {opPaper.pricePerSheet ? fmt(opPaper.pricePerSheet) : 'packet pricing'}
@@ -4156,8 +4156,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 })}
                 <div className="border-t pt-3 mt-3">
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-blue-800">Total Paper Cost:</span>
-                    <span className="text-xl font-bold text-blue-800">
+                    <span className="font-semibold text-[#27aae1]">Total Paper Cost:</span>
+                    <span className="text-xl font-bold text-[#27aae1]">
                       {fmt(formData.operational.papers.reduce((acc, opPaper, index) => {
                         const actualSheetsNeeded = opPaper.enteredSheets ?? 
                                                  perPaperCalc[Math.floor(index / formData.products[0]?.papers.length || 1)]?.[index % (formData.products[0]?.papers.length || 1)]?.recommendedSheets ?? 0;
@@ -4194,24 +4194,24 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             </div>
 
             {/* Units Costs Breakdown */}
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
-              <h3 className="text-lg font-semibold text-purple-800 mb-4 flex items-center">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-[#ea078b]/30">
+              <h3 className="text-lg font-semibold text-[#ea078b] mb-4 flex items-center">
                 <BarChart3 className="w-5 h-5 mr-2" />
                 Units Costs
               </h3>
-              <div className="bg-white rounded-lg p-4 border border-purple-200">
+              <div className="bg-white rounded-lg p-4 border border-[#ea078b]/30">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-slate-700">Units Required:</span>
-                  <span className="font-semibold text-purple-700">{formData.operational.units ?? units ?? 0}</span>
+                  <span className="font-semibold text-[#ea078b]">{formData.operational.units ?? units ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <span className="text-sm font-medium text-slate-700">Cost per Unit:</span>
-                  <span className="font-semibold text-purple-700">AED 0.05</span>
+                  <span className="font-semibold text-[#ea078b]">AED 0.05</span>
                 </div>
                 <div className="border-t pt-3 mt-3">
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-purple-800">Total Units Cost:</span>
-                    <span className="text-xl font-bold text-purple-800">{fmt(calculateUnitsCost())}</span>
+                    <span className="font-semibold text-[#ea078b]">Total Units Cost:</span>
+                    <span className="text-xl font-bold text-[#ea078b]">{fmt(calculateUnitsCost())}</span>
                   </div>
                 </div>
               </div>
@@ -4326,7 +4326,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center text-2xl font-bold text-slate-800">
-              <Calculator className="w-8 h-8 mr-3 text-blue-600" />
+              <Calculator className="w-8 h-8 mr-3 text-[#27aae1]" />
               Pricing Logic & Calculation Methods
             </DialogTitle>
             <p className="text-slate-600 mt-2">Understand how your costs are calculated based on different pricing scenarios</p>
@@ -4334,17 +4334,17 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
           
           <div className="space-y-6">
             {/* Pricing Methods Overview */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-              <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+            <div className="bg-[#27aae1]/10 rounded-xl p-6 border border-[#27aae1]/30">
+              <h3 className="text-lg font-semibold text-[#27aae1] mb-4 flex items-center">
                 <BarChart3 className="w-5 h-5 mr-2" />
                 Available Pricing Methods
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-lg p-4 border border-blue-200 shadow-sm">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <Package className="w-5 h-5 text-blue-600" />
+                <div className="bg-white rounded-lg p-4 border border-[#27aae1]/30 shadow-sm">
+                  <div className="w-10 h-10 bg-[#27aae1]/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <Package className="w-5 h-5 text-[#27aae1]" />
                   </div>
-                  <h4 className="font-semibold text-blue-800 text-center mb-2">Packet Pricing</h4>
+                  <h4 className="font-semibold text-[#27aae1] text-center mb-2">Packet Pricing</h4>
                   <p className="text-xs text-slate-600 text-center">Buy paper in pre-packaged quantities</p>
                 </div>
                 <div className="bg-white rounded-lg p-4 border border-green-200 shadow-sm">
@@ -4354,11 +4354,11 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   <h4 className="font-semibold text-green-800 text-center mb-2">Sheet Pricing</h4>
                   <p className="text-xs text-slate-600 text-center">Buy individual sheets at unit price</p>
                 </div>
-                <div className="bg-white rounded-lg p-4 border border-purple-200 shadow-sm">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <Settings className="w-5 h-5 text-purple-600" />
+                <div className="bg-white rounded-lg p-4 border border-[#ea078b]/30 shadow-sm">
+                  <div className="w-10 h-10 bg-[#ea078b]/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <Settings className="w-5 h-5 text-[#ea078b]" />
                   </div>
-                  <h4 className="font-semibold text-purple-800 text-center mb-2">Hybrid Pricing</h4>
+                  <h4 className="font-semibold text-[#ea078b] text-center mb-2">Hybrid Pricing</h4>
                   <p className="text-xs text-slate-600 text-center">Combine both methods for optimal cost</p>
                 </div>
               </div>
@@ -4375,13 +4375,13 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 {/* Rule 1: Packet Only */}
                 <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
                   <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-blue-600 font-bold text-sm">1</span>
+                    <div className="w-6 h-6 bg-[#27aae1]/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[#27aae1] font-bold text-sm">1</span>
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-blue-800 mb-2">Packet Only Pricing</h4>
-                      <div className="bg-blue-50 rounded-lg p-3 mb-3">
-                        <div className="font-mono text-sm text-blue-700">
+                      <h4 className="font-semibold text-[#27aae1] mb-2">Packet Only Pricing</h4>
+                      <div className="bg-[#27aae1]/10 rounded-lg p-3 mb-3">
+                        <div className="font-mono text-sm text-[#27aae1]">
                           Total Cost = ⌈(Sheets needed ÷ Sheets per packet)⌉ × Price per packet
                         </div>
                       </div>
@@ -4417,13 +4417,13 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 {/* Rule 3: Hybrid Pricing */}
                 <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
                   <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-purple-600 font-bold text-sm">3</span>
+                    <div className="w-6 h-6 bg-[#ea078b]/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[#ea078b] font-bold text-sm">3</span>
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-purple-800 mb-2">Hybrid Pricing (Recommended)</h4>
-                      <div className="bg-purple-50 rounded-lg p-3 mb-3">
-                        <div className="font-mono text-sm text-purple-700">
+                      <h4 className="font-semibold text-[#ea078b] mb-2">Hybrid Pricing (Recommended)</h4>
+                      <div className="bg-[#ea078b]/10 rounded-lg p-3 mb-3">
+                        <div className="font-mono text-sm text-[#ea078b]">
                           Total Cost = Full packets × Price per packet + Remaining sheets × Price per sheet
                         </div>
                       </div>
@@ -4487,7 +4487,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <div className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="w-2 h-2 bg-[#27aae1]/100 rounded-full mt-2 flex-shrink-0"></div>
                     <div className="text-sm text-slate-700">
                       <span className="font-semibold">Cost Optimization:</span> Always uses the most economical combination
                     </div>
@@ -4501,7 +4501,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="w-2 h-2 bg-[#ea078b]/100 rounded-full mt-2 flex-shrink-0"></div>
                     <div className="text-sm text-slate-700">
                       <span className="font-semibold">Transparency:</span> Clear breakdown of all costs
                     </div>
@@ -4533,7 +4533,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center text-2xl font-bold text-slate-800">
-              <Calculator className="w-8 h-8 mr-3 text-blue-600" />
+              <Calculator className="w-8 h-8 mr-3 text-[#27aae1]" />
               Pricing Logic & Calculation Methods
             </DialogTitle>
             <p className="text-slate-600 mt-2">Understand how your costs are calculated based on different pricing scenarios</p>
@@ -4541,17 +4541,17 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
           
           <div className="space-y-6">
             {/* Pricing Methods Overview */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-              <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+            <div className="bg-[#27aae1]/10 rounded-xl p-6 border border-[#27aae1]/30">
+              <h3 className="text-lg font-semibold text-[#27aae1] mb-4 flex items-center">
                 <BarChart3 className="w-5 h-5 mr-2" />
                 Available Pricing Methods
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-lg p-4 border border-blue-200 shadow-sm">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <Package className="w-5 h-5 text-blue-600" />
+                <div className="bg-white rounded-lg p-4 border border-[#27aae1]/30 shadow-sm">
+                  <div className="w-10 h-10 bg-[#27aae1]/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <Package className="w-5 h-5 text-[#27aae1]" />
                   </div>
-                  <h4 className="font-semibold text-blue-800 text-center mb-2">Packet Pricing</h4>
+                  <h4 className="font-semibold text-[#27aae1] text-center mb-2">Packet Pricing</h4>
                   <p className="text-xs text-slate-600 text-center">Buy paper in pre-packaged quantities</p>
                 </div>
                 <div className="bg-white rounded-lg p-4 border border-green-200 shadow-sm">
@@ -4561,11 +4561,11 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   <h4 className="font-semibold text-green-800 text-center mb-2">Sheet Pricing</h4>
                   <p className="text-xs text-slate-600 text-center">Buy individual sheets at unit price</p>
                 </div>
-                <div className="bg-white rounded-lg p-4 border border-purple-200 shadow-sm">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <Settings className="w-5 h-5 text-purple-600" />
+                <div className="bg-white rounded-lg p-4 border border-[#ea078b]/30 shadow-sm">
+                  <div className="w-10 h-10 bg-[#ea078b]/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <Settings className="w-5 h-5 text-[#ea078b]" />
                   </div>
-                  <h4 className="font-semibold text-purple-800 text-center mb-2">Hybrid Pricing</h4>
+                  <h4 className="font-semibold text-[#ea078b] text-center mb-2">Hybrid Pricing</h4>
                   <p className="text-xs text-slate-600 text-center">Combine both methods for optimal cost</p>
                 </div>
               </div>
@@ -4582,13 +4582,13 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 {/* Rule 1: Packet Only */}
                 <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
                   <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-blue-600 font-bold text-sm">1</span>
+                    <div className="w-6 h-6 bg-[#27aae1]/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[#27aae1] font-bold text-sm">1</span>
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-blue-800 mb-2">Packet Only Pricing</h4>
-                      <div className="bg-blue-50 rounded-lg p-3 mb-3">
-                        <div className="font-mono text-sm text-blue-700">
+                      <h4 className="font-semibold text-[#27aae1] mb-2">Packet Only Pricing</h4>
+                      <div className="bg-[#27aae1]/10 rounded-lg p-3 mb-3">
+                        <div className="font-mono text-sm text-[#27aae1]">
                           Total Cost = ⌈(Sheets needed ÷ Sheets per packet)⌉ × Price per packet
                         </div>
                       </div>
@@ -4624,13 +4624,13 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 {/* Rule 3: Hybrid Pricing */}
                 <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
                   <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-purple-600 font-bold text-sm">3</span>
+                    <div className="w-6 h-6 bg-[#ea078b]/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[#ea078b] font-bold text-sm">3</span>
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-purple-800 mb-2">Hybrid Pricing (Recommended)</h4>
-                      <div className="bg-purple-50 rounded-lg p-3 mb-3">
-                        <div className="font-mono text-sm text-purple-700">
+                      <h4 className="font-semibold text-[#ea078b] mb-2">Hybrid Pricing (Recommended)</h4>
+                      <div className="bg-[#ea078b]/10 rounded-lg p-3 mb-3">
+                        <div className="font-mono text-sm text-[#ea078b]">
                           Total Cost = Full packets × Price per packet + Remaining sheets × Price per sheet
                         </div>
                       </div>
@@ -4694,7 +4694,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <div className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="w-2 h-2 bg-[#27aae1]/100 rounded-full mt-2 flex-shrink-0"></div>
                     <div className="text-sm text-slate-700">
                       <span className="font-semibold">Cost Optimization:</span> Always uses the most economical combination
                     </div>
@@ -4708,7 +4708,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="w-2 h-2 bg-[#ea078b]/100 rounded-full mt-2 flex-shrink-0"></div>
                     <div className="text-sm text-slate-700">
                       <span className="font-semibold">Transparency:</span> Clear breakdown of all costs
                     </div>
@@ -4740,7 +4740,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center text-2xl font-bold text-slate-800">
-              <Calculator className="w-8 h-8 mr-3 text-blue-600" />
+              <Calculator className="w-8 h-8 mr-3 text-[#27aae1]" />
               Paper Price Details
             </DialogTitle>
             <p className="text-slate-600 mt-2">Detailed breakdown of paper pricing and calculations</p>
@@ -4761,8 +4761,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             return (
               <div className="space-y-6">
                 {/* Paper Information */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-                  <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+                <div className="bg-[#27aae1]/10 rounded-xl p-6 border border-[#27aae1]/30">
+                  <h3 className="text-lg font-semibold text-[#27aae1] mb-4 flex items-center">
                     <Package className="w-5 h-5 mr-2" />
                     Paper Specifications
                   </h3>
@@ -4770,25 +4770,25 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-600">Paper Name:</span>
-                        <span className="font-semibold text-blue-700">
+                        <span className="font-semibold text-[#27aae1]">
                           {formData.products[0]?.papers[paperIndex % (formData.products[0]?.papers.length || 1)]?.name || 'Standard Paper'}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-600">GSM:</span>
-                        <span className="font-semibold text-blue-700">
+                        <span className="font-semibold text-[#27aae1]">
                           {formData.products[0]?.papers[paperIndex % (formData.products[0]?.papers.length || 1)]?.gsm || '150'} gsm
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-600">Input Size:</span>
-                        <span className="font-semibold text-blue-700">
+                        <span className="font-semibold text-[#27aae1]">
                           {opPaper?.inputWidth || 100} × {opPaper?.inputHeight || 70} cm
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-600">Output Size:</span>
-                        <span className="font-semibold text-blue-700">
+                        <span className="font-semibold text-[#27aae1]">
                           {opPaper?.outputWidth || 'Not set'} × {opPaper?.outputHeight || 'Not set'} cm
                         </span>
                       </div>
@@ -4796,21 +4796,21 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-600">Sheets Needed:</span>
-                        <span className="font-semibold text-blue-700">{actualSheetsNeeded}</span>
+                        <span className="font-semibold text-[#27aae1]">{actualSheetsNeeded}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-600">Sheets per Packet:</span>
-                        <span className="font-semibold text-blue-700">
+                        <span className="font-semibold text-[#27aae1]">
                           {opPaper?.sheetsPerPacket || 'Not set'}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-600">Paper Index:</span>
-                        <span className="font-semibold text-blue-700">{paperIndex + 1}</span>
+                        <span className="font-semibold text-[#27aae1]">{paperIndex + 1}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-600">Product Index:</span>
-                        <span className="font-semibold text-blue-700">{productIndex + 1}</span>
+                        <span className="font-semibold text-[#27aae1]">{productIndex + 1}</span>
                       </div>
                     </div>
                   </div>
@@ -4893,25 +4893,25 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
                 {/* Cost Calculation */}
                 {pricePerSheet && (
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
-                    <h3 className="text-lg font-semibold text-purple-800 mb-4 flex items-center">
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-[#ea078b]/30">
+                    <h3 className="text-lg font-semibold text-[#ea078b] mb-4 flex items-center">
                       <Calculator className="w-5 h-5 mr-2" />
                       Cost Calculation
                     </h3>
-                    <div className="bg-white rounded-lg p-4 border border-purple-200">
+                    <div className="bg-white rounded-lg p-4 border border-[#ea078b]/30">
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-sm text-slate-600">Unit Cost:</span>
-                          <span className="font-semibold text-purple-700">${pricePerSheet.toFixed(2)} per sheet</span>
+                          <span className="font-semibold text-[#ea078b]">${pricePerSheet.toFixed(2)} per sheet</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-slate-600">Quantity:</span>
-                          <span className="font-semibold text-purple-700">{actualSheetsNeeded} sheets</span>
+                          <span className="font-semibold text-[#ea078b]">{actualSheetsNeeded} sheets</span>
                         </div>
                         <div className="border-t pt-3 mt-3">
                           <div className="flex justify-between">
-                            <span className="font-semibold text-purple-800">Total Paper Cost:</span>
-                            <span className="text-xl font-bold text-purple-800">
+                            <span className="font-semibold text-[#ea078b]">Total Paper Cost:</span>
+                            <span className="text-xl font-bold text-[#ea078b]">
                               ${(pricePerSheet * actualSheetsNeeded).toFixed(2)}
                             </span>
                           </div>

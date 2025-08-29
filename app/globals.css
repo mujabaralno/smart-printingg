@@ -12,21 +12,28 @@
   --sp-elev: #F3F6FF;         /* elevated surface */
   --sp-border: #E5E9F2;
 
-  /* Primary Palette */
-  --sp-primary: #5B5BD6;      /* indigo */
-  --sp-primary-600: #4F46E5;  /* deeper indigo */
-  --sp-accent: #8B5CF6;       /* violet */
-  --sp-accent-2: #22D3EE;     /* cyan hint */
+  /* Brand Color Palette - Updated */
+  --sp-azure: #27aae1;        /* bright blue */
+  --sp-magenta: #ea078b;      /* vivid magenta */
+  --sp-yellow: #fbec20;       /* bright yellow */
+  --sp-orange: #f89d1d;       /* warm orange */
+  --sp-black: #000000;        /* solid black */
+
+  /* Primary Palette - Using brand colors */
+  --sp-primary: var(--sp-azure);      /* azure as primary */
+  --sp-primary-600: #1e8bc3;          /* darker azure */
+  --sp-accent: var(--sp-magenta);     /* magenta as accent */
+  --sp-accent-2: var(--sp-orange);    /* orange as secondary accent */
 
   /* Semantic Colors */
   --sp-success: #10B981;
-  --sp-warning: #F59E0B;
+  --sp-warning: var(--sp-orange);     /* using brand orange */
   --sp-danger: #EF4444;
 
   /* Text Colors */
-  --sp-text: #0F172A;         /* slate-900 */
-  --sp-muted: #64748B;        /* slate-500 */
-  --sp-subtle: #94A3B8;       /* slate-400 */
+  --sp-text: var(--sp-black);         /* brand black */
+  --sp-muted: #64748B;                /* slate-500 */
+  --sp-subtle: #94A3B8;               /* slate-400 */
 
   /* Design System */
   --sp-radius: 16px;
@@ -35,8 +42,8 @@
   --sp-shadow: 0 10px 30px rgba(2,6,23,0.08);
   --sp-blur: 12px;
 
-  /* Signature Gradient */
-  --sp-gradient: linear-gradient(135deg, #5B5BD6 0%, #8B5CF6 55%, #22D3EE 100%);
+  /* Signature Gradient - Using brand colors */
+  --sp-gradient: linear-gradient(135deg, var(--sp-azure) 0%, var(--sp-magenta) 55%, var(--sp-orange) 100%);
 }
 
 @theme inline {
@@ -46,46 +53,46 @@
   --color-card-foreground: var(--sp-text);
   --color-popover: var(--sp-surface);
   --color-popover-foreground: var(--sp-text);
-  --color-primary: var(--sp-primary);
+  --color-primary: var(--sp-azure);
   --color-primary-foreground: #FFFFFF;
   --color-secondary: var(--sp-elev);
   --color-secondary-foreground: var(--sp-text);
   --color-muted: var(--sp-muted);
   --color-muted-foreground: var(--sp-subtle);
-  --color-accent: var(--sp-accent);
+  --color-accent: var(--sp-magenta);
   --color-accent-foreground: #FFFFFF;
   --color-destructive: var(--sp-danger);
   --color-border: var(--sp-border);
   --color-input: var(--sp-surface);
-  --color-ring: var(--sp-primary);
+  --color-ring: var(--sp-azure);
   --radius: var(--sp-radius);
-  --chart-1: var(--sp-primary);
-  --chart-2: var(--sp-accent);
-  --chart-3: var(--sp-accent-2);
-  --chart-4: var(--sp-primary-600);
-  --chart-5: var(--sp-accent);
+  --chart-1: var(--sp-azure);
+  --chart-2: var(--sp-magenta);
+  --chart-3: var(--sp-orange);
+  --chart-4: var(--sp-yellow);
+  --chart-5: var(--sp-black);
 }
 
 /* Ensure Dialog components have proper background */
 :root {
   --color-background: #ffffff;
-  --color-foreground: #0f172a;
+  --color-foreground: var(--sp-black);
   --color-card: #ffffff;
-  --color-card-foreground: #0f172a;
+  --color-card-foreground: var(--sp-black);
   --color-popover: #ffffff;
-  --color-popover-foreground: #0f172a;
-  --color-primary: #5b5bd6;
+  --color-popover-foreground: var(--sp-black);
+  --color-primary: var(--sp-azure);
   --color-primary-foreground: #ffffff;
   --color-secondary: #f3f6ff;
-  --color-secondary-foreground: #0f172a;
+  --color-secondary-foreground: var(--sp-black);
   --color-muted: #64748b;
   --color-muted-foreground: #94a3b8;
-  --color-accent: #8b5cf6;
+  --color-accent: var(--sp-magenta);
   --color-accent-foreground: #ffffff;
   --color-destructive: #ef4444;
   --color-border: #e5e9f2;
   --color-input: #ffffff;
-  --color-ring: #5b5bd6;
+  --color-ring: var(--sp-azure);
   --radius: 16px;
 }
 

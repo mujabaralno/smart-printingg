@@ -314,10 +314,10 @@ export default function LoginPage() {
           {/* Logo and Header */}
           <div className="text-center">
             <div className="flex items-center justify-center gap-3 mb-6 sm:mb-8">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#27aae1] to-[#ea078b] rounded-xl flex items-center justify-center shadow-lg">
                 <Shield className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
+              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#27aae1] to-[#ea078b] bg-clip-text text-transparent">
                 SmartPrint
               </span>
             </div>
@@ -329,8 +329,8 @@ export default function LoginPage() {
           {/* Location Status Card */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
             {isLocationChecking ? (
-              <div className="flex items-center gap-2 sm:gap-3 text-blue-600">
-                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-blue-600 border-t-transparent"></div>
+              <div className="flex items-center gap-2 sm:gap-3 text-[#27aae1]">
+                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-[#27aae1] border-t-transparent"></div>
                 <span className="text-xs sm:text-sm font-medium">Verifying location...</span>
               </div>
             ) : locationError ? (
@@ -344,7 +344,7 @@ export default function LoginPage() {
                 </div>
                 <button
                   onClick={checkUserLocationOnMount}
-                  className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors text-xs sm:text-sm font-medium"
+                  className="flex items-center gap-2 text-[#27aae1] hover:text-[#1e8bc3] transition-colors text-xs sm:text-sm font-medium"
                 >
                   <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
                   Retry Verification
@@ -396,7 +396,7 @@ export default function LoginPage() {
                     value={employeeId}
                     onChange={(e) => setEmployeeId(e.target.value)}
                     placeholder="Enter your Employee ID or Email"
-                    className="pl-10 sm:pl-11 h-11 sm:h-12 bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-lg transition-colors text-sm sm:text-base"
+                    className="pl-10 sm:pl-11 h-11 sm:h-12 bg-gray-50 border-gray-200 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-lg transition-colors text-sm sm:text-base"
                     disabled={isLoading}
                   />
                 </div>
@@ -413,7 +413,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="pl-10 sm:pl-11 pr-10 sm:pr-11 h-11 sm:h-12 bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-lg transition-colors text-sm sm:text-base"
+                    className="pl-10 sm:pl-11 pr-10 sm:pr-11 h-11 sm:h-12 bg-gray-50 border-gray-200 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-lg transition-colors text-sm sm:text-base"
                     disabled={isLoading}
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && isFormValid && !isLoading) {
@@ -436,7 +436,7 @@ export default function LoginPage() {
             <Button 
               onClick={handleGetOtp}
               disabled={!isFormValid || isLoading}
-              className="w-full h-11 sm:h-12 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none text-sm sm:text-base"
+              className="w-full h-11 sm:h-12 bg-gradient-to-r from-[#ea078b] to-[#d4067a] hover:from-[#d4067a] hover:to-[#b80568] disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none text-sm sm:text-base"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
@@ -465,7 +465,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Panel - Branding */}
-      <div className="hidden lg:flex w-full lg:w-1/2 h-full bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 items-center justify-center relative overflow-hidden">
+      <div className="hidden lg:flex w-full lg:w-1/2 h-full bg-gradient-to-br from-[#ea078b] via-[#d4067a] to-[#b80568] items-center justify-center relative overflow-hidden">
         {/* Animated Background Pattern */}
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-80 h-80 bg-gradient-to-r from-white/5 to-white/10 rounded-full blur-3xl animate-pulse"></div>
@@ -495,12 +495,12 @@ export default function LoginPage() {
             <div className="space-y-4">
               <h1 className="text-5xl font-bold leading-tight tracking-tight">
                 <span className="block text-white drop-shadow-lg">SmartPrint</span>
-                <span className="block text-3xl text-blue-100 font-medium mt-2">Print Management System</span>
+                <span className="block text-3xl text-white font-medium mt-2">Print Management System</span>
               </h1>
               
               <div className="w-24 h-1 bg-gradient-to-r from-white/60 to-white/20 mx-auto rounded-full"></div>
               
-              <p className="text-xl text-blue-50 leading-relaxed font-light max-w-md mx-auto">
+              <p className="text-xl text-white leading-relaxed font-light max-w-md mx-auto">
                 Secure printing solutions with location-based access control and mobile verification
               </p>
             </div>
@@ -589,8 +589,8 @@ export default function LoginPage() {
               <X className="w-4 h-4 text-gray-500" />
             </button>
             <DialogTitle className="flex items-center gap-3 text-xl pr-8">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <Smartphone className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 bg-[#ea078b]/20 rounded-full flex items-center justify-center">
+                <Smartphone className="w-5 h-5 text-[#ea078b]" />
               </div>
               Enter Verification Code
             </DialogTitle>
@@ -627,7 +627,7 @@ export default function LoginPage() {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
-                  className="text-center text-3xl font-mono tracking-[0.5em] py-4 h-14 bg-gray-50 border-2 focus:border-blue-500 rounded-xl"
+                  className="text-center text-3xl font-mono tracking-[0.5em] py-4 h-14 bg-gray-50 border-2 focus:border-[#ea078b] rounded-xl"
                   maxLength={6}
                   disabled={isLoading}
                   onKeyPress={(e) => {
@@ -643,7 +643,7 @@ export default function LoginPage() {
                 <button 
                   onClick={resendOtp}
                   disabled={isLoading}
-                  className="text-blue-600 hover:text-blue-700 ml-1 font-semibold transition-colors disabled:opacity-50"
+                  className="text-[#ea078b] hover:text-[#d4067a] ml-1 font-semibold transition-colors disabled:opacity-50"
                 >
                   Resend Code
                 </button>
@@ -662,7 +662,7 @@ export default function LoginPage() {
               <Button 
                 onClick={handleOtpVerification}
                 disabled={!otp || otp.length !== 6 || isLoading}
-                className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 shadow-lg disabled:from-gray-400 disabled:to-gray-400 text-white"
+                className="flex-1 h-12 bg-gradient-to-r from-[#ea078b] to-[#d4067a] hover:from-[#d4067a] hover:to-[#b80568] shadow-lg disabled:from-gray-400 disabled:to-gray-400 text-white"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">

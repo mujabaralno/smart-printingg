@@ -22,8 +22,8 @@ const toastIcons = {
 const toastStyles = {
   success: "border-green-200 bg-green-50 text-green-800",
   error: "border-red-200 bg-red-50 text-red-800",
-  warning: "border-yellow-200 bg-yellow-50 text-yellow-800",
-  info: "border-blue-200 bg-blue-50 text-blue-800",
+  warning: "border-[#f89d1d]/20 bg-[#f89d1d]/10 text-[#f89d1d]/80",
+  info: "border-[#27aae1]/20 bg-[#27aae1]/10 text-[#27aae1]/80",
 };
 
 export function toast({ title, description, type = "info", duration = 4000 }: ToastProps) {

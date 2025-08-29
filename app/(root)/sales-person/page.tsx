@@ -249,11 +249,11 @@ export default function SalesPersonManagementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-[#27aae1] to-[#ea078b] bg-clip-text text-transparent">
             Sales Person Management
           </h1>
           <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
@@ -287,7 +287,7 @@ export default function SalesPersonManagementPage() {
           </div>
           <Button
             onClick={() => setShowAddModal(true)}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-auto"
+            className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-auto"
           >
             <Plus className="h-5 w-5 mr-2" />
             Add New Sales Person
@@ -303,7 +303,7 @@ export default function SalesPersonManagementPage() {
         <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="w-3 h-3 bg-blue-500 rounded-full mx-auto mb-2"></div>
+              <div className="w-3 h-3 bg-[#27aae1] rounded-full mx-auto mb-2"></div>
               <div className="text-sm text-slate-600">Total Sales Persons</div>
               <div className="text-lg font-bold text-slate-900">{salesPersons.length}</div>
             </div>
@@ -313,7 +313,7 @@ export default function SalesPersonManagementPage() {
               <div className="text-lg font-bold text-slate-900">{salesPersons.filter(sp => sp.status === "Active").length}</div>
             </div>
             <div className="text-center">
-              <div className="w-3 h-3 bg-purple-500 rounded-full mx-auto mb-2"></div>
+              <div className="w-3 h-3 bg-[#ea078b] rounded-full mx-auto mb-2"></div>
               <div className="text-sm text-slate-600">Managers</div>
               <div className="text-lg font-bold text-slate-900">{salesPersons.filter(sp => sp.designation.includes("Manager")).length}</div>
             </div>
@@ -347,7 +347,7 @@ export default function SalesPersonManagementPage() {
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-16 text-slate-500">
                         <div className="flex items-center justify-center space-x-2">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#f89d1d]"></div>
                           <span>Loading sales persons...</span>
                         </div>
                       </TableCell>
@@ -362,7 +362,7 @@ export default function SalesPersonManagementPage() {
                     salesPersons.map((person) => (
                       <TableRow key={person.id} className="hover:bg-slate-50 transition-colors duration-200 border-slate-100">
                         <TableCell className="p-4">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#ea078b]/20 text-[#ea078b]">
                             {person.salesPersonId}
                           </span>
                         </TableCell>
@@ -403,7 +403,7 @@ export default function SalesPersonManagementPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditPerson(person)}
-                              className="text-blue-600 hover:bg-blue-50 rounded-lg p-2"
+                              className="text-[#f89d1d] hover:bg-[#f89d1d]/10 rounded-lg p-2"
                             >
                               <Edit3 className="h-4 w-4" />
                             </Button>
@@ -421,7 +421,7 @@ export default function SalesPersonManagementPage() {
               {loading ? (
                 <div className="text-center py-16 text-slate-500">
                   <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#f89d1d]"></div>
                     <span>Loading sales persons...</span>
                   </div>
                 </div>
@@ -489,7 +489,7 @@ export default function SalesPersonManagementPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleEditPerson(person)}
-                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                            className="text-[#f89d1d] border-[#f89d1d]/30 hover:bg-[#f89d1d]/10"
                           >
                             <Edit3 className="w-4 h-4 mr-1" />
                             Edit
@@ -750,7 +750,7 @@ function AddSalesPersonForm({ onSubmit, onCancel }: {
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+        <Button type="submit" className="bg-[#27aae1] hover:bg-[#1e8bc3]">
           Add Sales Person
         </Button>
       </DialogFooter>
@@ -965,7 +965,7 @@ function EditSalesPersonForm({
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+        <Button type="submit" className="bg-[#27aae1] hover:bg-[#1e8bc3]">
           Update Sales Person
         </Button>
       </DialogFooter>

@@ -23,8 +23,6 @@ export default function AppHeader({ className = "", isNavbarExpanded = false, on
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
   // Modal states
   const [showAccountSettings, setShowAccountSettings] = useState(false);
@@ -99,52 +97,6 @@ export default function AppHeader({ className = "", isNavbarExpanded = false, on
     
     loadUser();
   }, []);
-
-  // Mobile scroll detection for header hide/show
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // Only apply scroll behavior on mobile
-      if (window.innerWidth < 1024) {
-        if (currentScrollY > lastScrollY && currentScrollY > 100) {
-          // Scrolling down and past initial 100px - hide header
-          setIsHeaderVisible(false);
-        } else if (currentScrollY < lastScrollY) {
-          // Scrolling up - show header
-          setIsHeaderVisible(true);
-        }
-      }
-      
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
-
-  // Mobile scroll detection for header hide/show
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // Only apply scroll behavior on mobile
-      if (window.innerWidth < 1024) {
-        if (currentScrollY > lastScrollY && currentScrollY > 100) {
-          // Scrolling down and past initial 100px - hide header
-          setIsHeaderVisible(false);
-        } else if (currentScrollY < lastScrollY) {
-          // Scrolling up - show header
-          setIsHeaderVisible(true);
-        }
-      }
-      
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
 
   // Separate useEffect for the timer to prevent infinite loops
   useEffect(() => {
@@ -360,12 +312,9 @@ export default function AppHeader({ className = "", isNavbarExpanded = false, on
     <>
       <header 
         className={cn(
-          "bg-white border-b border-gray-200 overflow-visible w-full transition-all duration-300 ease-in-out hover:border-gray-300 hover:bg-gray-50/50",
-          // Mobile: fixed positioning with scroll behavior, Desktop: relative positioning
-          "lg:relative lg:z-40 fixed top-0 left-0 right-0 z-50 shadow-sm",
-          // Mobile scroll behavior
-          "lg:transform-none",
-          isHeaderVisible ? "transform-none" : "-translate-y-full",
+          "bg-white border-b border-gray-200 overflow-visible relative z-30 transition-all duration-300",
+          // Adjust positioning based on navbar state
+          isNavbarExpanded ? "lg:ml-72" : "lg:ml-16",
           className
         )}
         // Desktop hover detection for navbar auto-expand
@@ -373,48 +322,46 @@ export default function AppHeader({ className = "", isNavbarExpanded = false, on
         onMouseLeave={() => onNavbarHover?.(false)}
       >
         {/* Mobile Layout - Hidden as SideNav handles mobile */}
-        <div className="lg:hidden transition-all duration-300 ease-in-out bg-white/95 backdrop-blur-sm border-b border-gray-100">
+        <div className="lg:hidden">
           {/* Top Row - Navbar Button and Search Bar */}
-          <div className="px-4 py-3 transition-all duration-300 ease-in-out">
-            <div className="flex items-center space-x-2 w-full min-w-0 transition-all duration-300 ease-in-out">
+          <div className="p-4 pb-3">
+            <div className="flex items-center space-x-3 w-full min-w-0">
               {/* Mobile Navbar Toggle Button */}
               <button
-                onClick={onNavbarToggle}
-                className="flex-shrink-0 p-2 rounded-lg hover:bg-gray-50 transition-all duration-300 ease-in-out transform hover:scale-105 active:scale-95"
+                onClick={onNavbarToggle || (() => {})}
+                className="flex-shrink-0 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 aria-label="Toggle navigation menu"
               >
-                <div className="relative w-5 h-5 transition-all duration-300 ease-in-out">
-                  {isNavbarOpen ? (
-                    <ChevronLeft className="w-5 h-5 text-gray-600 transition-all duration-300 ease-in-out transform rotate-180" />
-                  ) : (
-                    <ChevronRight className="w-5 h-5 text-gray-600 transition-all duration-300 ease-in-out transform rotate-0" />
-                  )}
-                </div>
+                {isNavbarOpen ? (
+                  <ChevronLeft className="w-5 h-5 text-gray-600" />
+                ) : (
+                  <ChevronRight className="w-5 h-5 text-gray-600" />
+                )}
               </button>
               
               {/* Search Bar */}
-              <div className="flex-1 min-w-0 transition-all duration-300 ease-in-out">
+              <div className="flex-1 min-w-0">
                 <GlobalSearch />
               </div>
             </div>
           </div>
 
           {/* Bottom Row - User Info and Time */}
-          <div className="px-4 pb-3 transition-all duration-300 ease-in-out">
-            <div className="flex items-center justify-between min-w-0 transition-all duration-300 ease-in-out">
+          <div className="px-4 pb-4">
+            <div className="flex items-center justify-between min-w-0">
               {/* Time Display */}
               {mounted && currentTime && (
-                <div className="text-left min-w-0 flex-shrink-0 transition-all duration-300 ease-in-out">
-                  <div className="text-sm font-medium text-gray-600 truncate transition-all duration-300 ease-in-out">{formatDate(currentTime)}</div>
-                  <div className="text-xs text-gray-500 truncate transition-all duration-300 ease-in-out">{formatTime(currentTime)}</div>
+                <div className="text-left min-w-0 flex-shrink-0">
+                  <div className="text-sm font-medium text-gray-600 truncate">{formatDate(currentTime)}</div>
+                  <div className="text-xs text-gray-500 truncate">{formatTime(currentTime)}</div>
                 </div>
               )}
 
               {/* User Info and Profile Picture */}
-              <div className="flex items-center space-x-2 min-w-0 flex-1 justify-end transition-all duration-300 ease-in-out">
-                <div className="text-right min-w-0 flex-shrink-0 transition-all duration-300 ease-in-out">
-                  <div className="text-sm font-medium text-gray-900 truncate transition-all duration-300 ease-in-out">{user?.name || "John Admin"}</div>
-                  <div className="text-xs text-gray-500 truncate transition-all duration-300 ease-in-out">ID: {convertToEmpFormat(user?.id || "1")}</div>
+              <div className="flex items-center space-x-3 min-w-0 flex-1 justify-end">
+                <div className="text-right min-w-0 flex-shrink-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{user?.name || "John Admin"}</div>
+                  <div className="text-xs text-gray-500 truncate">ID: {convertToEmpFormat(user?.id || "1")}</div>
                 </div>
 
                 <div className="relative account-dropdown-container flex-shrink-0">
@@ -423,26 +370,17 @@ export default function AppHeader({ className = "", isNavbarExpanded = false, on
                       console.log('Profile picture clicked, current state:', showAccountDropdown);
                       setShowAccountDropdown(!showAccountDropdown);
                     }}
-                    className={cn(
-                      "flex items-center space-x-2 p-2 rounded-lg transition-all duration-300 ease-in-out transform",
-                      showAccountDropdown 
-                        ? "bg-purple-50 scale-105 shadow-md" 
-                        : "hover:bg-gray-50 hover:scale-105 active:scale-95"
-                    )}
-                    aria-label="Account menu"
+                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <div className={cn(
-                      "w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-in-out",
-                      showAccountDropdown && "ring-2 ring-purple-300 ring-offset-2"
-                    )}>
+                    <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
                       {profilePicture ? (
                         <img 
                           src={profilePicture} 
                           alt="Profile" 
-                          className="w-8 h-8 rounded-full object-cover transition-all duration-300 ease-in-out"
+                          className="w-8 h-8 rounded-full object-cover"
                         />
                       ) : (
-                        <span className="text-white font-semibold text-xs transition-all duration-300 ease-in-out">
+                        <span className="text-white font-semibold text-xs">
                           {user?.name?.charAt(0)?.toUpperCase() || "J"}
                         </span>
                       )}
@@ -455,7 +393,7 @@ export default function AppHeader({ className = "", isNavbarExpanded = false, on
         </div>
 
         {/* Desktop Layout */}
-        <div className="hidden lg:flex items-center justify-between py-4 lg:ml-16">
+        <div className="hidden lg:flex items-center justify-between py-4">
           {/* Left Section - Search Bar */}
           <div className="flex items-center space-x-4 min-w-0">
             <div className="w-96 min-w-0">

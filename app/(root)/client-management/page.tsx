@@ -15,6 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ClientRow } from "@/constants";
 
 // Function to convert client ID to readable format (e.g., "CL001")
 const getClientDisplayId = (id: string): string => {
@@ -601,7 +602,7 @@ export default function ClientManagementPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-[#27aae1] to-[#ea078b] bg-clip-text text-transparent">
             Client Management
           </h1>
           <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
@@ -616,12 +617,12 @@ export default function ClientManagementPage() {
               placeholder="Search by company name, contact person, or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 text-base"
+              className="w-full border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
             />
           </div>
           <Button
             onClick={() => setOpen(true)}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+            className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
           >
             <Plus className="h-5 w-5 mr-2" />
             Add New Client
@@ -633,7 +634,7 @@ export default function ClientManagementPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Client Type</label>
             <Select value={clientTypeFilter} onValueChange={setClientTypeFilter}>
-              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+              <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-10">
                 <SelectValue placeholder="All Types" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
@@ -647,7 +648,7 @@ export default function ClientManagementPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Status</label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+              <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-10">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
@@ -661,7 +662,7 @@ export default function ClientManagementPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Area</label>
             <Select value={areaFilter} onValueChange={setAreaFilter}>
-              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+              <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-10">
                 <SelectValue placeholder="All Areas" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
@@ -678,7 +679,7 @@ export default function ClientManagementPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Role</label>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+              <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-10">
                 <SelectValue placeholder="All Roles" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
@@ -698,7 +699,7 @@ export default function ClientManagementPage() {
             <Button
               variant="ghost"
               onClick={() => setShowAll(!showAll)}
-              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl px-4 py-2 transition-all duration-200"
+              className="text-[#27aae1] hover:text-[#1e8bc3] hover:bg-[#27aae1]/10 rounded-xl px-4 py-2 transition-all duration-200"
             >
               {showAll ? (
                 <>
@@ -719,7 +720,7 @@ export default function ClientManagementPage() {
         <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="w-3 h-3 bg-blue-500 rounded-full mx-auto mb-2"></div>
+              <div className="w-3 h-3 bg-[#27aae1] rounded-full mx-auto mb-2"></div>
               <div className="text-sm text-slate-600">Total Clients</div>
               <div className="text-lg font-bold text-slate-900">{filtered.length}</div>
             </div>
@@ -729,7 +730,7 @@ export default function ClientManagementPage() {
               <div className="text-lg font-bold text-slate-900">{filtered.filter(c => c.status === "Active").length}</div>
             </div>
             <div className="text-center">
-              <div className="w-3 h-3 bg-purple-500 rounded-full mx-auto mb-2"></div>
+              <div className="w-3 h-3 bg-[#ea078b] rounded-full mx-auto mb-2"></div>
               <div className="text-sm text-slate-600">Companies</div>
               <div className="text-lg font-bold text-slate-900">{filtered.filter(c => c.clientType === "Company").length}</div>
             </div>
@@ -792,8 +793,8 @@ export default function ClientManagementPage() {
                           <TableCell className="p-4">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               client.clientType === "Company" 
-                                ? "bg-blue-100 text-blue-700 border-blue-200"
-                                : "bg-purple-100 text-purple-700 border-purple-200"
+                                ? "bg-[#27aae1]/20 text-[#27aae1] border-[#27aae1]/30"
+                                : "bg-[#ea078b]/20 text-[#ea078b] border-[#ea078b]/30"
                             }`}>
                               {client.clientType}
                             </span>
@@ -819,14 +820,14 @@ export default function ClientManagementPage() {
                                   href={`/quote-management?clientId=${client.id}`}
                                   className="group cursor-pointer"
                                 >
-                                  <div className="text-lg font-bold text-blue-600 group-hover:text-blue-700 transition-colors duration-200 flex items-center justify-center">
+                                  <div className="text-lg font-bold text-[#27aae1] group-hover:text-[#1e8bc3] transition-colors duration-200 flex items-center justify-center">
                                     {quoteCount}
-                                    <Eye className="h-3 w-3 ml-1 text-blue-500" />
+                                    <Eye className="h-3 w-3 ml-1 text-[#27aae1]" />
                                   </div>
                                   <div className="text-xs text-slate-500 group-hover:text-slate-600 transition-colors duration-200">
                                     quotes
                                   </div>
-                                  <div className="text-xs text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                  <div className="text-xs text-[#27aae1] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                     Click to view
                                   </div>
                                 </Link>
@@ -853,7 +854,7 @@ export default function ClientManagementPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => onView(client)}
-                              className="text-blue-600 hover:bg-blue-50 rounded-lg p-2"
+                              className="text-[#27aae1] hover:bg-[#27aae1]/10 rounded-lg p-2"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -880,7 +881,7 @@ export default function ClientManagementPage() {
               {loading ? (
                 <div className="text-center py-16 text-slate-500">
                   <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#27aae1]"></div>
                     <span>Loading clients...</span>
                   </div>
                 </div>
@@ -1080,7 +1081,7 @@ export default function ClientManagementPage() {
                       placeholder="Enter company name"
                       value={draft.companyName}
                       onChange={(e) => updateContactPerson("companyName", e.target.value)}
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                      className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                     />
                   </div>
                   <div>
@@ -1090,7 +1091,7 @@ export default function ClientManagementPage() {
                       placeholder="Enter role or designation"
                       value={draft.role}
                       onChange={(e) => setDraft({ ...draft, role: e.target.value })}
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                      className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                     />
                   </div>
                 </>
@@ -1106,7 +1107,7 @@ export default function ClientManagementPage() {
                       placeholder="Enter first name"
                       value={draft.firstName}
                       onChange={(e) => updateContactPerson("firstName", e.target.value)}
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                      className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                     />
                   </div>
                   <div>
@@ -1116,7 +1117,7 @@ export default function ClientManagementPage() {
                       placeholder="Enter last name"
                       value={draft.lastName}
                       onChange={(e) => updateContactPerson("lastName", e.target.value)}
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                      className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                     />
                   </div>
                 </>
@@ -1130,7 +1131,7 @@ export default function ClientManagementPage() {
                   placeholder="Contact person name"
                   value={draft.contactPerson}
                   onChange={(e) => setDraft({ ...draft, contactPerson: e.target.value })}
-                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                  className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                 />
               </div>
 
@@ -1143,7 +1144,7 @@ export default function ClientManagementPage() {
                   placeholder="Enter primary email address"
                   value={draft.email}
                   onChange={(e) => setDraft({ ...draft, email: e.target.value })}
-                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                  className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                 />
               </div>
 
@@ -1158,7 +1159,7 @@ export default function ClientManagementPage() {
                         placeholder={`Email ${index + 1}`}
                         value={email}
                         onChange={(e) => updateEmail(index, e.target.value)}
-                        className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                        className="flex-1 border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                       />
                       {emails.length > 1 && (
                         <Button
@@ -1205,7 +1206,7 @@ export default function ClientManagementPage() {
                       placeholder="Enter TRN number"
                       value={draft.trn || ""}
                       onChange={(e) => setDraft({ ...draft, trn: e.target.value })}
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                      className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                     />
                   )}
                 </div>
@@ -1230,7 +1231,7 @@ export default function ClientManagementPage() {
                       }
                     }}
                   >
-                    <SelectTrigger className="w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                    <SelectTrigger className="w-32 border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl">
                       <SelectValue placeholder="Code" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1244,7 +1245,7 @@ export default function ClientManagementPage() {
                     placeholder="Enter phone number"
                     value={draft.phone}
                     onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
-                    className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    className="flex-1 border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                   />
                 </div>
               </div>
@@ -1263,7 +1264,7 @@ export default function ClientManagementPage() {
                       setDraft({ ...draft, country: value });
                     }}
                   >
-                    <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                    <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl">
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1281,7 +1282,7 @@ export default function ClientManagementPage() {
                     placeholder="Enter street address"
                     value={draft.address || ""}
                     onChange={(e) => setDraft({ ...draft, address: e.target.value })}
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                   />
                 </div>
 
@@ -1292,7 +1293,7 @@ export default function ClientManagementPage() {
                       value={draft.area || ""}
                       onValueChange={(value) => setDraft({ ...draft, area: value })}
                     >
-                      <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                      <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl">
                         <SelectValue placeholder="Select area" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1310,7 +1311,7 @@ export default function ClientManagementPage() {
                       value={draft.state || "Dubai"}
                       onValueChange={(value) => setDraft({ ...draft, state: value })}
                     >
-                      <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                      <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl">
                         <SelectValue placeholder="Select state" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1333,7 +1334,7 @@ export default function ClientManagementPage() {
                     placeholder="Enter city (optional)"
                     value={draft.city || ""}
                     onChange={(e) => setDraft({ ...draft, city: e.target.value })}
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                   />
                 </div>
 
@@ -1344,7 +1345,7 @@ export default function ClientManagementPage() {
               <div>
                 <Label htmlFor="status" className="text-sm font-medium text-slate-700">Status</Label>
                 <Select value={draft.status} onValueChange={(v: "Active" | "Inactive") => setDraft({ ...draft, status: v })}>
-                  <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                  <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1366,7 +1367,7 @@ export default function ClientManagementPage() {
             </Button>
             <Button 
               onClick={onSubmit}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
+              className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-2 rounded-xl"
             >
               {mode === "add" ? "Add Client" : "Update Client"}
             </Button>

@@ -21,8 +21,6 @@ export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperPro
     setIsSideNavExpanded(isHovering);
   };
 
-
-
   return (
     <div className="w-full flex min-h-screen bg-background overflow-hidden">
       <SideNav 
@@ -42,15 +40,7 @@ export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperPro
           isNavbarOpen={isNavbarOpen}
           isNavbarExpanded={isSideNavExpanded}
         />
-        <main className={cn(
-          "flex-1 p-4 sm:p-6 overflow-auto bg-gray-50 transition-all duration-300 relative pt-32 lg:pt-4",
-          // Mobile: dim main content when sidenav is open
-          isNavbarOpen && "lg:opacity-50 lg:pointer-events-none"
-        )}>
-          {/* Mobile overlay when sidenav is open */}
-          {isNavbarOpen && (
-            <div className="lg:hidden absolute inset-0 bg-black/20 pointer-events-none z-10" />
-          )}
+        <main className="flex-1 p-4 sm:p-6 overflow-auto bg-gray-50">
           <div className="max-w-7xl mx-auto w-full">
             {children}
           </div>

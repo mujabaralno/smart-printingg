@@ -352,7 +352,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               className={`flex items-center justify-center px-4 sm:px-6 py-3 rounded-xl font-medium cursor-pointer transition-all duration-200 hover:shadow-md w-full ${
                 client.clientType === "Individual"
                   ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl"
-                  : "bg-white border-2 border-gray-200 text-gray-600 hover:border-purple-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+                  : "bg-white border-2 border-gray-200 text-gray-600 hover:border-[#ea078b]/50 hover:bg-[#27aae1]/10"
               }`}
             >
               <User className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -370,7 +370,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               className={`flex items-center justify-center px-4 sm:px-6 py-3 rounded-xl font-medium cursor-pointer transition-all duration-200 hover:shadow-md w-full ${
                 client.clientType === "Company"
                   ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl"
-                  : "bg-white border-2 border-gray-200 text-gray-600 hover:border-purple-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+                  : "bg-white border-2 border-gray-200 text-gray-600 hover:border-[#ea078b]/50 hover:bg-[#27aae1]/10"
               }`}
             >
               <Building className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -522,7 +522,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
           <button
             type="button"
             onClick={addEmail}
-            className="inline-flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors w-full sm:w-auto"
+            className="inline-flex items-center justify-center px-4 py-2 bg-[#27aae1]/20 text-[#27aae1] rounded-md hover:bg-[#27aae1]/30 transition-colors w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Another Email
@@ -544,7 +544,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
                 value={client.countryCode || "+971"}
                 onValueChange={(value) => setClient({ countryCode: value })}
               >
-                <SelectTrigger className="w-full sm:w-32 py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors">
+                <SelectTrigger className="w-full sm:w-32 py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-[#ea078b] focus:border-transparent transition-colors">
                   <SelectValue placeholder="Code" />
                 </SelectTrigger>
                 <SelectContent>
@@ -587,7 +587,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
                 id="hasNoTrn"
                 checked={hasNoTrn}
                 onChange={(e) => setHasNoTrn(e.target.checked)}
-                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                className="w-4 h-4 text-[#ea078b] border-gray-300 rounded focus:ring-[#ea078b]"
               />
               <Label htmlFor="hasNoTrn" className="text-xs sm:text-sm text-gray-600">
                 No TRN
@@ -641,7 +641,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               value={client.area || ""}
               onValueChange={(value) => setClient({ area: value })}
             >
-              <SelectTrigger className={`py-5 border rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors w-full ${
+              <SelectTrigger className={`py-5 border rounded-sm focus:outline-none focus:ring-2 focus:ring-[#ea078b] focus:border-transparent transition-colors w-full ${
                 !client.area?.trim()
                   ? "border-red-300"
                   : "border-gray-200"
@@ -675,7 +675,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
                 setClient({ state: value, area: "" }); // Reset area when state changes
               }}
             >
-              <SelectTrigger className="py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors w-full">
+              <SelectTrigger className="py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-[#ea078b] focus:border-transparent transition-colors w-full">
                 <SelectValue placeholder="Select State" />
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 rounded-md shadow-lg z-50">
@@ -701,7 +701,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               value={client.country || "UAE"}
               onValueChange={(value) => setClient({ country: value })}
             >
-              <SelectTrigger className="py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors w-full">
+              <SelectTrigger className="py-5 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-[#ea078b] focus:border-transparent transition-colors w-full">
                 <SelectValue placeholder="Select Country" />
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 rounded-md shadow-lg z-50">
@@ -724,7 +724,7 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
               value={client.additionalInfo || ""}
               onChange={(e) => setClient({ additionalInfo: e.target.value })}
               placeholder="Any additional notes, special requirements, or comments..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors min-h-[80px] resize-y text-sm sm:text-base"
+              className="w-full px-3 py-2 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-[#ea078b] focus:border-transparent transition-colors min-h-[80px] resize-y text-sm sm:text-base"
               rows={3}
             />
           </div>
@@ -769,12 +769,12 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
 
       {/* New Customer Indicator */}
       {isNewCustomer && client.firstName && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+        <div className="bg-[#27aae1]/10 border border-[#27aae1]/30 rounded-lg p-3 sm:p-4">
           <div className="flex items-center space-x-2">
-            <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+            <div className="w-5 h-5 rounded-full bg-[#27aae1]/100 flex items-center justify-center flex-shrink-0">
               <span className="text-white text-xs font-bold">+</span>
             </div>
-            <p className="text-blue-700 font-medium text-sm sm:text-base">
+            <p className="text-[#27aae1] font-medium text-sm sm:text-base">
               New customer will be added to database
             </p>
           </div>

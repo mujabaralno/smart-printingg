@@ -123,29 +123,6 @@ export default function AppHeader({ className = "", isNavbarExpanded = false, on
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // Mobile scroll detection for header hide/show
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // Only apply scroll behavior on mobile
-      if (window.innerWidth < 1024) {
-        if (currentScrollY > lastScrollY && currentScrollY > 100) {
-          // Scrolling down and past initial 100px - hide header
-          setIsHeaderVisible(false);
-        } else if (currentScrollY < lastScrollY) {
-          // Scrolling up - show header
-          setIsHeaderVisible(true);
-        }
-      }
-      
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
-
   // Separate useEffect for the timer to prevent infinite loops
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -385,9 +362,9 @@ export default function AppHeader({ className = "", isNavbarExpanded = false, on
               >
                 <div className="relative w-5 h-5 transition-all duration-300 ease-in-out">
                   {isNavbarOpen ? (
-                    <ChevronLeft className="w-5 h-5 text-gray-600 transition-all duration-300 ease-in-out transform rotate-180" />
+                    <ChevronLeft className="w-5 h-5 text-gray-600 transition-all duration-300 ease-in-out transform rotate-0 hover:rotate-[-5deg]" />
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-gray-600 transition-all duration-300 ease-in-out transform rotate-0" />
+                    <ChevronRight className="w-5 h-5 text-gray-600 transition-all duration-300 ease-in-out transform rotate-0 hover:rotate-[5deg]" />
                   )}
                 </div>
               </button>
@@ -423,18 +400,9 @@ export default function AppHeader({ className = "", isNavbarExpanded = false, on
                       console.log('Profile picture clicked, current state:', showAccountDropdown);
                       setShowAccountDropdown(!showAccountDropdown);
                     }}
-                    className={cn(
-                      "flex items-center space-x-2 p-2 rounded-lg transition-all duration-300 ease-in-out transform",
-                      showAccountDropdown 
-                        ? "bg-purple-50 scale-105 shadow-md" 
-                        : "hover:bg-gray-50 hover:scale-105 active:scale-95"
-                    )}
-                    aria-label="Account menu"
+                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-all duration-300 ease-in-out transform hover:scale-105 active:scale-95"
                   >
-                    <div className={cn(
-                      "w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-in-out",
-                      showAccountDropdown && "ring-2 ring-purple-300 ring-offset-2"
-                    )}>
+                    <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl">
                       {profilePicture ? (
                         <img 
                           src={profilePicture} 

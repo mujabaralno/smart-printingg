@@ -169,23 +169,23 @@ export default function SideNav({
         }}
       >
         {/* Header */}
-        <div className="p-4">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Printer className="w-5 h-5 text-white" />
-            </div>
-            <div className={cn(
-              "ml-3 flex-1 min-w-0 transition-all duration-200 ease-out",
-              shouldExpand ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
-            )}>
-              <div className="text-lg font-bold text-slate-800 whitespace-nowrap">Smart Printing</div>
-              <div className="text-slate-500 text-xs font-medium uppercase tracking-wide">
-                <div>Professional Print</div>
-                <div>Management</div>
+                            <div className="p-4">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-[#27aae1] to-[#ea078b] rounded-lg flex items-center justify-center flex-shrink-0">
+                <Printer className="w-5 h-5 text-white" />
+              </div>
+              <div className={cn(
+                "ml-3 flex-1 min-w-0 transition-all duration-200 ease-out",
+                shouldExpand ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
+              )}>
+                <div className="text-lg font-bold text-slate-800 whitespace-nowrap">Smart Printing</div>
+                <div className="text-slate-500 text-xs font-medium uppercase tracking-wide">
+                  <div>Professional Print</div>
+                  <div>Management</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2">
@@ -200,8 +200,8 @@ export default function SideNav({
                 className={cn(
                   "flex items-center px-2 py-2 rounded-xl transition-all duration-300 group w-full",
                   isActive 
-                    ? "bg-purple-600 text-white shadow-md" 
-                    : "text-slate-600 hover:bg-purple-50 hover:text-purple-700"
+                    ? "bg-gradient-to-r from-[#27aae1] via-purple-600 to-[#ea078b] text-white shadow-lg" 
+                    : "text-slate-600 hover:bg-[#ea078b]/10 hover:text-[#ea078b]"
                 )}
               >
                 <div className="flex items-center w-full">
@@ -210,7 +210,7 @@ export default function SideNav({
                       "flex items-center w-6 h-6 rounded-lg transition-all duration-300 flex-shrink-0",
                       isActive 
                         ? "text-white" 
-                        : "text-slate-500 group-hover:text-purple-600"
+                        : "text-slate-500 group-hover:text-[#ea078b]"
                     )}>
                       <IconComponent
                         size={18}
@@ -254,7 +254,7 @@ export default function SideNav({
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-gradient-to-br from-[#27aae1] to-[#ea078b] rounded-lg flex items-center justify-center flex-shrink-0">
                   <Printer className="w-5 h-5 text-white" />
                 </div>
                 <div className="ml-3">
@@ -289,8 +289,8 @@ export default function SideNav({
                   className={cn(
                     "flex items-center px-3 py-3 rounded-xl transition-all duration-300 group w-full",
                     isActive 
-                      ? "bg-purple-600 text-white shadow-md" 
-                      : "text-slate-600 hover:bg-purple-50 hover:text-purple-700"
+                      ? "bg-gradient-to-r from-[#27aae1] via-purple-600 to-[#ea078b] text-white shadow-lg" 
+                      : "text-slate-600 hover:bg-[#ea078b]/10 hover:text-[#ea078b]"
                   )}
                 >
                   <div className="flex items-center w-full">
@@ -299,7 +299,7 @@ export default function SideNav({
                         "flex items-center w-6 h-6 rounded-lg transition-all duration-300 flex-shrink-0",
                         isActive 
                           ? "text-white" 
-                          : "text-slate-500 group-hover:text-purple-600"
+                          : "text-slate-500 group-hover:text-[#ea078b]"
                       )}>
                         <IconComponent
                           size={20}

@@ -362,7 +362,7 @@ function SupplierManagementContent() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-[#27aae1] to-[#ea078b] bg-clip-text text-transparent">
             Supplier Management
           </h1>
           <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
@@ -377,12 +377,12 @@ function SupplierManagementContent() {
               placeholder="Search suppliers or materials..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 text-base"
+              className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-12 text-base"
             />
           </div>
           <Button
             onClick={() => setOpen(true)}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+            className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
           >
             <Plus className="h-5 w-5 mr-2" />
             Add New Material
@@ -397,7 +397,7 @@ function SupplierManagementContent() {
               type="date" 
               value={from} 
               onChange={(e) => setFrom(e.target.value)}
-              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 text-base"
+              className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10 text-base"
             />
           </div>
           
@@ -407,14 +407,14 @@ function SupplierManagementContent() {
               type="date" 
               value={to} 
               onChange={(e) => setTo(e.target.value)}
-              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 text-base"
+              className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10 text-base"
             />
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Status</label>
             <Select value={statusFilter} onValueChange={(v: "all" | "Active" | "Inactive") => setStatusFilter(v)}>
-              <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+              <SelectTrigger className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -428,7 +428,7 @@ function SupplierManagementContent() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Unit</label>
             <Select value={unitFilter} onValueChange={(v: "all" | string) => setUnitFilter(v)}>
-              <SelectTrigger className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+              <SelectTrigger className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10">
                 <SelectValue placeholder="All Units" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
@@ -448,7 +448,7 @@ function SupplierManagementContent() {
             <Button
               variant="ghost"
               onClick={() => setShowAll(!showAll)}
-              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl px-4 py-2 transition-all duration-200"
+              className="text-[#f89d1d] hover:text-[#e88a0a] hover:bg-[#f89d1d]/10 rounded-xl px-4 py-2 transition-all duration-200"
             >
               {showAll ? (
                 <>
@@ -546,7 +546,7 @@ function SupplierManagementContent() {
                     <TableCell className="text-slate-700 p-6 w-24">
                       <div className="truncate">
                         {r.gsm ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-[#27aae1]/20 text-[#27aae1]">
                             {r.gsm} gsm
                           </span>
                         ) : (
@@ -585,7 +585,7 @@ function SupplierManagementContent() {
                             size="icon"
                             title="Edit Material"
                             onClick={() => onEdit(r)}
-                            className="w-8 h-8 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
+                            className="w-8 h-8 hover:bg-[#f89d1d]/10 hover:text-[#f89d1d] transition-colors duration-200"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -758,7 +758,7 @@ function SupplierManagementContent() {
                   placeholder="e.g. ART-001"
                   value={draft.materialId}
                   onChange={(e) => setDraft({ ...draft, materialId: e.target.value })}
-                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                  className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl"
                   disabled={mode === "edit"}
                 />
               </div>
@@ -769,7 +769,7 @@ function SupplierManagementContent() {
                   placeholder="e.g. Art Paper"
                   value={draft.name}
                   onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                  className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl"
                 />
               </div>
               <div>
@@ -779,7 +779,7 @@ function SupplierManagementContent() {
                   placeholder="e.g. 300, 150, 80"
                   value={draft.gsm || ""}
                   onChange={(e) => setDraft({ ...draft, gsm: e.target.value })}
-                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                  className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl"
                 />
                 <p className="text-xs text-slate-500 mt-1">Leave empty for non-paper materials</p>
               </div>
@@ -789,7 +789,7 @@ function SupplierManagementContent() {
                    const selectedSupplier = suppliers.find(s => s.id === v);
                    setDraft({ ...draft, supplier: { id: v, name: selectedSupplier?.name || '' } });
                  }}>
-                  <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                  <SelectTrigger className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl">
                     <SelectValue placeholder="Select supplier" />
                   </SelectTrigger>
                   <SelectContent>
@@ -809,13 +809,13 @@ function SupplierManagementContent() {
                   placeholder="0.00"
                   value={draft.cost}
                   onChange={(e) => setDraft({ ...draft, cost: Number(e.target.value) })}
-                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                  className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl"
                 />
               </div>
               <div>
                 <Label htmlFor="unit" className="text-sm font-medium text-slate-700">Unit</Label>
                 <Select value={draft.unit} onValueChange={(v: string) => setDraft({ ...draft, unit: v })}>
-                  <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                  <SelectTrigger className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl">
                     <SelectValue placeholder="Select unit" />
                   </SelectTrigger>
                   <SelectContent>
@@ -832,13 +832,13 @@ function SupplierManagementContent() {
                   type="date"
                   value={draft.lastUpdated}
                   onChange={(e) => setDraft({ ...draft, lastUpdated: e.target.value })}
-                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                  className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl"
                 />
               </div>
               <div>
                 <Label htmlFor="status" className="text-sm font-medium text-slate-700">Status</Label>
                 <Select value={draft.status} onValueChange={(v: "Active" | "Inactive") => setDraft({ ...draft, status: v })}>
-                  <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
+                  <SelectTrigger className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -860,7 +860,7 @@ function SupplierManagementContent() {
             </Button>
             <Button 
               onClick={onSubmit}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
+              className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-2 rounded-xl"
             >
               {mode === "add" ? "Add Material" : "Update Material"}
             </Button>
@@ -877,7 +877,7 @@ export default function SupplierManagementPage() {
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f89d1d] mx-auto"></div>
           <p className="text-slate-600">Loading supplier management...</p>
         </div>
       </div>

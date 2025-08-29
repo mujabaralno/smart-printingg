@@ -857,7 +857,10 @@ function CreateQuoteContent() {
 
   // Handle quote selection for editing existing quotes
   const handleQuoteSelect = (quote: any) => {
-    console.log('Quote selected for editing:', quote);
+    console.log('🎯 Quote selected for editing:', quote);
+    console.log('🔍 Quote finishing data:', quote.finishing);
+    console.log('🔍 Quote finishing type:', typeof quote.finishing);
+    console.log('🔍 Quote finishing length:', quote.finishing?.length);
     
     // Set the selected quote ID for editing
     setSelectedQuoteId(quote.id);
@@ -921,9 +924,24 @@ function CreateQuoteContent() {
           papers: quote.papers && quote.papers.length > 0 
             ? quote.papers.map((p: any) => ({ name: p.name, gsm: p.gsm }))
             : [{ name: "Standard Paper", gsm: "150" }],
-          finishing: quote.finishing && quote.finishing.length > 0
-            ? quote.finishing.map((f: any) => f.name)
-            : [],
+          finishing: (() => {
+            console.log('🔄 Processing finishing data...');
+            console.log('  Original quote.finishing:', quote.finishing);
+            
+            if (!quote.finishing || !Array.isArray(quote.finishing) || quote.finishing.length === 0) {
+              console.log('  ❌ No finishing data or invalid format');
+              return [];
+            }
+            
+            // Simply extract the finishing names - no side logic needed
+            const mappedFinishing = quote.finishing.map((f: any) => {
+              console.log(`  Processing finishing item: ${f.name}`);
+              return f.name;
+            });
+            
+            console.log('  ✅ Final mapped finishing:', mappedFinishing);
+            return mappedFinishing;
+          })(),
           colors: { 
             front: mappedFrontColor, 
             back: mappedBackColor 
@@ -931,16 +949,66 @@ function CreateQuoteContent() {
         }]
       }));
       
-      console.log('Form data updated with selected quote:', {
+      // Immediately ensure finishing data is loaded
+      ensureFinishingDataLoaded(quote);
+      
+      console.log('📋 Form data updated with selected quote:', {
         product: quote.product,
         quantity: quote.quantity,
         sides: quote.sides,
         printing: quote.printing,
         papers: quote.papers,
-        finishing: quote.finishing,
+        originalFinishing: quote.finishing,
         colors: { front: mappedFrontColor, back: mappedBackColor }
       });
+      
+      // Log the actual formData state after update
+      setTimeout(() => {
+        console.log('🔄 FormData state after update:', formData);
+        console.log('🎯 Products array:', formData.products);
+        if (formData.products && formData.products.length > 0) {
+          console.log('🎯 First product finishing:', formData.products[0].finishing);
+          console.log('🎯 First product finishing type:', typeof formData.products[0].finishing);
+          console.log('🎯 First product finishing isArray:', Array.isArray(formData.products[0].finishing));
+        }
+      }, 100);
+      
+      // Force a re-render by updating the formData again
+      setTimeout(() => {
+        console.log('🔄 Forcing re-render...');
+        setFormData(prevData => ({
+          ...prevData,
+          products: prevData.products.map((p, idx) => 
+            idx === 0 ? { ...p, finishing: p.finishing } : p
+          )
+        }));
+      }, 200);
+      
+      // Additional fix: Ensure finishing data is properly loaded
+      setTimeout(() => {
+        console.log('🔧 Additional finishing data fix...');
+        ensureFinishingDataLoaded(quote);
+      }, 300);
     }
+  };
+
+  // Helper function to ensure finishing data is properly loaded
+  const ensureFinishingDataLoaded = (quote: any) => {
+    console.log('🔧 Ensuring finishing data is loaded...');
+    if (quote.finishing && Array.isArray(quote.finishing) && quote.finishing.length > 0) {
+      const finishingNames = quote.finishing.map((f: any) => f.name);
+      console.log('🔧 Setting finishing names:', finishingNames);
+      
+      setFormData(prevData => ({
+        ...prevData,
+        products: prevData.products.map((p, idx) => 
+          idx === 0 ? { ...p, finishing: finishingNames } : p
+        )
+      }));
+      
+      return true;
+    }
+    return false;
   };
 
   // Get current user ID - use a valid user from the database
@@ -1765,7 +1833,7 @@ function CreateQuoteContent() {
                   </div>
                   <div className="pt-2 sm:pt-4">
                     <Button 
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
+                      className="w-full bg-[#27aae1] hover:bg-[#1e8bc3] text-white py-2 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
                       onClick={handleStartNew}
                     >
                       <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
@@ -1791,7 +1859,7 @@ function CreateQuoteContent() {
                 }}
               >
                 <CardContent className="p-4 sm:p-6 lg:p-8 text-center space-y-4 sm:space-y-6">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#ea078b] to-[#d4067a] rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
                     <Copy className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                   </div>
                   <div className="space-y-2 sm:space-y-3">
@@ -1802,7 +1870,7 @@ function CreateQuoteContent() {
                   </div>
                   <div className="pt-2 sm:pt-4">
                     <Button 
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
+                      className="w-full bg-[#ea078b] hover:bg-[#d4067a] text-white py-2 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
                       onClick={() => {
                         // Clear default product data when entering existing quote mode
                         setFormData((prev) => ({ 
@@ -1856,7 +1924,7 @@ function CreateQuoteContent() {
               // Show empty customer detail form for new quote
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                 <h4 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-[#27aae1] rounded-full mr-3"></span>
                   New Customer Details
                 </h4>
                 <Step2CustomerDetail formData={formData} setFormData={setFormData} />
@@ -1967,7 +2035,7 @@ function CreateQuoteContent() {
                     className={`px-6 sm:px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto ${
                       isNextButtonDisabled() 
                         ? "bg-gray-400 cursor-not-allowed" 
-                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                        : "bg-[#27aae1] hover:bg-[#1e8bc3] text-white"
                     }`}
                     title={
                       isNextButtonDisabled() 
@@ -1999,7 +2067,7 @@ function CreateQuoteContent() {
                 <Button
                   onClick={() => handleSaveQuote(false)}
                   disabled={isSaving}
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
+                  className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 sm:px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
                 >
                   {isSaving ? (
                     <>
@@ -2028,19 +2096,19 @@ function CreateQuoteContent() {
                 Your quote has been submitted and will appear in the Quote Management page.
               </p>
               <div className="space-y-4">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                <Button className="w-full bg-[#ea078b] hover:bg-[#d4067a] text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
                   <Link href={`mailto:${formData.client.email}`}>
                     Send to Customer
                   </Link>
                 </Button>
                 <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="w-full bg-[#f89d1d] hover:bg-[#e88a0a] text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                   onClick={handleDownloadCustomerFromModal}
                 >
                   Download for Customer
                 </Button>
                 <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="w-full bg-[#27aae1] hover:bg-[#1e8bc3] text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                   onClick={handleDownloadOpsFromModal}
                 >
                   Download Operations Copy
@@ -2070,7 +2138,7 @@ export default function CreateQuotePage() {
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#27aae1] mx-auto"></div>
           <p className="mt-4 text-lg text-slate-600">Loading quote creation...</p>
         </div>
       </div>
