@@ -305,7 +305,7 @@
   }
 }
 
-/* Fix Dialog transparency issues */
+/* Fix Dialog transparency issues - FORCE SOLID BACKGROUNDS */
 [data-slot="dialog-content"] {
   background-color: #ffffff !important;
   opacity: 1 !important;
@@ -322,9 +322,9 @@
   opacity: 1 !important;
 }
 
-/* Ensure DialogFooter and buttons are always visible */
+/* Ensure DialogFooter and buttons are always visible - NO TRANSPARENCY */
 [data-slot="dialog-footer"] {
-  background-color: transparent !important;
+  background-color: #ffffff !important;
   opacity: 1 !important;
   visibility: visible !important;
   display: flex !important;
@@ -352,9 +352,9 @@
   background-color: #ffffff !important;
 }
 
-/* Ensure dialog content has proper background */
+/* Ensure dialog content has proper background - REMOVE TRANSPARENCY */
 [data-slot="dialog-content"] > * {
-  background-color: transparent;
+  background-color: #ffffff !important;
 }
 
 /* Mobile Responsiveness & Touch Optimization */
@@ -552,7 +552,7 @@ input[type="reset"] {
 }
 
 [data-slot="dialog-footer"] button[variant="ghost"] {
-  background-color: transparent !important;
+  background-color: #f8fafc !important;
   color: var(--sp-text) !important;
   border: 1px solid var(--sp-border) !important;
 }
@@ -572,6 +572,48 @@ input[type="reset"] {
   font-size: 16px !important;
   padding: 12px 24px !important;
   margin: 8px !important;
+}
+
+/* COMPREHENSIVE: Remove ALL transparency from dialogs */
+[data-slot="dialog-content"],
+[data-slot="dialog-content"] *,
+[data-slot="dialog-footer"],
+[data-slot="dialog-footer"] *,
+[role="dialog"],
+[role="dialog"] * {
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Force button visibility with solid backgrounds */
+[data-slot="dialog-footer"] button,
+[data-slot="dialog-footer"] [role="button"],
+[role="dialog"] button,
+[role="dialog"] [role="button"] {
+  background-color: #27aae1 !important;
+  color: white !important;
+  border: none !important;
+  padding: 12px 24px !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 48px !important;
+  min-width: 120px !important;
+  box-shadow: 0 4px 12px rgba(39, 170, 225, 0.3) !important;
+}
+
+/* Ghost button variant */
+[data-slot="dialog-footer"] button[variant="ghost"],
+[role="dialog"] button[variant="ghost"] {
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  border: 2px solid #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Improve button accessibility */
