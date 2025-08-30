@@ -503,6 +503,35 @@ table.min-w-full td .inline-flex {
   word-break: break-all !important;
 }
 
+/* Mobile-specific optimizations */
+@media (max-width: 1024px) {
+  /* Mobile card improvements */
+  .lg\\:hidden .space-y-4 > * {
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Mobile button improvements */
+  .lg\\:hidden button {
+    min-height: 44px !important; /* Better touch targets */
+    font-size: 14px !important;
+  }
+  
+  /* Mobile card shadows and borders */
+  .lg\\:hidden .shadow-sm {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+  }
+  
+  /* Mobile spacing improvements */
+  .lg\\:hidden .space-y-4 > * + * {
+    margin-top: 1rem !important;
+  }
+  
+  /* Mobile grid improvements */
+  .lg\\:hidden .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+}
+
 /* Allow some columns to wrap text for better readability */
 .table-fixed td.wrap-text {
   white-space: normal !important;

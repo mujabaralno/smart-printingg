@@ -895,11 +895,11 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   filteredQuotes.map((quote: any, index: number) => (
-                    <Card key={`${quote.id}-${quote.status}`} className="p-4 border-slate-200">
-                      <div className="space-y-3">
+                    <Card key={`${quote.id}-${quote.status}`} className="p-4 border-slate-200 bg-white shadow-sm">
+                      <div className="space-y-4">
                         {/* Header with Quote ID and Status */}
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-sm font-medium text-slate-900 bg-slate-100 px-2 py-1 rounded">
+                          <span className="font-mono text-sm font-medium text-slate-900 bg-purple-100 text-purple-800 px-3 py-2 rounded-lg">
                             {quote.quoteId}
                           </span>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -914,64 +914,61 @@ export default function DashboardPage() {
                         </div>
                         
                         {/* Client Info */}
-                        <div className="flex items-center space-x-3">
-                          <div>
-                            <div className="font-medium text-slate-900">{quote.customerName}</div>
-                            <div className="text-sm text-slate-500">Client</div>
-                          </div>
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Client</div>
+                          <div className="font-semibold text-slate-900">{quote.customerName}</div>
                         </div>
                         
                         {/* Product Info */}
-                        <div className="flex items-center space-x-3">
-                          <div>
-                            <div className="font-medium text-slate-900">{quote.product || 'N/A'}</div>
-                            <div className="text-sm text-slate-500">Product</div>
-                          </div>
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Product</div>
+                          <div className="font-medium text-slate-900">{quote.product || 'N/A'}</div>
                         </div>
                         
                         {/* Date and Amount */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-slate-700">{formatDate(quote.createdDate)}</span>
+                        <div className="grid grid-cols-1 gap-3">
+                          <div className="bg-slate-50 p-3 rounded-lg">
+                            <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Date</div>
+                            <div className="font-medium text-slate-900">{formatDate(quote.createdDate)}</div>
                           </div>
-                          <div>
-                            <span className="text-sm text-slate-500">Amount:</span>
+                          <div className="bg-slate-50 p-3 rounded-lg">
+                            <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Amount</div>
                             <div className="font-semibold text-slate-900">AED {isNaN(quote.totalAmount) ? '0.00' : (quote.totalAmount || 0).toFixed(2)}</div>
                           </div>
                         </div>
                         
                         {/* Actions */}
-                        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                        <div className="flex flex-col space-y-2 pt-3 border-t border-slate-200">
                           <div className="flex space-x-2">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleViewQuote(quote)}
-                              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                              className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50"
                             >
-                              <Eye className="w-4 h-4 mr-1" />
+                              <Eye className="w-4 h-4 mr-2" />
                               View
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleUpdateQuote(quote)}
-                              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                              className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50"
                             >
-                              <Edit className="w-4 h-4 mr-1" />
+                              <Edit className="w-4 h-4 mr-2" />
                               Edit
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownloadPDF(quote)}
-                              className="text-blue-600 border-blue-200 hover:bg-blue-50 download-btn"
-                              data-quote-id={quote.id}
-                            >
-                              <Download className="w-4 h-4 mr-1" />
-                              PDF
-                            </Button>
                           </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadPDF(quote)}
+                            className="w-full text-blue-600 border-blue-200 hover:bg-blue-50 download-btn"
+                            data-quote-id={quote.id}
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Download PDF
+                          </Button>
                         </div>
                       </div>
                     </Card>

@@ -951,42 +951,43 @@ export default function QuoteManagementPage() {
                 </div>
               ) : (
                 current.map((row, index) => (
-                  <Card key={row.id} className="p-4 border-slate-200">
-                    <div className="space-y-3">
+                  <Card key={row.id} className="p-4 border-slate-200 bg-white shadow-sm">
+                    <div className="space-y-4">
                       {/* Header with Quote ID and Status */}
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-sm font-medium text-slate-900 bg-slate-100 px-2 py-1 rounded">
+                        <span className="font-mono text-sm font-medium text-slate-900 bg-purple-100 text-purple-800 px-3 py-2 rounded-lg">
                           {row.quoteId}
                         </span>
-                                                 <StatusBadge value={row.status} />
+                        <StatusBadge value={row.status} />
                       </div>
                       
                       {/* Client Info */}
-                      <div className="space-y-1">
-                        <div className="font-medium text-slate-900">{row.clientName || 'N/A'}</div>
-                        <div className="text-sm text-slate-500">{row.contactPerson || 'N/A'}</div>
+                      <div className="bg-slate-50 p-3 rounded-lg">
+                        <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Client</div>
+                        <div className="font-semibold text-slate-900">{row.clientName || 'N/A'}</div>
+                        <div className="text-sm text-slate-600">{row.contactPerson || 'N/A'}</div>
                       </div>
                       
                       {/* Product and Quantity */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-sm text-slate-500">Product:</span>
-                          <div className="text-sm text-slate-700">{row.productName || row.product || 'N/A'}</div>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Product</div>
+                          <div className="font-medium text-slate-900">{row.productName || row.product || 'N/A'}</div>
                         </div>
-                        <div>
-                          <span className="text-sm text-slate-500">Quantity:</span>
-                          <div className="text-sm text-slate-700">{row.quantity || 0}</div>
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Quantity</div>
+                          <div className="font-medium text-slate-900">{row.quantity || 0}</div>
                         </div>
                       </div>
                       
                       {/* Date and Amount */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-sm text-slate-500">Date:</span>
-                          <div className="text-sm text-slate-700">{fmtDate(row.date)}</div>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Date</div>
+                          <div className="font-medium text-slate-900">{fmtDate(row.date)}</div>
                         </div>
-                        <div>
-                          <span className="text-sm text-slate-500">Amount:</span>
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Amount</div>
                           <div className="font-semibold text-slate-900">
                             {row.amount && row.amount > 0 ? (
                               `AED ${row.amount.toFixed(2)}`
@@ -1008,59 +1009,37 @@ export default function QuoteManagementPage() {
                       </div>
                       
                       {/* Actions */}
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                      <div className="flex flex-col space-y-2 pt-3 border-t border-slate-200">
                         <div className="flex space-x-2">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => onView(row)}
-                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                            className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50"
                           >
-                            <Eye className="w-4 h-4 mr-1" />
+                            <Eye className="w-4 h-4 mr-2" />
                             View
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => onEdit(row.id)}
-                            className="text-green-600 border-green-200 hover:bg-green-50"
+                            className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
                           >
-                            <Pencil className="w-4 h-4 mr-1" />
+                            <Pencil className="w-4 h-4 mr-2" />
                             Edit
                           </Button>
                         </div>
                         {row.status === "Approved" && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDownloadPDF(row, 'customer')}
-                                className="text-purple-600 border-purple-200 hover:bg-purple-50"
-                              >
-                                <Download className="w-4 h-4 mr-1" />
-                                PDF
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem 
-                                onClick={() => handleDownloadPDF(row, 'customer')}
-                                disabled={downloadingPDF === `${row.id}-customer`}
-                                className="text-green-700 hover:text-green-800 hover:bg-green-50"
-                              >
-                                <Download className="h-3 w-3 mr-2" />
-                                Customer PDF
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDownloadPDF(row, 'operations')}
-                                disabled={downloadingPDF === `${row.id}-operations`}
-                                className="text-orange-700 hover:text-orange-800 hover:bg-orange-50"
-                              >
-                                <Download className="h-3 w-3 mr-2" />
-                                Operations PDF
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadPDF(row, 'customer')}
+                            className="w-full text-purple-600 border-purple-200 hover:bg-purple-50"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Download PDF
+                          </Button>
                         )}
                       </div>
                     </div>
