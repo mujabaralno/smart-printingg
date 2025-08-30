@@ -179,8 +179,28 @@ export class DatabaseService {
         }
       }
       
+      // Ensure only valid fields are sent to the production database
+      const validClientData = {
+        clientType: clientData.clientType,
+        companyName: clientData.companyName || null,
+        contactPerson: clientData.contactPerson,
+        email: clientData.email,
+        phone: clientData.phone,
+        countryCode: clientData.countryCode,
+        role: clientData.role || null,
+        status: clientData.status || 'Active',
+        userId: clientData.userId || null,
+        address: clientData.address || null,
+        city: clientData.city || null,
+        state: clientData.state || null,
+        postalCode: clientData.postalCode || null,
+        country: clientData.country || null
+      }
+      
+      console.log('Validated client data for production:', JSON.stringify(validClientData, null, 2))
+      
       const client = await this.prisma.client.create({
-        data: clientData,
+        data: validClientData,
       });
       
       console.log('Client created successfully:', client.id)

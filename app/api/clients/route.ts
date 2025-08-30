@@ -51,8 +51,36 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    // Filter out fields that don't exist in the production database schema
+    // Production schema only supports these fields for Client model
+    const allowedFields = [
+      'clientType',
+      'companyName', 
+      'contactPerson',
+      'email',
+      'phone',
+      'countryCode',
+      'role',
+      'status',
+      'userId',
+      'address',
+      'city',
+      'state',
+      'postalCode',
+      'country'
+    ];
+    
+    const filteredClientData = Object.keys(body)
+      .filter(key => allowedFields.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = body[key];
+        return obj;
+      }, {} as any);
+    
+    console.log('Filtered client data for production database:', JSON.stringify(filteredClientData, null, 2));
+    
     const dbService = getDatabaseService();
-    const client = await dbService.createClient(body);
+    const client = await dbService.createClient(filteredClientData);
     
     console.log('Client created successfully:', client.id);
     return NextResponse.json(client);
