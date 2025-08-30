@@ -133,8 +133,7 @@ export default function SalesPersonManagementPage() {
 
   // Filter sales persons based on search and status
   const filteredSalesPersons = React.useMemo(() => {
-    console.log('Search term:', search);
-    console.log('Sales persons data:', salesPersons);
+    console.log('🔍 Sales Person Search:', { search, totalPersons: salesPersons.length });
     
     return salesPersons.filter((person) => {
       const searchTerm = search.toLowerCase().trim();
@@ -153,7 +152,14 @@ export default function SalesPersonManagementPage() {
       const matchesStatus = statusFilter === "all" || person.status === statusFilter;
       
       if (search !== "" && !matchesSearch) {
-        console.log('Person did not match search:', person.name, 'Search term:', searchTerm);
+        console.log('❌ Sales Person did not match search:', {
+          name: person.name,
+          search: searchTerm,
+          email: person.email,
+          phone: person.phone,
+          designation: person.designation,
+          department: person.department
+        });
       }
       
       return matchesSearch && matchesStatus;
@@ -288,12 +294,15 @@ export default function SalesPersonManagementPage() {
         <div className="flex flex-col lg:flex-row gap-6 items-end">
           <div className="flex-1 space-y-2">
             <label className="text-sm font-medium text-slate-700">Search</label>
-            <Input
-              placeholder="Search by name, email, or ID..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 text-base"
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+              <Input
+                placeholder="Search by name, email, ID, phone, or department..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 text-base"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Status</label>
@@ -319,7 +328,7 @@ export default function SalesPersonManagementPage() {
 
         {/* Results Summary */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-sm text-slate-600">
-          <span>Showing {salesPersons.length} sales persons</span>
+          <span>Showing {filteredSalesPersons.length} of {salesPersons.length} sales persons</span>
         </div>
 
         {/* Sales Person Summary */}
@@ -375,14 +384,14 @@ export default function SalesPersonManagementPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ) : salesPersons.length === 0 ? (
+                  ) : filteredSalesPersons.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-16 text-slate-500">
-                        No sales persons found.
+                        {salesPersons.length === 0 ? "No sales persons found." : `No sales persons found matching "${search}".`}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    salesPersons.map((person) => (
+                    filteredSalesPersons.map((person) => (
                       <TableRow key={person.id} className="hover:bg-slate-50 transition-colors duration-200 border-slate-100">
                         <TableCell className="p-4">
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#ea078b]/20 text-[#ea078b]">

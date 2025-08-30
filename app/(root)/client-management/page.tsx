@@ -295,20 +295,35 @@ export default function ClientManagementPage() {
   // filtering
   const filtered = React.useMemo(() => {
     const s = search.trim().toLowerCase();
+    console.log('🔍 Client Search:', { search: s, totalRows: rows.length });
+    
     return rows.filter((r) => {
       const hitSearch =
         s === "" || 
-        r.companyName.toLowerCase().includes(s) ||
-        r.contactPerson.toLowerCase().includes(s) ||
-        r.email.toLowerCase().includes(s) ||
-        r.id.toLowerCase().includes(s) ||
+        (r.companyName && r.companyName.toLowerCase().includes(s)) ||
+        (r.contactPerson && r.contactPerson.toLowerCase().includes(s)) ||
+        (r.email && r.email.toLowerCase().includes(s)) ||
+        (r.id && r.id.toLowerCase().includes(s)) ||
         (r.firstName && r.firstName.toLowerCase().includes(s)) ||
         (r.lastName && r.lastName.toLowerCase().includes(s));
 
       const hitStatus = statusFilter === "all" || r.status === statusFilter;
       const hitClientType = clientTypeFilter === "all" || r.clientType === clientTypeFilter;
 
-      return hitSearch && hitStatus && hitClientType;
+      const matches = hitSearch && hitStatus && hitClientType;
+      
+      if (s !== "" && !hitSearch) {
+        console.log('❌ Client did not match search:', {
+          name: r.companyName || `${r.firstName} ${r.lastName}`,
+          search: s,
+          companyName: r.companyName,
+          contactPerson: r.contactPerson,
+          email: r.email,
+          id: r.id
+        });
+      }
+
+      return matches;
     });
   }, [rows, search, statusFilter, clientTypeFilter]);
 
@@ -613,12 +628,15 @@ export default function ClientManagementPage() {
         {/* Search and Add Client */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
-            <Input
-              placeholder="Search by company name, contact person, or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+              <Input
+                placeholder="Search by company name, contact person, email, or ID..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
+              />
+            </div>
           </div>
           <Button
             onClick={() => setOpen(true)}
