@@ -514,6 +514,16 @@ html, body {
 
 /* Mobile-specific optimizations ONLY */
 @media (max-width: 1024px) {
+  /* Force mobile cards to display and hide desktop tables */
+  .lg\\:hidden {
+    display: block !important;
+  }
+  
+  /* Hide desktop tables on mobile */
+  .block:not(.lg\\:hidden) {
+    display: none !important;
+  }
+  
   /* Ensure mobile cards are properly spaced */
   .lg\\:hidden .space-y-4 > * {
     margin-bottom: 1rem !important;
@@ -577,6 +587,44 @@ html, body {
     word-wrap: break-word !important;
     overflow-wrap: break-word !important;
   }
+  
+  /* Force table containers to use mobile layout */
+  [data-slot="table"],
+  [role="table"],
+  .overflow-x-auto {
+    display: none !important;
+  }
+  
+  /* Ensure mobile cards are visible */
+  .lg\\:hidden .space-y-4 {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Mobile card styling */
+  .lg\\:hidden .p-4.border-slate-200 {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0.5rem !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Mobile badge styling */
+  .lg\\:hidden .font-mono.text-sm {
+    display: inline-block !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 0.5rem !important;
+    font-weight: 500 !important;
+  }
+  
+  /* Mobile section styling */
+  .lg\\:hidden .bg-slate-50.p-3 {
+    background: #f8fafc !important;
+    padding: 0.75rem !important;
+    border-radius: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+  }
 }
 
 /* Better table spacing and layout */
@@ -592,33 +640,17 @@ table.min-w-full td .inline-flex {
   word-break: break-all !important;
 }
 
-/* Mobile-specific optimizations */
-@media (max-width: 1024px) {
-  /* Mobile card improvements */
-  .lg\\:hidden .space-y-4 > * {
-    margin-bottom: 1rem !important;
-  }
-  
-  /* Mobile button improvements */
-  .lg\\:hidden button {
-    min-height: 44px !important; /* Better touch targets */
-    font-size: 14px !important;
-  }
-  
-  /* Mobile card shadows and borders */
-  .lg\\:hidden .shadow-sm {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
-  }
-  
-  /* Mobile spacing improvements */
-  .lg\\:hidden .space-y-4 > * + * {
-    margin-top: 1rem !important;
-  }
-  
-  /* Mobile grid improvements */
-  .lg\\:hidden .grid-cols-1 {
-    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
-  }
+/* Better table spacing and layout */
+table.min-w-full th,
+table.min-w-full td {
+  padding: 12px 16px !important;
+  vertical-align: top !important;
+}
+
+/* Ensure Quote ID badges have proper spacing */
+table.min-w-full td .inline-flex {
+  max-width: 100% !important;
+  word-break: break-all !important;
 }
 
 /* Allow some columns to wrap text for better readability */
@@ -651,6 +683,36 @@ table.min-w-full td .inline-flex {
 [role="table"] {
   overflow: hidden !important;
   max-width: 100% !important;
+}
+
+/* Force mobile layout on small screens */
+@media (max-width: 1024px) {
+  /* Hide all table containers on mobile */
+  .overflow-x-auto,
+  .min-w-\\[.*\\],
+  table {
+    display: none !important;
+  }
+  
+  /* Show mobile cards */
+  .lg\\:hidden {
+    display: block !important;
+  }
+  
+  /* Ensure mobile cards are properly styled */
+  .lg\\:hidden .space-y-4 {
+    display: block !important;
+    padding: 1rem !important;
+  }
+  
+  /* Mobile card styling */
+  .lg\\:hidden .p-4 {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0.5rem !important;
+    margin-bottom: 1rem !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
+  }
 }
 
 /* Prevent horizontal scrolling on mobile */
