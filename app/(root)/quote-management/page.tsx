@@ -424,7 +424,7 @@ export default function QuoteManagementPage() {
   };
 
   const onSubmitEdit = async () => {
-    if (!draft.id || !draft.clientName || !draft.contactPerson || !draft.date || draft.amount === "") {
+    if (!draft.id || !draft.clientName || !draft.contactPerson || !draft.date || draft.amount === "" || (typeof draft.amount === 'number' && draft.amount <= 0)) {
       alert("Please complete all required fields.");
       return;
     }
@@ -492,6 +492,8 @@ export default function QuoteManagementPage() {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Quote update failed:', response.status, errorData);
+        console.error('Request data sent:', updateData);
+        console.error('Quote ID:', draft.id);
         throw new Error(errorData.error || `HTTP ${response.status}: Failed to update quote`);
       }
 
