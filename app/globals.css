@@ -558,6 +558,25 @@ html, body {
     max-width: 100% !important;
     overflow-x: hidden !important;
   }
+  
+  /* Ensure all mobile content stays within bounds */
+  .lg\\:hidden * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Mobile card specific fixes */
+  .lg\\:hidden .bg-slate-50 {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+  
+  /* Mobile text wrapping */
+  .lg\\:hidden .font-semibold,
+  .lg\\:hidden .font-medium {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
 }
 
 /* Better table spacing and layout */
