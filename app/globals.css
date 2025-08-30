@@ -1046,6 +1046,58 @@ header {
   .mobile-backdrop.show {
     opacity: 1 !important;
   }
+}
 
-
+/* Sales Person Management Mobile Specific Styles */
+@media (max-width: 1024px) {
+  /* Ensure sales person mobile cards are properly displayed */
+  .lg\\:hidden .space-y-4 {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Sales person mobile card styling */
+  .lg\\:hidden .p-4.border-slate-200 {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0.75rem !important;
+    margin-bottom: 1rem !important;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05) !important;
+  }
+  
+  /* Sales person mobile badge styling */
+  .lg\\:hidden .font-mono.text-sm.bg-orange-100 {
+    display: inline-block !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 0.5rem !important;
+    font-weight: 500 !important;
+    background: #fed7aa !important;
+    color: #ea580c !important;
+  }
+  
+  /* Sales person mobile section styling */
+  .lg\\:hidden .bg-slate-50.p-3 {
+    background: #f8fafc !important;
+    padding: 0.75rem !important;
+    border-radius: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* Sales person mobile button styling */
+  .lg\\:hidden button {
+    background: white !important;
+    border: 1px solid #fbbf24 !important;
+    color: #d97706 !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 0.5rem !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .lg\\:hidden button:hover {
+    background: #fef3c7 !important;
+    border-color: #f59e0b !important;
+    color: #b45309 !important;
+  }
 }

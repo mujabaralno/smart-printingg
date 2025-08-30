@@ -361,7 +361,7 @@ export default function SalesPersonManagementPage() {
         <Card className="shadow-xl border-0 bg-white">
           <CardContent className="p-0">
             {/* Desktop Table */}
-            <div className="block overflow-x-auto min-w-[800px]">
+            <div className="hidden lg:block overflow-x-auto min-w-[800px]">
               <Table className="min-w-full">
                 <TableHeader className="bg-slate-50">
                   <TableRow className="border-slate-200">
@@ -457,12 +457,12 @@ export default function SalesPersonManagementPage() {
                     <span>Loading sales persons...</span>
                   </div>
                 </div>
-              ) : salesPersons.length === 0 ? (
+              ) : filteredSalesPersons.length === 0 ? (
                 <div className="text-center py-16 text-slate-500">
-                  No sales persons found.
+                  {salesPersons.length === 0 ? "No sales persons found." : `No sales persons found matching "${search}".`}
                 </div>
               ) : (
-                salesPersons.map((person) => (
+                filteredSalesPersons.map((person) => (
                   <Card key={person.id} className="p-4 border-slate-200 bg-white shadow-sm">
                     <div className="space-y-4">
                       {/* Header with Sales Person ID and Status */}
@@ -493,7 +493,7 @@ export default function SalesPersonManagementPage() {
                           )}
                           <div className="flex-1">
                             <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Sales Person</div>
-                            <div className="font-semibold text-slate-900">{person.name}</div>
+                            <div className="font-semibold text-slate-900 text-lg">{person.name}</div>
                             <div className="text-sm text-slate-600">{person.designation}</div>
                           </div>
                         </div>
@@ -503,7 +503,7 @@ export default function SalesPersonManagementPage() {
                       <div className="grid grid-cols-1 gap-3">
                         <div className="bg-slate-50 p-3 rounded-lg">
                           <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Email</div>
-                          <div className="font-medium text-slate-900">{person.email}</div>
+                          <div className="font-medium text-slate-900 break-all">{person.email}</div>
                         </div>
                         <div className="bg-slate-50 p-3 rounded-lg">
                           <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Phone</div>
