@@ -4,9 +4,14 @@ import { convertToEmpFormat } from '@/lib/auth';
 
 export async function GET() {
   try {
-    const users = await DatabaseService.getAllUsers();
-    const clients = await DatabaseService.getAllClients();
-    const quotes = await DatabaseService.getAllQuotes();
+    const dbService = new DatabaseService();
+    const prisma = dbService.getClient();
+    
+    const [users, clients, quotes] = await Promise.all([
+      prisma.user.findMany({ orderBy: { createdAt: 'desc' } }),
+      prisma.client.findMany({ orderBy: { createdAt: 'desc' } }),
+      prisma.quote.findMany({ orderBy: { createdAt: 'desc' } })
+    ]);
     
     return NextResponse.json({
       status: 'ok',
