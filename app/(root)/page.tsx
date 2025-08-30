@@ -762,8 +762,8 @@ export default function DashboardPage() {
           <Card className="border-0 shadow-lg">
             <CardContent className="p-0">
               {/* Desktop Table */}
-              <div className="block overflow-x-auto">
-                <table className="w-full table-fixed" style={{ tableLayout: 'fixed' }}>
+              <div className="block overflow-x-auto min-w-[900px]">
+                <table className="min-w-full">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50">
                       <th className="text-left p-4 font-semibold text-slate-700 w-36">Quote ID</th>
@@ -772,7 +772,7 @@ export default function DashboardPage() {
                       <th className="text-left p-4 font-semibold text-slate-700 w-28">Date</th>
                       <th className="text-left p-4 font-semibold text-slate-700 w-28">Amount</th>
                       <th className="text-left p-4 font-semibold text-slate-700 w-20">Status</th>
-                      <th className="text-left p-4 font-semibold text-slate-700 w-32">Actions</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-32 min-w-[120px]">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -840,7 +840,7 @@ export default function DashboardPage() {
                             </span>
                           </div>
                         </td>
-                        <td className="p-4 w-32">
+                        <td className="p-4 w-32 min-w-[120px]">
                           <div className="truncate">
                             <div className="flex items-center space-x-2">
                               <Button
