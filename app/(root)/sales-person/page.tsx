@@ -352,8 +352,8 @@ export default function SalesPersonManagementPage() {
         <Card className="shadow-xl border-0 bg-white">
           <CardContent className="p-0">
             {/* Desktop Table */}
-                          <div className="block overflow-x-auto">
-              <Table>
+            <div className="block overflow-x-auto min-w-[800px]">
+              <Table className="min-w-full">
                 <TableHeader className="bg-slate-50">
                   <TableRow className="border-slate-200">
                     <TableHead className="text-slate-700 font-semibold p-4">ID</TableHead>
@@ -362,7 +362,7 @@ export default function SalesPersonManagementPage() {
                     <TableHead className="text-slate-700 font-semibold p-4">Phone Number</TableHead>
                     <TableHead className="text-slate-700 font-semibold p-4">Department & Role</TableHead>
                     <TableHead className="text-slate-700 font-semibold p-4">Status</TableHead>
-                    <TableHead className="text-center text-slate-700 font-semibold p-4">Actions</TableHead>
+                    <TableHead className="text-center text-slate-700 font-semibold p-4 w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
