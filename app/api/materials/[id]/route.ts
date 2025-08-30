@@ -29,6 +29,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const dbService = new DatabaseService();
     const body = await request.json();
     const material = await dbService.updateMaterial(params.id, body);
     return NextResponse.json(material);
