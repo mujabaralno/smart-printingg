@@ -26,7 +26,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Edit3, ChevronDown, ChevronUp, Filter } from "lucide-react";
+import { Plus, Edit3, ChevronDown, ChevronUp, Filter, Search } from "lucide-react";
 import StatusChip from "@/components/shared/StatusChip";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
