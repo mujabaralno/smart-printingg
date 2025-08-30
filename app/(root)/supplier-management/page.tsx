@@ -484,7 +484,7 @@ function SupplierManagementContent() {
         )}
 
         {/* Desktop Table - Completely Fixed Width */}
-        <div className="block border border-slate-200 rounded-2xl">
+        <div className="hidden lg:block border border-slate-200 rounded-2xl">
           <Table className="w-full table-fixed" style={{ tableLayout: 'fixed', width: '100%', overflow: 'hidden' }}>
             <TableHeader className="bg-slate-50">
               <TableRow className="border-slate-200">

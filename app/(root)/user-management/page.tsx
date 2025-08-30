@@ -376,7 +376,7 @@ export default function UserManagementPage() {
             {/* Table - Mobile Responsive */}
             <div className="overflow-hidden border border-slate-200 rounded-2xl">
               {/* Desktop Table */}
-              <div className="block">
+              <div className="hidden lg:block">
                 <Table>
                   <TableHeader className="bg-slate-50">
                     <TableRow className="border-slate-200">

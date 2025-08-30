@@ -764,7 +764,7 @@ export default function ClientManagementPage() {
         <Card className="shadow-xl border-0 bg-white">
           <CardContent className="p-0">
             {/* Desktop Table */}
-                          <div className="block overflow-x-auto">
+            <div className="hidden lg:block overflow-x-auto">
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow className="border-slate-200">
