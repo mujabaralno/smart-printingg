@@ -795,45 +795,45 @@ export default function DashboardPage() {
                       filteredQuotes.map((quote: any, index: number) => (
                       <tr key={`${quote.id}-${quote.status}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors duration-200">
                         <td className="p-4 w-36">
-                          <div className="truncate">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                          <div>
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 break-all">
                               {quote.quoteId}
                             </span>
                           </div>
                         </td>
                         <td className="p-4 w-36">
-                          <div className="truncate">
+                          <div>
                             <div className="flex items-center space-x-3">
                               <span className="font-medium text-slate-900">{quote.customerName}</span>
                             </div>
                           </div>
                         </td>
                         <td className="p-4 w-36">
-                          <div className="truncate">
+                          <div>
                             <div className="flex items-center space-x-2">
                               <span className="text-slate-700">{quote.product || 'N/A'}</span>
                             </div>
                           </div>
                         </td>
                         <td className="p-4 w-28">
-                          <div className="truncate">
+                          <div>
                             <div className="flex items-center space-x-2">
                               <span className="text-slate-700">{formatDate(quote.createdDate)}</span>
                             </div>
                           </div>
                         </td>
                         <td className="p-4 w-28">
-                          <div className="truncate">
+                          <div>
                             <span className="font-semibold text-slate-900">AED {isNaN(quote.totalAmount) ? '0.00' : (quote.totalAmount || 0).toFixed(2)}</span>
                           </div>
                         </td>
                         <td className="p-4 w-20">
-                          <div className="truncate">
+                          <div>
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              quote.status === "Approved" 
-                                ? "bg-emerald-100 text-emerald-700"
-                                : quote.status === "Pending"
+                              quote.status === "Pending" 
                                 ? "bg-amber-100 text-amber-700"
+                                : quote.status === "Approved"
+                                ? "bg-emerald-100 text-emerald-700"
                                 : "bg-rose-100 text-rose-700"
                             }`}>
                               {quote.status}
@@ -841,7 +841,7 @@ export default function DashboardPage() {
                           </div>
                         </td>
                         <td className="p-4 w-32 min-w-[120px]">
-                          <div className="truncate">
+                          <div>
                             <div className="flex items-center space-x-2">
                               <Button
                                 variant="ghost"

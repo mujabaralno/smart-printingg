@@ -488,15 +488,15 @@ function SupplierManagementContent() {
           <Table className="w-full table-fixed" style={{ tableLayout: 'fixed', width: '100%', overflow: 'hidden' }}>
             <TableHeader className="bg-slate-50">
               <TableRow className="border-slate-200">
-                <TableHead className="text-slate-700 font-semibold p-4 w-20">Material ID</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-32">Material</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-16">GSM</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-28">Supplier</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-20">Cost</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-16">Unit</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-24">Last Updated</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-4 w-24">Material ID</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-4 w-40">Material</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-4 w-20">GSM</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-4 w-36">Supplier</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-4 w-24">Cost</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-4 w-20">Unit</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-4 w-28">Last Updated</TableHead>
                 <TableHead className="text-slate-700 font-semibold p-4 w-24">Status</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-24">Actions</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-4 w-28">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -540,13 +540,13 @@ function SupplierManagementContent() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-32">
-                      <div className="truncate">{r.name}</div>
+                    <TableCell className="text-slate-700 p-4 w-40 wrap-text">
+                      <div>{r.name}</div>
                     </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-16">
-                      <div className="truncate">
+                    <TableCell className="text-slate-700 p-4 w-24">
+                      <div>
                         {r.gsm ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-[#27aae1]/20 text-[#27aae1]">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#27aae1]/20 text-[#27aae1] whitespace-nowrap">
                             {r.gsm} gsm
                           </span>
                         ) : (
@@ -554,20 +554,20 @@ function SupplierManagementContent() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-28">
-                      <div className="truncate">{r.supplier.name}</div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-20">
-                      <div className="truncate">{currency.format(r.cost)}</div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-16">
-                      <div className="truncate">{unitLabel(r.unit)}</div>
+                    <TableCell className="text-slate-700 p-4 w-36 wrap-text">
+                      <div>{r.supplier.name}</div>
                     </TableCell>
                     <TableCell className="text-slate-700 p-4 w-24">
-                      <div className="truncate">{fmtDate(r.lastUpdated)}</div>
+                      <div>{currency.format(r.cost)}</div>
                     </TableCell>
-                    <TableCell className="p-4 w-20">
-                      <div className="truncate">
+                    <TableCell className="text-slate-700 p-4 w-20">
+                      <div>{unitLabel(r.unit)}</div>
+                    </TableCell>
+                    <TableCell className="text-slate-700 p-4 w-28">
+                      <div>{fmtDate(r.lastUpdated)}</div>
+                    </TableCell>
+                    <TableCell className="p-4 w-24">
+                      <div>
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                           r.status === "Active" 
                             ? "bg-green-100 text-green-800" 
@@ -577,8 +577,8 @@ function SupplierManagementContent() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="p-4 w-24">
-                      <div className="truncate">
+                    <TableCell className="p-4 w-28">
+                      <div>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
