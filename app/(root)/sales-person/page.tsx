@@ -463,70 +463,77 @@ export default function SalesPersonManagementPage() {
                 </div>
               ) : (
                 salesPersons.map((person) => (
-                  <Card key={person.id} className="p-4 border-slate-200">
-                    <div className="space-y-3">
+                  <Card key={person.id} className="p-4 border-slate-200 bg-white shadow-sm">
+                    <div className="space-y-4">
                       {/* Header with Sales Person ID and Status */}
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-slate-600">{person.salesPersonId}</span>
-                        </div>
+                        <span className="font-mono text-sm font-medium text-slate-900 bg-orange-100 text-orange-800 px-3 py-2 rounded-lg">
+                          {person.salesPersonId}
+                        </span>
                         <StatusChip value={person.status} />
                       </div>
                       
                       {/* Sales Person Info */}
-                      <div className="flex items-center space-x-3">
-                        {person.profilePicture ? (
-                          <div className="w-12 h-12 rounded-full overflow-hidden">
-                            <img 
-                              src={person.profilePicture} 
-                              alt={`${person.name}'s profile`}
-                              className="w-full h-full object-cover"
-                            />
+                      <div className="bg-slate-50 p-3 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          {person.profilePicture ? (
+                            <div className="w-12 h-12 rounded-full overflow-hidden">
+                              <img 
+                                src={person.profilePicture} 
+                                alt={`${person.name}'s profile`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+                              <span className="text-white text-sm font-medium">
+                                {person.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Sales Person</div>
+                            <div className="font-semibold text-slate-900">{person.name}</div>
+                            <div className="text-sm text-slate-600">{person.designation}</div>
                           </div>
-                        ) : null}
-                        <div>
-                          <div className="font-medium text-slate-900 text-lg">{person.name}</div>
-                          <div className="text-sm text-slate-500">{person.designation}</div>
                         </div>
                       </div>
                       
                       {/* Contact Details */}
-                      <div className="grid grid-cols-1 gap-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-slate-500">Email:</span>
-                          <span className="text-sm text-slate-700">{person.email}</span>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Email</div>
+                          <div className="font-medium text-slate-900">{person.email}</div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-slate-500">Phone:</span>
-                          <span className="text-sm text-slate-700">{person.phone}</span>
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Phone</div>
+                          <div className="font-medium text-slate-900">{person.phone}</div>
                         </div>
                       </div>
                       
                       {/* Department and Hire Date */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-sm text-slate-500">Department:</span>
-                          <div className="text-sm text-slate-700">{person.department}</div>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Department</div>
+                          <div className="font-medium text-slate-900">{person.department}</div>
                         </div>
-                        <div>
-                          <span className="text-sm text-slate-500">Hire Date:</span>
-                          <div className="text-sm text-slate-700">{person.hireDate}</div>
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Hire Date</div>
+                          <div className="font-medium text-slate-900">{person.hireDate}</div>
                         </div>
                       </div>
                       
                       {/* Actions */}
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditPerson(person)}
-                            className="text-[#f89d1d] border-[#f89d1d]/30 hover:bg-[#f89d1d]/10"
-                          >
-                            <Edit3 className="w-4 h-4 mr-1" />
-                            Edit
-                          </Button>
-                        </div>
+                      <div className="flex items-center justify-center pt-3 border-t border-slate-200">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditPerson(person)}
+                          className="w-full text-[#f89d1d] border-[#f89d1d]/30 hover:bg-[#f89d1d]/10"
+                        >
+                          <Edit3 className="w-4 h-4 mr-2" />
+                          Edit Sales Person
+                        </Button>
                       </div>
                     </div>
                   </Card>
