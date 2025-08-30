@@ -594,15 +594,24 @@ function AddSalesPersonForm({ onSubmit, onCancel }: {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('📝 AddSalesPersonForm: Form submitted with data:', formData);
-    console.log('📝 AddSalesPersonForm: Form data type:', typeof formData);
-    console.log('📝 AddSalesPersonForm: Form data keys:', Object.keys(formData));
+    
+    // Convert date to ISO string for database compatibility
+    const submitData = {
+      ...formData,
+      hireDate: new Date(formData.hireDate).toISOString()
+    };
+    
+    console.log('📝 AddSalesPersonForm: Form submitted with data:', submitData);
+    console.log('📝 AddSalesPersonForm: Form data type:', typeof submitData);
+    console.log('📝 AddSalesPersonForm: Form data keys:', Object.keys(submitData));
     console.log('📝 AddSalesPersonForm: Required fields check:', {
-      name: !!formData.name,
-      email: !!formData.email,
-      phone: !!formData.phone
+      name: !!submitData.name,
+      email: !!submitData.email,
+      phone: !!submitData.phone
     });
-    onSubmit(formData);
+    console.log('📝 AddSalesPersonForm: Hire date converted:', submitData.hireDate);
+    
+    onSubmit(submitData);
   };
 
   return (
@@ -820,11 +829,20 @@ function EditSalesPersonForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('📝 EditSalesPersonForm: Form submitted with data:', formData);
-    console.log('📝 EditSalesPersonForm: Form data type:', typeof formData);
-    console.log('📝 EditSalesPersonForm: Form data keys:', Object.keys(formData));
-    console.log('📝 EditSalesPersonForm: Status value:', formData.status);
-    onSubmit(formData);
+    
+    // Convert date to ISO string for database compatibility
+    const submitData = {
+      ...formData,
+      hireDate: new Date(formData.hireDate).toISOString()
+    };
+    
+    console.log('📝 EditSalesPersonForm: Form submitted with data:', submitData);
+    console.log('📝 EditSalesPersonForm: Form data type:', typeof submitData);
+    console.log('📝 EditSalesPersonForm: Form data keys:', Object.keys(submitData));
+    console.log('📝 EditSalesPersonForm: Status value:', submitData.status);
+    console.log('📝 EditSalesPersonForm: Hire date converted:', submitData.hireDate);
+    
+    onSubmit(submitData);
   };
 
   return (
