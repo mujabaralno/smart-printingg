@@ -490,6 +490,28 @@ html, body {
   white-space: nowrap !important;
 }
 
+/* Ensure tables never scroll horizontally */
+.overflow-x-auto {
+  overflow-x: hidden !important;
+}
+
+/* Force mobile cards instead of horizontal scrolling */
+@media (max-width: 1024px) {
+  .lg\\:hidden {
+    display: block !important;
+  }
+  
+  /* Hide desktop tables on mobile */
+  .block:not(.lg\\:hidden) {
+    display: none !important;
+  }
+  
+  /* Ensure mobile cards are properly spaced */
+  .lg\\:hidden .space-y-4 > * {
+    margin-bottom: 1rem !important;
+  }
+}
+
 /* Better table spacing and layout */
 table.min-w-full th,
 table.min-w-full td {

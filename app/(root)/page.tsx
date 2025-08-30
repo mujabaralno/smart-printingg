@@ -762,17 +762,17 @@ export default function DashboardPage() {
           <Card className="border-0 shadow-lg">
             <CardContent className="p-0">
               {/* Desktop Table */}
-              <div className="block overflow-x-auto min-w-[900px]">
-                <table className="min-w-full">
+              <div className="block">
+                <table className="w-full table-fixed" style={{ tableLayout: 'fixed', width: '100%', overflow: 'hidden' }}>
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50">
-                      <th className="text-left p-4 font-semibold text-slate-700 w-44">Quote ID</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-36">Quote ID</th>
                       <th className="text-left p-4 font-semibold text-slate-700 w-32">Client Name</th>
-                      <th className="text-left p-4 font-semibold text-slate-700 w-28">Product</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-24">Product</th>
                       <th className="text-left p-4 font-semibold text-slate-700 w-24">Date</th>
                       <th className="text-left p-4 font-semibold text-slate-700 w-24">Amount</th>
                       <th className="text-left p-4 font-semibold text-slate-700 w-20">Status</th>
-                      <th className="text-left p-4 font-semibold text-slate-700 w-28">Actions</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-24">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -794,7 +794,7 @@ export default function DashboardPage() {
                     ) : (
                       filteredQuotes.map((quote: any, index: number) => (
                       <tr key={`${quote.id}-${quote.status}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors duration-200">
-                        <td className="p-4 w-44">
+                        <td className="p-4 w-36">
                           <div>
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 break-all">
                               {quote.quoteId}
@@ -808,7 +808,7 @@ export default function DashboardPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="p-4 w-28">
+                        <td className="p-4 w-24">
                           <div>
                             <div className="flex items-center space-x-2">
                               <span className="text-slate-700">{quote.product || 'N/A'}</span>
@@ -840,7 +840,7 @@ export default function DashboardPage() {
                             </span>
                           </div>
                         </td>
-                        <td className="p-4 w-28">
+                        <td className="p-4 w-24">
                           <div>
                             <div className="flex items-center space-x-2">
                               <Button
