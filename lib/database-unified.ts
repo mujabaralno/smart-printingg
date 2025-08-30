@@ -4,16 +4,12 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// Determine which database to use based on environment
-const isProduction = process.env.NODE_ENV === 'production'
-const hasVercelDatabase = !!process.env.DATABASE_URL
-
-// Create Prisma client with appropriate configuration
+// Create Prisma client with SQLite configuration (as it was working before)
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || 'file:./prisma/dev.db',
+      url: 'file:./dev.db',
     },
   },
 })
@@ -46,7 +42,7 @@ export class DatabaseService {
   // Get database info
   async getDatabaseInfo() {
     try {
-      const result = await this.prisma.$queryRaw`SELECT version()`
+      const result = await this.prisma.$queryRaw`SELECT sqlite_version() as version`
       return { 
         status: 'connected', 
         info: result,
