@@ -800,6 +800,10 @@ function EditSalesPersonForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('📝 EditSalesPersonForm: Form submitted with data:', formData);
+    console.log('📝 EditSalesPersonForm: Form data type:', typeof formData);
+    console.log('📝 EditSalesPersonForm: Form data keys:', Object.keys(formData));
+    console.log('📝 EditSalesPersonForm: Status value:', formData.status);
     onSubmit(formData);
   };
 
@@ -891,7 +895,10 @@ function EditSalesPersonForm({
           <Label htmlFor="edit-status" className="text-sm font-medium text-gray-700 mb-2 block">
             Status
           </Label>
-          <Select value={formData.status} onValueChange={(value: "Active" | "Inactive") => setFormData(prev => ({ ...prev, status: value }))}>
+          <Select value={formData.status} onValueChange={(value: "Active" | "Inactive") => {
+            console.log('🔄 EditSalesPersonForm: Status changed from:', formData.status, 'to:', value);
+            setFormData(prev => ({ ...prev, status: value }));
+          }}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
