@@ -298,7 +298,7 @@ export class DatabaseService {
       console.log('Creating quote with data:', JSON.stringify(quoteData, null, 2));
       
       // Extract nested data that needs to be created separately
-      const { papers, finishing, amounts, ...mainQuoteData } = quoteData;
+      const { papers, finishing, amounts, operational, ...mainQuoteData } = quoteData;
       
       // Create the main quote first
       const quote = await this.prisma.quote.create({
@@ -326,7 +326,7 @@ export class DatabaseService {
       }
       
       // Create finishing if provided
-      if (finishing && Array.isArray(finishing) && papers.length > 0) {
+      if (finishing && Array.isArray(finishing) && finishing.length > 0) {
         console.log('Creating finishing for quote:', finishing.length);
         for (const finish of finishing) {
           await this.prisma.finishing.create({
@@ -351,6 +351,21 @@ export class DatabaseService {
         console.log('Amounts created successfully');
       }
       
+      // Create operational data if provided
+      if (operational) {
+        console.log('Creating operational data for quote');
+        await this.prisma.quoteOperational.create({
+          data: {
+            id: quote.id, // Use the quote ID as the operational ID (1:1 relationship)
+            plates: operational.plates || 0,
+            units: operational.units || 0,
+            quoteId: quote.id,
+            updatedAt: new Date()
+          }
+        });
+        console.log('Operational data created successfully');
+      }
+      
       // Fetch the complete quote with all relations
       const completeQuote = await this.prisma.quote.findUnique({
         where: { id: quote.id },
@@ -359,7 +374,8 @@ export class DatabaseService {
           user: true,
           papers: true,
           finishing: true,
-          amounts: true
+          amounts: true,
+          QuoteOperational: true
         }
       });
       
