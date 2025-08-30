@@ -92,6 +92,20 @@ export default function DashboardPage() {
     }
   }, []); // Remove router dependency to run immediately
 
+  // Cleanup effect for update modal
+  useEffect(() => {
+    if (!isUpdateModalOpen) {
+      // Reset states when modal is closed
+      const timer = setTimeout(() => {
+        setUpdateStatusValue("");
+        setSelectedQuote(null);
+        setIsUpdating(false);
+      }, 100); // Small delay to ensure modal animation completes
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isUpdateModalOpen]);
+
   // Load quotes from database on page load
   useEffect(() => {
     const loadQuotes = async () => {
@@ -347,9 +361,14 @@ export default function DashboardPage() {
     
     console.log('Opening update modal for quote:', quote);
     console.log('Quote status:', quote.status);
+    
+    // Set both states together to ensure consistency
     setSelectedQuote(quote);
     setUpdateStatusValue(quote.status || "");
+    
     console.log('Set updateStatusValue to:', quote.status || "");
+    
+    // Open the modal
     setIsUpdateModalOpen(true);
   };
 
@@ -513,12 +532,14 @@ export default function DashboardPage() {
               <Button 
                 variant="outline"
                 onClick={() => {
+                  // Store the quote reference before closing the view modal
+                  const quoteToEdit = selectedQuote;
+                  
                   // Close view modal first
                   setIsViewModalOpen(false);
-                  setSelectedQuote(null);
                   
-                  // Then open update modal
-                  handleUpdateQuote(selectedQuote);
+                  // Then open update modal with the stored quote reference
+                  handleUpdateQuote(quoteToEdit);
                 }}
               >
                 Edit Quote
@@ -536,22 +557,26 @@ export default function DashboardPage() {
         open={isUpdateModalOpen} 
         onOpenChange={(open) => {
           if (!open) {
-            // Force close and reset all states
+            // Only reset states when actually closing the modal
             setIsUpdateModalOpen(false);
-            setUpdateStatusValue("");
-            setSelectedQuote(null);
-            setIsUpdating(false);
+            // Don't reset other states immediately to avoid race conditions
           }
         }}
       >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Update Quote - {selectedQuote?.quoteNumber}</DialogTitle>
+            <DialogTitle>Update Quote - {selectedQuote?.quoteId}</DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
             <div>
               <label className="text-sm font-medium text-gray-600">Update Status</label>
-              <Select value={updateStatusValue} onValueChange={setUpdateStatusValue}>
+              <Select 
+                value={updateStatusValue} 
+                onValueChange={(value) => {
+                  console.log('Select value changed to:', value);
+                  setUpdateStatusValue(value);
+                }}
+              >
                 <SelectTrigger className="w-full mt-2">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -569,11 +594,11 @@ export default function DashboardPage() {
                 className={`flex-1 ${
                   updateStatusValue 
                     ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-gray-300 text-gray-700 cursor-not-allowed border border-gray-400'
                 }`}
-                disabled={!updateStatusValue}
+                disabled={!updateStatusValue || isUpdating}
               >
-                Apply Status Change {!updateStatusValue && '(Select Status First)'}
+                {isUpdating ? 'Updating...' : updateStatusValue ? `Apply Status Change` : 'Select Status First'}
               </Button>
               <Button 
                 onClick={() => {
@@ -584,10 +609,11 @@ export default function DashboardPage() {
                   setIsUpdating(false);
                   
                   // Navigate to step 2 customer detail choose
-                  window.location.href = `/create-quote?step=2&edit=${selectedQuote?.quoteNumber}`;
+                  window.location.href = `/create-quote?step=2&edit=${selectedQuote?.quoteId}`;
                 }}
                 variant="outline"
                 className="flex items-center justify-center space-x-2 flex-1"
+                disabled={isUpdating}
               >
                 <Edit className="w-4 h-4" />
                 <span>Edit Quote Details</span>
