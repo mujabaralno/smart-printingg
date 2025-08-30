@@ -112,7 +112,7 @@ model Quote {
   amounts           QuoteAmount?
   QuoteOperational  QuoteOperational?
   // Approval workflow fields
-  approvalStatus    String            @default("Draft") // Draft, Pending Approval, Approved, Rejected
+  approvalStatus    String?           @default("Draft") // Draft, Pending Approval, Approved, Rejected
   requiresApproval  Boolean           @default(false)
   approvalReason    String?           // Why approval is required
   approvedBy        String?           // User ID who approved
