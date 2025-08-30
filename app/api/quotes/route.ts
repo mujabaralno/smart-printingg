@@ -103,16 +103,17 @@ export async function POST(request: NextRequest) {
       body.finishing = [];
     }
     
-    // Remove operational field from quote data since it's a relation field
-    // The operational data will be created separately by the DatabaseService
-    if (body.operational) {
-      console.log('Extracting operational data for separate creation:', body.operational);
-      // Keep the operational data for the DatabaseService to use
+    // Ensure operational data exists
+    if (!body.operational) {
+      body.operational = {
+        plates: 0,
+        units: 0
+      };
     }
     
     console.log('Processed quote data:', JSON.stringify(body, null, 2));
     
-    // Use the working createQuote method from DatabaseService
+    // Use the enhanced createQuote method from DatabaseService
     const quote = await dbService.createQuote(body);
     
     console.log('Quote created successfully with all details:', quote?.id);

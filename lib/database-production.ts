@@ -277,13 +277,90 @@ export class DatabaseService {
 
   async createQuote(quoteData: any) {
     try {
-      return await this.prisma.quote.create({
-        data: quoteData,
+      console.log('Creating quote with data:', JSON.stringify(quoteData, null, 2));
+      
+      // Extract nested data that needs to be created separately
+      const { papers, finishing, amounts, operational, ...mainQuoteData } = quoteData;
+      
+      // Create the main quote first
+      const quote = await this.prisma.quote.create({
+        data: mainQuoteData,
         include: {
           client: true,
           user: true,
         },
       });
+      
+      console.log('Main quote created successfully:', quote.id);
+      
+      // Create papers if provided
+      if (papers && Array.isArray(papers) && papers.length > 0) {
+        console.log('Creating papers for quote:', papers.length);
+        for (const paper of papers) {
+          await this.prisma.paper.create({
+            data: {
+              ...paper,
+              quoteId: quote.id
+            }
+          });
+        }
+        console.log('Papers created successfully');
+      }
+      
+      // Create finishing if provided
+      if (finishing && Array.isArray(finishing) && finishing.length > 0) {
+        console.log('Creating finishing for quote:', finishing.length);
+        for (const finish of finishing) {
+          await this.prisma.finishing.create({
+            data: {
+              ...finish,
+              quoteId: quote.id
+            }
+          });
+        }
+        console.log('Finishing created successfully');
+      }
+      
+      // Create amounts if provided
+      if (amounts) {
+        console.log('Creating amounts for quote');
+        await this.prisma.quoteAmount.create({
+          data: {
+            ...amounts,
+            quoteId: quote.id
+          }
+        });
+        console.log('Amounts created successfully');
+      }
+      
+      // Create operational if provided
+      if (operational) {
+        console.log('Creating operational data for quote');
+        await this.prisma.quoteOperational.create({
+          data: {
+            ...operational,
+            quoteId: quote.id
+          }
+        });
+        console.log('Operational data created successfully');
+      }
+      
+      // Fetch the complete quote with all relations
+      const completeQuote = await this.prisma.quote.findUnique({
+        where: { id: quote.id },
+        include: {
+          client: true,
+          user: true,
+          papers: true,
+          finishing: true,
+          amounts: true,
+          operational: true
+        }
+      });
+      
+      console.log('Quote creation completed successfully with all relations');
+      return completeQuote;
+      
     } catch (error) {
       console.error('Error creating quote:', error);
       throw error;
