@@ -30,6 +30,7 @@ import { Plus, Edit3, ChevronDown, ChevronUp, Filter } from "lucide-react";
 import StatusChip from "@/components/shared/StatusChip";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { toastSuccess, toastError } from "@/components/ui/Toast";
 
 // Sales Person type definition
 interface SalesPerson {
@@ -188,15 +189,15 @@ export default function SalesPersonManagementPage() {
         setShowAddModal(false);
         
         // Show success feedback
-        alert('Sales person added successfully!');
+        toastSuccess('Sales person added successfully!');
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error('❌ Failed to add sales person:', response.status, errorData);
-        alert(`Failed to add sales person: ${response.status} - ${errorData.error || 'Unknown error'}`);
+                  toastError(`Failed to add sales person: ${response.status} - ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('❌ Error adding sales person:', error);
-      alert(`Error adding sales person: ${error instanceof Error ? error.message : 'Unknown error'}`);
+              toastError(`Error adding sales person: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -223,15 +224,15 @@ export default function SalesPersonManagementPage() {
         setEditingPerson(null);
         
         // Show success feedback
-        alert('Sales person updated successfully!');
+        toastSuccess('Sales person updated successfully!');
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error('❌ Failed to update sales person:', response.status, errorData);
-        alert(`Failed to update sales person: ${response.status} - ${errorData.error || 'Unknown error'}`);
+                  toastError(`Failed to update sales person: ${response.status} - ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('❌ Error updating sales person:', error);
-      alert(`Error updating sales person: ${error instanceof Error ? error.message : 'Unknown error'}`);
+              toastError(`Error updating sales person: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
