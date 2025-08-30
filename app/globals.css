@@ -322,13 +322,39 @@
   opacity: 1 !important;
 }
 
-/* Force white background on all dialog elements */
-[data-slot="dialog-content"] * {
-  background-color: transparent;
+/* Ensure DialogFooter and buttons are always visible */
+[data-slot="dialog-footer"] {
+  background-color: transparent !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: flex !important;
+  position: relative !important;
+  z-index: 1000 !important;
 }
 
-[data-slot="dialog-content"] > * {
+[data-slot="dialog-footer"] button,
+[data-slot="dialog-footer"] [role="button"] {
+  background-color: var(--sp-azure) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+  position: relative !important;
+  z-index: 1001 !important;
+}
+
+[data-slot="dialog-footer"] button[variant="ghost"] {
+  background-color: transparent !important;
+  border: 1px solid var(--sp-border) !important;
+}
+
+/* Force white background on dialog content container only */
+[data-slot="dialog-content"] {
   background-color: #ffffff !important;
+}
+
+/* Ensure dialog content has proper background */
+[data-slot="dialog-content"] > * {
+  background-color: transparent;
 }
 
 /* Mobile Responsiveness & Touch Optimization */
@@ -496,6 +522,56 @@ html, body {
 *:focus {
   outline: 2px solid var(--sp-primary);
   outline-offset: 2px;
+}
+
+/* Ensure all form buttons are visible */
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Ensure DialogFooter buttons are always visible */
+[data-slot="dialog-footer"] button,
+[data-slot="dialog-footer"] [role="button"] {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background-color: var(--sp-azure) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.5rem 1.5rem !important;
+  border-radius: 0.75rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 200ms ease-out !important;
+}
+
+[data-slot="dialog-footer"] button[variant="ghost"] {
+  background-color: transparent !important;
+  color: var(--sp-text) !important;
+  border: 1px solid var(--sp-border) !important;
+}
+
+[data-slot="dialog-footer"] button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: var(--sp-shadow-sm) !important;
+}
+
+/* Debug: Make buttons extremely visible */
+[data-slot="dialog-footer"] button {
+  border: 3px solid red !important;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.5) !important;
+  background-color: yellow !important;
+  color: black !important;
+  font-weight: bold !important;
+  font-size: 16px !important;
+  padding: 12px 24px !important;
+  margin: 8px !important;
 }
 
 /* Improve button accessibility */
