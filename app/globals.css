@@ -352,9 +352,9 @@
   background-color: #ffffff !important;
 }
 
-/* Ensure dialog content has proper background - REMOVE TRANSPARENCY */
+/* Allow some transparency for form content (but not buttons) */
 [data-slot="dialog-content"] > * {
-  background-color: #ffffff !important;
+  background-color: transparent;
 }
 
 /* Mobile Responsiveness & Touch Optimization */
@@ -524,96 +524,48 @@ html, body {
   outline-offset: 2px;
 }
 
-/* Ensure all form buttons are visible */
-button,
-[role="button"],
-input[type="button"],
-input[type="submit"],
-input[type="reset"] {
-  display: inline-flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-/* Ensure DialogFooter buttons are always visible */
+/* Essential: Ensure DialogFooter buttons are always visible */
 [data-slot="dialog-footer"] button,
 [data-slot="dialog-footer"] [role="button"] {
   display: inline-flex !important;
   visibility: visible !important;
   opacity: 1 !important;
-  background-color: var(--sp-azure) !important;
+}
+
+/* Professional button styling */
+[data-slot="dialog-footer"] button {
+  background-color: #27aae1 !important;
   color: white !important;
   border: none !important;
-  padding: 0.5rem 1.5rem !important;
-  border-radius: 0.75rem !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
   font-weight: 500 !important;
+  font-size: 14px !important;
   cursor: pointer !important;
   transition: all 200ms ease-out !important;
 }
 
-[data-slot="dialog-footer"] button[variant="ghost"] {
-  background-color: #f8fafc !important;
-  color: var(--sp-text) !important;
-  border: 1px solid var(--sp-border) !important;
-}
-
 [data-slot="dialog-footer"] button:hover {
+  background-color: #1e8bc3 !important;
   transform: translateY(-1px) !important;
-  box-shadow: var(--sp-shadow-sm) !important;
-}
-
-/* Debug: Make buttons extremely visible */
-[data-slot="dialog-footer"] button {
-  border: 3px solid red !important;
-  box-shadow: 0 0 20px rgba(255, 0, 0, 0.5) !important;
-  background-color: yellow !important;
-  color: black !important;
-  font-weight: bold !important;
-  font-size: 16px !important;
-  padding: 12px 24px !important;
-  margin: 8px !important;
-}
-
-/* COMPREHENSIVE: Remove ALL transparency from dialogs */
-[data-slot="dialog-content"],
-[data-slot="dialog-content"] *,
-[data-slot="dialog-footer"],
-[data-slot="dialog-footer"] *,
-[role="dialog"],
-[role="dialog"] * {
-  background-color: #ffffff !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Force button visibility with solid backgrounds */
-[data-slot="dialog-footer"] button,
-[data-slot="dialog-footer"] [role="button"],
-[role="dialog"] button,
-[role="dialog"] [role="button"] {
-  background-color: #27aae1 !important;
-  color: white !important;
-  border: none !important;
-  padding: 12px 24px !important;
-  border-radius: 12px !important;
-  font-weight: 600 !important;
-  font-size: 16px !important;
-  cursor: pointer !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-height: 48px !important;
-  min-width: 120px !important;
   box-shadow: 0 4px 12px rgba(39, 170, 225, 0.3) !important;
 }
 
+/* Ensure DialogFooter is visible */
+[data-slot="dialog-footer"] {
+  background-color: transparent !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: flex !important;
+  position: relative !important;
+  z-index: 1000 !important;
+}
+
 /* Ghost button variant */
-[data-slot="dialog-footer"] button[variant="ghost"],
-[role="dialog"] button[variant="ghost"] {
+[data-slot="dialog-footer"] button[variant="ghost"] {
   background-color: #f8fafc !important;
   color: #334155 !important;
-  border: 2px solid #e2e8f0 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #e2e8f0 !important;
 }
 
 /* Improve button accessibility */
