@@ -194,6 +194,8 @@ export default function SalesPersonManagementPage() {
   // Update existing sales person
   const handleUpdateSalesPerson = async (id: string, formData: Partial<SalesPerson>) => {
     try {
+      console.log('🔄 Updating sales person with ID:', id, 'Data:', formData);
+      
       const response = await fetch(`/api/sales-persons/${id}`, {
         method: 'PUT',
         headers: {
@@ -202,16 +204,25 @@ export default function SalesPersonManagementPage() {
         body: JSON.stringify(formData),
       });
 
+      console.log('📡 Response status:', response.status);
+
       if (response.ok) {
         const updatedPerson = await response.json();
+        console.log('✅ Sales person updated successfully:', updatedPerson);
         setSalesPersons(prev => prev.map(p => p.id === id ? updatedPerson : p));
         setIsEditModalOpen(false);
         setEditingPerson(null);
+        
+        // Show success feedback
+        alert('Sales person updated successfully!');
       } else {
-        console.error('Failed to update sales person');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to update sales person:', response.status, errorData);
+        alert(`Failed to update sales person: ${response.status} - ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error updating sales person:', error);
+      console.error('❌ Error updating sales person:', error);
+      alert(`Error updating sales person: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -244,8 +255,10 @@ export default function SalesPersonManagementPage() {
   };
 
   const handleEditPerson = (person: SalesPerson) => {
+    console.log('🔄 Opening edit modal for sales person:', person.id, person.name);
     setEditingPerson(person);
     setIsEditModalOpen(true);
+    console.log('✅ Edit modal state set to open');
   };
 
   return (
@@ -399,6 +412,38 @@ export default function SalesPersonManagementPage() {
                         </TableCell>
                         <TableCell className="text-center p-4">
                           <div className="flex items-center justify-center space-x-2">
+                            {/* Quick Status Toggle */}
+                            <div className="flex items-center space-x-2 mr-2">
+                              <Switch
+                                checked={person.status === "Active"}
+                                onCheckedChange={async (checked) => {
+                                  const newStatus = checked ? "Active" : "Inactive";
+                                  try {
+                                    const response = await fetch(`/api/sales-persons/${person.id}`, {
+                                      method: 'PUT',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({ status: newStatus }),
+                                    });
+
+                                    if (response.ok) {
+                                      const updatedPerson = await response.json();
+                                      setSalesPersons(prev => prev.map(p => p.id === person.id ? updatedPerson : p));
+                                    } else {
+                                      console.error('Failed to update status');
+                                    }
+                                  } catch (error) {
+                                    console.error('Error updating status:', error);
+                                  }
+                                }}
+                                className="data-[state=checked]:bg-[#27aae1] data-[state=unchecked]:bg-slate-200"
+                              />
+                              <span className="text-xs text-slate-500">
+                                {person.status === "Active" ? "Active" : "Inactive"}
+                              </span>
+                            </div>
+                            
                             <Button
                               variant="ghost"
                               size="sm"
@@ -485,6 +530,38 @@ export default function SalesPersonManagementPage() {
                       {/* Actions */}
                       <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                         <div className="flex space-x-2">
+                          {/* Quick Status Toggle for Mobile */}
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={person.status === "Active"}
+                              onCheckedChange={async (checked) => {
+                                const newStatus = checked ? "Active" : "Inactive";
+                                try {
+                                  const response = await fetch(`/api/sales-persons/${person.id}`, {
+                                    method: 'PUT',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ status: newStatus }),
+                                  });
+
+                                  if (response.ok) {
+                                    const updatedPerson = await response.json();
+                                    setSalesPersons(prev => prev.map(p => p.id === person.id ? updatedPerson : p));
+                                  } else {
+                                    console.error('Failed to update status');
+                                  }
+                                } catch (error) {
+                                  console.error('Error updating status:', error);
+                                }
+                              }}
+                              className="data-[state=checked]:bg-[#27aae1] data-[state=unchecked]:bg-slate-200"
+                            />
+                            <span className="text-xs text-slate-500">
+                              {person.status === "Active" ? "Active" : "Inactive"}
+                            </span>
+                          </div>
+                          
                           <Button
                             variant="outline"
                             size="sm"

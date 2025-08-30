@@ -517,9 +517,6 @@ export default function DashboardPage() {
   };
 
   const UpdateQuoteModal = () => {
-    // Only render if modal should be open
-    if (!isUpdateModalOpen) return null;
-    
     return (
       <Dialog 
         open={isUpdateModalOpen} 
