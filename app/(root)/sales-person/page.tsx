@@ -291,8 +291,9 @@ export default function SalesPersonManagementPage() {
         </div>
 
         {/* Search, Status Filter, and Add Sales Person */}
-        <div className="flex flex-col lg:flex-row gap-6 items-end">
-          <div className="flex-1 space-y-2">
+        <div className="space-y-4 lg:space-y-0">
+          {/* Search Bar - Full Width on Mobile */}
+          <div className="w-full space-y-2">
             <label className="text-sm font-medium text-slate-700">Search</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
@@ -304,26 +305,30 @@ export default function SalesPersonManagementPage() {
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Status</label>
-            <Select value={statusFilter} onValueChange={(value: "all" | "Active" | "Inactive") => setStatusFilter(value)}>
-              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+          
+          {/* Status Filter and Add Button - Same Line on Mobile */}
+          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-end">
+            <div className="flex-1 space-y-2">
+              <label className="text-sm font-medium text-slate-700">Status</label>
+              <Select value={statusFilter} onValueChange={(value: "all" | "Active" | "Inactive") => setStatusFilter(value)}>
+                <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 w-full">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={() => setShowAddModal(true)}
+              className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add New Sales Person
+            </Button>
           </div>
-          <Button
-            onClick={() => setShowAddModal(true)}
-            className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-auto"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Add New Sales Person
-          </Button>
         </div>
 
         {/* Results Summary */}
