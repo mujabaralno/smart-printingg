@@ -1,58 +1,73 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/database';
 
 export async function GET() {
   try {
-    console.log('🔍 Database Health Check API called');
+    // Check environment
+    const isProduction = process.env.NODE_ENV === 'production';
+    const hasDatabaseUrl = !!process.env.DATABASE_URL;
     
-    // Test database connection
-    const startTime = Date.now();
-    
-    // Simple query to test connection
-    const result = await prisma.$queryRaw`SELECT 1 as test`;
-    const responseTime = Date.now() - startTime;
-    
-    console.log('✅ Database connection successful:', { responseTime, result });
-    
-    return NextResponse.json({
-      status: 'healthy',
-      database: {
-        status: 'connected',
-        responseTime: `${responseTime}ms`,
-        timestamp: new Date().toISOString(),
-        provider: process.env.DATABASE_URL?.includes('postgresql') ? 'PostgreSQL' : 'SQLite'
-      },
-      environment: {
-        nodeEnv: process.env.NODE_ENV,
-        hasDatabaseUrl: !!process.env.DATABASE_URL,
-        databaseUrlPrefix: process.env.DATABASE_URL?.substring(0, 20) || 'N/A'
-      }
-    });
-    
-  } catch (error) {
-    console.error('❌ Database health check failed:', error);
-    
-    return NextResponse.json(
-      { 
-        status: 'unhealthy',
-        database: {
-          status: 'disconnected',
-          error: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString()
-        },
+    if (isProduction && hasDatabaseUrl) {
+      // Use production database configuration
+      const { checkDatabaseConnection } = await import('@/lib/database-production');
+      const result = await checkDatabaseConnection();
+      
+      return NextResponse.json({
+        status: result.status === 'connected' ? 'healthy' : 'unhealthy',
+        database: result,
         environment: {
           nodeEnv: process.env.NODE_ENV,
-          hasDatabaseUrl: !!process.env.DATABASE_URL,
-          databaseUrlPrefix: process.env.DATABASE_URL?.substring(0, 20) || 'N/A'
+          hasDatabaseUrl,
+          databaseUrlPrefix: process.env.DATABASE_URL?.substring(0, 20) || 'none'
         },
-        recommendations: [
+        recommendations: result.status === 'failed' ? [
           'Check DATABASE_URL environment variable',
           'Verify database server is running',
           'Check network connectivity',
           'Verify database credentials'
-        ]
-      },
-      { status: 500 }
-    );
+        ] : []
+      });
+    } else {
+      // Use local database configuration
+      const { prisma } = await import('@/lib/database-unified');
+      
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+        return NextResponse.json({
+          status: 'healthy',
+          database: {
+            status: 'connected',
+            responseTime: 'local',
+            timestamp: new Date().toISOString(),
+            provider: 'SQLite'
+          },
+          environment: {
+            nodeEnv: process.env.NODE_ENV || 'development',
+            hasDatabaseUrl,
+            databaseUrlPrefix: 'file:./dev.db'
+          }
+        });
+      } catch (error) {
+        return NextResponse.json({
+          status: 'unhealthy',
+          database: {
+            status: 'disconnected',
+            error: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date().toISOString(),
+            provider: 'SQLite'
+          },
+          environment: {
+            nodeEnv: process.env.NODE_ENV || 'development',
+            hasDatabaseUrl,
+            databaseUrlPrefix: 'file:./dev.db'
+          }
+        });
+      }
+    }
+  } catch (error) {
+    return NextResponse.json({
+      status: 'error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
   }
 }

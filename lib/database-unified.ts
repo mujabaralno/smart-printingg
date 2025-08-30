@@ -13,18 +13,9 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || 'file:./dev.db',
+      url: process.env.DATABASE_URL || 'file:./prisma/dev.db',
     },
   },
-  // Vercel-specific optimizations for production
-  ...(isProduction && hasVercelDatabase && {
-    __internal: {
-      engine: {
-        enableEngineDebugMode: false,
-        enableQueryLogging: false,
-      },
-    },
-  }),
 });
 
 // Only create one instance in development
@@ -109,25 +100,6 @@ export class DatabaseService {
     const db = this.checkDatabase();
     return await db.user.findUnique({
       where: { id },
-      include: {
-        quotes: true,
-        clients: true,
-      },
-    });
-  }
-
-  static async updateUser(id: string, data: any) {
-    const db = this.checkDatabase();
-    return await db.user.update({
-      where: { id },
-      data,
-    });
-  }
-
-  static async deleteUser(id: string) {
-    const db = this.checkDatabase();
-    return await db.user.delete({
-      where: { id },
     });
   }
 
@@ -138,57 +110,48 @@ export class DatabaseService {
     });
   }
 
-  // Client operations
-  static async createClient(clientData: {
-    clientType: string;
-    companyName?: string;
-    firstName?: string;
-    lastName?: string;
-    designation?: string;
-    contactPerson: string;
-    email: string;
-    emails?: string;
-    phone: string;
-    countryCode: string;
-    role?: string;
-    trn?: string;
-    hasNoTrn?: number;
-    address?: string;
-    city?: string;
-    area?: string;
-    state?: string;
-    postalCode?: string;
-    country?: string;
-    userId?: string;
-  }) {
+  static async updateUser(id: string, userData: any) {
     const db = this.checkDatabase();
-    
-    try {
-      return await db.client.create({
-        data: clientData,
-      });
-    } catch (error) {
-      console.error('Error creating client:', error);
-      throw error;
-    }
+    return await db.user.update({
+      where: { id },
+      data: userData,
+    });
+  }
+
+  static async deleteUser(id: string) {
+    const db = this.checkDatabase();
+    return await db.user.delete({
+      where: { id },
+    });
+  }
+
+  // Client operations
+  static async createClient(clientData: any) {
+    const db = this.checkDatabase();
+    return await db.client.create({
+      data: clientData,
+    });
   }
 
   static async getClientById(id: string) {
     const db = this.checkDatabase();
     return await db.client.findUnique({
       where: { id },
-      include: {
-        user: true,
-        quotes: true,
-      },
     });
   }
 
-  static async updateClient(id: string, data: any) {
+  static async getAllClients() {
+    const db = this.checkDatabase();
+    return await db.client.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  static async updateClient(id: string, clientData: any) {
     const db = this.checkDatabase();
     return await db.client.update({
       where: { id },
-      data,
+      data: clientData,
     });
   }
 
@@ -199,30 +162,11 @@ export class DatabaseService {
     });
   }
 
-  static async getAllClients() {
-    const db = this.checkDatabase();
-    return await db.client.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: true,
-      },
-    });
-  }
-
   // Quote operations
   static async createQuote(quoteData: any) {
     const db = this.checkDatabase();
     return await db.quote.create({
       data: quoteData,
-      include: {
-        client: true,
-        user: true,
-        salesPerson: true,
-        amounts: true,
-        QuoteOperational: true,
-        papers: true,
-        finishing: true,
-      },
     });
   }
 
@@ -231,38 +175,12 @@ export class DatabaseService {
     return await db.quote.findUnique({
       where: { id },
       include: {
-        client: true,
         user: true,
-        salesPerson: true,
-        amounts: true,
-        QuoteOperational: true,
-        papers: true,
-        finishing: true,
-      },
-    });
-  }
-
-  static async updateQuote(id: string, data: any) {
-    const db = this.checkDatabase();
-    return await db.quote.update({
-      where: { id },
-      data,
-      include: {
         client: true,
-        user: true,
-        salesPerson: true,
-        amounts: true,
-        QuoteOperational: true,
-        papers: true,
         finishing: true,
+        papers: true,
+        amounts: true,
       },
-    });
-  }
-
-  static async deleteQuote(id: string) {
-    const db = this.checkDatabase();
-    return await db.quote.delete({
-      where: { id },
     });
   }
 
@@ -271,65 +189,33 @@ export class DatabaseService {
     return await db.quote.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        client: true,
-        user: true,
-        salesPerson: true,
-        amounts: true,
-        QuoteOperational: true,
-      },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            status: true
+          }
+        },
+        finishing: true,
+        papers: true
+      }
     });
   }
 
-  // Sales Person operations
-  static async createSalesPerson(salesPersonData: any) {
+  static async updateQuote(id: string, quoteData: any) {
     const db = this.checkDatabase();
-    return await db.salesPerson.create({
-      data: salesPersonData,
-    });
-  }
-
-  static async getSalesPersonById(id: string) {
-    const db = this.checkDatabase();
-    return await db.salesPerson.findUnique({
+    return await db.quote.update({
       where: { id },
-      include: {
-        quotes: true,
-      },
+      data: quoteData,
     });
   }
 
-  static async getSalesPersonBySalesPersonId(salesPersonId: string) {
+  static async deleteQuote(id: string) {
     const db = this.checkDatabase();
-    return await db.salesPerson.findUnique({
-      where: { salesPersonId },
-      include: {
-        quotes: true,
-      },
-    });
-  }
-
-  static async updateSalesPerson(id: string, data: any) {
-    const db = this.checkDatabase();
-    return await db.salesPerson.update({
+    return await db.quote.delete({
       where: { id },
-      data,
-    });
-  }
-
-  static async deleteSalesPerson(id: string) {
-    const db = this.checkDatabase();
-    return await db.salesPerson.delete({
-      where: { id },
-    });
-  }
-
-  static async getAllSalesPersons() {
-    const db = this.checkDatabase();
-    return await db.salesPerson.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        quotes: true,
-      },
     });
   }
 
@@ -345,24 +231,6 @@ export class DatabaseService {
     const db = this.checkDatabase();
     return await db.supplier.findUnique({
       where: { id },
-      include: {
-        materials: true,
-      },
-    });
-  }
-
-  static async updateSupplier(id: string, data: any) {
-    const db = this.checkDatabase();
-    return await db.supplier.update({
-      where: { id },
-      data,
-    });
-  }
-
-  static async deleteSupplier(id: string) {
-    const db = this.checkDatabase();
-    return await db.supplier.delete({
-      where: { id },
     });
   }
 
@@ -370,9 +238,21 @@ export class DatabaseService {
     const db = this.checkDatabase();
     return await db.supplier.findMany({
       orderBy: { createdAt: 'desc' },
-      include: {
-        materials: true,
-      },
+    });
+  }
+
+  static async updateSupplier(id: string, supplierData: any) {
+    const db = this.checkDatabase();
+    return await db.supplier.update({
+      where: { id },
+      data: supplierData,
+    });
+  }
+
+  static async deleteSupplier(id: string) {
+    const db = this.checkDatabase();
+    return await db.supplier.delete({
+      where: { id },
     });
   }
 
@@ -388,17 +268,21 @@ export class DatabaseService {
     const db = this.checkDatabase();
     return await db.material.findUnique({
       where: { id },
-      include: {
-        supplier: true,
-      },
     });
   }
 
-  static async updateMaterial(id: string, data: any) {
+  static async getAllMaterials() {
+    const db = this.checkDatabase();
+    return await db.material.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  static async updateMaterial(id: string, materialData: any) {
     const db = this.checkDatabase();
     return await db.material.update({
       where: { id },
-      data,
+      data: materialData,
     });
   }
 
@@ -409,28 +293,40 @@ export class DatabaseService {
     });
   }
 
-  static async getAllMaterials() {
+  // Sales Person operations
+  static async createSalesPerson(salesPersonData: any) {
     const db = this.checkDatabase();
-    return await db.material.findMany({
+    return await db.salesPerson.create({
+      data: salesPersonData,
+    });
+  }
+
+  static async getSalesPersonById(id: string) {
+    const db = this.checkDatabase();
+    return await db.salesPerson.findUnique({
+      where: { id },
+    });
+  }
+
+  static async getAllSalesPersons() {
+    const db = this.checkDatabase();
+    return await db.salesPerson.findMany({
       orderBy: { createdAt: 'desc' },
-      include: {
-        supplier: true,
-      },
     });
   }
 
-  // UAE Area operations
-  static async createUAEArea(areaData: any) {
+  static async updateSalesPerson(id: string, salesPersonData: any) {
     const db = this.checkDatabase();
-    return await db.uAEArea.create({
-      data: areaData,
+    return await db.salesPerson.update({
+      where: { id },
+      data: salesPersonData,
     });
   }
 
-  static async getAllUAEAreas() {
+  static async deleteSalesPerson(id: string) {
     const db = this.checkDatabase();
-    return await db.uAEArea.findMany({
-      orderBy: { name: 'asc' },
+    return await db.salesPerson.delete({
+      where: { id },
     });
   }
 
@@ -440,20 +336,18 @@ export class DatabaseService {
     return await db.quote.findMany({
       where: {
         OR: [
-          { quoteId: { contains: query, mode: 'insensitive' } },
-          { product: { contains: query, mode: 'insensitive' } },
-          { client: { contactPerson: { contains: query, mode: 'insensitive' } } },
-          { client: { companyName: { contains: query, mode: 'insensitive' } } },
+          { quoteId: { contains: query } },
+          { product: { contains: query } },
+          { client: { contactPerson: { contains: query } } },
+          { client: { companyName: { contains: query } } },
         ],
       },
       include: {
         client: true,
         user: true,
-        salesPerson: true,
-        amounts: true,
       },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: 20,
     });
   }
 
@@ -462,17 +356,14 @@ export class DatabaseService {
     return await db.client.findMany({
       where: {
         OR: [
-          { contactPerson: { contains: query, mode: 'insensitive' } },
-          { companyName: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } },
-          { phone: { contains: query, mode: 'insensitive' } },
+          { contactPerson: { contains: query } },
+          { companyName: { contains: query } },
+          { email: { contains: query } },
+          { phone: { contains: query } },
         ],
       },
-      include: {
-        user: true,
-      },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: 20,
     });
   }
 
@@ -481,16 +372,13 @@ export class DatabaseService {
     return await db.supplier.findMany({
       where: {
         OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { contact: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } },
+          { name: { contains: query } },
+          { contact: { contains: query } },
+          { email: { contains: query } },
         ],
       },
-      include: {
-        materials: true,
-      },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: 20,
     });
   }
 
@@ -499,186 +387,60 @@ export class DatabaseService {
     return await db.salesPerson.findMany({
       where: {
         OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } },
-          { salesPersonId: { contains: query, mode: 'insensitive' } },
+          { name: { contains: query } },
+          { email: { contains: query } },
+          { salesPersonId: { contains: query } },
         ],
       },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: 20,
     });
   }
 
-  // QuoteAmount operations
-  static async createQuoteAmount(amountData: {
-    quoteId: string;
-    base: number;
-    vat: number;
-    total: number;
-  }) {
+  // Get counts for dashboard
+  static async getDashboardCounts() {
     const db = this.checkDatabase();
-    return await db.quoteAmount.create({
-      data: amountData,
-    });
+    const [quotes, clients, suppliers, salesPersons] = await Promise.all([
+      db.quote.count(),
+      db.client.count(),
+      db.supplier.count(),
+      db.salesPerson.count(),
+    ]);
+
+    return {
+      quotes,
+      clients,
+      suppliers,
+      salesPersons,
+    };
   }
 
-  static async getQuoteAmounts(quoteId: string) {
+  // Get recent quotes for dashboard
+  static async getRecentQuotes(limit: number = 10) {
     const db = this.checkDatabase();
-    return await db.quoteAmount.findMany({
-      where: { quoteId },
-    });
-  }
-
-  static async updateQuoteAmount(id: string, amountData: {
-    base?: number;
-    vat?: number;
-    total?: number;
-  }) {
-    const db = this.checkDatabase();
-    return await db.quoteAmount.update({
-      where: { id },
-      data: amountData,
-    });
-  }
-
-  static async deleteQuoteAmount(id: string) {
-    const db = this.checkDatabase();
-    return await db.quoteAmount.delete({
-      where: { id },
-    });
-  }
-
-  // Amount calculation logic
-  static async calculateQuoteAmounts(quoteId: string) {
-    const db = this.checkDatabase();
-    
-    try {
-      // Get the quote with all related data
-      const quote = await db.quote.findUnique({
-        where: { id: quoteId },
-        include: {
-          papers: true,
-          finishing: true,
-          operational: true,
+    return await db.quote.findMany({
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        client: {
+          select: {
+            id: true,
+            contactPerson: true,
+            companyName: true,
+            email: true,
+          },
         },
-      });
-
-      if (!quote) {
-        throw new Error('Quote not found');
-      }
-
-      let baseAmount = 0;
-      let vatAmount = 0;
-      let totalAmount = 0;
-
-      // Calculate base amount from papers
-      if (quote.papers && quote.papers.length > 0) {
-        for (const paper of quote.papers) {
-          if (paper.pricePerSheet && paper.enteredSheets) {
-            baseAmount += paper.pricePerSheet * paper.enteredSheets;
-          }
-        }
-      }
-
-      // Add finishing costs
-      if (quote.finishing && quote.finishing.length > 0) {
-        for (const finish of quote.finishing) {
-          if (finish.cost) {
-            baseAmount += finish.cost;
-          }
-        }
-      }
-
-      // Add operational costs (if any) - commented out for now
-      // if (quote.operational && quote.operational.length > 0) {
-      //   for (const op of quote.operational) {
-      //     // Add any operational costs here if needed
-      //   }
-      // }
-
-      // Calculate VAT (5% for UAE)
-      vatAmount = baseAmount * 0.05;
-      
-      // Calculate total
-      totalAmount = baseAmount + vatAmount;
-
-      // Check if QuoteAmount record already exists
-      const existingAmount = await db.quoteAmount.findFirst({
-        where: { quoteId },
-      });
-
-      if (existingAmount) {
-        // Update existing record
-        await this.updateQuoteAmount(existingAmount.id, {
-          base: baseAmount,
-          vat: vatAmount,
-          total: totalAmount,
-        });
-      } else {
-        // Create new record
-        await this.createQuoteAmount({
-          quoteId,
-          base: baseAmount,
-          vat: vatAmount,
-          total: totalAmount,
-        });
-      }
-
-      return {
-        base: baseAmount,
-        vat: vatAmount,
-        total: totalAmount,
-      };
-    } catch (error) {
-      console.error('Error calculating quote amounts:', error);
-      throw error;
-    }
-  }
-
-  // System metrics
-  static async getSystemMetrics() {
-    const db = this.checkDatabase();
-    
-    try {
-      const [
-        totalUsers,
-        totalClients,
-        totalQuotes,
-        totalSuppliers,
-        totalMaterials,
-        totalSalesPersons,
-        totalUAEAreas
-      ] = await Promise.all([
-        db.user.count(),
-        db.client.count(),
-        db.quote.count(),
-        db.supplier.count(),
-        db.material.count(),
-        db.salesPerson.count(),
-        db.uAEArea.count(),
-      ]);
-
-      return {
-        totalUsers,
-        totalClients,
-        totalQuotes,
-        totalSuppliers,
-        totalMaterials,
-        totalSalesPersons,
-        totalUAEAreas,
-        timestamp: new Date().toISOString(),
-        ...this.getDatabaseInfo()
-      };
-    } catch (error) {
-      console.error('Error getting system metrics:', error);
-      return {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-        ...this.getDatabaseInfo()
-      };
-    }
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
   }
 }
 
 // Export the main prisma instance
-export { prisma as default };
+export default prisma;

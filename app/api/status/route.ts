@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseService } from '@/lib/database';
+import { DatabaseService } from '@/lib/database-unified';
 import { convertToEmpFormat } from '@/lib/auth';
 
 export async function GET() {
