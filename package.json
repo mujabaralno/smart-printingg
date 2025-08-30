@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "DATABASE_URL=\"postgres://c91c8561fe8b6b34a5985f17ac564ca367969fe928557c4c4f6b5bc780733281:sk_1sGdxWA91n5mc5fS6JTs0@db.prisma.io:5432/?sslmode=require\" prisma generate --schema=./prisma/schema.prisma && DATABASE_URL=\"postgres://c91c8561fe8b6b34a5985f17ac564ca367969fe928557c4c4f6b5bc780733281:sk_1sGdxWA91n5mc5fS6JTs0@db.prisma.io:5432/?sslmode=require\" next dev",
-    "build": "prisma generate --schema=./prisma/schema-postgresql-current.prisma --no-engine && next build",
+    "build": "prisma generate --schema=./prisma/schema.prisma --no-engine && next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate --schema=./prisma/schema-postgresql-current.prisma --no-engine",
+    "postinstall": "prisma generate --schema=./prisma/schema.prisma --no-engine",
     "db:dev": "prisma generate --schema=./prisma/schema.dev.prisma",
-    "db:prod": "prisma generate --schema=./prisma/schema-postgresql-current.prisma --no-engine"
+    "db:prod": "prisma generate --schema=./prisma/schema.prisma --no-engine"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
