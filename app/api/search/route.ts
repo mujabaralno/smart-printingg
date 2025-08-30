@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
 
     // Search quotes
     try {
-      const quotes = await DatabaseService.getAllQuotes();
+      const dbService = new DatabaseService();
+    const quotes = await dbService.getAllQuotes();
       const quoteResults = quotes
         .filter(quote => 
           quote.quoteId?.toLowerCase().includes(searchQuery) ||
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     // Search clients
     try {
-      const clients = await DatabaseService.getAllClients();
+      const clients = await dbService.getAllClients();
       const clientResults = clients
         .filter(client => 
           client.contactPerson?.toLowerCase().includes(searchQuery) ||
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     // Search suppliers
     try {
-      const suppliers = await DatabaseService.getAllSuppliers();
+      const suppliers = await dbService.getAllSuppliers();
       const supplierResults = suppliers
         .filter(supplier => 
           supplier.name?.toLowerCase().includes(searchQuery) ||
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
 
     // Search materials
     try {
-      const materials = await DatabaseService.getAllMaterials();
+      const materials = await dbService.getAllMaterials();
       const materialResults = materials
         .filter(material => 
           material.name?.toLowerCase().includes(searchQuery) ||
@@ -107,7 +108,7 @@ export async function GET(request: NextRequest) {
 
     // Search users
     try {
-      const users = await DatabaseService.getAllUsers();
+      const users = await dbService.getAllUsers();
       const userResults = users
         .filter(user => 
           user.name?.toLowerCase().includes(searchQuery) ||
@@ -130,7 +131,7 @@ export async function GET(request: NextRequest) {
     // Search sales persons
     try {
       console.log('🔍 Searching sales persons...');
-      const salesPersons = await DatabaseService.getAllSalesPersons();
+      const salesPersons = await dbService.getAllSalesPersons();
       console.log(`📊 Found ${salesPersons.length} sales persons in database`);
       console.log('Sample sales person:', salesPersons[0] || 'No sales persons found');
       

@@ -4,7 +4,8 @@ import { DatabaseService } from '@/lib/database-unified';
 export async function GET() {
   try {
     console.log('🔍 API: Starting to fetch clients...');
-    const clients = await DatabaseService.getAllClients();
+    const dbService = new DatabaseService();
+    const clients = await dbService.getAllClients();
     console.log(`✅ API: Fetched ${clients.length} clients successfully`);
     console.log('Sample client data:', clients[0] || 'No clients found');
     return NextResponse.json(clients);
@@ -25,7 +26,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const client = await DatabaseService.createClient(body);
+    const dbService = new DatabaseService();
+    const client = await dbService.createClient(body);
     return NextResponse.json(client);
   } catch (error) {
     console.error('Error creating client:', error);

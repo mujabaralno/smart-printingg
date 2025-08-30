@@ -10,7 +10,8 @@ export async function PUT(
     console.log('🔍 API: Updating client with data:', body);
     console.log('🔍 API: Client ID:', params.id);
     
-    const client = await DatabaseService.updateClient(params.id, body);
+    const dbService = new DatabaseService();
+    const client = await dbService.updateClient(params.id, body);
     console.log('✅ API: Client updated successfully:', client);
     
     return NextResponse.json(client);
@@ -38,7 +39,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await DatabaseService.deleteClient(params.id);
+    const dbService = new DatabaseService();
+    await dbService.deleteClient(params.id);
     return NextResponse.json({ message: 'Client deleted successfully' });
   } catch (error) {
     console.error('Error deleting client:', error);

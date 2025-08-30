@@ -14,7 +14,8 @@ export async function PUT(
       delete body.password;
     }
     
-    const user = await DatabaseService.updateUser(id, body);
+    const dbService = new DatabaseService();
+    const user = await dbService.updateUser(id, body);
     return NextResponse.json(user);
   } catch (error) {
     console.error('Error updating user:', error);
@@ -30,7 +31,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await DatabaseService.deleteUser(params.id);
+    const dbService = new DatabaseService();
+    await dbService.deleteUser(params.id);
     return NextResponse.json({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('Error deleting user:', error);
