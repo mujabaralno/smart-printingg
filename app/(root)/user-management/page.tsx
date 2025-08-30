@@ -318,34 +318,37 @@ export default function UserManagementPage() {
             </div>
 
             {/* Filters */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Role</label>
-                <Select value={roleFilter} onValueChange={(v: "all" | "admin" | "user" | "estimator") => setRoleFilter(v)}>
-                  <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12">
-                    <SelectValue placeholder="All Roles" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="estimator">Estimator</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-4 mb-6">
+              {/* Role and Status on Same Line for Mobile */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Role</label>
+                  <Select value={roleFilter} onValueChange={(v: "all" | "admin" | "user" | "estimator") => setRoleFilter(v)}>
+                    <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 w-full">
+                      <SelectValue placeholder="All Roles" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="user">User</SelectItem>
+                      <SelectItem value="estimator">Estimator</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Status</label>
-                <Select value={statusFilter} onValueChange={(v: "all" | "Active" | "Inactive") => setStatusFilter(v)}>
-                  <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12">
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex-1 space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Status</label>
+                  <Select value={statusFilter} onValueChange={(v: "all" | "Active" | "Inactive") => setStatusFilter(v)}>
+                    <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 w-full">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
