@@ -530,7 +530,7 @@ export default function DashboardPage() {
           }
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Update Quote - {selectedQuote?.quoteNumber}</DialogTitle>
           </DialogHeader>
@@ -549,10 +549,10 @@ export default function DashboardPage() {
               </Select>
             </div>
             
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button 
                 onClick={() => handleStatusUpdate(updateStatusValue)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
                 disabled={!updateStatusValue}
               >
                 Apply Status Change
@@ -569,7 +569,7 @@ export default function DashboardPage() {
                   window.location.href = `/create-quote?step=2&edit=${selectedQuote?.quoteNumber}`;
                 }}
                 variant="outline"
-                className="flex items-center space-x-2"
+                className="flex items-center justify-center space-x-2 flex-1"
               >
                 <Edit className="w-4 h-4" />
                 <span>Edit Quote Details</span>
