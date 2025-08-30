@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DatabaseService } from '@/lib/database-unified';
 
+// Use production database service if in production
+const getDatabaseService = () => {
+  if (process.env.NODE_ENV === 'production') {
+    // In production, use the production database service
+    const { DatabaseService: ProductionDatabaseService } = require('@/lib/database-production');
+    return new ProductionDatabaseService();
+  }
+  // In development, use the unified database service
+  return new DatabaseService();
+};
+
 export async function GET() {
   try {
     console.log('🔍 API: Starting to fetch clients...');
-    const dbService = new DatabaseService();
+    const dbService = getDatabaseService();
     const clients = await dbService.getAllClients();
     console.log(`✅ API: Fetched ${clients.length} clients successfully`);
     console.log('Sample client data:', clients[0] || 'No clients found');
@@ -26,11 +37,36 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const dbService = new DatabaseService();
+    console.log('Creating client with data:', JSON.stringify(body, null, 2));
+    
+    // Validate required fields
+    const requiredFields = ['clientType', 'contactPerson', 'email', 'phone', 'countryCode'];
+    for (const field of requiredFields) {
+      if (!body[field]) {
+        console.error(`Missing required field: ${field}`);
+        return NextResponse.json(
+          { error: `Missing required field: ${field}` },
+          { status: 400 }
+        );
+      }
+    }
+    
+    const dbService = getDatabaseService();
     const client = await dbService.createClient(body);
+    
+    console.log('Client created successfully:', client.id);
     return NextResponse.json(client);
   } catch (error) {
     console.error('Error creating client:', error);
+    
+    // Provide more specific error information
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: `Failed to create client: ${error.message}` },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to create client' },
       { status: 500 }

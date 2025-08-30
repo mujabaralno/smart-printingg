@@ -8,6 +8,13 @@ const globalForPrisma = globalThis as unknown as {
 const isProduction = process.env.NODE_ENV === 'production'
 const hasVercelDatabase = !!process.env.DATABASE_URL
 
+console.log('Database Service Initialization:', {
+  isProduction,
+  hasVercelDatabase,
+  DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'NOT_SET',
+  NODE_ENV: process.env.NODE_ENV
+})
+
 // Create Prisma client with appropriate configuration
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
@@ -16,7 +23,7 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
       // In production, use the DATABASE_URL if available, otherwise fallback to SQLite
       url: isProduction && hasVercelDatabase 
         ? process.env.DATABASE_URL 
-        : 'file:./dev.db',
+        : 'file:./prisma/dev.db',
     },
   },
 })
@@ -30,6 +37,11 @@ export class DatabaseService {
 
   constructor() {
     this.prisma = prisma
+    console.log('DatabaseService initialized with:', {
+      isProduction,
+      hasVercelDatabase,
+      databaseUrl: isProduction && hasVercelDatabase ? 'PRODUCTION_POSTGRES' : 'LOCAL_SQLITE'
+    })
   }
 
   // Database health check

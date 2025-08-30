@@ -17,6 +17,592 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
 // Only create one instance
 if (process.env.NODE_ENV === 'production') globalForPrisma.prisma = prisma;
 
+// Production Database Service Class
+export class DatabaseService {
+  private prisma: PrismaClient
+
+  constructor() {
+    this.prisma = prisma
+    console.log('Production DatabaseService initialized with PostgreSQL')
+  }
+
+  // Database health check
+  async checkHealth() {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`
+      return { status: 'healthy', timestamp: new Date().toISOString() }
+    } catch (error) {
+      return { 
+        status: 'unhealthy', 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString() 
+      }
+    }
+  }
+
+  // Get database info
+  async getDatabaseInfo() {
+    try {
+      const result = await this.prisma.$queryRaw`SELECT version() as version`
+      return { 
+        status: 'connected', 
+        info: result,
+        database: 'Vercel PostgreSQL',
+        timestamp: new Date().toISOString() 
+      }
+    } catch (error) {
+      return { 
+        status: 'error', 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString() 
+      }
+    }
+  }
+
+  // Get Prisma client
+  getClient() {
+    return this.prisma
+  }
+
+  // ===== USER OPERATIONS =====
+  async getAllUsers() {
+    try {
+      return await this.prisma.user.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  }
+
+  async getUserByEmail(email: string) {
+    try {
+      return await this.prisma.user.findUnique({
+        where: { email },
+      });
+    } catch (error) {
+      console.error('Error fetching user by email:', error);
+      throw error;
+    }
+  }
+
+  async getUserById(id: string) {
+    try {
+      return await this.prisma.user.findUnique({
+        where: { id },
+        include: {
+          clients: true,
+          quotes: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching user by ID:', error);
+      throw error;
+    }
+  }
+
+  async createUser(userData: any) {
+    try {
+      return await this.prisma.user.create({
+        data: userData,
+      });
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  }
+
+  async updateUser(id: string, data: any) {
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data,
+      });
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  }
+
+  async deleteUser(id: string) {
+    try {
+      return await this.prisma.user.delete({
+        where: { id },
+      });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
+  }
+
+  // ===== CLIENT OPERATIONS =====
+  async getAllClients() {
+    try {
+      return await this.prisma.client.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: true,
+          quotes: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      throw error;
+    }
+  }
+
+  async getClientById(id: string) {
+    try {
+      return await this.prisma.client.findUnique({
+        where: { id },
+        include: {
+          user: true,
+          quotes: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching client by ID:', error);
+      throw error;
+    }
+  }
+
+  async createClient(clientData: any) {
+    try {
+      console.log('Creating client with data:', JSON.stringify(clientData, null, 2))
+      
+      // Validate required fields before creation
+      const requiredFields = ['clientType', 'contactPerson', 'email', 'phone', 'countryCode']
+      for (const field of requiredFields) {
+        if (!clientData[field]) {
+          throw new Error(`Missing required field: ${field}`)
+        }
+      }
+      
+      const client = await this.prisma.client.create({
+        data: clientData,
+      });
+      
+      console.log('Client created successfully:', client.id)
+      return client;
+    } catch (error) {
+      console.error('Error creating client:', error);
+      console.error('Client data that failed:', JSON.stringify(clientData, null, 2));
+      
+      // Provide more specific error information
+      if (error instanceof Error) {
+        throw new Error(`Client creation failed: ${error.message}`);
+      }
+      throw new Error('Client creation failed with unknown error');
+    }
+  }
+
+  async updateClient(id: string, data: any) {
+    try {
+      return await this.prisma.client.update({
+        where: { id },
+        data,
+      });
+    } catch (error) {
+      console.error('Error updating client:', error);
+      throw error;
+    }
+  }
+
+  async deleteClient(id: string) {
+    try {
+      return await this.prisma.client.delete({
+        where: { id },
+      });
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      throw error;
+    }
+  }
+
+  // ===== QUOTE OPERATIONS =====
+  async getAllQuotes() {
+    try {
+      return await this.prisma.quote.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          client: true,
+          user: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching quotes:', error);
+      throw error;
+    }
+  }
+
+  async getQuoteById(id: string) {
+    try {
+      return await this.prisma.quote.findUnique({
+        where: { id },
+        include: {
+          client: true,
+          user: true,
+          finishing: true,
+          papers: true,
+          amounts: true,
+          operational: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching quote by ID:', error);
+      throw error;
+    }
+  }
+
+  async createQuote(quoteData: any) {
+    try {
+      return await this.prisma.quote.create({
+        data: quoteData,
+        include: {
+          client: true,
+          user: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error creating quote:', error);
+      throw error;
+    }
+  }
+
+  async updateQuote(id: string, data: any) {
+    try {
+      return await this.prisma.quote.update({
+        where: { id },
+        data,
+        include: {
+          client: true,
+          user: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error updating quote:', error);
+      throw error;
+    }
+  }
+
+  async updateQuoteStatus(id: string, status: string) {
+    try {
+      return await this.prisma.quote.update({
+        where: { id },
+        data: {
+          status,
+          updatedAt: new Date()
+        },
+        include: {
+          client: true,
+          user: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error updating quote status:', error);
+      throw error;
+    }
+  }
+
+  async updateQuoteWithDetails(id: string, data: any) {
+    try {
+      return await this.prisma.quote.update({
+        where: { id },
+        data: {
+          ...data,
+          updatedAt: new Date()
+        },
+        include: {
+          client: true,
+          user: true,
+          papers: true,
+          finishing: true,
+          amounts: true,
+          operational: true
+        },
+      });
+    } catch (error) {
+      console.error('Error updating quote with details:', error);
+      throw error;
+    }
+  }
+
+  async deleteQuote(id: string) {
+    try {
+      return await this.prisma.quote.delete({
+        where: { id },
+      });
+    } catch (error) {
+      console.error('Error deleting quote:', error);
+      throw error;
+    }
+  }
+
+  // ===== SUPPLIER OPERATIONS =====
+  async getAllSuppliers() {
+    try {
+      return await this.prisma.supplier.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+    } catch (error) {
+      console.error('Error fetching suppliers:', error);
+      throw error;
+    }
+  }
+
+  async getSupplierById(id: string) {
+    try {
+      return await this.prisma.supplier.findUnique({
+        where: { id },
+        include: {
+          materials: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching supplier by ID:', error);
+      throw error;
+    }
+  }
+
+  async createSupplier(supplierData: any) {
+    try {
+      return await this.prisma.supplier.create({
+        data: supplierData,
+      });
+    } catch (error) {
+      console.error('Error creating supplier:', error);
+      throw error;
+    }
+  }
+
+  async updateSupplier(id: string, data: any) {
+    try {
+      return await this.prisma.supplier.update({
+        where: { id },
+        data,
+      });
+    } catch (error) {
+      console.error('Error updating supplier:', error);
+      throw error;
+    }
+  }
+
+  async deleteSupplier(id: string) {
+    try {
+      return await this.prisma.supplier.delete({
+        where: { id },
+      });
+    } catch (error) {
+      console.error('Error deleting supplier:', error);
+      throw error;
+    }
+  }
+
+  // ===== MATERIAL OPERATIONS =====
+  async getAllMaterials() {
+    try {
+      return await this.prisma.material.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          supplier: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching materials:', error);
+      throw error;
+    }
+  }
+
+  async getMaterialById(id: string) {
+    try {
+      return await this.prisma.material.findUnique({
+        where: { id },
+        include: {
+          supplier: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching material by ID:', error);
+      throw error;
+    }
+  }
+
+  async createMaterial(materialData: any) {
+    try {
+      return await this.prisma.material.create({
+        data: materialData,
+      });
+    } catch (error) {
+      console.error('Error creating material:', error);
+      throw error;
+    }
+  }
+
+  async updateMaterial(id: string, data: any) {
+    try {
+      return await this.prisma.material.update({
+        where: { id },
+        data,
+      });
+    } catch (error) {
+      console.error('Error updating material:', error);
+      throw error;
+    }
+  }
+
+  async deleteMaterial(id: string) {
+    try {
+      return await this.prisma.material.delete({
+        where: { id },
+      });
+    } catch (error) {
+      console.error('Error deleting material:', error);
+      throw error;
+    }
+  }
+
+  // ===== QUOTE AMOUNT OPERATIONS =====
+  async createQuoteAmount(amountData: any) {
+    try {
+      return await this.prisma.quoteAmount.create({
+        data: amountData,
+      });
+    } catch (error) {
+      console.error('Error creating quote amount:', error);
+      throw error;
+    }
+  }
+
+  async updateQuoteAmount(id: string, data: any) {
+    try {
+      return await this.prisma.quoteAmount.update({
+        where: { id },
+        data,
+      });
+    } catch (error) {
+      console.error('Error updating quote amount:', error);
+      throw error;
+    }
+  }
+
+  async deleteQuoteAmount(id: string) {
+    try {
+      return await this.prisma.quoteAmount.delete({
+        where: { id },
+      });
+    } catch (error) {
+      console.error('Error deleting quote amount:', error);
+      throw error;
+    }
+  }
+
+  // ===== QUOTE OPERATIONAL OPERATIONS =====
+  async createQuoteOperational(operationalData: any) {
+    try {
+      return await this.prisma.quoteOperational.create({
+        data: operationalData,
+      });
+    } catch (error) {
+      console.error('Error creating quote operational:', error);
+      throw error;
+    }
+  }
+
+  async updateQuoteOperational(id: string, data: any) {
+    try {
+      return await this.prisma.quoteOperational.update({
+        where: { id },
+        data,
+      });
+    } catch (error) {
+      console.error('Error updating quote operational:', error);
+      throw error;
+    }
+  }
+
+  async deleteQuoteOperational(id: string) {
+    try {
+      return await this.prisma.quoteOperational.delete({
+        where: { id },
+      });
+    } catch (error) {
+      console.error('Error deleting quote operational:', error);
+      throw error;
+    }
+  }
+
+  // ===== PAPER OPERATIONS =====
+  async createPaper(paperData: any) {
+    try {
+      return await this.prisma.paper.create({
+        data: paperData,
+      });
+    } catch (error) {
+      console.error('Error creating paper:', error);
+      throw error;
+    }
+  }
+
+  async updatePaper(id: string, data: any) {
+    try {
+      return await this.prisma.paper.update({
+        where: { id },
+        data,
+      });
+    } catch (error) {
+      console.error('Error updating paper:', error);
+      throw error;
+    }
+  }
+
+  async deletePaper(id: string) {
+    try {
+      return await this.prisma.paper.delete({
+        where: { id },
+      });
+    } catch (error) {
+      console.error('Error deleting paper:', error);
+      throw error;
+    }
+  }
+
+  // ===== FINISHING OPERATIONS =====
+  async createFinishing(finishingData: any) {
+    try {
+      return await this.prisma.finishing.create({
+        data: finishingData,
+      });
+    } catch (error) {
+      console.error('Error creating finishing:', error);
+      throw error;
+    }
+  }
+
+  async updateFinishing(id: string, data: any) {
+    try {
+      return await this.prisma.finishing.update({
+        where: { id },
+        data,
+      });
+    } catch (error) {
+      console.error('Error updating finishing:', error);
+      throw error;
+    }
+  }
+
+  async deleteFinishing(id: string) {
+    try {
+      return await this.prisma.finishing.delete({
+        where: { id },
+      });
+    } catch (error) {
+      console.error('Error deleting finishing:', error);
+      throw error;
+    }
+  }
+}
+
 // Database connection health check
 export async function checkDatabaseConnection() {
   if (!process.env.DATABASE_URL) {
