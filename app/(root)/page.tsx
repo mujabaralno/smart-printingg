@@ -762,7 +762,7 @@ export default function DashboardPage() {
           <Card className="border-0 shadow-lg">
             <CardContent className="p-0">
               {/* Desktop Table */}
-              <div className="hidden lg:block overflow-x-auto">
+              <div className="block overflow-x-auto">
                 <table className="w-full table-fixed" style={{ tableLayout: 'fixed' }}>
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50">
