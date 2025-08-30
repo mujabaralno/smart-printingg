@@ -346,8 +346,10 @@ export default function DashboardPage() {
     }
     
     console.log('Opening update modal for quote:', quote);
+    console.log('Quote status:', quote.status);
     setSelectedQuote(quote);
     setUpdateStatusValue(quote.status || "");
+    console.log('Set updateStatusValue to:', quote.status || "");
     setIsUpdateModalOpen(true);
   };
 
@@ -564,10 +566,14 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Button 
                 onClick={() => handleStatusUpdate(updateStatusValue)}
-                className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                className={`flex-1 ${
+                  updateStatusValue 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                }`}
                 disabled={!updateStatusValue}
               >
-                Apply Status Change
+                Apply Status Change {!updateStatusValue && '(Select Status First)'}
               </Button>
               <Button 
                 onClick={() => {
