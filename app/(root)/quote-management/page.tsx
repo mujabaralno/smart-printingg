@@ -823,9 +823,9 @@ export default function QuoteManagementPage() {
         {/* Quotes Table - Mobile Responsive */}
         <Card className="shadow-xl border-0 bg-white">
           <CardContent className="p-0">
-            {/* Desktop Table - Fixed Width */}
+            {/* Desktop Table - Completely Fixed Width */}
             <div className="block">
-              <Table className="w-full">
+              <Table className="w-full table-fixed" style={{ tableLayout: 'fixed', width: '100%', overflow: 'hidden' }}>
                 <TableHeader className="bg-slate-50">
                   <TableRow className="border-slate-200">
                     <TableHead className="text-slate-700 font-semibold p-4 w-24">Quote ID</TableHead>

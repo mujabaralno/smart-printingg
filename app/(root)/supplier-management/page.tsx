@@ -483,9 +483,9 @@ function SupplierManagementContent() {
           </div>
         )}
 
-        {/* Desktop Table - Fixed Width */}
+        {/* Desktop Table - Completely Fixed Width */}
         <div className="block border border-slate-200 rounded-2xl">
-          <Table className="w-full">
+          <Table className="w-full table-fixed" style={{ tableLayout: 'fixed', width: '100%', overflow: 'hidden' }}>
             <TableHeader className="bg-slate-50">
               <TableRow className="border-slate-200">
                 <TableHead className="text-slate-700 font-semibold p-4 w-20">Material ID</TableHead>
@@ -495,7 +495,7 @@ function SupplierManagementContent() {
                 <TableHead className="text-slate-700 font-semibold p-4 w-20">Cost</TableHead>
                 <TableHead className="text-slate-700 font-semibold p-4 w-16">Unit</TableHead>
                 <TableHead className="text-slate-700 font-semibold p-4 w-24">Last Updated</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-20">Status</TableHead>
+                <TableHead className="text-slate-700 font-semibold p-4 w-24">Status</TableHead>
                 <TableHead className="text-slate-700 font-semibold p-4 w-24">Actions</TableHead>
               </TableRow>
             </TableHeader>
