@@ -126,25 +126,37 @@ export default function DashboardPage() {
               customerName = `Client ${quote.quoteId}`;
             }
             
-            // Calculate amount - simplified logic to handle the array format from API
+            // Calculate amount - handle both array and object formats from API
             let totalAmount = 0;
             
-            if (quote.amounts && Array.isArray(quote.amounts) && quote.amounts.length > 0) {
-              // amounts is an array, get the first one
-              const amount = quote.amounts[0];
-              
-              if (amount && amount.total && amount.total > 0) {
-                totalAmount = amount.total;
-              } else if (amount && amount.base && amount.base > 0) {
-                // If total is missing but base exists, calculate total
-                totalAmount = amount.base + (amount.vat || 0);
+            if (quote.amounts) {
+              if (Array.isArray(quote.amounts) && quote.amounts.length > 0) {
+                // amounts is an array, get the first one
+                const amount = quote.amounts[0];
+                
+                if (amount && amount.total && amount.total > 0) {
+                  totalAmount = amount.total;
+                } else if (amount && amount.base && amount.base > 0) {
+                  // If total is missing but base exists, calculate total
+                  totalAmount = amount.base + (amount.vat || 0);
+                }
+              } else if (typeof quote.amounts === 'object' && quote.amounts.total && quote.amounts.total > 0) {
+                // Single amount object with total
+                totalAmount = quote.amounts.total;
+              } else if (typeof quote.amounts === 'object' && quote.amounts.base && quote.amounts.base > 0) {
+                // Single amount object with base, calculate total
+                totalAmount = quote.amounts.base + (quote.amounts.vat || 0);
               }
-            } else if (quote.amounts && typeof quote.amounts === 'object' && quote.amounts.total && quote.amounts.total > 0) {
-              // Fallback for single amount object (if amounts is not an array)
-              totalAmount = quote.amounts.total;
-            } else if (quote.amounts && typeof quote.amounts === 'object' && quote.amounts.base && quote.amounts.base > 0) {
-              totalAmount = quote.amounts.base + (quote.amounts.vat || 0);
             }
+            
+            // Debug logging for amounts
+            console.log('Quote amounts debug:', {
+              quoteId: quote.quoteId,
+              amounts: quote.amounts,
+              amountsType: typeof quote.amounts,
+              isArray: Array.isArray(quote.amounts),
+              calculatedTotal: totalAmount
+            });
             
             return {
               id: quote.id,

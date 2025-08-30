@@ -313,6 +313,10 @@ export class DatabaseService {
         include: {
           client: true,
           user: true,
+          amounts: true,
+          papers: true,
+          finishing: true,
+          operational: true,
         },
       });
     } catch (error) {
