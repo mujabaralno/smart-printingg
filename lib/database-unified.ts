@@ -359,6 +359,25 @@ export class DatabaseService {
     }
   }
 
+  async updateQuoteStatus(id: string, status: string) {
+    try {
+      return await this.prisma.quote.update({
+        where: { id },
+        data: {
+          status,
+          updatedAt: new Date()
+        },
+        include: {
+          client: true,
+          user: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error updating quote status:', error);
+      throw error;
+    }
+  }
+
   async deleteQuote(id: string) {
     try {
       return await this.prisma.quote.delete({
@@ -500,7 +519,7 @@ export class DatabaseService {
   async getAllPapers() {
     try {
       return await this.prisma.paper.findMany({
-        orderBy: { createdAt: 'desc' },
+        orderBy: { id: 'desc' },
         include: {
           quote: true,
         },
@@ -563,7 +582,7 @@ export class DatabaseService {
   async getAllFinishings() {
     try {
       return await this.prisma.finishing.findMany({
-        orderBy: { createdAt: 'desc' },
+        orderBy: { id: 'desc' },
         include: {
           quote: true,
         },

@@ -3,7 +3,8 @@ import { DatabaseService } from '@/lib/database-unified';
 
 export async function GET() {
   try {
-    const suppliers = await DatabaseService.getAllSuppliers();
+    const dbService = new DatabaseService();
+    const suppliers = await dbService.getAllSuppliers();
     return NextResponse.json(suppliers);
   } catch (error) {
     console.error('Error fetching suppliers:', error);
@@ -17,7 +18,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const supplier = await DatabaseService.createSupplier(body);
+    const supplier = await dbService.createSupplier(body);
     return NextResponse.json(supplier);
   } catch (error) {
     console.error('Error creating supplier:', error);

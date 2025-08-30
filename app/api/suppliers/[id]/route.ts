@@ -7,7 +7,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supplier = await DatabaseService.getSupplierById(id);
+    const dbService = new DatabaseService();
+    const supplier = await dbService.getSupplierById(id);
     if (!supplier) {
       return NextResponse.json(
         { error: 'Supplier not found' },
@@ -31,7 +32,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const supplier = await DatabaseService.updateSupplier(id, body);
+    const supplier = await dbService.updateSupplier(id, body);
     return NextResponse.json(supplier);
   } catch (error) {
     console.error('Error updating supplier:', error);
@@ -48,7 +49,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await DatabaseService.deleteSupplier(id);
+    await dbService.deleteSupplier(id);
     return NextResponse.json({ message: 'Supplier deleted successfully' });
   } catch (error) {
     console.error('Error deleting supplier:', error);

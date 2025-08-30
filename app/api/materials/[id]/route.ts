@@ -6,7 +6,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const material = await DatabaseService.getMaterialById(params.id);
+    const dbService = new DatabaseService();
+    const material = await dbService.getMaterialById(params.id);
     if (!material) {
       return NextResponse.json(
         { error: 'Material not found' },
@@ -29,7 +30,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const material = await DatabaseService.updateMaterial(params.id, body);
+    const material = await dbService.updateMaterial(params.id, body);
     return NextResponse.json(material);
   } catch (error) {
     console.error('Error updating material:', error);
@@ -45,7 +46,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await DatabaseService.deleteMaterial(params.id);
+    await dbService.deleteMaterial(params.id);
     return NextResponse.json({ message: 'Material deleted successfully' });
   } catch (error) {
     console.error('Error deleting material:', error);

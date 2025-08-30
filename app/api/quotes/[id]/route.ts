@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseService } from '@/lib/database';
+import { DatabaseService } from '@/lib/database-unified';
 
 export async function GET(
   request: NextRequest,
@@ -9,7 +9,8 @@ export async function GET(
     const { id } = await params;
     console.log('Getting quote with ID:', id);
     
-    const quote = await DatabaseService.getQuoteById(id);
+    const dbService = new DatabaseService();
+    const quote = await dbService.getQuoteById(id);
     if (!quote) {
       return NextResponse.json(
         { error: 'Quote not found' },
@@ -58,7 +59,8 @@ export async function PUT(
     console.log('Update data:', body);
     
     // Update the quote with all related data
-    const updatedQuote = await DatabaseService.updateQuoteWithDetails(id, body);
+    const dbService = new DatabaseService();
+    const updatedQuote = await dbService.updateQuoteWithDetails(id, body);
     
     if (!updatedQuote) {
       return NextResponse.json(
@@ -79,6 +81,40 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    
+    console.log('Updating quote status with ID:', id);
+    console.log('Status update data:', body);
+    
+    // Update only the quote status
+    const dbService = new DatabaseService();
+    const updatedQuote = await dbService.updateQuoteStatus(id, body.status);
+    
+    if (!updatedQuote) {
+      return NextResponse.json(
+        { error: 'Quote not found' },
+        { status: 404 }
+      );
+    }
+    
+    console.log('Quote status updated successfully:', updatedQuote.id, 'to', body.status);
+    return NextResponse.json(updatedQuote);
+    
+  } catch (error) {
+    console.error('Error updating quote status:', error);
+    return NextResponse.json(
+      { error: 'Failed to update quote status', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -89,7 +125,7 @@ export async function DELETE(
     console.log('Deleting quote with ID:', id);
     
     // Delete the quote
-    const deletedQuote = await DatabaseService.deleteQuote(id);
+    const deletedQuote = await dbService.deleteQuote(id);
     
     if (!deletedQuote) {
       return NextResponse.json(
