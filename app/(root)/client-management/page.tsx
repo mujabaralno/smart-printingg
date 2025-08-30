@@ -648,7 +648,7 @@ export default function ClientManagementPage() {
         </div>
 
         {/* Filters */}
-        <div className="client-management-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="client-management-filters grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Client Type</label>
             <Select value={clientTypeFilter} onValueChange={setClientTypeFilter}>
