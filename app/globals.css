@@ -490,6 +490,19 @@ html, body {
   white-space: nowrap !important;
 }
 
+/* Better table spacing and layout */
+table.min-w-full th,
+table.min-w-full td {
+  padding: 12px 16px !important;
+  vertical-align: top !important;
+}
+
+/* Ensure Quote ID badges have proper spacing */
+table.min-w-full td .inline-flex {
+  max-width: 100% !important;
+  word-break: break-all !important;
+}
+
 /* Allow some columns to wrap text for better readability */
 .table-fixed td.wrap-text {
   white-space: normal !important;

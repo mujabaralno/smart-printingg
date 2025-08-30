@@ -828,14 +828,14 @@ export default function QuoteManagementPage() {
               <Table className="w-full table-fixed" style={{ tableLayout: 'fixed', width: '100%', overflow: 'hidden' }}>
                 <TableHeader className="bg-slate-50">
                   <TableRow className="border-slate-200">
-                    <TableHead className="text-slate-700 font-semibold p-4 w-28">Quote ID</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4 w-48">Client Details</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4 w-24">Date</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4 w-32">Product</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4 w-24">Quantity</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4 w-28">Amount</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4 w-24">Status</TableHead>
-                    <TableHead className="text-slate-700 font-semibold p-4 w-32">Actions</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-40">Quote ID</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-44">Client Details</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-28">Date</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-28">Product</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-20">Quantity</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-24">Amount</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-20">Status</TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-4 w-28">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

@@ -766,13 +766,13 @@ export default function DashboardPage() {
                 <table className="min-w-full">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50">
-                      <th className="text-left p-4 font-semibold text-slate-700 w-36">Quote ID</th>
-                      <th className="text-left p-4 font-semibold text-slate-700 w-36">Client Name</th>
-                      <th className="text-left p-4 font-semibold text-slate-700 w-36">Product</th>
-                      <th className="text-left p-4 font-semibold text-slate-700 w-28">Date</th>
-                      <th className="text-left p-4 font-semibold text-slate-700 w-28">Amount</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-44">Quote ID</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-32">Client Name</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-28">Product</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-24">Date</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-24">Amount</th>
                       <th className="text-left p-4 font-semibold text-slate-700 w-20">Status</th>
-                      <th className="text-left p-4 font-semibold text-slate-700 w-32 min-w-[120px]">Actions</th>
+                      <th className="text-left p-4 font-semibold text-slate-700 w-28">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -794,35 +794,35 @@ export default function DashboardPage() {
                     ) : (
                       filteredQuotes.map((quote: any, index: number) => (
                       <tr key={`${quote.id}-${quote.status}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors duration-200">
-                        <td className="p-4 w-36">
+                        <td className="p-4 w-44">
                           <div>
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 break-all">
                               {quote.quoteId}
                             </span>
                           </div>
                         </td>
-                        <td className="p-4 w-36">
+                        <td className="p-4 w-32">
                           <div>
                             <div className="flex items-center space-x-3">
                               <span className="font-medium text-slate-900">{quote.customerName}</span>
                             </div>
                           </div>
                         </td>
-                        <td className="p-4 w-36">
+                        <td className="p-4 w-28">
                           <div>
                             <div className="flex items-center space-x-2">
                               <span className="text-slate-700">{quote.product || 'N/A'}</span>
                             </div>
                           </div>
                         </td>
-                        <td className="p-4 w-28">
+                        <td className="p-4 w-24">
                           <div>
                             <div className="flex items-center space-x-2">
                               <span className="text-slate-700">{formatDate(quote.createdDate)}</span>
                             </div>
                           </div>
                         </td>
-                        <td className="p-4 w-28">
+                        <td className="p-4 w-24">
                           <div>
                             <span className="font-semibold text-slate-900">AED {isNaN(quote.totalAmount) ? '0.00' : (quote.totalAmount || 0).toFixed(2)}</span>
                           </div>
@@ -840,7 +840,7 @@ export default function DashboardPage() {
                             </span>
                           </div>
                         </td>
-                        <td className="p-4 w-32 min-w-[120px]">
+                        <td className="p-4 w-28">
                           <div>
                             <div className="flex items-center space-x-2">
                               <Button
