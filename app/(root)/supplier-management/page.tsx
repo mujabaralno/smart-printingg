@@ -484,7 +484,7 @@ function SupplierManagementContent() {
         )}
 
         {/* Desktop Table */}
-        <div className="hidden lg:block overflow-hidden border border-slate-200 rounded-2xl">
+                      <div className="block overflow-hidden border border-slate-200 rounded-2xl">
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow className="border-slate-200">
