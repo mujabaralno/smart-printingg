@@ -4,44 +4,27 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// Determine which database to use based on environment
-const isProduction = process.env.NODE_ENV === 'production'
-const hasVercelDatabase = !!process.env.DATABASE_URL
-
-console.log('Database Service Initialization:', {
-  isProduction,
-  hasVercelDatabase,
-  DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'NOT_SET',
-  NODE_ENV: process.env.NODE_ENV
-})
-
-// Create Prisma client with appropriate configuration
+// Create Prisma client with PostgreSQL configuration only
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   datasources: {
     db: {
-      // In production, use the DATABASE_URL if available, otherwise fallback to SQLite
-      url: isProduction && hasVercelDatabase 
-        ? process.env.DATABASE_URL 
-        : 'file:./prisma/dev.db',
+      // Use DATABASE_URL for PostgreSQL/Prisma Accelerate only
+      url: process.env.DATABASE_URL,
     },
   },
 })
 
-// Only create one instance in development
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Only create one instance in production
+if (process.env.NODE_ENV === 'production') globalForPrisma.prisma = prisma
 
-// Database service class with unified interface
+// Database service class with PostgreSQL interface only
 export class DatabaseService {
   private prisma: PrismaClient
 
   constructor() {
     this.prisma = prisma
-    console.log('DatabaseService initialized with:', {
-      isProduction,
-      hasVercelDatabase,
-      databaseUrl: isProduction && hasVercelDatabase ? 'PRODUCTION_POSTGRES' : 'LOCAL_SQLITE'
-    })
+    console.log('DatabaseService initialized with PostgreSQL only')
   }
 
   // Database health check
@@ -61,24 +44,13 @@ export class DatabaseService {
   // Get database info
   async getDatabaseInfo() {
     try {
-      if (isProduction && hasVercelDatabase) {
-        // PostgreSQL in production
-        const result = await this.prisma.$queryRaw`SELECT version() as version`
-        return { 
-          status: 'connected', 
-          info: result,
-          database: 'Vercel PostgreSQL',
-          timestamp: new Date().toISOString() 
-        }
-      } else {
-        // SQLite in development
-        const result = await this.prisma.$queryRaw`SELECT sqlite_version() as version`
-        return { 
-          status: 'connected', 
-          info: result,
-          database: 'Local SQLite',
-          timestamp: new Date().toISOString() 
-        }
+      // PostgreSQL only
+      const result = await this.prisma.$queryRaw`SELECT version() as version`
+      return { 
+        status: 'connected', 
+        info: result,
+        database: 'PostgreSQL',
+        timestamp: new Date().toISOString() 
       }
     } catch (error) {
       return { 
@@ -1093,7 +1065,7 @@ export class DatabaseService {
         totalSalesPersons,
         totalUAEAreas,
         timestamp: new Date().toISOString(),
-        database: isProduction && hasVercelDatabase ? 'Vercel PostgreSQL' : 'Local SQLite',
+        database: 'PostgreSQL',
         environment: process.env.NODE_ENV || 'development'
       };
     } catch (error) {

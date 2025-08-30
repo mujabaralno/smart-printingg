@@ -1,22 +1,11 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { DatabaseService } from '@/lib/database-unified';
-
-// Use production database service if in production
-const getDatabaseService = () => {
-  if (process.env.NODE_ENV === 'production') {
-    // In production, use the production database service
-    const { DatabaseService: ProductionDatabaseService } = require('@/lib/database-production');
-    return new ProductionDatabaseService();
-  }
-  // In development, use the unified database service
-  return new DatabaseService();
-};
+import { DatabaseService } from '@/lib/database-production';
 
 export async function GET() {
   try {
     console.log('🔍 Fetching quotes from database...');
     
-    const dbService = getDatabaseService();
+    const dbService = new DatabaseService();
     const quotes = await dbService.getAllQuotes();
     
     console.log(`✅ Fetched ${quotes.length} quotes from database`);
@@ -66,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Validate that clientId exists
-    const dbService = getDatabaseService();
+    const dbService = new DatabaseService();
     try {
       const client = await dbService.getClientById(body.clientId);
       if (!client) {

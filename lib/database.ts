@@ -4,22 +4,19 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Determine which database to use based on environment
-const isProduction = process.env.NODE_ENV === 'production';
-const hasVercelDatabase = !!process.env.DATABASE_URL;
-
-// Create Prisma client with appropriate configuration
+// Create Prisma client with PostgreSQL configuration only
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || 'file:./prisma/dev.db',
+      // Use DATABASE_URL for PostgreSQL/Prisma Accelerate only
+      url: process.env.DATABASE_URL,
     },
   },
 });
 
-// Only create one instance in development
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+// Only create one instance in production
+if (process.env.NODE_ENV === 'production') globalForPrisma.prisma = prisma;
 
 // Database service class with unified interface
 export class DatabaseService {
@@ -34,9 +31,9 @@ export class DatabaseService {
   // Helper method to get database info
   static getDatabaseInfo() {
     return {
-      isProduction,
-      hasVercelDatabase,
-      databaseUrl: process.env.DATABASE_URL ? 'Vercel PostgreSQL' : 'Local SQLite',
+      isProduction: process.env.NODE_ENV === 'production',
+      hasVercelDatabase: !!process.env.DATABASE_URL,
+              databaseUrl: 'PostgreSQL Only',
       environment: process.env.NODE_ENV || 'development'
     };
   }

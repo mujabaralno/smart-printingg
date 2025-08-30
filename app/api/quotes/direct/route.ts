@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/database-unified';
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/database-production';
 
 export async function GET() {
   try {
