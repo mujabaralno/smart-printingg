@@ -162,6 +162,8 @@ export default function SalesPersonManagementPage() {
   // Add new sales person
   const handleAddSalesPerson = async (formData: Omit<SalesPerson, 'id' | 'salesPersonId' | 'createdAt' | 'updatedAt'>) => {
     try {
+      console.log('🔄 Adding new sales person with data:', formData);
+      
       // Generate automatic SL ID
       const nextId = salesPersons.length + 1;
       const salesPersonId = `SL-${nextId.toString().padStart(3, '0')}`;
@@ -171,6 +173,8 @@ export default function SalesPersonManagementPage() {
         salesPersonId
       };
 
+      console.log('📤 Sending sales person data to API:', salesPersonData);
+
       const response = await fetch('/api/sales-persons', {
         method: 'POST',
         headers: {
@@ -179,15 +183,24 @@ export default function SalesPersonManagementPage() {
         body: JSON.stringify(salesPersonData),
       });
 
+      console.log('📡 Response status:', response.status);
+
       if (response.ok) {
         const newPerson = await response.json();
+        console.log('✅ Sales person created successfully:', newPerson);
         setSalesPersons(prev => [...prev, newPerson]);
         setShowAddModal(false);
+        
+        // Show success feedback
+        alert('Sales person added successfully!');
       } else {
-        console.error('Failed to add sales person');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to add sales person:', response.status, errorData);
+        alert(`Failed to add sales person: ${response.status} - ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error adding sales person:', error);
+      console.error('❌ Error adding sales person:', error);
+      alert(`Error adding sales person: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -585,6 +598,14 @@ function AddSalesPersonForm({ onSubmit, onCancel }: {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('📝 AddSalesPersonForm: Form submitted with data:', formData);
+    console.log('📝 AddSalesPersonForm: Form data type:', typeof formData);
+    console.log('📝 AddSalesPersonForm: Form data keys:', Object.keys(formData));
+    console.log('📝 AddSalesPersonForm: Required fields check:', {
+      name: !!formData.name,
+      email: !!formData.email,
+      phone: !!formData.phone
+    });
     onSubmit(formData);
   };
 
@@ -676,7 +697,10 @@ function AddSalesPersonForm({ onSubmit, onCancel }: {
           <Label htmlFor="status" className="text-sm font-medium text-gray-700 mb-2 block">
             Status
           </Label>
-          <Select value={formData.status} onValueChange={(value: "Active" | "Inactive") => setFormData(prev => ({ ...prev, status: value }))}>
+          <Select value={formData.status} onValueChange={(value: "Active" | "Inactive") => {
+            console.log('🔄 AddSalesPersonForm: Status changed from:', formData.status, 'to:', value);
+            setFormData(prev => ({ ...prev, status: value }));
+          }}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
