@@ -4,12 +4,19 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// Create Prisma client with SQLite configuration (as it was working before)
+// Determine which database to use based on environment
+const isProduction = process.env.NODE_ENV === 'production'
+const hasVercelDatabase = !!process.env.DATABASE_URL
+
+// Create Prisma client with appropriate configuration
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   datasources: {
     db: {
-      url: 'file:./dev.db',
+      // In production, use the DATABASE_URL if available, otherwise fallback to SQLite
+      url: isProduction && hasVercelDatabase 
+        ? process.env.DATABASE_URL 
+        : 'file:./dev.db',
     },
   },
 })
@@ -42,11 +49,24 @@ export class DatabaseService {
   // Get database info
   async getDatabaseInfo() {
     try {
-      const result = await this.prisma.$queryRaw`SELECT sqlite_version() as version`
-      return { 
-        status: 'connected', 
-        info: result,
-        timestamp: new Date().toISOString() 
+      if (isProduction && hasVercelDatabase) {
+        // PostgreSQL in production
+        const result = await this.prisma.$queryRaw`SELECT version() as version`
+        return { 
+          status: 'connected', 
+          info: result,
+          database: 'Vercel PostgreSQL',
+          timestamp: new Date().toISOString() 
+        }
+      } else {
+        // SQLite in development
+        const result = await this.prisma.$queryRaw`SELECT sqlite_version() as version`
+        return { 
+          status: 'connected', 
+          info: result,
+          database: 'Local SQLite',
+          timestamp: new Date().toISOString() 
+        }
       }
     } catch (error) {
       return { 
