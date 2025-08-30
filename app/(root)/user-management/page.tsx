@@ -510,79 +510,87 @@ export default function UserManagementPage() {
                     Loading users...
                   </div>
                 ) : current.map((u) => (
-                  <Card key={u.id} className="p-4 border-slate-200">
-                    <div className="space-y-3">
+                  <Card key={u.id} className="p-4 border-slate-200 bg-white shadow-sm">
+                    <div className="space-y-4">
                       {/* Header with ID and Status */}
                       <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                                                     {u.displayId || u.id}
+                        <span className="font-mono text-sm font-medium text-slate-900 bg-purple-100 text-purple-800 px-3 py-2 rounded-lg">
+                          {u.displayId || u.id}
                         </span>
                         <StatusChip value={u.status} />
                       </div>
                       
                       {/* User Info */}
-                      <div className="flex items-start gap-3">
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden">
-                          {u.profilePicture ? (
-                            <>
-                              <img 
-                                src={u.profilePicture} 
-                                alt={`${u.name}'s profile`}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  const fallback = target.nextElementSibling as HTMLElement;
-                                  if (fallback) fallback.style.display = 'flex';
-                                }}
-                              />
-                              <span 
-                                className="text-white text-sm font-medium absolute"
-                                style={{ display: 'none' }}
-                              >
+                      <div className="bg-slate-50 p-3 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden">
+                            {u.profilePicture ? (
+                              <>
+                                <img 
+                                  src={u.profilePicture} 
+                                  alt={`${u.name}'s profile`}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const fallback = target.nextElementSibling as HTMLElement;
+                                    if (fallback) fallback.style.display = 'flex';
+                                  }}
+                                />
+                                <span 
+                                  className="text-white text-sm font-medium absolute"
+                                  style={{ display: 'none' }}
+                                >
+                                  {u.name.charAt(0).toUpperCase()}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-white text-sm font-medium">
                                 {u.name.charAt(0).toUpperCase()}
                               </span>
-                            </>
-                          ) : (
-                            <span className="text-white text-sm font-medium">
-                              {u.name.charAt(0).toUpperCase()}
-                            </span>
-                          )}
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">User</div>
+                            <div className="font-semibold text-slate-900">{u.name}</div>
+                            <div className="text-sm text-slate-600">{u.email}</div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-slate-900 text-lg">{u.name}</div>
-                          <div className="text-sm text-slate-500 mb-2">{u.email}</div>
-                          <div className="flex items-center gap-2 mb-2">
+                      </div>
+                      
+                      {/* Role and Join Date */}
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Role</div>
+                          <div className="flex items-center gap-2">
                             {getRoleIcon(u.role)}
                             <RoleBadge role={u.role} />
                           </div>
-                                                     <div className="text-xs text-slate-500">Joined: {fmt(u.joined || new Date().toISOString().slice(0, 10))}</div>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Joined</div>
+                          <div className="font-medium text-slate-900">{fmt(u.joined || new Date().toISOString().slice(0, 10))}</div>
                         </div>
                       </div>
                       
                       {/* Actions */}
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                      <div className="flex flex-col space-y-2 pt-3 border-t border-slate-200">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => editUser(u)}
-                          className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:border-blue-600 rounded-xl px-4 py-2 transition-all duration-200"
+                          className="w-full border-blue-500 text-blue-600 hover:bg-blue-50 hover:border-blue-600"
                         >
                           <Edit3 className="h-4 w-4 mr-2" />
-                          Edit
+                          Edit User
                         </Button>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-between">
                           <span className="text-sm text-slate-600 font-medium">Status:</span>
-                          <div className="flex flex-col items-center space-y-1">
-                            <Switch
-                              checked={u.status === "Active"}
-                              onCheckedChange={() => toggleStatus(u.id)}
-                              className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-600 data-[state=checked]:to-purple-600"
-                            />
-                            <span className="text-xs text-slate-500 font-medium">
-                              {u.status === "Active" ? "Active" : "Inactive"}
-                            </span>
-                          </div>
+                          <Switch
+                            checked={u.status === "Active"}
+                            onCheckedChange={() => toggleStatus(u.id)}
+                            className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-600 data-[state=checked]:to-purple-600"
+                          />
                         </div>
                       </div>
                     </div>

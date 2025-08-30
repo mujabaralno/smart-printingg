@@ -909,13 +909,13 @@ export default function ClientManagementPage() {
                 </div>
               ) : (
                 current.map((client) => (
-                  <Card key={client.id} className="p-4 border-slate-200">
-                    <div className="space-y-3">
+                  <Card key={client.id} className="p-4 border-slate-200 bg-white shadow-sm">
+                    <div className="space-y-4">
                       {/* Header with Client ID and Status */}
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-slate-600">{getClientDisplayId(client.id)}</span>
-                        </div>
+                        <span className="font-mono text-sm font-medium text-slate-900 bg-blue-100 text-blue-800 px-3 py-2 rounded-lg">
+                          {getClientDisplayId(client.id)}
+                        </span>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                           client.status === "Active" 
                             ? "bg-green-100 text-green-700 border-green-200"
@@ -926,43 +926,42 @@ export default function ClientManagementPage() {
                       </div>
                       
                       {/* Client Info */}
-                      <div className="space-y-1">
-                        <div className="font-medium text-slate-900 text-lg">
+                      <div className="bg-slate-50 p-3 rounded-lg">
+                        <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
+                          {client.clientType === "Company" ? "Company" : "Individual"}
+                        </div>
+                        <div className="font-semibold text-slate-900">
                           {client.clientType === "Company" ? client.companyName : `${client.firstName} ${client.lastName}`}
                         </div>
-                        <div className="text-sm text-slate-500">
+                        <div className="text-sm text-slate-600">
                           {client.clientType === "Company" ? client.contactPerson : client.role}
                         </div>
                       </div>
                       
                       {/* Contact Details */}
-                      <div className="grid grid-cols-1 gap-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-slate-500">Email:</span>
-                          <span className="text-sm text-slate-700">{client.email}</span>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Email</div>
+                          <div className="font-medium text-slate-900">{client.email}</div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-slate-500">Phone:</span>
-                          <span className="text-sm text-slate-700">{client.phone}</span>
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Phone</div>
+                          <div className="font-medium text-slate-900">{client.phone}</div>
                         </div>
                       </div>
                       
                       {/* Location */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-sm text-slate-500">City:</span>
-                          <div className="text-sm text-slate-700">{client.city}, {client.state}</div>
-                        </div>
-                        <div>
-                          <span className="text-sm text-slate-500">Area:</span>
-                          <div className="text-sm text-slate-700">{client.area || 'N/A'}</div>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Location</div>
+                          <div className="font-medium text-slate-900">{client.city}, {client.state}</div>
                         </div>
                       </div>
                       
                       {/* Quotes Count */}
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-slate-500">Quotes:</span>
+                      <div className="bg-slate-50 p-3 rounded-lg">
+                        <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Quotes</div>
+                        <div className="font-semibold text-slate-900">
                           {(() => {
                             const clientQuotes = quotes.filter(q => q.clientId === client.id);
                             const quoteCount = clientQuotes.length;

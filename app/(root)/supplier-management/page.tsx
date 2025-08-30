@@ -664,73 +664,67 @@ function SupplierManagementContent() {
             </div>
           ) : (
             current.map((r) => (
-              <Card key={r.id} className="p-4 border-slate-200">
-                <div className="space-y-3">
+              <Card key={r.id} className="p-4 border-slate-200 bg-white shadow-sm">
+                <div className="space-y-4">
                   {/* Header with Material ID and Status */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                        {r.materialId}
-                      </span>
-                      {(highlightedMaterialId === r.id || highlightedMaterialId === r.materialId) && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 animate-pulse">
-                          🔍 Found
-                        </span>
-                      )}
-                    </div>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                    <span className="font-mono text-sm font-medium text-slate-900 bg-green-100 text-green-800 px-3 py-2 rounded-lg">
+                      {r.materialId}
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       r.status === "Active" 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-red-100 text-red-800"
+                        ? "bg-green-100 text-green-700 border-green-200"
+                        : "bg-red-100 text-red-700 border-red-200"
                     }`}>
                       {r.status}
                     </span>
                   </div>
                   
                   {/* Material Info */}
-                  <div className="space-y-1">
-                    <div className="font-medium text-slate-900 text-lg">{r.name}</div>
+                  <div className="bg-slate-50 p-3 rounded-lg">
+                    <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Material</div>
+                    <div className="font-semibold text-slate-900">{r.name}</div>
                     {r.gsm && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mt-2">
                         {r.gsm} gsm
                       </span>
                     )}
                   </div>
                   
                   {/* Supplier and Cost */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm text-slate-500">Supplier:</span>
-                      <div className="text-sm text-slate-700 font-medium">{r.supplier.name}</div>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="bg-slate-50 p-3 rounded-lg">
+                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Supplier</div>
+                      <div className="font-medium text-slate-900">{r.supplier.name}</div>
                     </div>
-                    <div>
-                      <span className="text-sm text-slate-500">Cost:</span>
-                      <div className="text-sm text-slate-700 font-medium">{currency.format(r.cost)}</div>
+                    <div className="bg-slate-50 p-3 rounded-lg">
+                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Cost</div>
+                      <div className="font-semibold text-slate-900">{currency.format(r.cost)}</div>
                     </div>
                   </div>
                   
                   {/* Unit and Last Updated */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm text-slate-500">Unit:</span>
-                      <div className="text-sm text-slate-700">{unitLabel(r.unit)}</div>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="bg-slate-50 p-3 rounded-lg">
+                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Unit</div>
+                      <div className="font-medium text-slate-900">{unitLabel(r.unit)}</div>
                     </div>
-                    <div>
-                      <span className="text-sm text-slate-500">Updated:</span>
-                      <div className="text-sm text-slate-700">{fmtDate(r.lastUpdated)}</div>
+                    <div className="bg-slate-50 p-3 rounded-lg">
+                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Last Updated</div>
+                      <div className="font-medium text-slate-900">{fmtDate(r.lastUpdated)}</div>
                     </div>
                   </div>
                   
                   {/* Actions */}
-                  <div className="flex items-center justify-center pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-center pt-3 border-t border-slate-200">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => onEdit(r)}
-                      className="text-green-600 border-green-200 hover:bg-green-50"
+                      className="w-full text-green-600 border-green-200 hover:bg-green-50"
                     >
-                      <Pencil className="w-4 h-4 mr-1" />
-                      Edit
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Edit Material
                     </Button>
                   </div>
                 </div>
