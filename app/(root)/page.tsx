@@ -445,9 +445,62 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDownloadPDF = (quote: any) => {
-    // PDF download logic here
-    console.log(`Downloading PDF for quote ${quote.quoteNumber}`);
+  const handleDownloadPDF = async (quote: any) => {
+    try {
+      console.log(`Generating PDF for quote ${quote.quoteId}`);
+      
+      // Show loading state
+      const downloadBtn = document.querySelector(`[data-quote-id="${quote.id}"] .download-btn`);
+      if (downloadBtn) {
+        downloadBtn.innerHTML = 'Generating...';
+        downloadBtn.setAttribute('disabled', 'true');
+      }
+      
+      // Call the PDF generation API
+      const response = await fetch(`/api/quotes/${quote.id}/pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'customer' // or 'operations' based on your needs
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+      
+      // Get the PDF blob
+      const pdfBlob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Quote-${quote.quoteId}-${new Date().toISOString().split('T')[0]}.pdf`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      
+      console.log(`PDF downloaded successfully for quote ${quote.quoteId}`);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      // Reset button state
+      const downloadBtn = document.querySelector(`[data-quote-id="${quote.id}"] .download-btn`);
+      if (downloadBtn) {
+        downloadBtn.innerHTML = '<Download className="w-4 h-4" />';
+        downloadBtn.removeAttribute('disabled');
+      }
+    }
   };
 
   const ViewQuoteModal = () => {
@@ -522,13 +575,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex space-x-4">
-              <Button 
-                onClick={() => handleDownloadPDF(selectedQuote)}
-                className="flex items-center space-x-2"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download PDF</span>
-              </Button>
+              {/* Download button hidden */}
               <Button 
                 variant="outline"
                 onClick={() => {
@@ -588,18 +635,17 @@ export default function DashboardPage() {
               </Select>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="space-y-3">
               <Button 
                 onClick={() => handleStatusUpdate(updateStatusValue)}
-                className={`flex-1 ${
-                  updateStatusValue 
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                    : 'bg-gray-300 text-gray-700 cursor-not-allowed border border-gray-400'
-                }`}
                 disabled={!updateStatusValue || isUpdating}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isUpdating ? 'Updating...' : updateStatusValue ? `Apply Status Change` : 'Select Status First'}
+                {isUpdating ? 'Updating Status...' : updateStatusValue ? 'Apply Status Change' : 'Select Status First'}
               </Button>
+              
+
+              
               <Button 
                 onClick={() => {
                   // Force close and reset all states
@@ -612,7 +658,7 @@ export default function DashboardPage() {
                   window.location.href = `/create-quote?step=2&edit=${selectedQuote?.quoteId}`;
                 }}
                 variant="outline"
-                className="flex items-center justify-center space-x-2 flex-1"
+                className="w-full flex items-center justify-center space-x-2 py-3"
                 disabled={isUpdating}
               >
                 <Edit className="w-4 h-4" />
@@ -819,8 +865,9 @@ export default function DashboardPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDownloadPDF(quote)}
-                                className="p-2 hover:bg-[#f89d1d]/10 text-[#f89d1d] rounded-lg transition-colors duration-200"
+                                className="p-2 hover:bg-[#f89d1d]/10 text-[#f89d1d] rounded-lg transition-colors duration-200 download-btn"
                                 title="Download PDF"
+                                data-quote-id={quote.id}
                               >
                                 <Download className="w-4 h-4" />
                               </Button>
@@ -918,7 +965,8 @@ export default function DashboardPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleDownloadPDF(quote)}
-                              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                              className="text-blue-600 border-blue-200 hover:bg-blue-50 download-btn"
+                              data-quote-id={quote.id}
                             >
                               <Download className="w-4 h-4 mr-1" />
                               PDF
@@ -939,6 +987,6 @@ export default function DashboardPage() {
       <ViewQuoteModal />
       <UpdateQuoteModal />
 
-    </div>
-  );
+          </div>
+    );
 }

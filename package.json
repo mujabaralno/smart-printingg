@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "prisma generate --schema=./prisma/schema.dev.prisma && next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate --schema=./prisma/schema-postgresql-current.prisma --no-engine && next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate --schema=./prisma/schema-postgresql-current.prisma --no-engine",
     "db:dev": "prisma generate --schema=./prisma/schema.dev.prisma",
-    "db:prod": "prisma generate"
+    "db:prod": "prisma generate --schema=./prisma/schema-postgresql-current.prisma --no-engine"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

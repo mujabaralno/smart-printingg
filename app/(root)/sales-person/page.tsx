@@ -164,13 +164,9 @@ export default function SalesPersonManagementPage() {
     try {
       console.log('🔄 Adding new sales person with data:', formData);
       
-      // Generate automatic SL ID
-      const nextId = salesPersons.length + 1;
-      const salesPersonId = `SL-${nextId.toString().padStart(3, '0')}`;
-      
+      // Remove manual salesPersonId generation - now handled by backend
       const salesPersonData = {
-        ...formData,
-        salesPersonId
+        ...formData
       };
 
       console.log('📤 Sending sales person data to API:', salesPersonData);

@@ -209,6 +209,14 @@ export class DatabaseService {
 
   async createSalesPerson(salesPersonData: any) {
     try {
+      // Auto-generate salesPersonId if not provided
+      if (!salesPersonData.salesPersonId) {
+        const allSalesPersons = await this.getAllSalesPersons();
+        const nextId = allSalesPersons.length + 1;
+        salesPersonData.salesPersonId = `SL-${nextId.toString().padStart(3, '0')}`;
+        console.log('Auto-generated salesPersonId:', salesPersonData.salesPersonId);
+      }
+      
       return await this.prisma.salesPerson.create({
         data: salesPersonData,
       });
