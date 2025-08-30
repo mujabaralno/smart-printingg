@@ -378,6 +378,29 @@ export class DatabaseService {
     }
   }
 
+  async updateQuoteWithDetails(id: string, data: any) {
+    try {
+      return await this.prisma.quote.update({
+        where: { id },
+        data: {
+          ...data,
+          updatedAt: new Date()
+        },
+        include: {
+          client: true,
+          user: true,
+          papers: true,
+          finishing: true,
+          amounts: true,
+          operational: true
+        },
+      });
+    } catch (error) {
+      console.error('Error updating quote with details:', error);
+      throw error;
+    }
+  }
+
   async deleteQuote(id: string) {
     try {
       return await this.prisma.quote.delete({

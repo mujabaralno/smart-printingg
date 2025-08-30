@@ -1,24 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/database-unified';
+import { DatabaseService } from '@/lib/database-unified';
 
 export async function GET() {
   try {
-    console.log('🔍 Fetching sales persons from PostgreSQL database...');
+    console.log('🔍 Fetching sales persons from database...');
     
-    // Use direct Prisma client with raw SQL for now
-    const salesPersons = await prisma.$queryRaw`
-      SELECT 
-        id, "salesPersonId", name, email, phone, "countryCode", 
-        designation, department, "hireDate", status, "profilePicture",
-        address, city, state, "postalCode", country, notes,
-        "createdAt", "updatedAt"
-      FROM "SalesPerson" 
-      ORDER BY "createdAt" DESC
-    `;
+    const dbService = new DatabaseService();
+    const salesPersons = await dbService.getAllSalesPersons();
     
-    console.log(`✅ Found ${Array.isArray(salesPersons) ? salesPersons.length : 0} sales persons`);
+    console.log(`✅ Found ${salesPersons.length} sales persons`);
     
-    return NextResponse.json(Array.isArray(salesPersons) ? salesPersons : []);
+    return NextResponse.json(salesPersons);
     
   } catch (error) {
     console.error('❌ Error fetching sales persons:', error);
@@ -46,28 +38,12 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Create sales person using raw SQL for now
-    const result = await prisma.$executeRaw`
-      INSERT INTO "SalesPerson" (
-        id, "salesPersonId", name, email, phone, "countryCode", 
-        designation, department, "hireDate", status, "profilePicture",
-        address, city, state, "postalCode", country, notes,
-        "createdAt", "updatedAt"
-      ) VALUES (
-        ${body.id || 'cuid()'}, ${body.salesPersonId}, 
-        ${body.name}, ${body.email}, ${body.phone},
-        ${body.countryCode || '+971'}, ${body.designation || 'Sales Representative'},
-        ${body.department || 'Sales'}, ${body.hireDate || new Date()},
-        ${body.status || 'Active'}, ${body.profilePicture || null},
-        ${body.address || null}, ${body.city || 'Dubai'},
-        ${body.state || 'Dubai'}, ${body.postalCode || null},
-        ${body.country || 'UAE'}, ${body.notes || null},
-        ${new Date()}, ${new Date()}
-      )
-    `;
+    // Create sales person using DatabaseService
+    const dbService = new DatabaseService();
+    const salesPerson = await dbService.createSalesPerson(body);
     
-    console.log('Sales person created successfully');
-    return NextResponse.json({ success: true, message: 'Sales person created' });
+    console.log('Sales person created successfully:', salesPerson.id);
+    return NextResponse.json(salesPerson);
     
   } catch (error) {
     console.error('❌ Error creating sales person:', error);
