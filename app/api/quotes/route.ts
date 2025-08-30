@@ -92,14 +92,6 @@ export async function POST(request: NextRequest) {
       body.finishing = [];
     }
     
-    // Ensure operational data exists
-    if (!body.operational) {
-      body.operational = {
-        plates: 0,
-        units: 0
-      };
-    }
-    
     console.log('Processed quote data:', JSON.stringify(body, null, 2));
     
     // Use the enhanced createQuote method from DatabaseService

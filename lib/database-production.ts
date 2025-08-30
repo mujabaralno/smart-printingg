@@ -243,7 +243,7 @@ export class DatabaseService {
   // ===== QUOTE OPERATIONS =====
   async getAllQuotes() {
     try {
-      return await this.prisma.quote.findMany({
+      const quotes = await this.prisma.quote.findMany({
         orderBy: { createdAt: 'desc' },
         include: {
           client: true,
@@ -253,6 +253,12 @@ export class DatabaseService {
           finishing: true,
         },
       });
+      
+      // Add operational field for frontend compatibility
+      return quotes.map(quote => ({
+        ...quote,
+        operational: null // Will be populated when needed
+      }));
     } catch (error) {
       console.error('Error fetching quotes:', error);
       throw error;
@@ -261,7 +267,7 @@ export class DatabaseService {
 
   async getQuoteById(id: string) {
     try {
-      return await this.prisma.quote.findUnique({
+      const quote = await this.prisma.quote.findUnique({
         where: { id },
         include: {
           client: true,
@@ -271,6 +277,16 @@ export class DatabaseService {
           amounts: true,
         },
       });
+      
+      if (quote) {
+        // Add operational field for frontend compatibility
+        return {
+          ...quote,
+          operational: null // Will be populated when needed
+        };
+      }
+      
+      return quote;
     } catch (error) {
       console.error('Error fetching quote by ID:', error);
       throw error;
