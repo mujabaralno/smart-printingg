@@ -1573,27 +1573,13 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                               onCheckedChange={(checked) => {
                                 console.log(`🔄 Checkbox ${option} changed to:`, checked);
                                 if (!checked) {
-                                  // Remove all variants of this finishing option (case-insensitive)
-                                  const updatedFinishing = product.finishing.filter(f => {
-                                    if (typeof f === 'string') {
-                                      const normalizedFinishing = f.toLowerCase();
-                                      const normalizedOption = option.toLowerCase();
-                                      return !(normalizedFinishing === normalizedOption || normalizedFinishing.startsWith(normalizedOption + '-'));
-                                    }
-                                    return true;
-                                  });
+                                  // Remove all variants of this finishing option
+                                  const updatedFinishing = product.finishing.filter(f => !f.startsWith(option));
                                   updateProduct(idx, { finishing: updatedFinishing });
                                 } else {
                                   // Add default side when checked
                                   const finishingKey = product.sides === "2" ? `${option}-Front` : option;
-                                  const updatedFinishing = [...product.finishing.filter(f => {
-                                    if (typeof f === 'string') {
-                                      const normalizedFinishing = f.toLowerCase();
-                                      const normalizedOption = option.toLowerCase();
-                                      return !(normalizedFinishing === normalizedOption || normalizedFinishing.startsWith(normalizedOption + '-'));
-                                    }
-                                    return true;
-                                  }), finishingKey];
+                                  const updatedFinishing = [...product.finishing.filter(f => !f.startsWith(option)), finishingKey];
                                   updateProduct(idx, { finishing: updatedFinishing });
                                 }
                               }}

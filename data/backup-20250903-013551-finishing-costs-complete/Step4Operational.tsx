@@ -1899,29 +1899,10 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
       // Add only the finishing options that are actually selected in Step 3
       // Note: Costs are now calculated automatically in the display, so we don't need to pre-calculate them here
       allFinishingNames.forEach(finishingName => {
-        // Skip any incorrect "Uv spot" entries
-        if (finishingName.toLowerCase() === 'uv spot' && finishingName !== 'UV Spot') {
-          console.log('DEBUG: Skipping incorrect "Uv spot" entry');
-          return;
-        }
-        
-        // Only add if it's actually selected in Step 3
-        const isSelectedInStep3 = formData.products.some(product => 
-          product.finishing && product.finishing.some(f => {
-            const baseName = f.split('-')[0];
-            return baseName.toLowerCase() === finishingName.toLowerCase();
-          })
-        );
-        
-        if (isSelectedInStep3) {
-          console.log('DEBUG: Adding finishing:', finishingName);
-          newOperationalFinishing.push({
-            name: finishingName,
-            cost: null // Cost will be calculated automatically based on formula
-          });
-        } else {
-          console.log('DEBUG: Skipping finishing not selected in Step 3:', finishingName);
-        }
+        newOperationalFinishing.push({
+          name: finishingName,
+          cost: null // Cost will be calculated automatically based on formula
+        });
       });
 
       console.log('DEBUG: Setting new operational finishing:', newOperationalFinishing);
@@ -1935,32 +1916,6 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
       };
     });
   }, [formData.products, setFormData]);
-  
-  // ===== Clean up incorrect UV Spot entries =====
-  React.useEffect(() => {
-    setFormData((prev) => {
-      const hasIncorrectUVSpot = prev.operational.finishing.some(f => 
-        f.name.toLowerCase() === 'uv spot' && f.name !== 'UV Spot'
-      );
-      
-      if (hasIncorrectUVSpot) {
-        console.log('DEBUG: Found incorrect UV Spot entry, cleaning up...');
-        const cleanedFinishing = prev.operational.finishing.filter(f => 
-          !(f.name.toLowerCase() === 'uv spot' && f.name !== 'UV Spot')
-        );
-        
-        return {
-          ...prev,
-          operational: {
-            ...prev.operational,
-            finishing: cleanedFinishing
-          }
-        };
-      }
-      
-      return prev;
-    });
-  }, [setFormData]);
   
   // ===== Auto-update finishing costs when impressions change =====
   React.useEffect(() => {
@@ -2175,11 +2130,6 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         const uvSpotImpressions = Math.max(1000, totalQuantity); // Minimum 1000 impressions
         const uvSpotImpressionCost = Math.ceil(uvSpotImpressions / 1000) * 350;
         finishingCost = Math.max(350, uvSpotImpressionCost);
-        console.log('DEBUG: UV Spot calculation:');
-        console.log('  totalQuantity:', totalQuantity);
-        console.log('  uvSpotImpressions:', uvSpotImpressions);
-        console.log('  uvSpotImpressionCost:', uvSpotImpressionCost);
-        console.log('  finishingCost:', finishingCost);
         break;
         
       case 'Folding':
@@ -4562,14 +4512,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                             
                             // Calculate cost per unit
                             if (['Embossing', 'Foiling', 'Die Cutting', 'UV Spot', 'Folding'].includes(baseFinishingName)) {
-                              // For impression-based finishing, use total impressions or total quantity
-                              const totalImpressions = formData.operational.impressions || formData.products.reduce((acc, product) => acc + (product.quantity || 0), 0);
-                              const costPerUnit = totalImpressions > 0 ? totalCost / totalImpressions : totalCost;
-                              console.log('DEBUG: Cost per unit calculation for', finishing.name);
-                              console.log('  totalCost:', totalCost);
-                              console.log('  totalImpressions:', totalImpressions);
-                              console.log('  costPerUnit:', costPerUnit);
-                              return costPerUnit;
+                              return totalQuantity > 0 ? totalCost / totalQuantity : 0;
                             } else {
                               return actualSheetsNeeded > 0 ? totalCost / actualSheetsNeeded : 0;
                             }

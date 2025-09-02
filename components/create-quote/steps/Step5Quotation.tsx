@@ -298,14 +298,79 @@ const Step5Quotation: React.FC<Step5Props> = ({
     const PLATE_COST_PER_PLATE = 35; // Standard plate cost
     const platesCost = (formData.operational.plates || 0) * PLATE_COST_PER_PLATE;
 
-    // 3. Finishing Costs (cost per unit × actual units needed)
+    // 3. Finishing Costs (calculate using same logic as Step 4)
     const actualUnitsNeeded = formData.operational.units || product.quantity || 0;
-    const finishingCost = formData.operational.finishing.reduce((total, f) => {
-      if (product.finishing && product.finishing.includes(f.name)) {
-        return total + ((f.cost || 0) * actualUnitsNeeded);
+    const finishingCost = (() => {
+      let totalFinishingCost = 0;
+      
+      if (product.finishing && product.finishing.length > 0) {
+        product.finishing.forEach(finishingName => {
+          // Use the same calculation logic as Step 4
+          const baseFinishingName = finishingName.split('-')[0];
+          let finishingCost = 0;
+          
+          // Use impressions field if available, otherwise fall back to product quantity
+          const totalQuantity = formData.operational.impressions || product.quantity || 0;
+          
+          switch (baseFinishingName) {
+            case 'Lamination':
+              const actualSheetsNeeded = formData.operational.papers[productIndex]?.enteredSheets ?? 0;
+              finishingCost = 75 + (actualSheetsNeeded * 0.75);
+              break;
+            case 'Velvet Lamination':
+              const velvetSheetsNeeded = formData.operational.papers[productIndex]?.enteredSheets ?? 0;
+              finishingCost = 100 + (velvetSheetsNeeded * 1.0);
+              break;
+            case 'Embossing':
+              const embossingImpressions = Math.max(1000, totalQuantity);
+              const embossingImpressionCost = Math.ceil(embossingImpressions / 1000) * 50;
+              finishingCost = Math.max(75, embossingImpressionCost);
+              break;
+            case 'Foiling':
+              const foilingImpressions = Math.max(1000, totalQuantity);
+              const foilingImpressionCost = Math.ceil(foilingImpressions / 1000) * 75;
+              finishingCost = Math.max(75, foilingImpressionCost);
+              break;
+            case 'Die Cutting':
+              const dieCuttingImpressions = Math.max(1000, totalQuantity);
+              const dieCuttingImpressionCost = Math.ceil(dieCuttingImpressions / 1000) * 50;
+              let minCharge = 75;
+              if (product.flatSize && product.flatSize.width && product.flatSize.height) {
+                const area = product.flatSize.width * product.flatSize.height;
+                if (area <= 210 * 148) minCharge = 75;
+                else if (area <= 297 * 210) minCharge = 100;
+                else if (area <= 420 * 297) minCharge = 150;
+                else minCharge = 200;
+              }
+              finishingCost = Math.max(minCharge, dieCuttingImpressionCost);
+              break;
+            case 'UV Spot':
+              const uvSpotImpressions = Math.max(1000, totalQuantity);
+              const uvSpotImpressionCost = Math.ceil(uvSpotImpressions / 1000) * 350;
+              finishingCost = Math.max(350, uvSpotImpressionCost);
+              break;
+            case 'Folding':
+              const foldingImpressions = Math.max(1000, totalQuantity);
+              const foldingImpressionCost = Math.ceil(foldingImpressions / 1000) * 25;
+              finishingCost = Math.max(25, foldingImpressionCost);
+              break;
+            case 'Padding':
+              finishingCost = 25;
+              break;
+            case 'Varnishing':
+              finishingCost = 30;
+              break;
+            default:
+              finishingCost = 0;
+              break;
+          }
+          
+          totalFinishingCost += finishingCost;
+        });
       }
-      return total;
-    }, 0);
+      
+      return totalFinishingCost;
+    })();
 
     // 4. Calculate subtotal, margin, and VAT
     const subtotal = paperCost + platesCost + finishingCost;
