@@ -69,6 +69,11 @@ function computeLayout(
     gripperWidth, edgeMargin, gapWidth, bleedWidth
   });
   
+  console.log('🔍 computeLayout DEBUG - All parameters received:', {
+    inputWidth, inputHeight, outputWidth, outputHeight,
+    gripperWidth, edgeMargin, gapWidth, bleedWidth
+  });
+  
   if (!inputWidth || !inputHeight || !outputWidth || !outputHeight) {
     return {
       usableW: 0,
@@ -90,6 +95,13 @@ function computeLayout(
   const productWithBleedWidth = outputWidth + (2 * bleedWidth);
   const productWithBleedHeight = outputHeight + (2 * bleedWidth);
   
+  console.log('🔍 computeLayout CALCULATIONS:', {
+    printableWidth,
+    printableHeight,
+    productWithBleedWidth,
+    productWithBleedHeight
+  });
+  
 
   // Calculate how many products fit in printable area
   // For each row: we need space for products + gaps between them
@@ -106,6 +118,15 @@ function computeLayout(
   const rotatedItemsPerRow = Math.floor((printableWidth + gapWidth) / (productWithBleedHeight + gapWidth));
   const rotatedItemsPerCol = Math.floor((printableHeight + gapWidth) / (productWithBleedWidth + gapWidth));
   const rotatedCount = rotatedItemsPerRow * rotatedItemsPerCol;
+  
+  console.log('🔍 computeLayout RESULTS:', {
+    normalItemsPerRow,
+    normalItemsPerCol,
+    normalCount,
+    rotatedItemsPerRow,
+    rotatedItemsPerCol,
+    rotatedCount
+  });
   
 
   // Choose the better orientation
@@ -1958,8 +1979,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         
         
         const layout = computeLayout(
-          opPaper?.inputWidth ?? null,
-          opPaper?.inputHeight ?? null,
+          35,  // Fixed press sheet width: 35 cm
+          50,  // Fixed press sheet height: 50 cm
           step3ProductWidth,  // Use Step 3 dimensions
           step3ProductHeight, // Use Step 3 dimensions
           gripperWidth,
@@ -1967,6 +1988,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
           gapWidth,
           bleedWidth
         );
+        
+        console.log('🔍 computeLayout result:', layout);
         
         
 
@@ -4225,7 +4248,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             </Card>
 
             {/* Enhanced Sheet Optimization Preview - MAXIMUM SCALE */}
-                        <Card className="border-0 shadow-lg w-full mx-0">
+            <Card className="border-0 shadow-lg w-full mx-0">
               <CardHeader className="pb-3">
                 <CardTitle className="text-xl md:text-2xl font-bold text-slate-800 flex items-center">
                   <BarChart3 className="w-6 h-6 md:w-7 md:h-7 mr-2 md:mr-3 text-[#27aae1]" />
@@ -6099,6 +6122,6 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
       </Dialog>
     </div>
   );
-}; 
+};
 
 export default Step4Operational;
