@@ -68,3 +68,4 @@ const cost = Math.ceil(impressions / 1000) * baseCost;
 5. **Fallback Logic**: Graceful handling when impressions field is empty
 
 The finishing cost automation is now **100% functional** and ready for production use!
+
