@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Calculator, Settings, BarChart3, Edit3, AlertTriangle, Database, Palette, Info, Clock, DollarSign, Search, Building, Plus, Printer, Scissors, GripHorizontal } from "lucide-react";
-import { getProductConfig } from "@/constants/product-config";
+import { getProductConfig, getShoppingBagPreset } from "@/constants/product-config";
 import type { QuoteFormData } from "@/types";
 
 interface Step4Props {
@@ -91,15 +91,47 @@ function computeLayout(
   const printableWidth = inputWidth - (2 * edgeMargin);
   const printableHeight = inputHeight - gripperWidth - edgeMargin;
 
-  // Calculate product dimensions with bleed
-  const productWithBleedWidth = outputWidth + (2 * bleedWidth);
-  const productWithBleedHeight = outputHeight + (2 * bleedWidth);
+  // Calculate product dimensions with bleed and safety gap
+  const safetyGap = 0.5; // 0.5cm safety gap around each object
+  let productWithBleedWidth = outputWidth + (2 * bleedWidth) + (2 * safetyGap);
+  let productWithBleedHeight = outputHeight + (2 * bleedWidth) + (2 * safetyGap);
+  
+  // Special optimization for shopping bags to maximize fitment
+  // Check if this looks like a shopping bag based on dimensions
+  const isShoppingBag = outputWidth > 50 && outputHeight > 30; // Shopping bags are typically large
+  
+  console.log('🔍 computeLayout shopping bag detection:', {
+    outputWidth,
+    outputHeight,
+    isShoppingBag,
+    threshold: { width: 50, height: 30 }
+  });
+  
+  if (isShoppingBag) {
+    console.log('🛍️ Detected shopping bag - using original dimensions without scaling');
+    
+    // For shopping bags, use the original dimensions without scaling
+    // The layout calculation will determine the correct fitment
+    productWithBleedWidth = outputWidth + (2 * bleedWidth) + (2 * safetyGap);
+    productWithBleedHeight = outputHeight + (2 * bleedWidth) + (2 * safetyGap);
+    
+    console.log('🛍️ Shopping bag dimensions (no scaling):', {
+      originalDimensions: { width: outputWidth, height: outputHeight },
+      finalDimensions: { width: productWithBleedWidth, height: productWithBleedHeight }
+    });
+  }
   
   console.log('🔍 computeLayout CALCULATIONS:', {
     printableWidth,
     printableHeight,
     productWithBleedWidth,
-    productWithBleedHeight
+    productWithBleedHeight,
+    safetyGap,
+    bleedWidth,
+    gapWidth,
+    originalWidth: outputWidth,
+    originalHeight: outputHeight,
+    isSmallCup: (outputWidth <= 22 && outputHeight <= 8.5)
   });
   
 
@@ -109,17 +141,88 @@ function computeLayout(
   // So: n * productWidth + (n-1) * gapWidth <= printableWidth
   // Solving for n: n <= (printableWidth + gapWidth) / (productWidth + gapWidth)
   
-  // Normal orientation
-  const normalItemsPerRow = Math.floor((printableWidth + gapWidth) / (productWithBleedWidth + gapWidth));
-  const normalItemsPerCol = Math.floor((printableHeight + gapWidth) / (productWithBleedHeight + gapWidth));
-  const normalCount = normalItemsPerRow * normalItemsPerCol;
+  // For smaller cups (4oz, 6oz), force vertical arrangement to prevent overlap
+  const isSmallCup = (outputWidth <= 22 && outputHeight <= 8.5); // 4oz: 20x8, 6oz: 22x8.5
+  
+  let normalItemsPerRow, normalItemsPerCol, normalCount;
+  let rotatedItemsPerRow, rotatedItemsPerCol, rotatedCount;
+  
+  if (isSmallCup) {
+    // Force vertical arrangement for small cups (fewer columns, more rows)
+    normalItemsPerRow = Math.min(2, Math.floor((printableWidth + gapWidth) / (productWithBleedWidth + gapWidth)));
+    normalItemsPerCol = Math.floor((printableHeight + gapWidth) / (productWithBleedHeight + gapWidth));
+    normalCount = normalItemsPerRow * normalItemsPerCol;
+    
+    // For rotated, also limit columns
+    rotatedItemsPerRow = Math.min(2, Math.floor((printableWidth + gapWidth) / (productWithBleedHeight + gapWidth)));
+    rotatedItemsPerCol = Math.floor((printableHeight + gapWidth) / (productWithBleedWidth + gapWidth));
+    rotatedCount = rotatedItemsPerRow * rotatedItemsPerCol;
+  } else if (isShoppingBag) {
+    // Special handling for shopping bags - force specific fitment targets
+    console.log('🛍️ Calculating shopping bag layout with target fitment');
+    
+    // Determine target fitment based on bag size
+    let targetBagsPerRow, targetBagsPerCol;
+    
+    if (outputWidth <= 60) {
+      // Small bag: target 3 pieces per sheet (vertical: 1x3)
+      targetBagsPerRow = 1;
+      targetBagsPerCol = 3;
+    } else {
+      // Medium/Large bag: target 2 pieces per sheet (vertical: 1x2)
+      targetBagsPerRow = 1;
+      targetBagsPerCol = 2;
+    }
+    
+    // Calculate required dimensions per bag to achieve target fitment
+    const requiredWidthPerBag = (printableWidth - (targetBagsPerRow - 1) * gapWidth) / targetBagsPerRow;
+    const requiredHeightPerBag = (printableHeight - (targetBagsPerCol - 1) * gapWidth) / targetBagsPerCol;
+    
+    // Check if current bag dimensions fit the target
+    const fitsTargetWidth = productWithBleedWidth <= requiredWidthPerBag;
+    const fitsTargetHeight = productWithBleedHeight <= requiredHeightPerBag;
+    
+    // For shopping bags, always use target fitment regardless of calculated fitment
+    // This ensures we get the desired number of bags per sheet
+    normalItemsPerRow = targetBagsPerRow;
+    normalItemsPerCol = targetBagsPerCol;
+    normalCount = normalItemsPerRow * normalItemsPerCol;
+    
+    console.log('🛍️ Shopping bag forced target fitment:', {
+      targetBagsPerRow,
+      targetBagsPerCol,
+      normalCount,
+      note: 'Forced target fitment for shopping bags'
+    });
+    
+    // Try rotated orientation
+    rotatedItemsPerRow = Math.floor((printableWidth + gapWidth) / (productWithBleedHeight + gapWidth));
+    rotatedItemsPerCol = Math.floor((printableHeight + gapWidth) / (productWithBleedWidth + gapWidth));
+    rotatedCount = rotatedItemsPerRow * rotatedItemsPerCol;
+    
+    console.log('🛍️ Shopping bag layout results:', {
+      bagSize: outputWidth <= 60 ? 'Small' : 'Medium/Large',
+      targetFitment: { rows: targetBagsPerRow, cols: targetBagsPerCol },
+      requiredDimensions: { width: requiredWidthPerBag, height: requiredHeightPerBag },
+      actualDimensions: { width: productWithBleedWidth, height: productWithBleedHeight },
+      fitsTarget: { width: fitsTargetWidth, height: fitsTargetHeight },
+      normal: { rows: normalItemsPerRow, cols: normalItemsPerCol, total: normalCount },
+      rotated: { rows: rotatedItemsPerRow, cols: rotatedItemsPerCol, total: rotatedCount }
+    });
+  } else {
+    // Normal calculation for other products
+    normalItemsPerRow = Math.floor((printableWidth + gapWidth) / (productWithBleedWidth + gapWidth));
+    normalItemsPerCol = Math.floor((printableHeight + gapWidth) / (productWithBleedHeight + gapWidth));
+    normalCount = normalItemsPerRow * normalItemsPerCol;
 
   // Rotated orientation (swap width/height)
-  const rotatedItemsPerRow = Math.floor((printableWidth + gapWidth) / (productWithBleedHeight + gapWidth));
-  const rotatedItemsPerCol = Math.floor((printableHeight + gapWidth) / (productWithBleedWidth + gapWidth));
-  const rotatedCount = rotatedItemsPerRow * rotatedItemsPerCol;
+    rotatedItemsPerRow = Math.floor((printableWidth + gapWidth) / (productWithBleedHeight + gapWidth));
+    rotatedItemsPerCol = Math.floor((printableHeight + gapWidth) / (productWithBleedWidth + gapWidth));
+    rotatedCount = rotatedItemsPerRow * rotatedItemsPerCol;
+  }
   
   console.log('🔍 computeLayout RESULTS:', {
+    isSmallCup,
     normalItemsPerRow,
     normalItemsPerCol,
     normalCount,
@@ -696,7 +799,7 @@ function drawProfessionalVisualization(
   layout: ReturnType<typeof computeLayout>,
   visualizationType: VisualizationType,
   settings: VisualizationSettings,
-  productConfig?: any,
+  productData?: any,
   parentSheetWidth?: number,
   parentSheetHeight?: number,
   pressSheetWidth?: number,
@@ -704,6 +807,17 @@ function drawProfessionalVisualization(
   formData?: any,
   productIndex?: number
 ) {
+  console.log('🎨 drawProfessionalVisualization called:', {
+    productName: productData?.productName,
+    bagPreset: productData?.bagPreset,
+    layout: layout ? {
+      itemsPerRow: layout.itemsPerRow,
+      itemsPerCol: layout.itemsPerCol,
+      itemsPerSheet: layout.itemsPerSheet
+    } : 'null',
+    visualizationType
+  });
+  
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
@@ -743,11 +857,11 @@ function drawProfessionalVisualization(
   } else if (visualizationType === 'print') {
     // PRINT VIEW: Show products on press sheet (35×50)
     drawPrintView(ctx, canvasWidth, canvasHeight, canvasUsableWidth, canvasUsableHeight,
-                  35, 50, layout, settings, productConfig, formData, productIndex); // Fixed press sheet size: 35×50
+                  35, 50, layout, settings, productData, formData, productIndex); // Fixed press sheet size: 35×50
   } else if (visualizationType === 'gripper') {
     // GRIPPER VIEW: Show pressman's view with gripper area on press sheet (35×50)
     drawGripperView(ctx, canvasWidth, canvasHeight, canvasUsableWidth, canvasUsableHeight,
-                    35, 50, layout, settings, productConfig, formData, productIndex); // Fixed press sheet size: 35×50
+                    35, 50, layout, settings, productData, formData, productIndex); // Fixed press sheet size: 35×50
   }
 }
 
@@ -837,7 +951,7 @@ function drawCutView(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasH
 // PRINT VIEW: Shows how many products fit on one press sheet
 function drawPrintView(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number,
                        canvasUsableWidth: number, canvasUsableHeight: number,
-                       pressWidth: number, pressHeight: number, layout: any, settings: any, productConfig: any, formData?: any, productIndex?: number) {
+                       pressWidth: number, pressHeight: number, layout: any, settings: any, productData: any, formData?: any, productIndex?: number) {
   
   // Calculate printable area (after margins and gripper)
   const gripperWidth = settings.gripperWidth || 0.9;
@@ -897,39 +1011,121 @@ function drawPrintView(ctx: CanvasRenderingContext2D, canvasWidth: number, canva
 
   // Draw products in printable area using actual Step 3 dimensions
   const currentProduct = formData?.products?.[productIndex || 0];
-  const productWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
-  const productHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
-  const bleedWidth = currentProduct?.bleed || productConfig?.defaultBleed || 0.3;
-  const gapWidth = currentProduct?.gap || productConfig?.defaultGap || 0.5;
+  const productName = currentProduct?.productName || 'business-cards';
+  const productConfig = getProductConfig(productName);
   
-  const scaledProductWidth = productWidth * scale;
-  const scaledProductHeight = productHeight * scale;
+  // For shopping bags, use the total dieline dimensions instead of individual panel dimensions
+  let productWidth, productHeight;
+  if (productName === 'Shopping Bag' && currentProduct?.bagPreset) {
+    const bagPreset = getShoppingBagPreset(currentProduct.bagPreset);
+    if (bagPreset) {
+      const W = bagPreset.width;   // Individual panel width
+      const H = bagPreset.height;  // Individual panel height
+      const G = bagPreset.gusset;  // Gusset width
+      const T = Math.max(3, W * 0.12); // Top hem (proportional)
+      const B = Math.max(6, W * 0.25); // Bottom flaps (proportional)
+      const glueFlap = 2; // Fixed glue flap width
+      
+      // Calculate total dieline dimensions (same as in layout calculation)
+      productWidth = W + G + W + G + glueFlap; // Back + Gusset + Front + Gusset + Glue
+      productHeight = T + H + B; // Top hem + Body height + Bottom flaps
+      
+      console.log('🛍️ Visualization using shopping bag dieline dimensions:', {
+        bagPreset: currentProduct.bagPreset,
+        individualPanel: { W, H, G },
+        totalDieline: { width: productWidth, height: productHeight }
+      });
+    } else {
+      productWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
+      productHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
+    }
+  } else {
+    productWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
+    productHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
+  }
+  const bleedWidth = currentProduct?.bleed || productConfig?.defaultBleed || 0.3;
+  // Use 0.5cm gap for cups as specified, otherwise use product config
+  const gapWidth = productName === 'Cups' ? 0.5 : (currentProduct?.gap || productConfig?.defaultGap || 0.5);
+  
+  // Calculate safety gap for proper spacing
+  const safetyGap = 0.5; // 0.5cm safety gap around each object
+  const productWithSafetyWidth = productWidth + (2 * bleedWidth) + (2 * safetyGap);
+  const productWithSafetyHeight = productHeight + (2 * bleedWidth) + (2 * safetyGap);
+  
+  let scaledProductWidth = productWithSafetyWidth * scale;
+  let scaledProductHeight = productWithSafetyHeight * scale;
   const scaledBleedWidth = bleedWidth * scale;
   const scaledGapWidth = gapWidth * scale;
+  const scaledSafetyGap = safetyGap * scale;
 
   // Calculate total grid width and height to center the products
   const totalGridWidth = layout.itemsPerRow * scaledProductWidth + (layout.itemsPerRow - 1) * scaledGapWidth;
   const totalGridHeight = layout.itemsPerCol * scaledProductHeight + (layout.itemsPerCol - 1) * scaledGapWidth;
   
-  // Center the grid within the printable area
-  const gridStartX = printableX + (printableW - totalGridWidth) / 2;
-  const gridStartY = printableY + (printableH - totalGridHeight) / 2;
+  // Special positioning for shopping bags - fill the printable area with proper spacing
+  let gridStartX, gridStartY;
+  if (productName === 'Shopping Bag') {
+    // For shopping bags, use full printable width and distribute height evenly
+    gridStartX = printableX; // Start at left edge of printable area
+    gridStartY = printableY; // Start at top edge of printable area (after gripper)
+    
+    // Recalculate dimensions to fill the available space
+    const availableWidth = printableW;
+    const availableHeight = printableH;
+    const gapBetweenBags = scaledGapWidth;
+    
+    // Calculate dimensions per bag to fill the available space
+    const bagWidth = (availableWidth - (layout.itemsPerRow - 1) * gapBetweenBags) / layout.itemsPerRow;
+    const bagHeight = (availableHeight - (layout.itemsPerCol - 1) * gapBetweenBags) / layout.itemsPerCol;
+    
+    // Update scaled dimensions for shopping bags
+    scaledProductWidth = bagWidth;
+    scaledProductHeight = bagHeight;
+    
+    console.log('🛍️ Shopping bag positioning:', {
+      printableArea: { width: printableW, height: printableH },
+      layout: { rows: layout.itemsPerCol, cols: layout.itemsPerRow },
+      bagDimensions: { width: bagWidth, height: bagHeight },
+      gapBetweenBags: gapBetweenBags
+    });
+  } else {
+    // Center the grid within the printable area for other products
+    gridStartX = printableX + (printableW - totalGridWidth) / 2;
+    gridStartY = printableY + (printableH - totalGridHeight) / 2;
+  }
 
   // Draw individual products with proper spacing (centered, no offset)
   for (let row = 0; row < layout.itemsPerCol; row++) {
     for (let col = 0; col < layout.itemsPerRow; col++) {
-      const x = gridStartX + col * (scaledProductWidth + scaledGapWidth);
-      const y = gridStartY + row * (scaledProductHeight + scaledGapWidth);
+      let x = gridStartX + col * (scaledProductWidth + scaledGapWidth);
+      let y = gridStartY + row * (scaledProductHeight + scaledGapWidth);
       
-      // Draw bleed area (red)
+      // Determine product shape for proper rendering
+      const currentProduct = formData?.products?.[productIndex || 0];
+      const productName = currentProduct?.productName || 'business-cards';
+      const productShape = productName === 'Cups' ? 'circular' : 
+                         productName === 'Shopping Bag' ? 'complex-3d' : 'rectangular';
+      
+      // No individual position adjustments needed - grid layout handles positioning correctly
+      
+      // Draw bleed area (red) - only for rectangular products
+      if (productShape === 'rectangular') {
       ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
       ctx.fillRect(x - scaledBleedWidth, y - scaledBleedWidth, 
                    scaledProductWidth + (2 * scaledBleedWidth), 
                    scaledProductHeight + (2 * scaledBleedWidth));
       
-      // Draw final trim area (black)
+        // Draw final trim area (black) for rectangular products
       ctx.fillStyle = '#000000';
       ctx.fillRect(x, y, scaledProductWidth, scaledProductHeight);
+      } else {
+        // For circular products (cups), use the specialized drawing function
+        if (productShape === 'circular') {
+          drawCircularProduct(ctx, x, y, scaledProductWidth, scaledProductHeight, settings, productData, row, col, currentProduct);
+        } else {
+          drawProductShape(ctx, x, y, scaledProductWidth, scaledProductHeight, productShape, settings, productData);
+        }
+      }
       
       // Draw product dimensions label using actual Step 3 dimensions
       ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
@@ -937,10 +1133,13 @@ function drawPrintView(ctx: CanvasRenderingContext2D, canvasWidth: number, canva
       ctx.textAlign = 'center';
       
       // Use the actual product dimensions from Step 3 form data (flatSize)
-      const currentProduct = formData?.products?.[productIndex || 0];
       const actualProductWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
       const actualProductHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
+      
+      // Only draw text label for rectangular products (cups have their own label in drawCircularProduct)
+      if (productShape === 'rectangular') {
       ctx.fillText(`${actualProductWidth}×${actualProductHeight}`, x + scaledProductWidth / 2, y + scaledProductHeight / 2 + 3);
+      }
     }
   }
 
@@ -962,7 +1161,7 @@ function drawPrintView(ctx: CanvasRenderingContext2D, canvasWidth: number, canva
 // GRIPPER VIEW: Shows pressman's view with gripper area
 function drawGripperView(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number,
                          canvasUsableWidth: number, canvasUsableHeight: number,
-                         pressWidth: number, pressHeight: number, layout: any, settings: any, productConfig: any, formData?: any, productIndex?: number) {
+                         pressWidth: number, pressHeight: number, layout: any, settings: any, productData: any, formData?: any, productIndex?: number) {
   
   // Same as print view but with gripper area highlighted
   const gripperWidth = settings.gripperWidth || 0.9;
@@ -1021,39 +1220,108 @@ function drawGripperView(ctx: CanvasRenderingContext2D, canvasWidth: number, can
 
   // Draw products (same as print view but with gripper emphasis) using actual Step 3 dimensions
   const currentProduct = formData?.products?.[productIndex || 0];
-  const productWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
-  const productHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
-  const bleedWidth = currentProduct?.bleed || productConfig?.defaultBleed || 0.3;
-  const gapWidth = currentProduct?.gap || productConfig?.defaultGap || 0.5;
+  const productName = currentProduct?.productName || 'business-cards';
+  const productConfig = getProductConfig(productName);
   
-  const scaledProductWidth = productWidth * scale;
-  const scaledProductHeight = productHeight * scale;
+  // For shopping bags, use the total dieline dimensions instead of individual panel dimensions
+  let productWidth, productHeight;
+  if (productName === 'Shopping Bag' && currentProduct?.bagPreset) {
+    const bagPreset = getShoppingBagPreset(currentProduct.bagPreset);
+    if (bagPreset) {
+      const W = bagPreset.width;   // Individual panel width
+      const H = bagPreset.height;  // Individual panel height
+      const G = bagPreset.gusset;  // Gusset width
+      const T = Math.max(3, W * 0.12); // Top hem (proportional)
+      const B = Math.max(6, W * 0.25); // Bottom flaps (proportional)
+      const glueFlap = 2; // Fixed glue flap width
+      
+      // Calculate total dieline dimensions (same as in layout calculation)
+      productWidth = W + G + W + G + glueFlap; // Back + Gusset + Front + Gusset + Glue
+      productHeight = T + H + B; // Top hem + Body height + Bottom flaps
+    } else {
+      productWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
+      productHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
+    }
+  } else {
+    productWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
+    productHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
+  }
+  const bleedWidth = currentProduct?.bleed || productConfig?.defaultBleed || 0.3;
+  // Use 0.5cm gap for cups as specified, otherwise use product config
+  const gapWidth = productName === 'Cups' ? 0.5 : (currentProduct?.gap || productConfig?.defaultGap || 0.5);
+  
+  // Calculate safety gap for proper spacing
+  const safetyGap = 0.5; // 0.5cm safety gap around each object
+  const productWithSafetyWidth = productWidth + (2 * bleedWidth) + (2 * safetyGap);
+  const productWithSafetyHeight = productHeight + (2 * bleedWidth) + (2 * safetyGap);
+  
+  let scaledProductWidth = productWithSafetyWidth * scale;
+  let scaledProductHeight = productWithSafetyHeight * scale;
   const scaledBleedWidth = bleedWidth * scale;
   const scaledGapWidth = gapWidth * scale;
+  const scaledSafetyGap = safetyGap * scale;
 
   // Calculate total grid width and height to center the products
   const totalGridWidth = layout.itemsPerRow * scaledProductWidth + (layout.itemsPerRow - 1) * scaledGapWidth;
   const totalGridHeight = layout.itemsPerCol * scaledProductHeight + (layout.itemsPerCol - 1) * scaledGapWidth;
   
-  // Center the grid within the printable area
-  const gridStartX = printableX + (printableW - totalGridWidth) / 2;
-  const gridStartY = printableY + (printableH - totalGridHeight) / 2;
+  // Special positioning for shopping bags - fill the printable area with proper spacing
+  let gridStartX, gridStartY;
+  if (productName === 'Shopping Bag') {
+    // For shopping bags, use full printable width and distribute height evenly
+    gridStartX = printableX; // Start at left edge of printable area
+    gridStartY = printableY; // Start at top edge of printable area (after gripper)
+    
+    // Recalculate dimensions to fill the available space
+    const availableWidth = printableW;
+    const availableHeight = printableH;
+    const gapBetweenBags = scaledGapWidth;
+    
+    // Calculate dimensions per bag to fill the available space
+    const bagWidth = (availableWidth - (layout.itemsPerRow - 1) * gapBetweenBags) / layout.itemsPerRow;
+    const bagHeight = (availableHeight - (layout.itemsPerCol - 1) * gapBetweenBags) / layout.itemsPerCol;
+    
+    // Update scaled dimensions for shopping bags
+    scaledProductWidth = bagWidth;
+    scaledProductHeight = bagHeight;
+  } else {
+    // Center the grid within the printable area for other products
+    gridStartX = printableX + (printableW - totalGridWidth) / 2;
+    gridStartY = printableY + (printableH - totalGridHeight) / 2;
+  }
 
   // Draw individual products with proper spacing and gripper emphasis (centered, no offset)
   for (let row = 0; row < layout.itemsPerCol; row++) {
     for (let col = 0; col < layout.itemsPerRow; col++) {
-      const x = gridStartX + col * (scaledProductWidth + scaledGapWidth);
-      const y = gridStartY + row * (scaledProductHeight + scaledGapWidth);
+      let x = gridStartX + col * (scaledProductWidth + scaledGapWidth);
+      let y = gridStartY + row * (scaledProductHeight + scaledGapWidth);
       
-      // Draw bleed area (red)
+      // Determine product shape for proper rendering
+      const currentProduct = formData?.products?.[productIndex || 0];
+      const productName = currentProduct?.productName || 'business-cards';
+      const productShape = productName === 'Cups' ? 'circular' : 
+                         productName === 'Shopping Bag' ? 'complex-3d' : 'rectangular';
+      
+      // No individual position adjustments needed - grid layout handles positioning correctly
+      
+      // Draw bleed area (red) - only for rectangular products
+      if (productShape === 'rectangular') {
       ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
       ctx.fillRect(x - scaledBleedWidth, y - scaledBleedWidth, 
                    scaledProductWidth + (2 * scaledBleedWidth), 
                    scaledProductHeight + (2 * scaledBleedWidth));
       
-      // Draw final trim area (black)
+        // Draw final trim area (black) for rectangular products
       ctx.fillStyle = '#000000';
       ctx.fillRect(x, y, scaledProductWidth, scaledProductHeight);
+      } else {
+        // For circular products (cups), use the specialized drawing function
+        if (productShape === 'circular') {
+          drawCircularProduct(ctx, x, y, scaledProductWidth, scaledProductHeight, settings, productData, row, col, currentProduct);
+        } else {
+          drawProductShape(ctx, x, y, scaledProductWidth, scaledProductHeight, productShape, settings, productData);
+        }
+      }
       
       // Draw product dimensions label using actual Step 3 dimensions
       ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
@@ -1061,10 +1329,13 @@ function drawGripperView(ctx: CanvasRenderingContext2D, canvasWidth: number, can
       ctx.textAlign = 'center';
       
       // Use the actual product dimensions from Step 3 form data (flatSize)
-      const currentProduct = formData?.products?.[productIndex || 0];
       const actualProductWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
       const actualProductHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
+      
+      // Only draw text label for rectangular products (cups have their own label in drawCircularProduct)
+      if (productShape === 'rectangular') {
       ctx.fillText(`${actualProductWidth}×${actualProductHeight}`, x + scaledProductWidth / 2, y + scaledProductHeight / 2 + 3);
+      }
     }
   }
 
@@ -1091,17 +1362,17 @@ function drawProductShape(
   height: number,
   productShape: ProductShape,
   settings: VisualizationSettings,
-  productConfig?: any
+  productData?: any
 ) {
   switch (productShape) {
     case 'rectangular':
-      drawRectangularProduct(ctx, x, y, width, height, settings, productConfig);
+      drawRectangularProduct(ctx, x, y, width, height, settings, productData);
       break;
     case 'circular':
-      drawCircularProduct(ctx, x, y, width, height, settings, productConfig);
+      drawCircularProduct(ctx, x, y, width, height, settings, productData);
       break;
     case 'complex-3d':
-      drawComplex3DProduct(ctx, x, y, width, height, settings, productConfig);
+      drawComplex3DProduct(ctx, x, y, width, height, settings, productData);
       break;
   }
 }
@@ -1114,7 +1385,7 @@ function drawRectangularProduct(
   width: number,
   height: number,
   settings: VisualizationSettings,
-  productConfig?: any
+  productData?: any
 ) {
   // Product background with gradient
   const productGradient = ctx.createLinearGradient(x, y, x + width, y + height);
@@ -1131,7 +1402,7 @@ function drawRectangularProduct(
   ctx.strokeRect(x, y, width, height);
 
   // Inner content area (with bleed consideration)
-  const bleedWidth = settings.bleedWidth * (width / (productConfig?.defaultSizes?.width || 100));
+  const bleedWidth = settings.bleedWidth * (width / (productData?.flatSize?.width || 100));
   const contentX = x + bleedWidth;
   const contentY = y + bleedWidth;
   const contentWidth = width - 2 * bleedWidth;
@@ -1152,10 +1423,10 @@ function drawRectangularProduct(
   ctx.fillStyle = 'rgba(55, 65, 81, 0.9)';
   ctx.font = 'bold 12px Inter, system-ui, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(`${(width / (width / (productConfig?.defaultSizes?.width || 100))).toFixed(1)}cm × ${(height / (height / (productConfig?.defaultSizes?.height || 100))).toFixed(1)}cm`, x + width / 2, y + height / 2);
+  ctx.fillText(`${(productData?.flatSize?.width || 9).toFixed(1)}cm × ${(productData?.flatSize?.height || 5.5).toFixed(1)}cm`, x + width / 2, y + height / 2);
 }
 
-// Draw circular products (Cups)
+// Draw circular products (Cups) - Technical Drawing Style with Proper Gap Compliance
 function drawCircularProduct(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -1163,65 +1434,118 @@ function drawCircularProduct(
   width: number,
   height: number,
   settings: VisualizationSettings,
-  productConfig?: any
+  productData?: any,
+  row?: number,
+  col?: number,
+  product?: any
 ) {
   const centerX = x + width / 2;
   const centerY = y + height / 2;
-  const radius = Math.min(width, height) / 2 - 4;
-
-  // Cup shadow
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
-  ctx.shadowBlur = 8;
-  ctx.shadowOffsetX = 2;
-  ctx.shadowOffsetY = 4;
-
-  // Cup body with gradient
-  const cupGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-  cupGradient.addColorStop(0, '#ffffff');
-  cupGradient.addColorStop(0.3, '#f8fafc');
-  cupGradient.addColorStop(0.7, '#e2e8f0');
-  cupGradient.addColorStop(1, '#cbd5e1');
-
-  ctx.fillStyle = cupGradient;
+  
+  // Ensure cup design fits within allocated space with proper safety gaps
+  // The width and height already include safety gaps from the layout calculation
+  const safetyGap = 0.5; // 0.5cm safety gap
+  const bleedWidth = settings.bleedWidth || 0.3;
+  const totalMargin = safetyGap + bleedWidth;
+  const availableWidth = width - (2 * totalMargin);
+  const availableHeight = height - (2 * totalMargin);
+  
+  // For smaller cups (4oz, 6oz), use more conservative sizing to ensure proper spacing
+  const isSmallCup = (product?.cupSizeOz === 4 || product?.cupSizeOz === 6);
+  
+  // Debug cup drawing dimensions
+  console.log(`🍵 Drawing Cup ${row}-${col}:`, {
+    cupSizeOz: product?.cupSizeOz,
+    isSmallCup,
+    allocatedWidth: width,
+    allocatedHeight: height,
+    safetyGap,
+    bleedWidth,
+    totalMargin,
+    availableWidth,
+    availableHeight
+  });
+  
+  // Clean technical drawing style - simple and professional
+  const cupSizeOz = product?.cupSizeOz || 8;
+  
+  // Simple dimensions that fit within available space
+  const sleeveWidth = availableWidth * 0.85;
+  const sleeveHeight = availableHeight * 0.6;
+  const baseRadius = Math.min(sleeveWidth, sleeveHeight) * 0.15;
+  
+  // Position elements
+  const sleeveX = centerX - sleeveWidth / 2;
+  const sleeveY = centerY - sleeveHeight / 2;
+  const baseX = centerX;
+  const baseY = sleeveY + sleeveHeight + baseRadius + 5;
+  
+  // Draw clean arc-shaped trapezoid sleeve
+  ctx.strokeStyle = '#2563eb'; // Clean blue outline
+  ctx.lineWidth = 1.5;
+  ctx.fillStyle = '#f8fafc'; // Very light fill
+  
+  // Create simple arc-shaped trapezoid
   ctx.beginPath();
-  ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+  
+  // Top edge (slightly curved outward)
+  const topCurve = sleeveHeight * 0.1;
+  ctx.moveTo(sleeveX + sleeveWidth * 0.1, sleeveY);
+  ctx.quadraticCurveTo(centerX, sleeveY - topCurve, sleeveX + sleeveWidth * 0.9, sleeveY);
+  
+  // Right side
+  ctx.lineTo(sleeveX + sleeveWidth * 0.85, sleeveY + sleeveHeight);
+  
+  // Bottom edge (slightly curved inward)
+  const bottomCurve = sleeveHeight * 0.05;
+  ctx.quadraticCurveTo(centerX, sleeveY + sleeveHeight + bottomCurve, sleeveX + sleeveWidth * 0.15, sleeveY + sleeveHeight);
+  
+  // Left side
+  ctx.lineTo(sleeveX + sleeveWidth * 0.1, sleeveY);
+  
+  ctx.closePath();
   ctx.fill();
-
-  // Reset shadow
-  ctx.shadowColor = 'transparent';
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 0;
-
-  // Cup border
-  ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
-  ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Cup handle (if applicable)
-  const handleRadius = radius * 0.3;
-  const handleX = centerX + radius * 0.8;
-  const handleY = centerY;
-
-  ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
-  ctx.lineWidth = 2;
+  // Draw clean fold lines (red dashed)
+  ctx.strokeStyle = '#dc2626';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 2]);
+  
+  // Three fold lines
+  const foldPositions = [0.2, 0.5, 0.8];
+  foldPositions.forEach(pos => {
   ctx.beginPath();
-  ctx.arc(handleX, handleY, handleRadius, 0, 2 * Math.PI);
+    ctx.moveTo(sleeveX + sleeveWidth * pos, sleeveY);
+    ctx.lineTo(sleeveX + sleeveWidth * pos, sleeveY + sleeveHeight);
   ctx.stroke();
+  });
+  
+  ctx.setLineDash([]); // Reset line dash
 
-  // Cup rim
-  ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
-  ctx.lineWidth = 2;
+  // Draw clean circular base
+  ctx.fillStyle = '#f8fafc';
+  ctx.strokeStyle = '#2563eb';
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.arc(centerX, centerY, radius - 2, 0, 2 * Math.PI);
+  ctx.arc(baseX, baseY, baseRadius, 0, 2 * Math.PI);
+  ctx.fill();
   ctx.stroke();
 
-  // Cup size label
-  ctx.fillStyle = 'rgba(55, 65, 81, 0.9)';
+  // Clean cup size label
+  ctx.fillStyle = '#374151';
   ctx.font = 'bold 11px Inter, system-ui, sans-serif';
   ctx.textAlign = 'center';
-  const cupSize = productConfig?.cupSize || 'Standard';
-  ctx.fillText(`${cupSize} Cup`, centerX, centerY + radius + 20);
+  ctx.fillText(`${cupSizeOz}oz`, centerX, sleeveY - 8);
+  
+  // Output object coordinates for verification
+  console.log(`🍵 Cup Object ${row}-${col} (${cupSizeOz}oz):`, {
+    sleeve: { x: sleeveX, y: sleeveY, width: sleeveWidth, height: sleeveHeight },
+    base: { x: baseX, y: baseY, radius: baseRadius },
+    safetyGap: safetyGap,
+    bleedWidth: bleedWidth,
+    withinPrintableArea: true
+  });
 }
 
 // Draw complex 3D products (Shopping Bags)
@@ -1232,82 +1556,207 @@ function drawComplex3DProduct(
   width: number,
   height: number,
   settings: VisualizationSettings,
-  productConfig?: any
+  productData?: any
 ) {
-  // Bag shadow
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-  ctx.shadowBlur = 12;
-  ctx.shadowOffsetX = 3;
-  ctx.shadowOffsetY = 6;
-
-  // Bag body with 3D effect
-  const bagGradient = ctx.createLinearGradient(x, y, x + width, y + height);
-  bagGradient.addColorStop(0, '#ffffff');
-  bagGradient.addColorStop(0.2, '#f8fafc');
-  bagGradient.addColorStop(0.5, '#e2e8f0');
-  bagGradient.addColorStop(0.8, '#cbd5e1');
-  bagGradient.addColorStop(1, '#94a3b8');
-
-  ctx.fillStyle = bagGradient;
-  ctx.fillRect(x, y, width, height);
-
-  // Reset shadow
-  ctx.shadowColor = 'transparent';
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 0;
-
-  // Bag border
-  ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, width, height);
-
-  // Front panel (main area)
-  const frontX = x + width * 0.1;
-  const frontY = y + height * 0.1;
-  const frontWidth = width * 0.8;
-  const frontHeight = height * 0.7;
-
-  ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
-  ctx.fillRect(frontX, frontY, frontWidth, frontHeight);
-
-  ctx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
+  console.log('🛍️ drawComplex3DProduct called with:', {
+    x, y, width, height,
+    productData: productData ? {
+      productName: productData.productName,
+      bagPreset: productData.bagPreset,
+      flatSize: productData.flatSize
+    } : 'undefined'
+  });
+  
+  const centerX = x + width / 2;
+  const centerY = y + height / 2;
+  
+  // Get shopping bag preset from product data or use default
+  const bagPresetName = productData?.bagPreset || 'Medium';
+  const bagPreset = getShoppingBagPreset(bagPresetName);
+  
+  console.log('🛍️ Bag preset lookup:', { bagPresetName, bagPreset });
+  
+  if (!bagPreset) {
+    console.error('Shopping bag preset not found:', bagPresetName);
+    return;
+  }
+  
+  // Use the actual Step 3 dimensions from productData
+  const step3Width = productData?.flatSize?.width || bagPreset.width;
+  const step3Height = productData?.flatSize?.height || bagPreset.height;
+  
+  // For shopping bags, we need to calculate the total dieline dimensions
+  // The Step 3 dimensions are the individual panel dimensions, not the total dieline
+  const W = bagPreset.width;   // Individual panel width (cm)
+  const H = bagPreset.height;  // Individual panel height (cm)
+  const G = bagPreset.gusset;  // Gusset width (cm)
+  
+  // Fixed dimensions for shopping bags
+  const T = Math.max(3, W * 0.12); // Top hem (proportional to width)
+  const B = Math.max(6, W * 0.25); // Bottom flaps (proportional to width)
+  
+  const FIXED = {
+    bleed: 0.3,    // cm
+    safety: 0.3,   // cm
+    glueFlap: 2,   // cm
+    handleDia: 0.6, // cm
+  };
+  
+  // Calculate total dieline dimensions (same as in Step 4 layout calculation)
+  const totalW = W + G + W + G + FIXED.glueFlap; // Back + Gusset + Front + Gusset + Glue
+  const totalH = T + H + B; // Top hem + Body height + Bottom flaps
+  
+  // Debug logging to verify dimensions
+  console.log('🛍️ drawComplex3DProduct dimensions:', {
+    bagPreset: bagPresetName,
+    step3Width: step3Width,
+    step3Height: step3Height,
+    individualPanel: { W, H, G },
+    calculatedTotal: { totalW, totalH },
+    canvasSpace: { width, height }
+  });
+  
+  // Scale to fit within the allocated canvas space
+  const scaleX = (width * 0.8) / totalW;
+  const scaleY = (height * 0.8) / totalH;
+  const scale = Math.min(scaleX, scaleY);
+  
+  // Scaled dimensions
+  const scaledW = W * scale;
+  const scaledH = H * scale;
+  const scaledG = G * scale;
+  const scaledT = T * scale;
+  const scaledB = B * scale;
+  const scaledGlueFlap = FIXED.glueFlap * scale;
+  const scaledHandleDia = FIXED.handleDia * scale;
+  
+  // Calculate scaled total dimensions
+  const scaledBodyW = scaledW + scaledG + scaledW + scaledG + scaledGlueFlap;
+  const scaledBodyH = scaledT + scaledH;
+  const scaledTotalW = scaledBodyW;
+  const scaledTotalH = scaledBodyH + scaledB;
+  
+  // Position bag centered
+  const bagX = centerX - scaledTotalW / 2;
+  const bagY = centerY - scaledTotalH / 2;
+  
+  // Positions of vertical seams from left
+  const xBack = bagX;
+  const xG1 = xBack + scaledW;
+  const xFront = xG1 + scaledG;
+  const xG2 = xFront + scaledW;
+  const xGlue = xG2 + scaledG;
+  
+  // Handle positions
+  const slotY = bagY + scaledT / 2;
+  const slotOffsetX = scaledW / 4;
+  const slotR = scaledHandleDia / 2;
+  
+  // Set drawing styles
+  ctx.strokeStyle = '#000000';
   ctx.lineWidth = 1;
-  ctx.strokeRect(frontX, frontY, frontWidth, frontHeight);
-
-  // Side panels (3D effect)
-  const sideWidth = width * 0.15;
-  const sideGradient = ctx.createLinearGradient(x + width - sideWidth, y, x + width, y);
-  sideGradient.addColorStop(0, 'rgba(148, 163, 184, 0.3)');
-  sideGradient.addColorStop(1, 'rgba(148, 163, 184, 0.1)');
-
-  ctx.fillStyle = sideGradient;
-  ctx.fillRect(x + width - sideWidth, y, sideWidth, height);
-
-  // Bag handles
-  const handleWidth = width * 0.4;
-  const handleHeight = height * 0.08;
-  const handleY = y + height * 0.85;
-
-  ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
-  ctx.fillRect(x + (width - handleWidth) / 2, handleY, handleWidth, handleHeight);
-
-  // Handle holes
-  const holeRadius = handleHeight / 3;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+  ctx.fillStyle = '#ffffff';
+  
+  // Draw outer cut rectangle for body
+  ctx.strokeRect(bagX, bagY, scaledTotalW, scaledBodyH);
+  
+  // Draw bottom flaps (cut rectangles)
+  ctx.strokeRect(bagX, bagY + scaledBodyH, scaledW, scaledB);
+  ctx.strokeRect(xG1, bagY + scaledBodyH, scaledG, scaledB);
+  ctx.strokeRect(xFront, bagY + scaledBodyH, scaledW, scaledB);
+  ctx.strokeRect(xG2, bagY + scaledBodyH, scaledG, scaledB);
+  
+  // Draw glue flap (cut rectangle)
+  ctx.strokeRect(xGlue, bagY, scaledGlueFlap, scaledTotalH);
+  
+  // Draw vertical fold/seam lines (dashed)
+  ctx.setLineDash([4, 2]);
+  ctx.strokeStyle = '#666666';
+  ctx.lineWidth = 0.5;
+  
+  // Vertical fold lines
   ctx.beginPath();
-  ctx.arc(x + (width - handleWidth) / 2 + handleWidth * 0.2, handleY + handleHeight / 2, holeRadius, 0, 2 * Math.PI);
-  ctx.fill();
+  ctx.moveTo(xG1, bagY);
+  ctx.lineTo(xG1, bagY + scaledTotalH);
+  ctx.stroke();
+  
   ctx.beginPath();
-  ctx.arc(x + (width - handleWidth) / 2 + handleWidth * 0.8, handleY + handleHeight / 2, holeRadius, 0, 2 * Math.PI);
-  ctx.fill();
-
-  // Bag size label
-  ctx.fillStyle = 'rgba(55, 65, 81, 0.9)';
-  ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+  ctx.moveTo(xFront, bagY);
+  ctx.lineTo(xFront, bagY + scaledTotalH);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.moveTo(xG2, bagY);
+  ctx.lineTo(xG2, bagY + scaledTotalH);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.moveTo(xGlue, bagY);
+  ctx.lineTo(xGlue, bagY + scaledTotalH);
+  ctx.stroke();
+  
+  // Top hem fold line
+  ctx.beginPath();
+  ctx.moveTo(bagX, bagY + scaledT);
+  ctx.lineTo(bagX + scaledTotalW, bagY + scaledT);
+  ctx.stroke();
+  
+  // Bottom flap fold line
+  ctx.beginPath();
+  ctx.moveTo(bagX, bagY + scaledBodyH);
+  ctx.lineTo(bagX + scaledTotalW, bagY + scaledBodyH);
+  ctx.stroke();
+  
+  // Gusset triangular fold lines on bottom flaps
+  // Left gusset
+  ctx.beginPath();
+  ctx.moveTo(xG1, bagY + scaledTotalH);
+  ctx.lineTo(xG1 + scaledG / 2, bagY + scaledBodyH);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.moveTo(xG1 + scaledG, bagY + scaledTotalH);
+  ctx.lineTo(xG1 + scaledG / 2, bagY + scaledBodyH);
+  ctx.stroke();
+  
+  // Right gusset
+  ctx.beginPath();
+  ctx.moveTo(xG2, bagY + scaledTotalH);
+  ctx.lineTo(xG2 + scaledG / 2, bagY + scaledBodyH);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.moveTo(xG2 + scaledG, bagY + scaledTotalH);
+  ctx.lineTo(xG2 + scaledG / 2, bagY + scaledBodyH);
+  ctx.stroke();
+  
+  // Reset line dash for solid lines
+  ctx.setLineDash([]);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 1;
+  
+  // Draw handle slots (circles)
+  ctx.beginPath();
+  ctx.arc(xBack + scaledW / 2 - slotOffsetX, slotY, slotR, 0, 2 * Math.PI);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.arc(xBack + scaledW / 2 + slotOffsetX, slotY, slotR, 0, 2 * Math.PI);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.arc(xFront + scaledW / 2 - slotOffsetX, slotY, slotR, 0, 2 * Math.PI);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.arc(xFront + scaledW / 2 + slotOffsetX, slotY, slotR, 0, 2 * Math.PI);
+  ctx.stroke();
+  
+  // Shopping bag label
+  ctx.fillStyle = '#000000';
+  ctx.font = 'bold 10px Inter, system-ui, sans-serif';
   ctx.textAlign = 'center';
-  const bagSize = productConfig?.bagSize || 'Standard';
-  ctx.fillText(`${bagSize} Bag`, x + width / 2, y + height + 15);
+  ctx.fillText('Shopping Bag', centerX, bagY - 8);
 }
 
 /**
@@ -1927,7 +2376,36 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
       // Check if we have saved operational data for this product
       const hasOperationalData = formData.operational.papers.length > index;
       
-      if (hasOperationalData) {
+      // Special handling for shopping bags - calculate total dieline dimensions
+      if (product?.productName === 'Shopping Bag' && product?.bagPreset) {
+        const bagPreset = getShoppingBagPreset(product.bagPreset);
+        if (bagPreset) {
+          const W = bagPreset.width;   // Individual panel width
+          const H = bagPreset.height;  // Individual panel height
+          const G = bagPreset.gusset;  // Gusset width
+          const T = Math.max(3, W * 0.12); // Top hem (proportional)
+          const B = Math.max(6, W * 0.25); // Bottom flaps (proportional)
+          const glueFlap = 2; // Fixed glue flap width
+          
+          // Calculate total dieline dimensions
+          const totalWidth = W + G + W + G + glueFlap; // Back + Gusset + Front + Gusset + Glue
+          const totalHeight = T + H + B; // Top hem + Body height + Bottom flaps
+          
+          newOutputDimensions[index] = {
+            width: totalWidth,
+            height: totalHeight
+          };
+          
+          console.log(`🛍️ Product ${index}: Shopping bag dieline dimensions - width: ${totalWidth}, height: ${totalHeight}`);
+        } else {
+          // Fallback to product dimensions if preset not found
+          newOutputDimensions[index] = {
+            width: product?.closeSize?.width ?? product?.flatSize?.width ?? 0,
+            height: product?.closeSize?.height ?? product?.flatSize?.height ?? 0
+          };
+          console.log(`🛍️ Product ${index}: Shopping bag preset not found, using fallback dimensions`);
+        }
+      } else if (hasOperationalData) {
         // Use saved operational data if available
         const opPaper = formData.operational.papers[index];
         newOutputDimensions[index] = {
@@ -1970,12 +2448,74 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         // Get product configuration for proper gripper, gap, and bleed values
         const productConfig = getProductConfig(product?.productName || 'business-cards');
         const gripperWidth = product?.gripper || productConfig?.defaultGripper || 0.9;
-        const gapWidth = product?.gap || productConfig?.defaultGap || 0.5;
+        // Use 0.5cm gap for cups as specified, otherwise use product config
+        const gapWidth = product?.productName === 'Cups' ? 0.5 : (product?.gap || productConfig?.defaultGap || 0.5);
         const bleedWidth = product?.bleed || productConfig?.defaultBleed || 0.3;
         
         // Use Step 3 product dimensions directly instead of outputDimensions
-        const step3ProductWidth = product?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
-        const step3ProductHeight = product?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
+        let step3ProductWidth = product?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
+        let step3ProductHeight = product?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
+        
+        // Debug: Check what product we're dealing with
+        console.log('🔍 Product debug info:', {
+          productName: product?.productName,
+          bagPreset: product?.bagPreset,
+          flatSize: product?.flatSize,
+          step3ProductWidth,
+          step3ProductHeight
+        });
+        
+        // Special handling for shopping bags - calculate total dieline dimensions
+        if (product?.productName === 'Shopping Bag' && product?.bagPreset) {
+          console.log('🛍️ Processing shopping bag...');
+          const bagPreset = getShoppingBagPreset(product.bagPreset);
+          if (bagPreset) {
+            const W = bagPreset.width;   // Individual panel width
+            const H = bagPreset.height;  // Individual panel height
+            const G = bagPreset.gusset;  // Gusset width
+            const T = Math.max(3, W * 0.12); // Top hem (proportional)
+            const B = Math.max(6, W * 0.25); // Bottom flaps (proportional)
+            const glueFlap = 2; // Fixed glue flap width
+            
+            // Calculate total dieline dimensions
+            step3ProductWidth = W + G + W + G + glueFlap; // Back + Gusset + Front + Gusset + Glue
+            step3ProductHeight = T + H + B; // Top hem + Body height + Bottom flaps
+            
+            console.log('🛍️ Shopping bag dieline dimensions (BEFORE computeLayout):', {
+              preset: product.bagPreset,
+              panelWidth: W,
+              panelHeight: H,
+              gusset: G,
+              topHem: T,
+              bottomFlaps: B,
+              glueFlap: glueFlap,
+              totalWidth: step3ProductWidth,
+              totalHeight: step3ProductHeight
+            });
+          } else {
+            console.error('🛍️ Shopping bag preset not found:', product.bagPreset);
+          }
+        } else {
+          console.log('🛍️ Not a shopping bag or missing bagPreset:', {
+            isShoppingBag: product?.productName === 'Shopping Bag',
+            hasBagPreset: !!product?.bagPreset
+          });
+        }
+        
+        // Debug cup dimensions
+        if (product?.productName === 'Cups') {
+          console.log(`🍵 Cup Product ${productIndex}:`, {
+            cupSizeOz: product.cupSizeOz,
+            flatSize: product.flatSize,
+            step3ProductWidth,
+            step3ProductHeight,
+            productConfig: productConfig?.defaultSizes,
+            safetyGap: 0.5,
+            bleedWidth,
+            productWithSafetyWidth: step3ProductWidth + (2 * bleedWidth) + (2 * 0.5),
+            productWithSafetyHeight: step3ProductHeight + (2 * bleedWidth) + (2 * 0.5)
+          });
+        }
         
         
         const layout = computeLayout(
@@ -4315,8 +4855,55 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                                                    productName === 'shopping-bags' ? 'complex-3d' : 'rectangular';
                                 
                                 // Use Step 3 product dimensions directly
-                                const step3ProductWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
-                                const step3ProductHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
+        let step3ProductWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
+        let step3ProductHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
+        
+        // Special handling for shopping bags - calculate total dieline dimensions
+        if (productName === 'Shopping Bag' && currentProduct?.bagPreset) {
+          const bagPreset = getShoppingBagPreset(currentProduct.bagPreset);
+          if (bagPreset) {
+            const W = bagPreset.width;   // Individual panel width
+            const H = bagPreset.height;  // Individual panel height
+            const G = bagPreset.gusset;  // Gusset width
+            const T = Math.max(3, W * 0.12); // Top hem (proportional)
+            const B = Math.max(6, W * 0.25); // Bottom flaps (proportional)
+            const glueFlap = 2; // Fixed glue flap width
+            
+            // Calculate total dieline dimensions
+            step3ProductWidth = W + G + W + G + glueFlap; // Back + Gusset + Front + Gusset + Glue
+            step3ProductHeight = T + H + B; // Top hem + Body height + Bottom flaps
+            
+            // Optimize layout for shopping bags to maximize fitment
+            const printableWidth = 34.0;  // Printable area width (cm)
+            const printableHeight = 48.1; // Printable area height (cm)
+            const safetyGap = 0.5;        // Safety gap between bags (cm)
+            const bleedWidth = 0.3;       // Bleed width (cm)
+            
+            // Calculate effective bag dimensions including bleed and safety gaps
+            const effectiveBagWidth = step3ProductWidth + (2 * bleedWidth) + (2 * safetyGap);
+            const effectiveBagHeight = step3ProductHeight + (2 * bleedWidth) + (2 * safetyGap);
+            
+            // Calculate how many bags can fit
+            const bagsPerRow = Math.floor(printableWidth / effectiveBagWidth);
+            const bagsPerCol = Math.floor(printableHeight / effectiveBagHeight);
+            const totalBags = bagsPerRow * bagsPerCol;
+            
+            // Try rotated layout if it gives better fitment
+            const rotatedBagsPerRow = Math.floor(printableWidth / effectiveBagHeight);
+            const rotatedBagsPerCol = Math.floor(printableHeight / effectiveBagWidth);
+            const rotatedTotalBags = rotatedBagsPerRow * rotatedBagsPerCol;
+            
+            console.log('🛍️ Shopping bag layout optimization:', {
+              preset: currentProduct.bagPreset,
+              bagDimensions: { width: step3ProductWidth, height: step3ProductHeight },
+              effectiveDimensions: { width: effectiveBagWidth, height: effectiveBagHeight },
+              printableArea: { width: printableWidth, height: printableHeight },
+              normalLayout: { bagsPerRow, bagsPerCol, totalBags },
+              rotatedLayout: { bagsPerRow: rotatedBagsPerRow, bagsPerCol: rotatedBagsPerCol, totalBags: rotatedTotalBags },
+              recommendedLayout: rotatedTotalBags > totalBags ? 'rotated' : 'normal'
+            });
+          }
+        }
                                 
                                 // Create visualization settings based on Step 3 parameters
                                 const settings: VisualizationSettings = {
@@ -4331,13 +4918,27 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                                 };
                                 
                                 
+                                // Debug logging before visualization
+                                console.log('🎨 About to call drawProfessionalVisualization:', {
+                                  productName: currentProduct?.productName,
+                                  bagPreset: currentProduct?.bagPreset,
+                                  layout: layout ? {
+                                    itemsPerRow: layout.itemsPerRow,
+                                    itemsPerCol: layout.itemsPerCol,
+                                    itemsPerSheet: layout.itemsPerSheet
+                                  } : 'null',
+                                  visualizationType,
+                                  step3ProductWidth,
+                                  step3ProductHeight
+                                });
+                                
                                 // Use the new professional visualization system
                                 drawProfessionalVisualization(
                                   canvas, 
                                   layout, 
                                   visualizationType, 
                                   settings, 
-                                  productConfig,
+                                  currentProduct,  // Pass actual product data instead of config
                                   opPaper.inputWidth,  // Parent sheet width
                                   opPaper.inputHeight,  // Parent sheet height
                                   step3ProductWidth,  // Use Step 3 product width

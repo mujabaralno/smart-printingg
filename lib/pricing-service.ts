@@ -5,7 +5,7 @@ export class PricingService {
   // Fetch digital pricing from database
   static async getDigitalPricing(): Promise<DigitalPricing> {
     try {
-      const response = await fetch('/api/pricing/digital');
+      const response = await fetch('/api/digital');
       if (!response.ok) {
         throw new Error('Failed to fetch digital pricing');
       }
@@ -20,7 +20,7 @@ export class PricingService {
   // Fetch offset pricing from database
   static async getOffsetPricing(): Promise<OffsetPricing> {
     try {
-      const response = await fetch('/api/pricing/offset');
+      const response = await fetch('/api/offset');
       if (!response.ok) {
         throw new Error('Failed to fetch offset pricing');
       }
@@ -48,7 +48,7 @@ export class PricingService {
   // Update digital pricing
   static async updateDigitalPricing(pricing: DigitalPricing): Promise<DigitalPricing> {
     try {
-      const response = await fetch('/api/pricing/digital', {
+      const response = await fetch('/api/digital', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ export class PricingService {
   // Update offset pricing
   static async updateOffsetPricing(pricing: OffsetPricing): Promise<OffsetPricing> {
     try {
-      const response = await fetch('/api/pricing/offset', {
+      const response = await fetch('/api/offset', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
