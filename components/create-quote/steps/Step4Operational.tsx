@@ -936,25 +936,38 @@ function drawCutView(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasH
   ctx.setLineDash([]);
 
   // Professional layout with proper text positioning
-  // Title positioned above the sheet with proper spacing
+  // Responsive sizing based on canvas width
+  const isMobile = canvasWidth < 768;
+  const isTablet = canvasWidth >= 768 && canvasWidth < 1024;
+  
+  // Title positioned above the sheet with proper spacing (responsive font size)
   ctx.fillStyle = '#111827';
-  ctx.font = 'bold 20px Inter, system-ui, sans-serif';
+  const mainTitleFontSize = isMobile ? '16px' : isTablet ? '18px' : '20px';
+  ctx.font = `bold ${mainTitleFontSize} Inter, system-ui, sans-serif`;
   ctx.textAlign = 'center';
   ctx.fillText('Cutting Operations', canvasWidth / 2, startY - 80);
   
-  // Subtitle with proper spacing from title
+  // Subtitle with proper spacing from title (responsive font size)
   ctx.fillStyle = '#6b7280';
-  ctx.font = '14px Inter, system-ui, sans-serif';
+  const subtitleFontSize = isMobile ? '11px' : isTablet ? '12px' : '14px';
+  ctx.font = `${subtitleFontSize} Inter, system-ui, sans-serif`;
   ctx.fillText(`Parent ${parentWidth}×${parentHeight} → Press ${pressWidth}×${pressHeight}`, canvasWidth / 2, startY - 55);
   
   // Information panels positioned outside the parent sheet area
-  const panelWidth = 180;
-  const panelHeight = 120;
-  const panelSpacing = 20;
   
-  // Left panel - Specifications (positioned to the left of the parent sheet)
-  const leftPanelX = startX - panelWidth - panelSpacing;
-  const leftPanelY = startY + 20;
+  const panelWidth = isMobile ? Math.min(140, canvasWidth * 0.35) : 
+                     isTablet ? Math.min(160, canvasWidth * 0.25) : 180;
+  const panelHeight = isMobile ? 100 : isTablet ? 110 : 120;
+  const panelSpacing = isMobile ? 10 : isTablet ? 15 : 20;
+  
+  // Check if panels fit on screen, if not, position them below the sheet
+  const leftPanelFits = (startX - panelWidth - panelSpacing) > 0;
+  const rightPanelFits = (startX + scaledParentWidth + panelSpacing + panelWidth) < canvasWidth;
+  
+  // Left panel - Specifications (responsive positioning)
+  const leftPanelX = leftPanelFits ? startX - panelWidth - panelSpacing : 
+                     startX + scaledParentWidth / 2 - panelWidth / 2;
+  const leftPanelY = leftPanelFits ? startY + 20 : startY + scaledParentHeight + 30;
   
   // Panel background with transparency
   ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
@@ -972,15 +985,17 @@ function drawCutView(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasH
   ctx.lineWidth = 1;
   ctx.strokeRect(leftPanelX, leftPanelY, panelWidth, 30);
   
-  // Panel title
+  // Panel title (responsive font size)
   ctx.fillStyle = '#111827';
-  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  const titleFontSize = isMobile ? '10px' : isTablet ? '11px' : '12px';
+  ctx.font = `bold ${titleFontSize} Inter, system-ui, sans-serif`;
   ctx.textAlign = 'left';
   ctx.fillText('Specifications', leftPanelX + 8, leftPanelY + 20);
   
-  // Specifications list
+  // Specifications list (responsive font size)
   ctx.fillStyle = '#374151';
-  ctx.font = '10px Inter, system-ui, sans-serif';
+  const textFontSize = isMobile ? '8px' : isTablet ? '9px' : '10px';
+  ctx.font = `${textFontSize} Inter, system-ui, sans-serif`;
   const specs = [
     `Parent: ${parentWidth}×${parentHeight} cm`,
     `Press: ${pressWidth}×${pressHeight} cm`,
@@ -993,9 +1008,13 @@ function drawCutView(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasH
     ctx.fillText(spec, leftPanelX + 8, leftPanelY + 45 + (index * 12));
   });
   
-  // Right panel - Yield Analysis (positioned to the right of the parent sheet)
-  const rightPanelX = startX + scaledParentWidth + panelSpacing;
-  const rightPanelY = startY + 20;
+  // Right panel - Yield Analysis (responsive positioning)
+  const rightPanelX = rightPanelFits ? startX + scaledParentWidth + panelSpacing : 
+                      leftPanelFits ? startX + scaledParentWidth / 2 - panelWidth / 2 :
+                      startX + scaledParentWidth / 2 - panelWidth / 2;
+  const rightPanelY = rightPanelFits ? startY + 20 : 
+                      leftPanelFits ? startY + scaledParentHeight + 30 :
+                      startY + scaledParentHeight + 150;
   
   // Panel background with transparency
   ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
@@ -1013,15 +1032,15 @@ function drawCutView(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasH
   ctx.lineWidth = 1;
   ctx.strokeRect(rightPanelX, rightPanelY, panelWidth, 30);
   
-  // Panel title
+  // Panel title (responsive font size)
   ctx.fillStyle = '#1e40af';
-  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  ctx.font = `bold ${titleFontSize} Inter, system-ui, sans-serif`;
   ctx.textAlign = 'left';
   ctx.fillText('Yield Analysis', rightPanelX + 8, rightPanelY + 20);
   
-  // Yield details
+  // Yield details (responsive font size)
   ctx.fillStyle = '#1e3a8a';
-  ctx.font = '10px Inter, system-ui, sans-serif';
+  ctx.font = `${textFontSize} Inter, system-ui, sans-serif`;
   const yieldData = [
     `Total Pieces: ${totalPieces}`,
     `Per Row: ${piecesPerRow}`,
@@ -1249,25 +1268,37 @@ function drawPrintView(ctx: CanvasRenderingContext2D, canvasWidth: number, canva
   // Professional layout with proper text positioning
   const orientation = layout.orientation === 'rotated' ? 'Rotated' : 'Normal';
   
-  // Title positioned above the sheet with proper spacing
+  // Responsive sizing based on canvas width
+  const isMobile = canvasWidth < 768;
+  const isTablet = canvasWidth >= 768 && canvasWidth < 1024;
+  
+  // Title positioned above the sheet with proper spacing (responsive font size)
   ctx.fillStyle = '#111827';
-  ctx.font = 'bold 20px Inter, system-ui, sans-serif';
+  const mainTitleFontSize = isMobile ? '16px' : isTablet ? '18px' : '20px';
+  ctx.font = `bold ${mainTitleFontSize} Inter, system-ui, sans-serif`;
   ctx.textAlign = 'center';
   ctx.fillText('Print Layout', canvasWidth / 2, startY - 80);
   
-  // Subtitle with proper spacing from title
+  // Subtitle with proper spacing from title (responsive font size)
   ctx.fillStyle = '#6b7280';
-  ctx.font = '14px Inter, system-ui, sans-serif';
+  const subtitleFontSize = isMobile ? '11px' : isTablet ? '12px' : '14px';
+  ctx.font = `${subtitleFontSize} Inter, system-ui, sans-serif`;
   ctx.fillText(`${pressWidth}×${pressHeight} • Yield ${layout.itemsPerSheet} (${layout.itemsPerRow}×${layout.itemsPerCol}) • ${orientation}`, canvasWidth / 2, startY - 55);
   
   // Information panels positioned outside the printable area
-  const panelWidth = 180;
-  const panelHeight = 120;
-  const panelSpacing = 20;
+  const panelWidth = isMobile ? Math.min(140, canvasWidth * 0.35) : 
+                     isTablet ? Math.min(160, canvasWidth * 0.25) : 180;
+  const panelHeight = isMobile ? 100 : isTablet ? 110 : 120;
+  const panelSpacing = isMobile ? 10 : isTablet ? 15 : 20;
   
-  // Left panel - Sheet Specifications (positioned to the left of the sheet)
-  const leftPanelX = startX - panelWidth - panelSpacing;
-  const leftPanelY = startY + 20;
+  // Check if panels fit on screen, if not, position them below the sheet
+  const leftPanelFits = (startX - panelWidth - panelSpacing) > 0;
+  const rightPanelFits = (startX + scaledPressWidth + panelSpacing + panelWidth) < canvasWidth;
+  
+  // Left panel - Sheet Specifications (responsive positioning)
+  const leftPanelX = leftPanelFits ? startX - panelWidth - panelSpacing : 
+                     startX + scaledPressWidth / 2 - panelWidth / 2;
+  const leftPanelY = leftPanelFits ? startY + 20 : startY + scaledPressHeight + 30;
   
   // Panel background with transparency
   ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
@@ -1285,15 +1316,17 @@ function drawPrintView(ctx: CanvasRenderingContext2D, canvasWidth: number, canva
   ctx.lineWidth = 1;
   ctx.strokeRect(leftPanelX, leftPanelY, panelWidth, 30);
   
-  // Panel title
+  // Panel title (responsive font size)
   ctx.fillStyle = '#111827';
-  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  const titleFontSize = isMobile ? '10px' : isTablet ? '11px' : '12px';
+  ctx.font = `bold ${titleFontSize} Inter, system-ui, sans-serif`;
   ctx.textAlign = 'left';
   ctx.fillText('Sheet Specs', leftPanelX + 8, leftPanelY + 20);
   
-  // Specifications list
+  // Specifications list (responsive font size)
   ctx.fillStyle = '#374151';
-  ctx.font = '10px Inter, system-ui, sans-serif';
+  const textFontSize = isMobile ? '8px' : isTablet ? '9px' : '10px';
+  ctx.font = `${textFontSize} Inter, system-ui, sans-serif`;
   const specs = [
     `Press: ${pressWidth}×${pressHeight} cm`,
     `Printable: ${printableWidth.toFixed(1)}×${printableHeight.toFixed(1)} cm`,
@@ -1306,9 +1339,13 @@ function drawPrintView(ctx: CanvasRenderingContext2D, canvasWidth: number, canva
     ctx.fillText(spec, leftPanelX + 8, leftPanelY + 45 + (index * 12));
   });
   
-  // Right panel - Product Layout (positioned to the right of the sheet)
-  const rightPanelX = startX + scaledPressWidth + panelSpacing;
-  const rightPanelY = startY + 20;
+  // Right panel - Product Layout (responsive positioning)
+  const rightPanelX = rightPanelFits ? startX + scaledPressWidth + panelSpacing : 
+                      leftPanelFits ? startX + scaledPressWidth / 2 - panelWidth / 2 :
+                      startX + scaledPressWidth / 2 - panelWidth / 2;
+  const rightPanelY = rightPanelFits ? startY + 20 : 
+                      leftPanelFits ? startY + scaledPressHeight + 30 :
+                      startY + scaledPressHeight + 150;
   
   // Panel background with transparency
   ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
@@ -1326,15 +1363,15 @@ function drawPrintView(ctx: CanvasRenderingContext2D, canvasWidth: number, canva
   ctx.lineWidth = 1;
   ctx.strokeRect(rightPanelX, rightPanelY, panelWidth, 30);
   
-  // Panel title
+  // Panel title (responsive font size)
   ctx.fillStyle = '#0369a1';
-  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  ctx.font = `bold ${titleFontSize} Inter, system-ui, sans-serif`;
   ctx.textAlign = 'left';
   ctx.fillText('Product Layout', rightPanelX + 8, rightPanelY + 20);
   
-  // Product details
+  // Product details (responsive font size)
   ctx.fillStyle = '#0c4a6e';
-  ctx.font = '10px Inter, system-ui, sans-serif';
+  ctx.font = `${textFontSize} Inter, system-ui, sans-serif`;
   const productSpecs = [
     `Products: ${layout.itemsPerSheet}`,
     `Layout: ${layout.itemsPerRow}×${layout.itemsPerCol}`,
@@ -1553,25 +1590,37 @@ function drawGripperView(ctx: CanvasRenderingContext2D, canvasWidth: number, can
   }
 
   // Professional layout with proper text positioning
-  // Title positioned above the sheet with proper spacing
+  // Responsive sizing based on canvas width
+  const isMobile = canvasWidth < 768;
+  const isTablet = canvasWidth >= 768 && canvasWidth < 1024;
+  
+  // Title positioned above the sheet with proper spacing (responsive font size)
   ctx.fillStyle = '#111827';
-  ctx.font = 'bold 20px Inter, system-ui, sans-serif';
+  const mainTitleFontSize = isMobile ? '16px' : isTablet ? '18px' : '20px';
+  ctx.font = `bold ${mainTitleFontSize} Inter, system-ui, sans-serif`;
   ctx.textAlign = 'center';
   ctx.fillText('Gripper Handling', canvasWidth / 2, startY - 80);
   
-  // Subtitle with proper spacing from title
+  // Subtitle with proper spacing from title (responsive font size)
   ctx.fillStyle = '#6b7280';
-  ctx.font = '14px Inter, system-ui, sans-serif';
+  const subtitleFontSize = isMobile ? '11px' : isTablet ? '12px' : '14px';
+  ctx.font = `${subtitleFontSize} Inter, system-ui, sans-serif`;
   ctx.fillText(`${pressWidth}×${pressHeight} • Safety Check`, canvasWidth / 2, startY - 55);
   
   // Information panels positioned outside the printable area
-  const panelWidth = 180;
-  const panelHeight = 140;
-  const panelSpacing = 20;
+  const panelWidth = isMobile ? Math.min(140, canvasWidth * 0.35) : 
+                     isTablet ? Math.min(160, canvasWidth * 0.25) : 180;
+  const panelHeight = isMobile ? 120 : isTablet ? 130 : 140;
+  const panelSpacing = isMobile ? 10 : isTablet ? 15 : 20;
   
-  // Left panel - Sheet Specifications (positioned to the left of the sheet)
-  const leftPanelX = startX - panelWidth - panelSpacing;
-  const leftPanelY = startY + 20;
+  // Check if panels fit on screen, if not, position them below the sheet
+  const leftPanelFits = (startX - panelWidth - panelSpacing) > 0;
+  const rightPanelFits = (startX + scaledPressWidth + panelSpacing + panelWidth) < canvasWidth;
+  
+  // Left panel - Sheet Specifications (responsive positioning)
+  const leftPanelX = leftPanelFits ? startX - panelWidth - panelSpacing : 
+                     startX + scaledPressWidth / 2 - panelWidth / 2;
+  const leftPanelY = leftPanelFits ? startY + 20 : startY + scaledPressHeight + 30;
   
   // Panel background with transparency
   ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
@@ -1589,15 +1638,17 @@ function drawGripperView(ctx: CanvasRenderingContext2D, canvasWidth: number, can
   ctx.lineWidth = 1;
   ctx.strokeRect(leftPanelX, leftPanelY, panelWidth, 30);
   
-  // Panel title
+  // Panel title (responsive font size)
   ctx.fillStyle = '#111827';
-  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  const titleFontSize = isMobile ? '10px' : isTablet ? '11px' : '12px';
+  ctx.font = `bold ${titleFontSize} Inter, system-ui, sans-serif`;
   ctx.textAlign = 'left';
   ctx.fillText('Sheet Specs', leftPanelX + 8, leftPanelY + 20);
   
-  // Specifications list
+  // Specifications list (responsive font size)
   ctx.fillStyle = '#374151';
-  ctx.font = '10px Inter, system-ui, sans-serif';
+  const textFontSize = isMobile ? '8px' : isTablet ? '9px' : '10px';
+  ctx.font = `${textFontSize} Inter, system-ui, sans-serif`;
   const specs = [
     `${pressWidth}×${pressHeight} cm`,
     `Gripper: ${gripperWidth} cm (shaded)`,
@@ -1611,9 +1662,13 @@ function drawGripperView(ctx: CanvasRenderingContext2D, canvasWidth: number, can
     ctx.fillText(spec, leftPanelX + 8, leftPanelY + 45 + (index * 12));
   });
   
-  // Right panel - Safety Check (positioned to the right of the sheet)
-  const rightPanelX = startX + scaledPressWidth + panelSpacing;
-  const rightPanelY = startY + 20;
+  // Right panel - Safety Check (responsive positioning)
+  const rightPanelX = rightPanelFits ? startX + scaledPressWidth + panelSpacing : 
+                      leftPanelFits ? startX + scaledPressWidth / 2 - panelWidth / 2 :
+                      startX + scaledPressWidth / 2 - panelWidth / 2;
+  const rightPanelY = rightPanelFits ? startY + 20 : 
+                      leftPanelFits ? startY + scaledPressHeight + 30 :
+                      startY + scaledPressHeight + 150;
   
   // Panel background with transparency
   ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
@@ -1631,15 +1686,15 @@ function drawGripperView(ctx: CanvasRenderingContext2D, canvasWidth: number, can
   ctx.lineWidth = 1;
   ctx.strokeRect(rightPanelX, rightPanelY, panelWidth, 30);
   
-  // Panel title
+  // Panel title (responsive font size)
   ctx.fillStyle = '#dc2626';
-  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  ctx.font = `bold ${titleFontSize} Inter, system-ui, sans-serif`;
   ctx.textAlign = 'left';
   ctx.fillText('Safety Check', rightPanelX + 8, rightPanelY + 20);
   
-  // Safety details with checkmarks
+  // Safety details with checkmarks (responsive font size)
   ctx.fillStyle = '#991b1b';
-  ctx.font = '10px Inter, system-ui, sans-serif';
+  ctx.font = `${textFontSize} Inter, system-ui, sans-serif`;
   const safetyChecks = [
     `Gripper Clearance: ✓`,
     `Margin Check: ✓`,
