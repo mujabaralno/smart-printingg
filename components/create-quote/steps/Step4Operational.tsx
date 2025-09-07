@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Calculator, Settings, BarChart3, Edit3, AlertTriangle, Database, Palette, Info, Clock, DollarSign, Search, Building, Plus, Printer, Scissors, GripHorizontal } from "lucide-react";
+import { Package, Calculator, Settings, BarChart3, Edit3, AlertTriangle, Database, Palette, Info, Clock, DollarSign, Search, Building, Plus, Minus, Printer, Scissors, GripHorizontal } from "lucide-react";
 import { getProductConfig, getShoppingBagPreset } from "@/constants/product-config";
 import type { QuoteFormData } from "@/types";
 
@@ -36,6 +36,7 @@ interface VisualizationSettings {
   bleedWidth: number;
   gapWidth: number;
 }
+
 
 /** Exact HTML calculation logic */
 function calculateMaxItemsPerSheet(sheetLength: number, sheetWidth: number, itemLength: number, itemWidth: number) {
@@ -887,7 +888,7 @@ function drawCutView(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasH
   const scaledPressHeight = pressHeight * scale;
   
   const startX = (canvasWidth - scaledParentWidth) / 2;
-  const startY = (canvasHeight - scaledParentHeight) / 2;
+  const startY = (canvasHeight - scaledParentHeight) / 2 + 50; // Add offset for title space
 
   // Draw parent sheet (100×70)
   ctx.fillStyle = '#ffffff';
@@ -934,18 +935,103 @@ function drawCutView(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasH
   }
   ctx.setLineDash([]);
 
-  // Draw title and information
-  ctx.fillStyle = '#374151';
-  ctx.font = 'bold 18px Inter, system-ui, sans-serif';
+  // Professional layout with proper text positioning
+  // Title positioned above the sheet with proper spacing
+  ctx.fillStyle = '#111827';
+  ctx.font = 'bold 20px Inter, system-ui, sans-serif';
   ctx.textAlign = 'center';
+  ctx.fillText('Cutting Operations', canvasWidth / 2, startY - 80);
   
-  const titleY = startY - 30;
-  ctx.fillText(`Cut — Parent ${parentWidth}×${parentHeight} → ${pressWidth}×${pressHeight} (${totalPieces} pcs, ${piecesPerRow}×${piecesPerCol})`, canvasWidth / 2, titleY);
-  
+  // Subtitle with proper spacing from title
+  ctx.fillStyle = '#6b7280';
   ctx.font = '14px Inter, system-ui, sans-serif';
-  ctx.fillText(`Parent Sheet: ${parentWidth}×${parentHeight} cm`, canvasWidth / 2, titleY + 25);
-  ctx.fillText(`Press Sheet: ${pressWidth}×${pressHeight} cm`, canvasWidth / 2, titleY + 45);
-  ctx.fillText(`Cut Pieces: ${totalPieces} (${piecesPerRow}×${piecesPerCol})`, canvasWidth / 2, titleY + 65);
+  ctx.fillText(`Parent ${parentWidth}×${parentHeight} → Press ${pressWidth}×${pressHeight}`, canvasWidth / 2, startY - 55);
+  
+  // Information panels positioned outside the parent sheet area
+  const panelWidth = 180;
+  const panelHeight = 120;
+  const panelSpacing = 20;
+  
+  // Left panel - Specifications (positioned to the left of the parent sheet)
+  const leftPanelX = startX - panelWidth - panelSpacing;
+  const leftPanelY = startY + 20;
+  
+  // Panel background with transparency
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.fillRect(leftPanelX, leftPanelY, panelWidth, panelHeight);
+  
+  // Panel border
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(leftPanelX, leftPanelY, panelWidth, panelHeight);
+  
+  // Panel header
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(leftPanelX, leftPanelY, panelWidth, 30);
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(leftPanelX, leftPanelY, panelWidth, 30);
+  
+  // Panel title
+  ctx.fillStyle = '#111827';
+  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Specifications', leftPanelX + 8, leftPanelY + 20);
+  
+  // Specifications list
+  ctx.fillStyle = '#374151';
+  ctx.font = '10px Inter, system-ui, sans-serif';
+  const specs = [
+    `Parent: ${parentWidth}×${parentHeight} cm`,
+    `Press: ${pressWidth}×${pressHeight} cm`,
+    `Cut Pieces: ${totalPieces} pieces`,
+    `Layout: ${piecesPerRow}×${piecesPerCol} grid`,
+    `Efficiency: ${((totalPieces * pressWidth * pressHeight) / (parentWidth * parentHeight) * 100).toFixed(1)}%`
+  ];
+  
+  specs.forEach((spec, index) => {
+    ctx.fillText(spec, leftPanelX + 8, leftPanelY + 45 + (index * 12));
+  });
+  
+  // Right panel - Yield Analysis (positioned to the right of the parent sheet)
+  const rightPanelX = startX + scaledParentWidth + panelSpacing;
+  const rightPanelY = startY + 20;
+  
+  // Panel background with transparency
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.fillRect(rightPanelX, rightPanelY, panelWidth, panelHeight);
+  
+  // Panel border
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rightPanelX, rightPanelY, panelWidth, panelHeight);
+  
+  // Panel header with yield theme
+  ctx.fillStyle = '#eff6ff';
+  ctx.fillRect(rightPanelX, rightPanelY, panelWidth, 30);
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rightPanelX, rightPanelY, panelWidth, 30);
+  
+  // Panel title
+  ctx.fillStyle = '#1e40af';
+  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Yield Analysis', rightPanelX + 8, rightPanelY + 20);
+  
+  // Yield details
+  ctx.fillStyle = '#1e3a8a';
+  ctx.font = '10px Inter, system-ui, sans-serif';
+  const yieldData = [
+    `Total Pieces: ${totalPieces}`,
+    `Per Row: ${piecesPerRow}`,
+    `Per Column: ${piecesPerCol}`,
+    `Waste: ${(100 - ((totalPieces * pressWidth * pressHeight) / (parentWidth * parentHeight) * 100)).toFixed(1)}%`
+  ];
+  
+  yieldData.forEach((data, index) => {
+    ctx.fillText(data, rightPanelX + 8, rightPanelY + 45 + (index * 12));
+  });
 }
 
 // PRINT VIEW: Shows how many products fit on one press sheet
@@ -970,7 +1056,7 @@ function drawPrintView(ctx: CanvasRenderingContext2D, canvasWidth: number, canva
   const scaledEdgeMargin = edgeMargin * scale;
   
   const startX = (canvasWidth - scaledPressWidth) / 2;
-  const startY = (canvasHeight - scaledPressHeight) / 2;
+  const startY = (canvasHeight - scaledPressHeight) / 2 + 50; // Add offset for title space
 
   // Draw press sheet with better visibility
   ctx.fillStyle = 'rgba(255, 255, 255, 0.98)';
@@ -1127,35 +1213,145 @@ function drawPrintView(ctx: CanvasRenderingContext2D, canvasWidth: number, canva
         }
       }
       
-      // Draw product dimensions label using actual Step 3 dimensions
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.font = 'bold 10px Inter, system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      
-      // Use the actual product dimensions from Step 3 form data (flatSize)
+      // Draw enhanced product dimensions label using actual Step 3 dimensions
       const actualProductWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
       const actualProductHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
       
       // Only draw text label for rectangular products (cups have their own label in drawCircularProduct)
       if (productShape === 'rectangular') {
+        // Background for dimension label
+        const labelWidth = 60;
+        const labelHeight = 20;
+        const labelX = x + scaledProductWidth / 2 - labelWidth / 2;
+        const labelY = y + scaledProductHeight / 2 - labelHeight / 2;
+        
+        // Draw background with modern styling
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.fillRect(labelX, labelY, labelWidth, labelHeight);
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(labelX, labelY, labelWidth, labelHeight);
+        
+        // Draw dimension text
+        ctx.fillStyle = '#1e40af';
+        ctx.font = 'bold 9px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
       ctx.fillText(`${actualProductWidth}×${actualProductHeight}`, x + scaledProductWidth / 2, y + scaledProductHeight / 2 + 3);
+        
+        // Add unit label
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '8px Inter, system-ui, sans-serif';
+        ctx.fillText('cm', x + scaledProductWidth / 2, y + scaledProductHeight / 2 + 12);
       }
     }
   }
 
-  // Draw title and information
-  ctx.fillStyle = '#374151';
-  ctx.font = 'bold 18px Inter, system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  
-  const titleY = startY - 30;
+  // Professional layout with proper text positioning
   const orientation = layout.orientation === 'rotated' ? 'Rotated' : 'Normal';
-  ctx.fillText(`Print — ${pressWidth}×${pressHeight} • Yield ${layout.itemsPerSheet} (${layout.itemsPerRow}×${layout.itemsPerCol}) • ${orientation}`, canvasWidth / 2, titleY);
   
+  // Title positioned above the sheet with proper spacing
+  ctx.fillStyle = '#111827';
+  ctx.font = 'bold 20px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Print Layout', canvasWidth / 2, startY - 80);
+  
+  // Subtitle with proper spacing from title
+  ctx.fillStyle = '#6b7280';
   ctx.font = '14px Inter, system-ui, sans-serif';
-  ctx.fillText(`Press Sheet: ${pressWidth}×${pressHeight} cm`, canvasWidth / 2, titleY + 25);
-  ctx.fillText(`Printable Area: ${printableWidth.toFixed(1)}×${printableHeight.toFixed(1)} cm`, canvasWidth / 2, titleY + 45);
-  ctx.fillText(`Products per Sheet: ${layout.itemsPerSheet}`, canvasWidth / 2, titleY + 65);
+  ctx.fillText(`${pressWidth}×${pressHeight} • Yield ${layout.itemsPerSheet} (${layout.itemsPerRow}×${layout.itemsPerCol}) • ${orientation}`, canvasWidth / 2, startY - 55);
+  
+  // Information panels positioned outside the printable area
+  const panelWidth = 180;
+  const panelHeight = 120;
+  const panelSpacing = 20;
+  
+  // Left panel - Sheet Specifications (positioned to the left of the sheet)
+  const leftPanelX = startX - panelWidth - panelSpacing;
+  const leftPanelY = startY + 20;
+  
+  // Panel background with transparency
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.fillRect(leftPanelX, leftPanelY, panelWidth, panelHeight);
+  
+  // Panel border
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(leftPanelX, leftPanelY, panelWidth, panelHeight);
+  
+  // Panel header
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(leftPanelX, leftPanelY, panelWidth, 30);
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(leftPanelX, leftPanelY, panelWidth, 30);
+  
+  // Panel title
+  ctx.fillStyle = '#111827';
+  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Sheet Specs', leftPanelX + 8, leftPanelY + 20);
+  
+  // Specifications list
+  ctx.fillStyle = '#374151';
+  ctx.font = '10px Inter, system-ui, sans-serif';
+  const specs = [
+    `Press: ${pressWidth}×${pressHeight} cm`,
+    `Printable: ${printableWidth.toFixed(1)}×${printableHeight.toFixed(1)} cm`,
+    `Gripper: ${gripperWidth} cm`,
+    `Margins: ${edgeMargin} cm`,
+    `Orientation: ${orientation}`
+  ];
+  
+  specs.forEach((spec, index) => {
+    ctx.fillText(spec, leftPanelX + 8, leftPanelY + 45 + (index * 12));
+  });
+  
+  // Right panel - Product Layout (positioned to the right of the sheet)
+  const rightPanelX = startX + scaledPressWidth + panelSpacing;
+  const rightPanelY = startY + 20;
+  
+  // Panel background with transparency
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.fillRect(rightPanelX, rightPanelY, panelWidth, panelHeight);
+  
+  // Panel border
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rightPanelX, rightPanelY, panelWidth, panelHeight);
+  
+  // Panel header
+  ctx.fillStyle = '#f0f9ff';
+  ctx.fillRect(rightPanelX, rightPanelY, panelWidth, 30);
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rightPanelX, rightPanelY, panelWidth, 30);
+  
+  // Panel title
+  ctx.fillStyle = '#0369a1';
+  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Product Layout', rightPanelX + 8, rightPanelY + 20);
+  
+  // Product details
+  ctx.fillStyle = '#0c4a6e';
+  ctx.font = '10px Inter, system-ui, sans-serif';
+  const productSpecs = [
+    `Products: ${layout.itemsPerSheet}`,
+    `Layout: ${layout.itemsPerRow}×${layout.itemsPerCol}`,
+    `Grid: ${layout.itemsPerRow} cols`,
+    `Rows: ${layout.itemsPerCol}`,
+    `Utilization: ${((layout.itemsPerSheet * productWidth * productHeight) / (printableWidth * printableHeight) * 100).toFixed(1)}%`
+  ];
+  
+  productSpecs.forEach((spec, index) => {
+    ctx.fillText(spec, rightPanelX + 8, rightPanelY + 45 + (index * 12));
+  });
+  
+  // Printable area dimensions (bottom center)
+  ctx.fillStyle = '#059669';
+  ctx.font = 'bold 10px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${printableWidth.toFixed(1)}×${printableHeight.toFixed(1)} cm`, printableX + printableW / 2, printableY + printableH + 20);
 }
 
 // GRIPPER VIEW: Shows pressman's view with gripper area
@@ -1179,7 +1375,7 @@ function drawGripperView(ctx: CanvasRenderingContext2D, canvasWidth: number, can
   const scaledEdgeMargin = edgeMargin * scale;
   
   const startX = (canvasWidth - scaledPressWidth) / 2;
-  const startY = (canvasHeight - scaledPressHeight) / 2;
+  const startY = (canvasHeight - scaledPressHeight) / 2 + 50; // Add offset for title space
 
   // Draw press sheet with better visibility
   ctx.fillStyle = 'rgba(255, 255, 255, 0.98)';
@@ -1323,34 +1519,150 @@ function drawGripperView(ctx: CanvasRenderingContext2D, canvasWidth: number, can
         }
       }
       
-      // Draw product dimensions label using actual Step 3 dimensions
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.font = 'bold 10px Inter, system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      
-      // Use the actual product dimensions from Step 3 form data (flatSize)
+      // Draw enhanced product dimensions label using actual Step 3 dimensions
       const actualProductWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
       const actualProductHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
       
       // Only draw text label for rectangular products (cups have their own label in drawCircularProduct)
       if (productShape === 'rectangular') {
+        // Background for dimension label
+        const labelWidth = 60;
+        const labelHeight = 20;
+        const labelX = x + scaledProductWidth / 2 - labelWidth / 2;
+        const labelY = y + scaledProductHeight / 2 - labelHeight / 2;
+        
+        // Draw background with modern styling
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.fillRect(labelX, labelY, labelWidth, labelHeight);
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(labelX, labelY, labelWidth, labelHeight);
+        
+        // Draw dimension text
+        ctx.fillStyle = '#1e40af';
+        ctx.font = 'bold 9px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
       ctx.fillText(`${actualProductWidth}×${actualProductHeight}`, x + scaledProductWidth / 2, y + scaledProductHeight / 2 + 3);
+        
+        // Add unit label
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '8px Inter, system-ui, sans-serif';
+        ctx.fillText('cm', x + scaledProductWidth / 2, y + scaledProductHeight / 2 + 12);
       }
     }
   }
 
-  // Draw title and information
-  ctx.fillStyle = '#374151';
-  ctx.font = 'bold 18px Inter, system-ui, sans-serif';
+  // Professional layout with proper text positioning
+  // Title positioned above the sheet with proper spacing
+  ctx.fillStyle = '#111827';
+  ctx.font = 'bold 20px Inter, system-ui, sans-serif';
   ctx.textAlign = 'center';
+  ctx.fillText('Gripper Handling', canvasWidth / 2, startY - 80);
   
-  const titleY = startY - 30;
-  ctx.fillText(`Gripper — ${pressWidth}×${pressHeight} • Safety Check`, canvasWidth / 2, titleY);
-  
+  // Subtitle with proper spacing from title
+  ctx.fillStyle = '#6b7280';
   ctx.font = '14px Inter, system-ui, sans-serif';
-  ctx.fillText(`Gripper Area: ${gripperWidth} cm (shaded)`, canvasWidth / 2, titleY + 25);
-  ctx.fillText(`Gap: ${gapWidth} cm • Bleed: ${bleedWidth} cm • Edge margins: ${edgeMargin} cm`, canvasWidth / 2, titleY + 45);
-  ctx.fillText(`Safe Printable Window: ${printableWidth.toFixed(1)}×${printableHeight.toFixed(1)} cm`, canvasWidth / 2, titleY + 65);
+  ctx.fillText(`${pressWidth}×${pressHeight} • Safety Check`, canvasWidth / 2, startY - 55);
+  
+  // Information panels positioned outside the printable area
+  const panelWidth = 180;
+  const panelHeight = 140;
+  const panelSpacing = 20;
+  
+  // Left panel - Sheet Specifications (positioned to the left of the sheet)
+  const leftPanelX = startX - panelWidth - panelSpacing;
+  const leftPanelY = startY + 20;
+  
+  // Panel background with transparency
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.fillRect(leftPanelX, leftPanelY, panelWidth, panelHeight);
+  
+  // Panel border
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(leftPanelX, leftPanelY, panelWidth, panelHeight);
+  
+  // Panel header
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(leftPanelX, leftPanelY, panelWidth, 30);
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(leftPanelX, leftPanelY, panelWidth, 30);
+  
+  // Panel title
+  ctx.fillStyle = '#111827';
+  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Sheet Specs', leftPanelX + 8, leftPanelY + 20);
+  
+  // Specifications list
+  ctx.fillStyle = '#374151';
+  ctx.font = '10px Inter, system-ui, sans-serif';
+  const specs = [
+    `${pressWidth}×${pressHeight} cm`,
+    `Gripper: ${gripperWidth} cm (shaded)`,
+    `Gap: ${gapWidth} cm • Bleed: ${bleedWidth} cm`,
+    `Edge margins: ${edgeMargin} cm`,
+    `Safe Printable Window:`,
+    `${printableWidth.toFixed(1)}×${printableHeight.toFixed(1)} cm`
+  ];
+  
+  specs.forEach((spec, index) => {
+    ctx.fillText(spec, leftPanelX + 8, leftPanelY + 45 + (index * 12));
+  });
+  
+  // Right panel - Safety Check (positioned to the right of the sheet)
+  const rightPanelX = startX + scaledPressWidth + panelSpacing;
+  const rightPanelY = startY + 20;
+  
+  // Panel background with transparency
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.fillRect(rightPanelX, rightPanelY, panelWidth, panelHeight);
+  
+  // Panel border
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rightPanelX, rightPanelY, panelWidth, panelHeight);
+  
+  // Panel header with safety theme
+  ctx.fillStyle = '#fef2f2';
+  ctx.fillRect(rightPanelX, rightPanelY, panelWidth, 30);
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rightPanelX, rightPanelY, panelWidth, 30);
+  
+  // Panel title
+  ctx.fillStyle = '#dc2626';
+  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Safety Check', rightPanelX + 8, rightPanelY + 20);
+  
+  // Safety details with checkmarks
+  ctx.fillStyle = '#991b1b';
+  ctx.font = '10px Inter, system-ui, sans-serif';
+  const safetyChecks = [
+    `Gripper Clearance: ✓`,
+    `Margin Check: ✓`,
+    `Bleed Area: ✓`,
+    `Edge Safety: ✓`,
+    `Print Area: ${printableWidth.toFixed(1)}×${printableHeight.toFixed(1)} cm`,
+    `Utilization: ${((layout.itemsPerSheet * productWidth * productHeight) / (printableWidth * printableHeight) * 100).toFixed(1)}%`
+  ];
+  
+  safetyChecks.forEach((check, index) => {
+    ctx.fillText(check, rightPanelX + 8, rightPanelY + 45 + (index * 12));
+  });
+  
+  // Gripper area label (centered in gripper area)
+  ctx.fillStyle = '#dc2626';
+  ctx.font = 'bold 10px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`Gripper: ${gripperWidth} cm`, startX + scaledPressWidth / 2, startY + scaledGripperWidth / 2 + 3);
+  
+  // Safe printable window dimensions (bottom center)
+  ctx.fillStyle = '#059669';
+  ctx.font = 'bold 10px Inter, system-ui, sans-serif';
+  ctx.fillText(`${printableWidth.toFixed(1)}×${printableHeight.toFixed(1)} cm`, printableX + printableW / 2, printableY + printableH + 20);
 }
 
 // Draw product-specific shapes with professional styling
@@ -1532,11 +1844,24 @@ function drawCircularProduct(
   ctx.fill();
   ctx.stroke();
 
-  // Clean cup size label
-  ctx.fillStyle = '#374151';
-  ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+  // Enhanced cup size label with modern styling
+  const labelWidth = 40;
+  const labelHeight = 16;
+  const labelX = centerX - labelWidth / 2;
+  const labelY = sleeveY - 20;
+  
+  // Draw background for label
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.fillRect(labelX, labelY, labelWidth, labelHeight);
+  ctx.strokeStyle = 'rgba(37, 99, 235, 0.3)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(labelX, labelY, labelWidth, labelHeight);
+  
+  // Draw cup size text
+  ctx.fillStyle = '#1e40af';
+  ctx.font = 'bold 10px Inter, system-ui, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(`${cupSizeOz}oz`, centerX, sleeveY - 8);
+  ctx.fillText(`${cupSizeOz}oz`, centerX, labelY + 11);
   
   // Output object coordinates for verification
   console.log(`🍵 Cup Object ${row}-${col} (${cupSizeOz}oz):`, {
@@ -1996,6 +2321,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
   // ===== Professional Visualization State =====
   const [visualizationType, setVisualizationType] = React.useState<VisualizationType>('print');
+  
 
   // ===== Debug: Log component mount and initial data =====
   React.useEffect(() => {
@@ -4835,6 +5161,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                       Gripper Handling
                     </button>
                   </div>
+                  
                   
                   {/* Single Sheet Canvas Visualization */}
                   <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-lg p-1 shadow-lg overflow-hidden">
