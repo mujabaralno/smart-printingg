@@ -99,8 +99,8 @@ function CreateQuoteContent() {
         { name: "UV Spot", cost: 20 },
         { name: "Lamination", cost: 15 },
       ],
-      plates: 4,
-      units: 5000,
+      plates: null,
+      units: null,
     },
     calculation: {
       basePrice: 0,
