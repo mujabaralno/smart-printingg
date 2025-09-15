@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +48,13 @@ import { QuoteStatus } from "@/constants";
 export default function DashboardPage() {
   const [allQuotes, setAllQuotes] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [from, setFrom] = useState<string>("");
+  const [to, setTo] = useState<string>("");
+  const [contactPerson, setContactPerson] = useState<string>("all");
+  const [minAmount, setMinAmount] = useState<string>("");
+  const [maxAmount, setMaxAmount] = useState<string>("");
+  const [keywordFilter, setKeywordFilter] = useState("");
+  const [filterContactPersons, setFilterContactPersons] = useState<Array<{id: string, name: string}>>([]);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -200,11 +208,72 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Filter quotes based on selected status - use useMemo for better performance
+  // Load contact persons for filter dropdown
+  useEffect(() => {
+    const loadContactPersons = async () => {
+      try {
+        const response = await fetch('/api/clients');
+        if (response.ok) {
+          const clients = await response.json();
+          // Extract unique contact persons
+          const contactPersons = clients.reduce((acc: any[], client: any) => {
+            if (client.contactPerson && !acc.find(cp => cp.name === client.contactPerson)) {
+              acc.push({
+                id: client.contactPerson,
+                name: client.contactPerson
+              });
+            }
+            return acc;
+          }, []);
+          setFilterContactPersons(contactPersons);
+        }
+      } catch (error) {
+        console.error('Error loading contact persons for filter:', error);
+        // Fallback to extracting from current quotes if API fails
+        const contactPersons = allQuotes.reduce((acc: any[], quote: any) => {
+          if (quote.client?.contactPerson && !acc.find(cp => cp.name === quote.client.contactPerson)) {
+            acc.push({
+              id: quote.client.contactPerson,
+              name: quote.client.contactPerson
+            });
+          }
+          return acc;
+        }, []);
+        setFilterContactPersons(contactPersons);
+      }
+    };
+
+    loadContactPersons();
+  }, [allQuotes]);
+
+  // Filter quotes based on all filters - use useMemo for better performance
   const filteredQuotes = useMemo(() => {
-    const filtered = statusFilter === "All" 
-      ? allQuotes 
-      : allQuotes.filter(q => q.status === statusFilter);
+    const filtered = allQuotes.filter((q) => {
+      const k = keywordFilter.trim().toLowerCase();
+
+      // Keyword filter for client, quotation number, product, date, and amount
+      const hitKeyword = k === "" || 
+        q.customerName?.toLowerCase().includes(k) ||
+        q.client?.contactPerson?.toLowerCase().includes(k) ||
+        q.quoteId?.toLowerCase().includes(k) ||
+        q.product?.toLowerCase().includes(k) ||
+        q.createdDate?.toLowerCase().includes(k) ||
+        q.totalAmount?.toString().includes(k);
+
+      // Status filter
+      const hitStatus = statusFilter === "All" || q.status === statusFilter;
+      
+      const hitContactPerson = contactPerson === "all" || q.client?.contactPerson === contactPerson;
+      
+      // Amount range filter
+      const hitMinAmount = minAmount === "" || (q.totalAmount && q.totalAmount >= Number(minAmount));
+      const hitMaxAmount = maxAmount === "" || (q.totalAmount && q.totalAmount <= Number(maxAmount));
+
+      const hitFrom = from === "" || (q.createdDate && q.createdDate >= from);
+      const hitTo = to === "" || (q.createdDate && q.createdDate <= to);
+
+      return hitKeyword && hitStatus && hitContactPerson && hitMinAmount && hitMaxAmount && hitFrom && hitTo;
+    });
     
     // Sort by newest first (most recent createdDate first)
     const sorted = [...filtered].sort((a, b) => {
@@ -214,7 +283,7 @@ export default function DashboardPage() {
     });
     
     return sorted;
-  }, [allQuotes, statusFilter]);
+  }, [allQuotes, statusFilter, keywordFilter, contactPerson, minAmount, maxAmount, from, to]);
 
   // Calculate metrics - these will now update automatically when allQuotes changes
   const totalQuotes = useMemo(() => allQuotes.length, [allQuotes]);
@@ -482,64 +551,218 @@ export default function DashboardPage() {
           }
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Quote Details - {selectedQuote?.quoteId}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-slate-900">Quote Details - {selectedQuote?.quoteId}</DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-600">Client Name</label>
-                <p className="text-lg font-semibold">{selectedQuote?.client?.contactPerson || selectedQuote?.client?.companyName}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600">Amount</label>
-                <p className="text-lg font-semibold">
-                  AED {(() => {
-                    if (selectedQuote?.amounts && Array.isArray(selectedQuote.amounts) && selectedQuote.amounts.length > 0) {
-                      return selectedQuote.amounts[0]?.total?.toFixed(2) || '0.00';
-                    } else if (selectedQuote?.amounts?.total) {
-                      return selectedQuote.amounts.total.toFixed(2);
-                    }
-                    return '0.00';
-                  })()}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600">Date Created</label>
-                <p className="text-lg font-semibold">
-                  {selectedQuote?.date ? formatDate(selectedQuote.date) : 'No date available'}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600">Status</label>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  selectedQuote?.status === "Approved" 
-                    ? "bg-emerald-100 text-emerald-700"
-                    : selectedQuote?.status === "Pending"
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-rose-100 text-rose-700"
-                }`}>
-                  {selectedQuote?.status}
-                </span>
-              </div>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-600">Products & Services</label>
-              <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-700">
-                  {selectedQuote?.product ? (
-                    `• ${selectedQuote.product} - ${selectedQuote?.quantity || 0} units`
-                  ) : (
-                    "• No product details available"
-                  )}
-                </p>
+            {/* Client Information */}
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">Client Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Company Name</label>
+                  <p className="text-base font-semibold text-slate-900">
+                    {selectedQuote?.client?.companyName || selectedQuote?.client?.contactPerson || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Contact Person</label>
+                  <p className="text-base font-semibold text-slate-900">
+                    {selectedQuote?.client?.contactPerson || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Email</label>
+                  <p className="text-base text-slate-700">
+                    {selectedQuote?.client?.email || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Phone</label>
+                  <p className="text-base text-slate-700">
+                    {selectedQuote?.client?.phone || 'N/A'}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="flex space-x-4">
-              {/* Download button hidden */}
+            {/* Quote Information */}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">Quote Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Quote ID</label>
+                  <p className="text-base font-semibold text-slate-900">{selectedQuote?.quoteId}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Status</label>
+                  <div className="mt-1">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      selectedQuote?.status === "Approved" 
+                        ? "bg-emerald-100 text-emerald-700"
+                        : selectedQuote?.status === "Pending"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-rose-100 text-rose-700"
+                    }`}>
+                      {selectedQuote?.status}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Date Created</label>
+                  <p className="text-base font-semibold text-slate-900">
+                    {selectedQuote?.createdDate ? formatDate(selectedQuote.createdDate) : 
+                     selectedQuote?.date ? formatDate(selectedQuote.date) : 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Product Details */}
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">Product Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Product</label>
+                  <p className="text-base font-semibold text-slate-900">
+                    {selectedQuote?.product || selectedQuote?.productName || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Quantity</label>
+                  <p className="text-base font-semibold text-slate-900">
+                    {selectedQuote?.quantity || 'N/A'} units
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Printing Type</label>
+                  <p className="text-base text-slate-700">
+                    {selectedQuote?.printing || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Sides</label>
+                  <p className="text-base text-slate-700">
+                    {selectedQuote?.sides || 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Paper Details */}
+            {selectedQuote?.papers && selectedQuote.papers.length > 0 && (
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">Paper Specifications</h3>
+                <div className="space-y-3">
+                  {selectedQuote.papers.map((paper: any, index: number) => (
+                    <div key={index} className="bg-white p-3 rounded border">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <label className="text-sm font-medium text-slate-600">Paper Type</label>
+                          <p className="text-sm text-slate-900">{paper.name || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-slate-600">GSM</label>
+                          <p className="text-sm text-slate-900">{paper.gsm || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-slate-600">Price per Sheet</label>
+                          <p className="text-sm text-slate-900">AED {paper.pricePerSheet || '0.00'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Finishing Details */}
+            {selectedQuote?.finishing && selectedQuote.finishing.length > 0 && (
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">Finishing Options</h3>
+                <div className="space-y-2">
+                  {selectedQuote.finishing.map((finish: any, index: number) => (
+                    <div key={index} className="bg-white p-3 rounded border flex justify-between items-center">
+                      <span className="text-sm font-medium text-slate-900">{finish.name || 'Standard Finishing'}</span>
+                      <span className="text-sm text-slate-700">AED {finish.cost || '0.00'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pricing Information */}
+            <div className="bg-emerald-50 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">Pricing Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Base Amount</label>
+                  <p className="text-lg font-semibold text-slate-900">
+                    AED {(() => {
+                      if (selectedQuote?.amounts && Array.isArray(selectedQuote.amounts) && selectedQuote.amounts.length > 0) {
+                        return selectedQuote.amounts[0]?.base?.toFixed(2) || '0.00';
+                      } else if (selectedQuote?.amounts?.base) {
+                        return selectedQuote.amounts.base.toFixed(2);
+                      }
+                      return '0.00';
+                    })()}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">VAT (5%)</label>
+                  <p className="text-lg font-semibold text-slate-900">
+                    AED {(() => {
+                      if (selectedQuote?.amounts && Array.isArray(selectedQuote.amounts) && selectedQuote.amounts.length > 0) {
+                        return selectedQuote.amounts[0]?.vat?.toFixed(2) || '0.00';
+                      } else if (selectedQuote?.amounts?.vat) {
+                        return selectedQuote.amounts.vat.toFixed(2);
+                      }
+                      return '0.00';
+                    })()}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Total Amount</label>
+                  <p className="text-xl font-bold text-emerald-700">
+                    AED {(() => {
+                      if (selectedQuote?.amounts && Array.isArray(selectedQuote.amounts) && selectedQuote.amounts.length > 0) {
+                        return selectedQuote.amounts[0]?.total?.toFixed(2) || '0.00';
+                      } else if (selectedQuote?.amounts?.total) {
+                        return selectedQuote.amounts.total.toFixed(2);
+                      }
+                      return '0.00';
+                    })()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Staff Information */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">Staff Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Created By</label>
+                  <p className="text-base text-slate-700">
+                    {selectedQuote?.user?.firstName && selectedQuote?.user?.lastName 
+                      ? `${selectedQuote.user.firstName} ${selectedQuote.user.lastName}`
+                      : selectedQuote?.user?.email || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Sales Person</label>
+                  <p className="text-base text-slate-700">
+                    {selectedQuote?.user?.firstName && selectedQuote?.user?.lastName 
+                      ? `${selectedQuote.user.firstName} ${selectedQuote.user.lastName}`
+                      : selectedQuote?.user?.email || 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex space-x-4 pt-4 border-t border-slate-200">
               <Button 
                 variant="outline"
                 onClick={() => {
@@ -552,8 +775,18 @@ export default function DashboardPage() {
                   // Then open update modal with the stored quote reference
                   handleUpdateQuote(quoteToEdit);
                 }}
+                className="flex items-center space-x-2"
               >
-                Edit Quote
+                <Edit className="w-4 h-4" />
+                <span>Edit Quote</span>
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => handleDownloadPDF(selectedQuote)}
+                className="flex items-center space-x-2"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download PDF</span>
               </Button>
             </div>
           </div>
@@ -678,34 +911,115 @@ export default function DashboardPage() {
           })}
         </div>
 
+        {/* Filters and Create Quote Button */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          {/* Compact Filters */}
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2">
+          {/* Keyword Filter */}
+          <div className="space-y-1 lg:col-span-2">
+            <label className="text-xs font-medium text-slate-600">Keyword</label>
+            <Input
+              placeholder="Search..."
+              value={keywordFilter}
+              onChange={(e) => setKeywordFilter(e.target.value)}
+              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg h-8 text-sm"
+            />
+          </div>
+
+          {/* Date Range */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">From</label>
+            <Input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg h-8 text-sm"
+            />
+          </div>
+          
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">To</label>
+            <Input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg h-8 text-sm"
+            />
+          </div>
+          
+          {/* Status Filter */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Status</label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg h-8 text-sm">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value="All">All</SelectItem>
+                <SelectItem value="Approved">Approved</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Contact Person */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Contact</label>
+            <Select value={contactPerson} onValueChange={(v: string) => setContactPerson(v)}>
+              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg h-8 text-sm">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value="all">All</SelectItem>
+                {filterContactPersons.map((person) => (
+                  <SelectItem key={person.id} value={person.id}>
+                    {person.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Amount Range */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Amount</label>
+            <div className="grid grid-cols-2 gap-1">
+              <Input
+                type="number"
+                placeholder="Min"
+                value={minAmount}
+                onChange={(e) => setMinAmount(e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg h-8 text-xs"
+              />
+              <Input
+                type="number"
+                placeholder="Max"
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg h-8 text-xs"
+              />
+            </div>
+          </div>
+          </div>
+
+          {/* Create Quote Button */}
+          <div className="flex items-center lg:ml-3">
+            <Link href="/create-quote" className="block">
+              <Button 
+                className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-5 py-2 rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 h-8 text-sm whitespace-nowrap"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Create New Quote
+              </Button>
+            </Link>
+          </div>
+        </div>
+
         {/* Recent Quotations Section */}
         <div className="space-y-6 sm:space-y-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">Recent Quotations</h2>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-              {/* Status Filter Dropdown */}
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-auto bg-white border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  <SelectItem value="All">All Status</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Link href="/create-quote" className="w-full sm:w-auto">
-                <Button 
-                  className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
-                >
-                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                  <span className="text-sm sm:text-base">Create a New Quote</span>
-                </Button>
-              </Link>
-            </div>
           </div>
 
           {/* Quotations Table - Mobile Responsive */}

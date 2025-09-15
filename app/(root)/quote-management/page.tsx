@@ -25,6 +25,7 @@ import { downloadCustomerPdf, generateOperationalPDF } from "@/lib/quote-pdf";
 
 type Status = "Approved" | "Pending" | "Rejected";
 type StatusFilter = "all" | Status;
+type MultiStatusFilter = Status[];
 type UserFilter = "all" | string;
 
 
@@ -85,10 +86,12 @@ export default function QuoteManagementPage() {
   const [status, setStatus] = React.useState<StatusFilter>("all");
   const [contactPerson, setContactPerson] = React.useState<UserFilter>("all");
   const [minAmount, setMinAmount] = React.useState<string>("");
+  const [maxAmount, setMaxAmount] = React.useState<string>("");
+  const [keywordFilter, setKeywordFilter] = React.useState("");
   const [page, setPage] = React.useState(1);
   const [showAll, setShowAll] = React.useState(false); // New state for show more option
 
-  React.useEffect(() => setPage(1), [search, from, to, status, contactPerson, minAmount]);
+  React.useEffect(() => setPage(1), [search, from, to, status, contactPerson, minAmount, maxAmount, keywordFilter]);
 
   // Load contact persons for filter dropdown
   const [filterContactPersons, setFilterContactPersons] = React.useState<Array<{id: string, name: string}>>([]);
@@ -203,6 +206,8 @@ export default function QuoteManagementPage() {
   const filtered = React.useMemo(() => {
     const filteredQuotes = rows.filter((q) => {
       const s = search.trim().toLowerCase();
+      const k = keywordFilter.trim().toLowerCase();
+      
       // Enhanced search to include quote number, client name, and person name as per requirements
       const hitSearch =
         s === "" || 
@@ -210,14 +215,29 @@ export default function QuoteManagementPage() {
         q.clientName.toLowerCase().includes(s) ||
         q.contactPerson.toLowerCase().includes(s);
 
+      // Keyword filter for client, quotation number, product, date, and amount
+      const hitKeyword = k === "" || 
+        q.clientName.toLowerCase().includes(k) ||
+        q.contactPerson.toLowerCase().includes(k) ||
+        q.quoteId?.toLowerCase().includes(k) ||
+        q.productName?.toLowerCase().includes(k) ||
+        q.product?.toLowerCase().includes(k) ||
+        q.date.toLowerCase().includes(k) ||
+        q.amount.toString().includes(k);
+
+      // Status filter
       const hitStatus = status === "all" || q.status === status;
+      
       const hitContactPerson = contactPerson === "all" || q.contactPerson === contactPerson;
-      const hitAmount = minAmount === "" || q.amount >= Number(minAmount);
+      
+      // Amount range filter
+      const hitMinAmount = minAmount === "" || q.amount >= Number(minAmount);
+      const hitMaxAmount = maxAmount === "" || q.amount <= Number(maxAmount);
 
       const hitFrom = from === "" || q.date >= from;
       const hitTo = to === "" || q.date <= to;
 
-      return hitSearch && hitStatus && hitContactPerson && hitAmount && hitFrom && hitTo;
+      return hitSearch && hitKeyword && hitStatus && hitContactPerson && hitMinAmount && hitMaxAmount && hitFrom && hitTo;
     });
 
     // Sort by newest first (most recent date first)
@@ -228,7 +248,7 @@ export default function QuoteManagementPage() {
     });
 
     return sorted;
-  }, [rows, search, from, to, status, contactPerson, minAmount]);
+  }, [rows, search, keywordFilter, from, to, status, contactPerson, minAmount, maxAmount]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const start = (page - 1) * PAGE_SIZE;
@@ -703,7 +723,19 @@ export default function QuoteManagementPage() {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+          {/* Keyword Filter */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Keyword Filter</label>
+            <Input
+              placeholder="Client, quote, product, date, amount..."
+              value={keywordFilter}
+              onChange={(e) => setKeywordFilter(e.target.value)}
+              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
+            />
+          </div>
+
+          {/* Date Range */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">From Date</label>
             <Input
@@ -724,21 +756,23 @@ export default function QuoteManagementPage() {
             />
           </div>
           
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Status</label>
-            <Select value={status} onValueChange={(v: StatusFilter) => setStatus(v)}>
-              <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+             {/* Status Filter */}
+             <div className="space-y-2">
+               <label className="text-sm font-medium text-slate-700">Status</label>
+               <Select value={status} onValueChange={(v: StatusFilter) => setStatus(v)}>
+                 <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10">
+                   <SelectValue placeholder="All Status" />
+                 </SelectTrigger>
+                 <SelectContent className="max-h-60">
+                   <SelectItem value="all">All Status</SelectItem>
+                   <SelectItem value="Approved">Approved</SelectItem>
+                   <SelectItem value="Pending">Pending</SelectItem>
+                   <SelectItem value="Rejected">Rejected</SelectItem>
+                 </SelectContent>
+               </Select>
+             </div>
           
+          {/* Contact Person */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Contact Person</label>
             <Select value={contactPerson} onValueChange={(v: UserFilter) => setContactPerson(v)}>
@@ -756,15 +790,25 @@ export default function QuoteManagementPage() {
             </Select>
           </div>
           
+          {/* Amount Range */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Minimum Amount</label>
-            <Input
-              type="number"
-              placeholder="AED 0.00"
-              value={minAmount}
-              onChange={(e) => setMinAmount(e.target.value)}
-              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10"
-            />
+            <label className="text-sm font-medium text-slate-700">Amount Range</label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                type="number"
+                placeholder="Min AED"
+                value={minAmount}
+                onChange={(e) => setMinAmount(e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 text-sm"
+              />
+              <Input
+                type="number"
+                placeholder="Max AED"
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-10 text-sm"
+              />
+            </div>
           </div>
         </div>
 

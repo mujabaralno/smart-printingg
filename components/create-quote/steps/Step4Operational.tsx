@@ -6648,7 +6648,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
             </div>
           </div>
 
-          <DialogFooter className="pt-6">
+          <DialogFooter className="pt-6l">
             <Button 
               onClick={() => setShowPricingLogic(false)}
               className="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-xl font-medium"
