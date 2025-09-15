@@ -15,7 +15,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Calculator, Settings, BarChart3, Edit3, AlertTriangle, Database, Palette, Info, Clock, DollarSign, Search, Building, Plus, Minus, Printer, Scissors, GripHorizontal } from "lucide-react";
 import { getProductConfig, getShoppingBagPreset } from "@/constants/product-config";
-import type { QuoteFormData } from "@/types";
+import type { QuoteFormData, DigitalPricing, OffsetPricing, DigitalCostingResult, OffsetCostingResult } from "@/types";
+import { calcDigitalCosting, calcOffsetCosting } from "@/lib/imposition";
 
 interface Step4Props {
   formData: QuoteFormData;
@@ -59,10 +60,10 @@ function computeLayout(
   inputHeight: number | null, // Press sheet height (50) 
   outputWidth: number | null, // Product width (14.8)
   outputHeight: number | null, // Product height (21.0)
-  gripperWidth: number = 0.9,  // Gripper area (top)
-  edgeMargin: number = 0.5,    // Edge margins
-  gapWidth: number = 0.5,      // Gap between products
-  bleedWidth: number = 0.3     // Bleed around products
+  gripperWidth: number = 0.9,  // Fixed gripper area (top)
+  edgeMargin: number = 0.5,    // Fixed edge margins
+  gapWidth: number = 0.5,      // Fixed gap between products
+  bleedWidth: number = 0.3     // Fixed bleed around products
 ) {
   // Debug log to see what's actually being passed
   console.log('🔍 computeLayout called with:', {
@@ -1148,9 +1149,9 @@ function drawPrintView(ctx: CanvasRenderingContext2D, canvasWidth: number, canva
     productWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
     productHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
   }
-  const bleedWidth = currentProduct?.bleed || productConfig?.defaultBleed || 0.3;
-  // Use 0.5cm gap for cups as specified, otherwise use product config
-  const gapWidth = productName === 'Cups' ? 0.5 : (currentProduct?.gap || productConfig?.defaultGap || 0.5);
+  // Fixed default values as requested by client
+  const bleedWidth = 0.3;
+  const gapWidth = 0.5;
   
   // Calculate safety gap for proper spacing
   const safetyGap = 0.5; // 0.5cm safety gap around each object
@@ -1479,9 +1480,9 @@ function drawGripperView(ctx: CanvasRenderingContext2D, canvasWidth: number, can
     productWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
     productHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
   }
-  const bleedWidth = currentProduct?.bleed || productConfig?.defaultBleed || 0.3;
-  // Use 0.5cm gap for cups as specified, otherwise use product config
-  const gapWidth = productName === 'Cups' ? 0.5 : (currentProduct?.gap || productConfig?.defaultGap || 0.5);
+  // Fixed default values as requested by client
+  const bleedWidth = 0.3;
+  const gapWidth = 0.5;
   
   // Calculate safety gap for proper spacing
   const safetyGap = 0.5; // 0.5cm safety gap around each object
@@ -2376,6 +2377,16 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
   // ===== Professional Visualization State =====
   const [visualizationType, setVisualizationType] = React.useState<VisualizationType>('print');
+  
+  // ===== Costing Analysis State =====
+  const [digitalPricing, setDigitalPricing] = React.useState<DigitalPricing | null>(null);
+  const [offsetPricing, setOffsetPricing] = React.useState<OffsetPricing | null>(null);
+  const [digitalCostingResults, setDigitalCostingResults] = React.useState<DigitalCostingResult[]>([]);
+  const [offsetCostingResult, setOffsetCostingResult] = React.useState<OffsetCostingResult | null>(null);
+  const [selectedDigitalOption, setSelectedDigitalOption] = React.useState<string>('');
+  const [selectedOffsetPress, setSelectedOffsetPress] = React.useState<string>('');
+  const [loadingPricing, setLoadingPricing] = React.useState(false);
+  
   
 
   // ===== Debug: Log component mount and initial data =====
@@ -3976,6 +3987,121 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
     return { breakdown, totalCost };
   };
 
+  // ===== Costing Analysis Functions =====
+  
+  // Load pricing data on component mount
+  React.useEffect(() => {
+    const loadPricingData = async () => {
+      try {
+        setLoadingPricing(true);
+        const response = await fetch('/api/pricing');
+        if (response.ok) {
+          const pricingData = await response.json();
+          setDigitalPricing(pricingData.digital);
+          setOffsetPricing(pricingData.offset);
+          console.log('Pricing data loaded:', pricingData);
+        } else {
+          console.error('Failed to load pricing data');
+        }
+      } catch (error) {
+        console.error('Error loading pricing data:', error);
+      } finally {
+        setLoadingPricing(false);
+      }
+    };
+
+    loadPricingData();
+  }, []);
+
+  // Calculate costing for the first product
+  const calculateCosting = (product: any) => {
+    if (!digitalPricing || !offsetPricing) {
+      console.log('Pricing data not loaded yet');
+      return;
+    }
+    
+    // Validate product data
+    const width = product.flatSize?.width || 0;
+    const height = product.flatSize?.height || 0;
+    const quantity = product.quantity || 0;
+    const sides = parseInt(product.sides || '1') || 1;
+    const colorsFront = parseInt(product.colors?.front || '0') || 0;
+    const colorsBack = parseInt(product.colors?.back || '0') || 0;
+    
+    console.log('Calculating costing with:', {
+      width, height, quantity, sides, colorsFront, colorsBack,
+      digitalPricing, offsetPricing
+    });
+    
+    if (width <= 0 || height <= 0 || quantity <= 0) {
+      console.log('Invalid product dimensions or quantity');
+      return;
+    }
+    
+    try {
+      // Calculate digital costing
+      const digitalResults = calcDigitalCosting({
+        qty: quantity,
+        piece: { w: width, h: height },
+        sides: sides as 1 | 2,
+        colorsF: colorsFront as 1 | 2 | 4,
+        colorsB: colorsBack as 1 | 2 | 4,
+        perClick: digitalPricing.perClick,
+        parentCost: digitalPricing.parentSheetCost,
+        wasteParents: digitalPricing.wasteParents,
+        bleed: product.bleed || 0.3,
+        gapX: product.gap || 0.5,
+        gapY: product.gap || 0.5,
+        allowRotate: true
+      });
+      
+      console.log('Digital costing results:', digitalResults);
+      setDigitalCostingResults(digitalResults);
+      
+      // For Digital printing, automatically select the cheapest option
+      if (digitalResults.length > 0) {
+        const cheapest = digitalResults.reduce((min, current) => 
+          current.total < min.total ? current : min
+        );
+        setSelectedDigitalOption(cheapest.option);
+      }
+      
+      // Calculate offset costing
+      const offsetResult = calcOffsetCosting({
+        qty: quantity,
+        parent: { w: 100, h: 70 }, // PARENT stock
+        press: { w: 35, h: 50, label: '35×50 cm' }, // 35×50 press
+        piece: { w: width, h: height },
+        sides: sides as 1 | 2,
+        colorsF: colorsFront as 1 | 2 | 4,
+        colorsB: colorsBack as 1 | 2 | 4,
+        pricing: offsetPricing,
+        bleed: product.bleed || 0.3,
+        gapX: product.gap || 0.5,
+        gapY: product.gap || 0.5,
+        allowRotate: true
+      });
+      
+      console.log('Offset costing result:', offsetResult);
+      setOffsetCostingResult(offsetResult);
+      
+      // Set default selection to 35x50 if enabled
+      if (offsetResult.pressPerParent > 0 && !selectedOffsetPress) {
+        setSelectedOffsetPress('35×50 cm');
+      }
+      
+    } catch (error) {
+      console.error('Error calculating costing:', error);
+    }
+  };
+
+  // Trigger costing calculation when product changes
+  React.useEffect(() => {
+    if (formData.products.length > 0 && digitalPricing && offsetPricing) {
+      calculateCosting(formData.products[0]);
+    }
+  }, [formData.products, digitalPricing, offsetPricing]);
+
   // ===== Render =====
   return (
     <div className="space-y-6 md:space-y-8 px-4 md:px-0">
@@ -4021,6 +4147,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               })()}
             </div>
           </div>
+
 
           {product.papers.map((paper, paperIndex) => {
             // Calculate the global paper index for this product's paper
@@ -5294,9 +5421,9 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                                   showCutLines: visualizationType === 'cut',
                                   showBleed: true,
                                   showGaps: true,
-                                  gripperWidth: currentProduct?.gripper || productConfig?.defaultGripper || 0.9,
-                                  bleedWidth: currentProduct?.bleed || productConfig?.defaultBleed || 0.3,
-                                  gapWidth: currentProduct?.gap || productConfig?.defaultGap || 0.5
+                                  gripperWidth: 0.9,
+                                  bleedWidth: 0.3,
+                                  gapWidth: 0.5
                                 };
                                 
                                 
@@ -7103,6 +7230,149 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* === Costing Analysis Section === */}
+      {formData.products.length > 0 && (
+        <Card className="bg-white border border-slate-200 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+              <Calculator className="w-5 h-5 mr-2 text-[#27aae1]" />
+              Costing Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Automatic Printing Method Display */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-slate-700">
+                Selected Printing Method
+              </Label>
+              <div className="flex items-center space-x-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div className={`w-3 h-3 rounded-full ${
+                  formData.products[0]?.printingSelection === "Digital" 
+                    ? 'bg-blue-500' 
+                    : 'bg-green-500'
+                }`}></div>
+                <span className="text-sm font-medium text-slate-700">
+                  {formData.products[0]?.printingSelection || "Not Selected"}
+                </span>
+                <span className="text-xs text-slate-500 ml-2">
+                  (Change in Basic Information above)
+                </span>
+              </div>
+            </div>
+
+            {/* Digital Costing Results - Show only cheapest option */}
+            {formData.products[0]?.printingSelection === "Digital" && digitalCostingResults.length > 0 ? (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-slate-700">
+                  Digital Cut-Size Options
+                </Label>
+                <div className="space-y-2">
+                  {/* Show only the cheapest option for Digital printing */}
+                  {(() => {
+                    const cheapest = digitalCostingResults.reduce((min, current) => 
+                      current.total < min.total ? current : min
+                    );
+                    return (
+                      <div className="p-3 rounded-lg border border-[#27aae1] bg-[#27aae1]/5">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <span className="font-medium text-slate-800">{cheapest.option}</span>
+                            <div className="text-xs text-slate-600 mt-1">
+                              {cheapest.upsPerSheet} ups per sheet • {cheapest.parents} parent sheets
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold text-slate-800">AED {cheapest.total.toFixed(2)}</div>
+                            <div className="text-xs text-slate-600">
+                              Paper: AED {cheapest.paper.toFixed(2)} • Clicks: AED {cheapest.clicks.toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : formData.products[0]?.printingSelection === "Digital" ? (
+              <div className="text-center py-4">
+                <div className="text-sm text-slate-600">Calculating digital pricing options...</div>
+              </div>
+            ) : null}
+
+            {/* Offset Costing Results */}
+            {formData.products[0]?.printingSelection === "Offset" && offsetCostingResult && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-slate-700">
+                  Offset Press Options
+                </Label>
+                <div className="space-y-2">
+                  {/* 35x50 Press */}
+                  <div
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                      selectedOffsetPress === '35×50 cm'
+                        ? 'border-[#27aae1] bg-[#27aae1]/5'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => offsetCostingResult.pressPerParent > 0 && setSelectedOffsetPress('35×50 cm')}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="font-medium text-slate-800">35×50 cm Press</span>
+                        <div className="text-xs text-slate-600 mt-1">
+                          {offsetCostingResult.upsPerPress} ups per press • {offsetCostingResult.pressSheets} press sheets • {offsetCostingResult.parents} parent sheets
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold text-slate-800">AED {offsetCostingResult.total.toFixed(2)}</div>
+                        <div className="text-xs text-slate-600">
+                          Paper: AED {offsetCostingResult.paper.toFixed(2)} • Plates: AED {offsetCostingResult.plates.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 52x72 Press (Disabled) */}
+                  <div className="p-3 rounded-lg border border-gray-200 bg-gray-50 opacity-60">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="font-medium text-slate-600">52×72 cm Press</span>
+                        <div className="text-xs text-slate-500 mt-1">
+                          Not cuttable from 100×70 parent
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold text-slate-400">Disabled</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {loadingPricing && (
+              <div className="text-center py-4">
+                <div className="text-sm text-slate-600">Loading pricing data...</div>
+              </div>
+            )}
+
+            {/* No Printing Method Selected */}
+            {!formData.products[0]?.printingSelection && !loadingPricing && (
+              <div className="text-center py-4">
+                <div className="text-sm text-slate-600">Please select a printing method in Basic Information to see costing analysis.</div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {!loadingPricing && (!digitalPricing || !offsetPricing) && (
+              <div className="text-center py-4">
+                <div className="text-sm text-red-600">Unable to load pricing data. Using default values.</div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

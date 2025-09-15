@@ -135,10 +135,37 @@ const createEmptyProduct = (): Product => {
     cupSizeOz: undefined,
     bagPreset: undefined,
     gusset: undefined,
-    bleed: defaultConfig?.defaultBleed || 0.3,
-    gap: defaultConfig?.defaultGap || 0.6,
-    gripper: defaultConfig?.defaultGripper || 0.9,
-    otherEdges: defaultConfig?.defaultOtherEdges || 0.5
+    // Fixed production settings as requested by client
+    bleed: 0.3,
+    gap: 0.5,
+    gripper: 0.9,
+    otherEdges: 0.5
+  };
+};
+
+// Create a truly empty product with no pre-filled data
+const createTrulyEmptyProduct = (): Product => {
+  return {
+    productName: "",
+    paperName: "",
+    quantity: null, // Use null instead of 0 to show empty field
+    sides: "1" as const,
+    printingSelection: "Digital" as const,
+    flatSize: { width: 0, height: 0, spine: 0 },
+    closeSize: { width: 0, height: 0, spine: 0 },
+    useSameAsFlat: true,
+    papers: [{ name: "Select Paper", gsm: "Select GSM" }],
+    finishing: [],
+    finishingComments: '',
+    colors: { front: "", back: "" },
+    cupSizeOz: undefined,
+    bagPreset: undefined,
+    gusset: undefined,
+    // Fixed production settings as requested by client
+    bleed: 0.3,
+    gap: 0.5,
+    gripper: 0.9,
+    otherEdges: 0.5
   };
 };
 
@@ -152,6 +179,15 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
   const [selectedPaperForDetails, setSelectedPaperForDetails] = useState<string>('');
   const [paperDetails, setPaperDetails] = useState<any>(null);
   const [loadingPaperDetails, setLoadingPaperDetails] = useState(false);
+  const [currentProductIndex, setCurrentProductIndex] = useState(0);
+  
+  // Paper filter states
+  const [paperFilters, setPaperFilters] = useState({
+    paperType: '',
+    gsm: '',
+    vendor: '',
+    paperName: ''
+  });
   const [availablePapers, setAvailablePapers] = useState<Array<{
     name: string;
     gsmOptions: string[];
@@ -159,14 +195,6 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
   }>>([]);
   const [loadingPapers, setLoadingPapers] = useState(false);
   
-  // === Costing State Management ===
-  const [digitalPricing, setDigitalPricing] = useState<DigitalPricing | null>(null);
-  const [offsetPricing, setOffsetPricing] = useState<OffsetPricing | null>(null);
-  const [digitalCostingResults, setDigitalCostingResults] = useState<DigitalCostingResult[]>([]);
-  const [offsetCostingResult, setOffsetCostingResult] = useState<OffsetCostingResult | null>(null);
-  const [selectedDigitalOption, setSelectedDigitalOption] = useState<string>('');
-  const [selectedOffsetPress, setSelectedOffsetPress] = useState<string>('');
-  const [loadingPricing, setLoadingPricing] = useState(false);
   
   // Refs to prevent infinite loops
   const hasMatchedPapers = React.useRef(false);
@@ -229,33 +257,17 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
           sides: config.defaultSides,
           printingSelection: config.defaultPrinting,
           colors: config.defaultColors,
-          bleed: config.defaultBleed,
-          gap: config.defaultGap,
-          gripper: config.defaultGripper,
-          otherEdges: config.defaultOtherEdges
+          // Fixed production settings as requested by client
+          bleed: 0.3,
+          gap: 0.5,
+          gripper: 0.9,
+          otherEdges: 0.5
         });
       }
       hasInitializedProducts.current = true;
     }
   }, [formData.products]);
   
-  // Load pricing data on component mount
-  useEffect(() => {
-    const loadPricing = async () => {
-      setLoadingPricing(true);
-      try {
-        const { digital, offset } = await PricingService.getAllPricing();
-        setDigitalPricing(digital);
-        setOffsetPricing(offset);
-      } catch (error) {
-        console.error('Error loading pricing:', error);
-      } finally {
-        setLoadingPricing(false);
-      }
-    };
-    
-    loadPricing();
-  }, []);
   
   // Helper function to find the best matching paper from available options
   const findBestMatchingPaper = (paperName: string, gsm: string) => {
@@ -362,20 +374,16 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
   
   React.useEffect(() => {
     if (!hasInitializedProducts.current) {
-      // Only create empty product if there are no products OR if the only product is completely empty
+      // Only create empty product if there are no products at all
       // This prevents overriding auto-filled data from existing quotes
-      if (formData.products.length === 0 || 
-          (formData.products.length === 1 && 
-           !formData.products[0].productName && 
-           formData.products[0].papers[0]?.name === "Select Paper" &&
-           formData.products[0].quantity === 100)) {
-        console.log('Creating empty product - no meaningful data found');
+      if (formData.products.length === 0) {
+        console.log('Creating empty product - no products found');
         setFormData(prev => ({
           ...prev,
-          products: [createEmptyProduct()]
+          products: [createTrulyEmptyProduct()]
         }));
       } else {
-        console.log('Skipping empty product creation - meaningful data exists:', {
+        console.log('Skipping empty product creation - products exist:', {
           productCount: formData.products.length,
           firstProduct: formData.products[0] ? {
             name: formData.products[0].productName,
@@ -451,11 +459,11 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
         printingSelection: config.defaultPrinting,
         sides: config.defaultSides,
         colors: config.defaultColors,
-        // Production settings
-        bleed: config.defaultBleed,
-        gap: config.defaultGap,
-        gripper: config.defaultGripper,
-        otherEdges: config.defaultOtherEdges
+        // Fixed production settings as requested by client
+        bleed: 0.3,
+        gap: 0.5,
+        gripper: 0.9,
+        otherEdges: 0.5
       };
       
       console.log(`  Updates to apply:`, updates);
@@ -606,94 +614,6 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
     }
   }, [formData]);
 
-  // === Costing Calculation Functions ===
-  const calculateCosting = (product: Product) => {
-    if (!digitalPricing || !offsetPricing) {
-      console.log('Pricing data not loaded yet');
-      return;
-    }
-    
-    // Validate product data
-    const width = product.flatSize?.width || 0;
-    const height = product.flatSize?.height || 0;
-    const quantity = product.quantity || 0;
-    const sides = parseInt(product.sides || '1') || 1;
-    const colorsFront = parseInt(product.colors?.front || '0') || 0;
-    const colorsBack = parseInt(product.colors?.back || '0') || 0;
-    
-    console.log('Calculating costing with:', {
-      width, height, quantity, sides, colorsFront, colorsBack,
-      digitalPricing, offsetPricing
-    });
-    
-    if (width <= 0 || height <= 0 || quantity <= 0) {
-      console.log('Invalid product dimensions or quantity');
-      return;
-    }
-    
-    try {
-      // Calculate digital costing
-      const digitalResults = calcDigitalCosting({
-        qty: quantity,
-        piece: { w: width, h: height },
-        sides: sides,
-        colorsF: colorsFront as 1 | 2 | 4,
-        colorsB: colorsBack as 1 | 2 | 4,
-        perClick: digitalPricing.perClick,
-        parentCost: digitalPricing.parentSheetCost,
-        wasteParents: digitalPricing.wasteParents,
-        bleed: product.bleed || 0.5,
-        gapX: product.gap || 0.5,
-        gapY: product.gap || 0.5,
-        allowRotate: true
-      });
-      
-      console.log('Digital costing results:', digitalResults);
-      setDigitalCostingResults(digitalResults);
-      
-      // Set default selection to cheapest option
-      if (digitalResults.length > 0 && !selectedDigitalOption) {
-        const cheapest = digitalResults.reduce((min, current) => 
-          current.total < min.total ? current : min
-        );
-        setSelectedDigitalOption(cheapest.option.label);
-      }
-      
-      // Calculate offset costing
-      const offsetResult = calcOffsetCosting({
-        qty: quantity,
-        parent: { w: 100, h: 70 }, // PARENT stock
-        press: { w: 35, h: 50, label: '35×50 cm' }, // 35×50 press
-        piece: { w: width, h: height },
-        sides: sides as 1 | 2,
-        colorsF: colorsFront as 1 | 2 | 4,
-        colorsB: colorsBack as 1 | 2 | 4,
-        pricing: offsetPricing,
-        bleed: product.bleed || 0.5,
-        gapX: product.gap || 0.5,
-        gapY: product.gap || 0.5,
-        allowRotate: true
-      });
-      
-      console.log('Offset costing result:', offsetResult);
-      setOffsetCostingResult(offsetResult);
-      
-      // Set default selection to 35x50 if enabled
-      if (offsetResult.pressPerParent > 0 && !selectedOffsetPress) {
-        setSelectedOffsetPress('35×50 cm');
-      }
-      
-    } catch (error) {
-      console.error('Error calculating costing:', error);
-    }
-  };
-
-  // Trigger costing calculation when product changes
-  useEffect(() => {
-    if (formData.products.length > 0 && digitalPricing && offsetPricing) {
-      calculateCosting(formData.products[0]);
-    }
-  }, [formData.products, digitalPricing, offsetPricing]);
 
   // Helper function to check if a finishing option is selected
   const isFinishingSelected = (product: Product, option: string): boolean => {
@@ -758,7 +678,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
     setFormData(
       (prev): QuoteFormData => ({
         ...prev,
-        products: [...prev.products, createEmptyProduct()],
+        products: [...prev.products, createTrulyEmptyProduct()],
       })
     );
   };
@@ -810,41 +730,109 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
     }
   };
 
-  const handleBrowseAvailablePapers = () => {
-    console.log('Opening browse available papers dialog');
+  const handleBrowseAvailablePapers = async (productIndex: number = 0) => {
+    console.log('Opening browse available papers dialog for product:', productIndex);
+    setCurrentProductIndex(productIndex);
     setSelectedPaperForDetails(''); // No specific paper selected
     setPaperDetailsDialogOpen(true);
-    setLoadingPaperDetails(false);
+    setLoadingPaperDetails(true);
+    
+    try {
+      // Fetch papers directly from API to ensure we have the latest data
+      const response = await fetch('/api/materials/papers');
+      if (response.ok) {
+        const papers = await response.json();
+        console.log('Papers loaded for browse dialog:', papers);
     
     // Set browse mode to show all available papers
+        setPaperDetails({
+          browseMode: true,
+          availablePapers: papers,
+          totalMaterials: papers.length,
+          message: `Browse ${papers.length} available papers`
+        });
+        
+        // Also update the availablePapers state if it's empty
+        if (availablePapers.length === 0) {
+          setAvailablePapers(papers);
+        }
+      } else {
+        console.error('Failed to fetch papers for browse dialog');
     setPaperDetails({
       browseMode: true,
       availablePapers: availablePapers,
       totalMaterials: availablePapers.length,
       message: `Browse ${availablePapers.length} available papers`
     });
+      }
+    } catch (error) {
+      console.error('Error fetching papers for browse dialog:', error);
+      setPaperDetails({
+        browseMode: true,
+        availablePapers: availablePapers,
+        totalMaterials: availablePapers.length,
+        message: `Browse ${availablePapers.length} available papers`
+      });
+    } finally {
+      setLoadingPaperDetails(false);
+    }
   };
 
-  const handleAddPaperFromBrowse = (paperName: string) => {
-    console.log('Adding paper from browse:', paperName);
-    // Add the paper to the first product (or you can modify this logic)
-    if (formData.products.length > 0) {
-      const updatedProducts = [...formData.products];
-      const firstProduct = updatedProducts[0];
+  // Filter papers based on current filter criteria
+  const getFilteredPapers = () => {
+    if (!paperDetails?.availablePapers) return [];
+    
+    return paperDetails.availablePapers.filter((paper: any) => {
+      const matchesPaperType = !paperFilters.paperType || 
+        (paper.paperType || 'Standard').toLowerCase().includes(paperFilters.paperType.toLowerCase());
       
-      // Add the paper with default GSM
+      const matchesGsm = !paperFilters.gsm || 
+        paper.gsmOptions.some((gsm: string) => gsm.toLowerCase().includes(paperFilters.gsm.toLowerCase()));
+      
+      const matchesVendor = !paperFilters.vendor || 
+        paper.suppliers.some((supplier: string) => supplier.toLowerCase().includes(paperFilters.vendor.toLowerCase()));
+      
+      const matchesPaperName = !paperFilters.paperName || 
+        paper.name.toLowerCase().includes(paperFilters.paperName.toLowerCase());
+      
+      return matchesPaperType && matchesGsm && matchesVendor && matchesPaperName;
+    });
+  };
+
+  const handleAddPaperFromBrowse = (paperName: string, productIndex: number = 0) => {
+    console.log('Adding paper from browse:', paperName, 'to product:', productIndex);
+    // Add the paper to the specified product
+    if (formData.products.length > 0 && productIndex < formData.products.length) {
+      const updatedProducts = [...formData.products];
+      const targetProduct = updatedProducts[productIndex];
+      
+      // Find the selected paper from the dialog's available papers first, then fallback to state
+      const dialogPapers = paperDetails?.availablePapers || [];
+      const statePapers = availablePapers || [];
+      const allPapers = [...dialogPapers, ...statePapers];
+      
+      const selectedPaper = allPapers.find(p => p.name === paperName);
+      const defaultGsm = selectedPaper && selectedPaper.gsmOptions && selectedPaper.gsmOptions.length > 0 
+        ? selectedPaper.gsmOptions[0] 
+        : "Select GSM";
+      
+      // Add the paper with proper GSM
       const newPaper: Paper = {
         name: paperName,
-        gsm: "Select GSM"
+        gsm: defaultGsm
       };
       
-      firstProduct.papers.push(newPaper);
+      targetProduct.papers.push(newPaper);
       setFormData({ ...formData, products: updatedProducts });
       
       // Close the dialog
       setPaperDetailsDialogOpen(false);
       
-      console.log('Paper added successfully:', paperName);
+      console.log('Paper added successfully:', newPaper);
+      console.log('Selected paper data:', selectedPaper);
+      console.log('Dialog papers count:', dialogPapers.length);
+      console.log('State papers count:', statePapers.length);
+      console.log('Updated product papers:', targetProduct.papers);
     }
   };
 
@@ -861,7 +849,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
               </div>
               <span className="break-words">
                 {paperDetails && paperDetails.browseMode 
-                  ? 'Browse Available Papers' 
+                  ? 'View Available Papers' 
                   : `Paper Details: ${selectedPaperForDetails}`
                 }
               </span>
@@ -877,15 +865,94 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
             <div className="space-y-4 sm:space-y-6">
               {paperDetails.browseMode && (
                 <div className="space-y-3 sm:space-y-4">
+                  {/* Filters Section */}
                   <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 sm:p-4 rounded-lg border border-green-200">
-                    <div className="text-center">
+                    <div className="text-center mb-4">
                       <h3 className="text-base sm:text-lg font-semibold text-green-800 mb-2">Browse All Available Papers</h3>
-                      <p className="text-xs sm:text-sm text-green-700">{paperDetails.message}</p>
+                      <p className="text-xs sm:text-sm text-green-700">
+                        Showing {getFilteredPapers().length} of {paperDetails.availablePapers?.length || 0} papers
+                      </p>
+                    </div>
+                    
+                    {/* Filter Controls */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {/* Paper Type Filter */}
+                      <div>
+                        <Label className="text-xs font-medium text-green-800 mb-1 block">Paper Type</Label>
+                        <Input
+                          placeholder="e.g., Standard, Premium"
+                          value={paperFilters.paperType}
+                          onChange={(e) => setPaperFilters(prev => ({ ...prev, paperType: e.target.value }))}
+                          className="text-xs border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg"
+                        />
+                  </div>
+                  
+                      {/* GSM Filter */}
+                      <div>
+                        <Label className="text-xs font-medium text-green-800 mb-1 block">GSM</Label>
+                        <Input
+                          placeholder="e.g., 150, 300"
+                          value={paperFilters.gsm}
+                          onChange={(e) => setPaperFilters(prev => ({ ...prev, gsm: e.target.value }))}
+                          className="text-xs border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg"
+                        />
+                      </div>
+                      
+                      {/* Vendor Filter */}
+                      <div>
+                        <Label className="text-xs font-medium text-green-800 mb-1 block">Vendor</Label>
+                        <Input
+                          placeholder="e.g., Apex Papers"
+                          value={paperFilters.vendor}
+                          onChange={(e) => setPaperFilters(prev => ({ ...prev, vendor: e.target.value }))}
+                          className="text-xs border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg"
+                        />
+                      </div>
+                      
+                      {/* Paper Name Filter */}
+                      <div>
+                        <Label className="text-xs font-medium text-green-800 mb-1 block">Paper Name</Label>
+                        <Input
+                          placeholder="e.g., Art Paper, Bond"
+                          value={paperFilters.paperName}
+                          onChange={(e) => setPaperFilters(prev => ({ ...prev, paperName: e.target.value }))}
+                          className="text-xs border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Clear Filters Button */}
+                    <div className="flex justify-center mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPaperFilters({ paperType: '', gsm: '', vendor: '', paperName: '' })}
+                        className="text-xs border-green-300 text-green-700 hover:bg-green-100 rounded-lg"
+                      >
+                        Clear All Filters
+                      </Button>
                     </div>
                   </div>
                   
+                  {getFilteredPapers().length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="text-gray-500 mb-2">
+                        <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <h4 className="text-lg font-medium">No papers found</h4>
+                        <p className="text-sm">Try adjusting your filters or clearing them to see all papers.</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPaperFilters({ paperType: '', gsm: '', vendor: '', paperName: '' })}
+                        className="mt-3"
+                      >
+                        Clear All Filters
+                      </Button>
+                    </div>
+                  ) : (
                   <div className="grid gap-3 sm:gap-4">
-                    {paperDetails.availablePapers?.map((paper, idx) => (
+                      {getFilteredPapers().map((paper, idx) => (
                       <div key={idx} className="border border-gray-200 rounded-lg p-3 sm:p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-start">
                           <div className="flex-1">
@@ -924,7 +991,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                               variant="outline"
                               className="bg-[#27aae1] text-white border-[#27aae1] hover:bg-[#1e8bc3] hover:border-[#1e8bc3] w-full sm:w-auto"
                               size="sm"
-                              onClick={() => handleAddPaperFromBrowse(paper.name)}
+                              onClick={() => handleAddPaperFromBrowse(paper.name, currentProductIndex)}
                               title={`Add ${paper.name} to product`}
                             >
                               <Plus className="w-4 h-4 mr-1" />
@@ -935,6 +1002,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                       </div>
                     ))}
                   </div>
+                  )}
                 </div>
               )}
               
@@ -1166,7 +1234,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                 onClick={() => {
                   setFormData(prev => ({
                     ...prev,
-                    products: [createEmptyProduct()]
+                    products: [createTrulyEmptyProduct()]
                   }));
                 }}
                 className="text-[#27aae1] border-[#27aae1]/50 hover:bg-[#27aae1]/10 w-full sm:w-auto flex-shrink-0"
@@ -1622,84 +1690,6 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                 </div>
               </div>
 
-              {/* Production Settings */}
-              <div className="space-y-3 sm:space-y-4">
-                <h4 className="text-base sm:text-lg font-semibold text-slate-800 flex items-center">
-                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-[#27aae1]" />
-                  Production Settings
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                  <div>
-                    <Label className="mb-2 block text-xs sm:text-sm font-medium text-slate-700">Bleed (cm)</Label>
-                    <Input
-                      type="number"
-                      min={0.3}
-                      step="0.1"
-                      placeholder="0.3"
-                      className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl text-sm"
-                      value={product.bleed ?? ""}
-                                                onChange={(e) =>
-                            updateProduct(idx, {
-                              bleed: e.target.value ? Number(e.target.value) : undefined,
-                            })
-                          }
-                    />
-                    <p className="text-xs text-slate-500 mt-1">Min: 0.3 cm</p>
-                  </div>
-                  <div>
-                    <Label className="mb-2 block text-xs sm:text-sm font-medium text-slate-700">Gap (cm)</Label>
-                    <Input
-                      type="number"
-                      min={0.4}
-                      step="0.1"
-                      placeholder="0.5"
-                      className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl text-sm"
-                      value={product.gap ?? ""}
-                                                onChange={(e) =>
-                            updateProduct(idx, {
-                              gap: e.target.value ? Number(e.target.value) : undefined,
-                            })
-                          }
-                    />
-                    <p className="text-xs text-slate-500 mt-1">Min: 0.4 cm</p>
-                  </div>
-                  <div>
-                    <Label className="mb-2 block text-xs sm:text-sm font-medium text-slate-700">Gripper (cm)</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.1"
-                      placeholder="0.9"
-                      className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl text-sm"
-                      value={product.gripper ?? ""}
-                                                onChange={(e) =>
-                            updateProduct(idx, {
-                              gripper: e.target.value ? Number(e.target.value) : undefined,
-                            })
-                          }
-                    />
-                  </div>
-                  <div>
-                    <Label className="mb-2 block text-xs sm:text-sm font-medium text-slate-700">Other Edges (cm)</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.1"
-                      placeholder="0.5"
-                      className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl text-sm"
-                      value={product.otherEdges ?? ""}
-                                                onChange={(e) =>
-                            updateProduct(idx, {
-                              otherEdges: e.target.value ? Number(e.target.value) : undefined,
-                            })
-                          }
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-slate-500">
-                  These settings control imposition layout. Step-4 interprets gap as space between bleed boxes.
-                </p>
-              </div>
 
               {/* Paper Details */}
               <div className="space-y-3 sm:space-y-4">
@@ -1710,41 +1700,6 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     </div>
                     Paper Details
                   </h4>
-                  <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-3">
-                    <Button 
-                      variant="outline" 
-                      className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 hover:from-purple-600 hover:to-purple-700 px-3 sm:px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm w-full sm:w-auto"
-                      onClick={() => {
-                        const paperName = product.papers[0]?.name;
-                        handleViewPaperDetails(paperName || '');
-                      }}
-                      disabled={!product.papers[0]?.name || product.papers[0]?.name === "Select Paper" || product.papers[0]?.name.trim() === ""}
-                      title={product.papers[0]?.name && product.papers[0]?.name !== "Select Paper" && product.papers[0]?.name.trim() !== ""
-                        ? `View details for ${product.papers[0].name.replace(/\s*\(Custom\)$/, '')}` 
-                        : "Select a paper first to view details"
-                      }
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      View Paper Details
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 px-3 sm:px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm w-full sm:w-auto"
-                      onClick={() => handleBrowseAvailablePapers()}
-                      title="Browse all available papers before selection"
-                    >
-                      <Search className="w-4 h-4 mr-2" />
-                      Browse Available Papers
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="border-[#27aae1] text-[#27aae1] hover:bg-[#27aae1]/10 rounded-xl text-xs sm:text-sm w-full sm:w-auto"
-                      size="sm"
-                      onClick={() => addPaper(idx)}
-                    >
-                      <Plus className="h-4 w-4 mr-2" /> Add Paper
-                    </Button>
-                  </div>
                 </div>
                 
                 <div className="space-y-3 sm:space-y-4">
@@ -1880,6 +1835,19 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     </div>
                   ))}
                 </div>
+                
+                {/* Add Paper Button at Bottom */}
+                <div className="flex justify-center pt-2">
+                  <Button
+                    variant="outline"
+                    className="border-[#27aae1] text-[#27aae1] hover:bg-[#27aae1]/10 rounded-xl text-sm px-4 py-2"
+                    size="sm"
+                    onClick={() => handleBrowseAvailablePapers(idx)}
+                    title="Browse and select papers to add"
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Add Paper
+                  </Button>
+                </div>
               </div>
 
               {/* Finishing Options */}
@@ -1889,24 +1857,6 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     <Settings className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-[#27aae1]" />
                     Finishing Options
                   </h4>
-                  {isTemplateQuote && product.finishing && product.finishing.length > 0 && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="flex items-start space-x-2">
-                        <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center mt-0.5 flex-shrink-0">
-                          <span className="text-white text-xs font-bold">✓</span>
-                        </div>
-                        <div className="text-green-700">
-                          <p className="text-sm font-medium">Finishing options auto-filled from existing customer data</p>
-                          <p className="text-xs mt-1">
-                            Selected options: <span className="font-medium">{product.finishing.join(', ')}</span>
-                          </p>
-                          <p className="text-xs mt-1 text-green-600">
-                            You can modify these selections as needed for your new quote.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1918,7 +1868,6 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                     "Die Cutting",
                     "UV Spot",
                     "Folding",
-                    "Padding",
                     "Varnishing",
                   ].map((option) => {
                     const isSelected = isFinishingSelected(product, option);
@@ -1953,8 +1902,8 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                                   });
                                   updateProduct(idx, { finishing: updatedFinishing });
                                 } else {
-                                  // Add default side when checked
-                                  const finishingKey = product.sides === "2" ? `${option}-Front` : option;
+                                  // Add default side when checked (except for Folding and Die Cutting)
+                                  const finishingKey = product.sides === "2" && !["Folding", "Die Cutting"].includes(option) ? `${option}-Front` : option;
                                   const updatedFinishing = [...product.finishing.filter(f => {
                                     if (typeof f === 'string') {
                                       const normalizedFinishing = f.toLowerCase();
@@ -1983,7 +1932,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                             </div>
                           </div>
                         
-                        {product.sides === "2" && isFinishingSelected(product, option) && (
+                        {product.sides === "2" && isFinishingSelected(product, option) && !["Folding", "Die Cutting"].includes(option) && (
                           <Select
                             value={product.finishing.find(f => f.startsWith(option))?.split('-')[1] || "Front"}
                             onValueChange={(side) => {
@@ -2034,150 +1983,6 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
           </Card>
         ))}
         
-        {/* === Costing Section === */}
-        {formData.products.length > 0 && (
-          <Card className="bg-white border border-slate-200 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                <Palette className="w-5 h-5 mr-2 text-[#27aae1]" />
-                Costing Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Automatic Printing Method Display */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium text-slate-700">
-                  Selected Printing Method
-                </Label>
-                <div className="flex items-center space-x-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className={`w-3 h-3 rounded-full ${
-                    formData.products[0]?.printingSelection === "Digital" 
-                      ? 'bg-blue-500' 
-                      : 'bg-green-500'
-                  }`}></div>
-                  <span className="text-sm font-medium text-slate-700">
-                    {formData.products[0]?.printingSelection || "Not Selected"}
-                  </span>
-                  <span className="text-xs text-slate-500 ml-2">
-                    (Change in Basic Information above)
-                  </span>
-                </div>
-              </div>
-
-              {/* Digital Costing Results */}
-              {formData.products[0]?.printingSelection === "Digital" && digitalCostingResults.length > 0 ? (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-slate-700">
-                    Digital Cut-Size Options
-                  </Label>
-                  <div className="space-y-2">
-                    {digitalCostingResults.map((result, idx) => (
-                      <div
-                        key={idx}
-                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                          selectedDigitalOption === result.option.label
-                            ? 'border-[#27aae1] bg-[#27aae1]/5'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        onClick={() => setSelectedDigitalOption(result.option.label)}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <span className="font-medium text-slate-800">{result.option.label}</span>
-                            <div className="text-xs text-slate-600 mt-1">
-                              {result.upsPerSheet} ups per sheet • {result.parents} parent sheets
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-semibold text-slate-800">AED {result.total.toFixed(2)}</div>
-                            <div className="text-xs text-slate-600">
-                              Paper: AED {result.paper.toFixed(2)} • Clicks: AED {result.clicks.toFixed(2)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : formData.products[0]?.printingSelection === "Digital" ? (
-                <div className="text-center py-4">
-                  <div className="text-sm text-slate-600">Calculating digital pricing options...</div>
-                </div>
-              ) : null}
-
-              {/* Offset Costing Results */}
-              {formData.products[0]?.printingSelection === "Offset" && offsetCostingResult && (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-slate-700">
-                    Offset Press Options
-                  </Label>
-                  <div className="space-y-2">
-                    {/* 35x50 Press */}
-                    <div
-                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                        selectedOffsetPress === '35×50 cm'
-                          ? 'border-[#27aae1] bg-[#27aae1]/5'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => offsetCostingResult.pressPerParent > 0 && setSelectedOffsetPress('35×50 cm')}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <span className="font-medium text-slate-800">35×50 cm Press</span>
-                          <div className="text-xs text-slate-600 mt-1">
-                            {offsetCostingResult.upsPerPress} ups per press • {offsetCostingResult.pressSheets} press sheets • {offsetCostingResult.parents} parent sheets
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-semibold text-slate-800">AED {offsetCostingResult.total.toFixed(2)}</div>
-                          <div className="text-xs text-slate-600">
-                            Paper: AED {offsetCostingResult.paper.toFixed(2)} • Plates: AED {offsetCostingResult.plates.toFixed(2)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 52x72 Press (Disabled) */}
-                    <div className="p-3 rounded-lg border border-gray-200 bg-gray-50 opacity-60">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <span className="font-medium text-slate-600">52×72 cm Press</span>
-                          <div className="text-xs text-slate-500 mt-1">
-                            Not cuttable from 100×70 parent
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-semibold text-slate-400">Disabled</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Loading State */}
-              {loadingPricing && (
-                <div className="text-center py-4">
-                  <div className="text-sm text-slate-600">Loading pricing data...</div>
-                </div>
-              )}
-
-              {/* No Printing Method Selected */}
-              {!formData.products[0]?.printingSelection && !loadingPricing && (
-                <div className="text-center py-4">
-                  <div className="text-sm text-slate-600">Please select a printing method in Basic Information to see costing analysis.</div>
-                </div>
-              )}
-
-              {/* Error State */}
-              {!loadingPricing && (!digitalPricing || !offsetPricing) && (
-                <div className="text-center py-4">
-                  <div className="text-sm text-red-600">Unable to load pricing data. Using default values.</div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
         
         {/* Add Product Button */}
         <div className="text-center">

@@ -396,21 +396,8 @@ function CreateQuoteContent() {
       const newFormData = { 
         ...prev, 
         client: cleanClient,
-        // Reset to default product for new quotes
-        products: [
-          {
-            productName: "Business Card",
-            quantity: 1000,
-            sides: "1" as const,
-            printingSelection: "Digital" as const,
-            flatSize: { width: 9, height: 5.5, spine: null },
-            closeSize: { width: 9, height: 5.5, spine: null },
-            useSameAsFlat: false,
-            papers: [{ name: "Art Paper", gsm: "300" }],
-            finishing: ["UV Spot", "Lamination"],
-            paperName: "Book",
-          },
-        ]
+        // Start with completely empty products array for new quotes
+        products: []
       };
       
       console.log('New form data set:', newFormData);
@@ -819,7 +806,7 @@ function CreateQuoteContent() {
           paperName: quote.papers && quote.papers.length > 0 ? quote.papers[0].name : "Standard Paper",
           quantity: quote.quantity || 100,
           sides: (quote.sides as "1" | "2") || "1",
-          printingSelection: (quote.printing as "Digital" | "Offset" | "Either" | "Both") || "Digital",
+          printingSelection: (quote.printing as "Digital" | "Offset") || "Digital",
           flatSize: defaultFlatSize,
           closeSize: defaultCloseSize,
           useSameAsFlat: true,
