@@ -37,104 +37,6 @@ const EMPTY_CLIENT: QuoteFormData["client"] = {
   additionalInfo: "",
 };
 
-// Synthetic customer data
-const SYNTHETIC_CUSTOMERS: {
-  id: string;
-  companyName: string;
-  contactPerson: string;
-  email: string;
-  phone: string;
-  countryCode: string;
-  role: string;
-  clientType: 'Individual' | 'Company';
-  address?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
-  additionalInfo?: string;
-}[] = [
-  {
-    id: "CUST001",
-    companyName: "Eagan Inc.",
-    contactPerson: "John Smith",
-    email: "john.smith@eagan.com",
-    phone: "+971-50-123-4567",
-    countryCode: "+971",
-    role: "Marketing Manager",
-    clientType: "Company",
-    address: "Sheikh Zayed Road, Office 1205, Business Bay",
-    city: "Dubai",
-    state: "Dubai",
-    postalCode: "00000",
-    country: "Dubai",
-    additionalInfo: "Regular customer, prefers digital communication"
-  },
-  {
-    id: "CUST002",
-    companyName: "Tech Solutions Ltd.",
-    contactPerson: "Sarah Johnson",
-    email: "sarah.j@techsolutions.com",
-    phone: "+971-55-987-6543",
-    countryCode: "+971",
-    role: "Operations Director",
-    clientType: "Company",
-    address: "Marina Walk, Tower 3, Level 15",
-    city: "Dubai",
-    state: "Dubai",
-    postalCode: "00000",
-    country: "Dubai",
-    additionalInfo: "Bulk orders, requires detailed quotations"
-  },
-  {
-    id: "CUST003",
-    companyName: "Global Print Corp.",
-    contactPerson: "Michael Brown",
-    email: "michael.b@globalprint.com",
-    phone: "+971-52-456-7890",
-    countryCode: "+971",
-    role: "Customer",
-    clientType: "Company",
-    address: "Al Wasl Road, Villa 25",
-    city: "Dubai",
-    state: "Dubai",
-    postalCode: "00000",
-    country: "Dubai",
-    additionalInfo: "Individual client, small quantity orders"
-  },
-  {
-    id: "CUST004",
-    companyName: "Creative Agency",
-    contactPerson: "Lisa Wilson",
-    email: "lisa.w@creativeagency.com",
-    phone: "+971-54-321-0987",
-    countryCode: "+971",
-    role: "Creative Director",
-    clientType: "Company",
-    address: "Jumeirah Beach Road, Office 45",
-    city: "Dubai",
-    state: "Dubai",
-    postalCode: "00000",
-    country: "Dubai",
-    additionalInfo: "Creative projects, high-quality printing"
-  },
-  {
-    id: "CUST005",
-    companyName: "Marketing Pro",
-    contactPerson: "David Lee",
-    email: "david.lee@marketingpro.com",
-    phone: "+971-56-789-0123",
-    countryCode: "+971",
-    role: "Marketing Specialist",
-    clientType: "Company",
-    address: "Al Barsha, Office 12",
-    city: "Dubai",
-    state: "Dubai",
-    postalCode: "00000",
-    country: "Dubai",
-    additionalInfo: "Marketing materials, regular orders"
-  }
-];
 
 // Create a separate component that uses useSearchParams
 function CreateQuoteContent() {
@@ -519,9 +421,9 @@ function CreateQuoteContent() {
     setQuoteMode("new");
     setSelectedQuoteId(null);
     setSelectedCustomer(null);
-    setCurrentStep(2);
+    // Don't auto-navigate - just set the mode for selection
     
-    console.log('New quote started with clean data');
+    console.log('New quote mode selected - ready for next step');
   };
 
   const handleSelectQuote = (q: PreviousQuote) => {
@@ -530,7 +432,7 @@ function CreateQuoteContent() {
     setFormData((prev) => detailToForm(detail, prev));
     setQuoteMode("existing");
     setSelectedQuoteId(q.id); // Set the selected quote ID for updating
-    setCurrentStep(2);
+    // Don't auto-navigate - just set the mode for selection
   };
 
   const handleSelectCustomer = (customer: {
@@ -1818,7 +1720,9 @@ function CreateQuoteContent() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
               {/* Create New Quote Card */}
               <Card 
-                className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group"
+                className={`border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group ${
+                  quoteMode === "new" ? "ring-4 ring-blue-500 ring-opacity-50 bg-blue-50" : ""
+                }`}
                 onClick={handleStartNew}
               >
                 <CardContent className="p-4 sm:p-6 lg:p-8 text-center space-y-4 sm:space-y-6">
@@ -1845,7 +1749,9 @@ function CreateQuoteContent() {
 
               {/* Existing Quote Card */}
               <Card 
-                className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group"
+                className={`border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group ${
+                  quoteMode === "existing" ? "ring-4 ring-[#ea078b] ring-opacity-50 bg-pink-50" : ""
+                }`}
                 onClick={() => {
                   // Clear default product data when entering existing quote mode
                   setFormData((prev) => ({ 
@@ -1854,8 +1760,8 @@ function CreateQuoteContent() {
                   }));
                   setQuoteMode("existing");
                   setSelectedQuoteId(null); // Will be set when a specific quote is selected
-                  setCurrentStep(2);
                   setSelectedCustomer(null);
+                  // Don't auto-navigate - just set the mode for selection
                 }}
               >
                 <CardContent className="p-4 sm:p-6 lg:p-8 text-center space-y-4 sm:space-y-6">
@@ -1879,8 +1785,8 @@ function CreateQuoteContent() {
                         }));
                         setQuoteMode("existing");
                         setSelectedQuoteId(null); // Will be set when a specific quote is selected
-                        setCurrentStep(2);
                         setSelectedCustomer(null);
+                        // Don't auto-navigate - just set the mode for selection
                       }}
                     >
                       <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
@@ -1985,6 +1891,7 @@ function CreateQuoteContent() {
           <CardContent className="p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-10">
             <StepIndicator
               activeStep={currentStep}
+              quoteMode={quoteMode}
             />
             
             <div className="mt-4 sm:mt-8">{renderStepContent()}</div>

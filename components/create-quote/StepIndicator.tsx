@@ -6,10 +6,11 @@ import type { FC } from 'react';
 // --- Tipe Data untuk Props ---
 interface StepIndicatorProps {
     activeStep: number;
+    quoteMode?: "new" | "existing" | null;
 }
 
 // --- Komponen Indikator Tahap ---
-const StepIndicator: FC<StepIndicatorProps> = ({ activeStep }) => {
+const StepIndicator: FC<StepIndicatorProps> = ({ activeStep, quoteMode }) => {
     const steps = [
         { number: 1, label: "Create A Quote", shortLabel: "Create" },
         { number: 2, label: "Customer Detail", shortLabel: "Customer" },
@@ -17,6 +18,28 @@ const StepIndicator: FC<StepIndicatorProps> = ({ activeStep }) => {
         { number: 4, label: "Operational", shortLabel: "Ops" },
         { number: 5, label: "Quotation", shortLabel: "Quote" },
     ];
+
+    // Determine colors based on quote mode
+    const getColors = () => {
+        if (quoteMode === "existing") {
+            return {
+                active: "bg-gradient-to-br from-[#ea078b] to-[#d4067a] text-white shadow-lg shadow-pink-200",
+                glow: "bg-pink-400",
+                text: "text-pink-700",
+                arrow: "text-pink-500"
+            };
+        } else {
+            // Default to blue for "new" or when no mode is selected
+            return {
+                active: "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200",
+                glow: "bg-blue-400",
+                text: "text-blue-700",
+                arrow: "text-blue-500"
+            };
+        }
+    };
+
+    const colors = getColors();
 
     return (
         <div className="flex items-center justify-center w-full">
@@ -69,21 +92,21 @@ const StepIndicator: FC<StepIndicatorProps> = ({ activeStep }) => {
                                         isCompleted 
                                             ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-200" 
                                             : isActive 
-                                            ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200" 
+                                            ? colors.active
                                             : "bg-gray-200 text-gray-700 shadow-md"
                                     }`}>
                                         {isCompleted ? <Check className={checkSize} /> : step.number}
                                         
                                         {/* Active Step Glow Effect */}
                                         {isActive && (
-                                            <div className="absolute inset-0 rounded-full bg-blue-400 animate-ping opacity-20" />
+                                            <div className={`absolute inset-0 rounded-full ${colors.glow} animate-ping opacity-20`} />
                                         )}
                                     </div>
                                     
                                     {/* Step Label */}
                                     <p className={`${labelSize} ${labelWeight} text-center mt-2 transition-all duration-300 ${
                                         isActive 
-                                            ? 'text-blue-700' 
+                                            ? colors.text
                                             : isCompleted 
                                             ? 'text-green-700' 
                                             : 'text-gray-600'
@@ -123,14 +146,14 @@ const StepIndicator: FC<StepIndicatorProps> = ({ activeStep }) => {
                                     isCompleted 
                                         ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-200 cursor-pointer" 
                                         : isActive 
-                                        ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200" 
+                                        ? colors.active
                                         : "bg-gray-200 text-gray-700 shadow-md"
                                 }`}>
                                     {isCompleted ? <Check className="h-8 w-8" /> : step.number}
                                     
                                     {/* Active Step Glow Effect */}
                                     {isActive && (
-                                        <div className="absolute inset-0 rounded-full bg-blue-400 animate-ping opacity-20" />
+                                        <div className={`absolute inset-0 rounded-full ${colors.glow} animate-ping opacity-20`} />
                                     )}
                                     
                                     {/* Hover Glow for Completed Steps */}
@@ -142,7 +165,7 @@ const StepIndicator: FC<StepIndicatorProps> = ({ activeStep }) => {
                                 {/* Step Label */}
                                 <p className={`text-base text-center font-semibold mt-3 transition-all duration-300 ${
                                     isActive 
-                                        ? 'text-blue-700 scale-105' 
+                                        ? `${colors.text} scale-105` 
                                         : isCompleted 
                                         ? 'text-green-700 group-hover:scale-105' 
                                         : 'text-gray-600'
