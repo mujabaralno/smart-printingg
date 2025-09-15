@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Calculator, Settings, BarChart3, Edit3, AlertTriangle, Database, Palette, Info, Clock, DollarSign, Search, Building, Plus, Minus, Printer, Scissors, GripHorizontal } from "lucide-react";
 import { getProductConfig, getShoppingBagPreset } from "@/constants/product-config";
 import type { QuoteFormData, DigitalPricing, OffsetPricing, DigitalCostingResult, OffsetCostingResult } from "@/types";
+import { PricingService } from "@/lib/pricing-service";
 import { calcDigitalCosting, calcOffsetCosting } from "@/lib/imposition";
 
 interface Step4Props {
@@ -3994,15 +3995,10 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
     const loadPricingData = async () => {
       try {
         setLoadingPricing(true);
-        const response = await fetch('/api/pricing');
-        if (response.ok) {
-          const pricingData = await response.json();
-          setDigitalPricing(pricingData.digital);
-          setOffsetPricing(pricingData.offset);
-          console.log('Pricing data loaded:', pricingData);
-        } else {
-          console.error('Failed to load pricing data');
-        }
+        const { digital, offset } = await PricingService.getAllPricing();
+        setDigitalPricing(digital);
+        setOffsetPricing(offset);
+        console.log('Pricing data loaded:', { digital, offset });
       } catch (error) {
         console.error('Error loading pricing data:', error);
       } finally {
