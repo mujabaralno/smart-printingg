@@ -43,24 +43,6 @@ import Link from "next/link";
 import { QuoteStatus } from "@/constants";
 
 
-// Motivational quotes collection
-const motivationalQuotes = [
-  "Success is not final, failure is not fatal: it is the courage to continue that counts. - Winston Churchill",
-  "The only way to do great work is to love what you do. - Steve Jobs",
-  "Innovation distinguishes between a leader and a follower. - Steve Jobs",
-  "Quality is not an act, it is a habit. - Aristotle",
-  "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt",
-  "Excellence is never an accident. It is always the result of high intention, sincere effort, and intelligent execution. - Aristotle",
-  "Success usually comes to those who are too busy to be looking for it. - Henry David Thoreau",
-  "The only limit to our realization of tomorrow will be our doubts of today. - Franklin D. Roosevelt",
-  "What you get by achieving your goals is not as important as what you become by achieving your goals. - Zig Ziglar",
-  "The way to get started is to quit talking and begin doing. - Walt Disney",
-  "Don't watch the clock; do what it does. Keep going. - Sam Levenson",
-  "The best way to predict the future is to create it. - Peter Drucker",
-  "Success is walking from failure to failure with no loss of enthusiasm. - Winston Churchill",
-  "Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work. - Steve Jobs",
-  "The difference between ordinary and extraordinary is that little extra. - Jimmy Johnson"
-];
 
 export default function DashboardPage() {
   const [allQuotes, setAllQuotes] = useState<any[]>([]);
@@ -68,7 +50,6 @@ export default function DashboardPage() {
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const [currentMotivationalQuote, setCurrentMotivationalQuote] = useState("");
   const [updateStatusValue, setUpdateStatusValue] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -206,23 +187,6 @@ export default function DashboardPage() {
     loadQuotes();
   }, []);
 
-  // Set initial quote and change it periodically
-  useEffect(() => {
-    // Function to get a random motivational quote
-    const getRandomQuote = () => {
-      const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
-      return motivationalQuotes[randomIndex];
-    };
-    
-    setCurrentMotivationalQuote(getRandomQuote());
-    
-    // Change quote every 45 seconds for variety
-    const interval = setInterval(() => {
-      setCurrentMotivationalQuote(getRandomQuote());
-    }, 45000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   // Cleanup function for modals
   useEffect(() => {
@@ -684,20 +648,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Welcome Header */}
-        <div className="text-center space-y-4 pb-6 border-b border-slate-200">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-[#27aae1] to-[#ea078b] bg-clip-text text-transparent">
-            Welcome Back, {user?.name}
-          </h1>
-          <div className="max-w-4xl mx-auto px-4">
-            <p className="text-base sm:text-lg lg:text-xl text-slate-600 italic leading-relaxed">
-              "{currentMotivationalQuote.split(' - ')[0]}"
-            </p>
-            <p className="text-xs sm:text-sm lg:text-base text-slate-500 mt-1 font-medium">
-              — {currentMotivationalQuote.split(' - ')[1]}
-            </p>
-          </div>
-        </div>
 
         {/* Metric Cards - Now Clickable */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">

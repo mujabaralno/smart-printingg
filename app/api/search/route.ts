@@ -6,26 +6,39 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
     
+    console.log('🔍 Search API called with query:', query);
+    
     if (!query) {
       return NextResponse.json({ error: 'Query parameter is required' }, { status: 400 });
     }
 
     const searchQuery = query.toLowerCase().trim();
+    console.log('🔍 Processed search query:', searchQuery);
     const results = [];
+    const dbService = new DatabaseService();
 
     // Search quotes
     try {
-      const dbService = new DatabaseService();
-    const quotes = await dbService.getAllQuotes();
+      console.log('🔍 Searching quotes...');
+      const quotes = await dbService.getAllQuotes();
+      console.log(`📊 Found ${quotes.length} quotes in database`);
+      
       const quoteResults = quotes
-        .filter(quote => 
-          quote.quoteId?.toLowerCase().includes(searchQuery) ||
-          quote.client?.contactPerson?.toLowerCase().includes(searchQuery) ||
-          quote.client?.companyName?.toLowerCase().includes(searchQuery) ||
-          quote.product?.toLowerCase().includes(searchQuery) ||
-          quote.productName?.toLowerCase().includes(searchQuery) ||
-          quote.status?.toLowerCase().includes(searchQuery)
-        )
+        .filter(quote => {
+          const matches = 
+            quote.quoteId?.toLowerCase().includes(searchQuery) ||
+            quote.client?.contactPerson?.toLowerCase().includes(searchQuery) ||
+            quote.client?.companyName?.toLowerCase().includes(searchQuery) ||
+            quote.product?.toLowerCase().includes(searchQuery) ||
+            quote.productName?.toLowerCase().includes(searchQuery) ||
+            quote.status?.toLowerCase().includes(searchQuery);
+          
+          if (matches) {
+            console.log(`✅ Quote "${quote.quoteId}" matches search "${searchQuery}"`);
+          }
+          
+          return matches;
+        })
         .map(quote => ({
           id: quote.id,
           type: 'quote' as const,
@@ -33,9 +46,11 @@ export async function GET(request: NextRequest) {
           subtitle: `${quote.client?.contactPerson || quote.client?.companyName || 'Unknown Client'} - ${quote.product || quote.productName || 'Unknown Product'}`,
           data: quote
         }));
+      
+      console.log(`🎯 Found ${quoteResults.length} matching quotes`);
       results.push(...quoteResults);
     } catch (error) {
-      console.error('Error searching quotes:', error);
+      console.error('❌ Error searching quotes:', error);
     }
 
     // Search clients
@@ -196,6 +211,9 @@ export async function GET(request: NextRequest) {
 
     // Limit results to prevent overwhelming the UI
     const limitedResults = sortedResults.slice(0, 20);
+    
+    console.log(`🎯 Total results found: ${results.length}, returning: ${limitedResults.length}`);
+    console.log('📋 Results:', limitedResults.map(r => ({ type: r.type, title: r.title })));
     
     return NextResponse.json(limitedResults);
   } catch (error) {

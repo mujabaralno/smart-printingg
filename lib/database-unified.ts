@@ -296,7 +296,7 @@ export class DatabaseService {
           amounts: true,
           papers: true,
           finishing: true,
-          operational: true,
+          QuoteOperational: true,
         },
       });
     } catch (error) {
@@ -315,7 +315,7 @@ export class DatabaseService {
           finishing: true,
           papers: true,
           amounts: true,
-          operational: true,
+          QuoteOperational: true,
         },
       });
     } catch (error) {
@@ -388,7 +388,7 @@ export class DatabaseService {
           papers: true,
           finishing: true,
           amounts: true,
-          operational: true
+          QuoteOperational: true
         },
       });
     } catch (error) {
