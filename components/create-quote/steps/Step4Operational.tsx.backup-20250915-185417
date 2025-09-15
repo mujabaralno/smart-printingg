@@ -3050,20 +3050,43 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
   // ===== Plates & Units =====
   const { plates, units } = React.useMemo(() => {
-    // Always calculate the proper values first
-    let calculatedPlates = 0;
-    let calculatedUnits = 0;
+    // Check if we have existing operational data that should be preserved
+    const hasExistingOperationalData = formData.operational.plates !== null || 
+                                      formData.operational.units !== null ||
+                                      formData.operational.papers.some(p => 
+                                        p.inputWidth !== null || p.inputHeight !== null ||
+                                        p.pricePerPacket !== null || p.pricePerSheet !== null
+                                      );
+    
+    // Use user-entered values if available, otherwise use defaults
+    const userPlates = formData.operational.plates;
+    const userUnits = formData.operational.units;
+    
+    // If user has entered values, use them; otherwise use defaults
+    if (userPlates !== null || userUnits !== null) {
+      return {
+        plates: userPlates ?? 4, // Default to 4 plates
+        units: userUnits ?? 0
+      };
+    }
+    
+    // Calculate total plates and units across all products for new quotes
+    let totalPlates = 0;
+    let totalUnits = 0;
+
     // Ensure we have products to calculate from
-    if (formData.products && formData.products.length > 0) {
+    if (!formData.products || formData.products.length === 0) {
+      return { plates: 0, units: 0 };
+    }
+
     formData.products.forEach((product, productIndex) => {
       const sides = product?.sides ?? "1";
       const printing = product?.printingSelection ?? "Digital";
 
-        // Calculate plates: Digital = 0, Offset = 4 plates per side
-        const platesForProduct = printing === "Digital" ? 0 : (sides === "2" ? 2 : 1) * 4;
-        calculatedPlates += platesForProduct;
+      const p = printing === "Digital" ? 0 : (sides === "2" ? 2 : 1) * 4;
+      totalPlates += p;
 
-        // Calculate units based on sheets needed
+      // For units, we need to calculate based on the product's papers
       const productPapers = product.papers || [];
       const totalSheets = productPapers.reduce(
         (acc, paper, paperIndex) => {
@@ -3087,19 +3110,17 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         0
       );
 
-        // Units = sheets × sides
-        calculatedUnits += totalSheets * (sides === "2" ? 2 : 1);
-      });
-    }
+      totalUnits += totalSheets * (sides === "2" ? 2 : 1);
+    });
 
-    // Always use calculated values by default
-    // Only use user values if they were explicitly entered (not null/undefined)
-    const userPlates = formData.operational.plates;
-    const userUnits = formData.operational.units;
+    // Ensure calculated values are valid and set defaults
+    const finalPlates = Math.max(0, totalPlates);
+    const finalUnits = Math.max(0, totalUnits);
     
+    // Default to 4 plates if no calculation, and use entered sheets for units
     return { 
-      plates: userPlates !== null && userPlates !== undefined ? userPlates : calculatedPlates, 
-      units: userUnits !== null && userUnits !== undefined ? userUnits : calculatedUnits 
+      plates: finalPlates > 0 ? finalPlates : 4, 
+      units: finalUnits > 0 ? finalUnits : 0 
     };
   }, [
     formData.operational.papers,
@@ -3374,7 +3395,6 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
   const [showPricingLogic, setShowPricingLogic] = React.useState(false);
   const [showPaperPrice, setShowPaperPrice] = React.useState<number | null>(null);
   const [showCostBreakdown, setShowCostBreakdown] = React.useState(false);
-  const [showFinishingDetails, setShowFinishingDetails] = React.useState(false);
   const openData =
     openIdx != null
       ? (() => {
@@ -3756,7 +3776,6 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
     
     // Extract base finishing name (remove side suffix like "-Front", "-Back", "-Both")
     const baseFinishingName = finishingName.split('-')[0];
-    const sideInfo = finishingName.includes('-') ? finishingName.split('-')[1] : 'Front';
     let finishingCost = 0;
     
     switch (baseFinishingName) {
@@ -3764,21 +3783,11 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         // a. Laminated: minimum cost is 75 AED, and 0.75 AED per sheet. (formula: 75+(sheets*0.75))
         finishingCost = 75 + (actualSheetsNeeded * 0.75);
         console.log('DEBUG: Lamination calculation: 75 + (' + actualSheetsNeeded + ' * 0.75) = ' + finishingCost);
-        
-        // Double the cost if applied to both sides
-        if (sideInfo === 'Both') {
-          finishingCost = finishingCost * 2;
-        }
         break;
         
       case 'Velvet Lamination':
         // b. Velvet laminated: minimum cost is 100 AED, and 1 AED per sheet. (formula: 100+(sheet*1))
         finishingCost = 100 + (actualSheetsNeeded * 1.0);
-        
-        // Double the cost if applied to both sides
-        if (sideInfo === 'Both') {
-          finishingCost = finishingCost * 2;
-        }
         break;
         
       case 'Embossing':
@@ -3788,11 +3797,6 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         const embossingImpressions = Math.max(1000, totalQuantity); // Minimum 1000 impressions
         const embossingImpressionCost = Math.ceil(embossingImpressions / 1000) * 50;
         finishingCost = Math.max(75, embossingImpressionCost);
-        
-        // Double the cost if applied to both sides
-        if (sideInfo === 'Both') {
-          finishingCost = finishingCost * 2;
-        }
         break;
         
       case 'Foiling':
@@ -3800,11 +3804,6 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         const foilingImpressions = Math.max(1000, totalQuantity); // Minimum 1000 impressions
         const foilingImpressionCost = Math.ceil(foilingImpressions / 1000) * 75;
         finishingCost = Math.max(75, foilingImpressionCost);
-        
-        // Double the cost if applied to both sides
-        if (sideInfo === 'Both') {
-          finishingCost = finishingCost * 2;
-        }
         break;
         
       case 'Die Cutting':
@@ -3840,11 +3839,6 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
         console.log('  uvSpotImpressions:', uvSpotImpressions);
         console.log('  uvSpotImpressionCost:', uvSpotImpressionCost);
         console.log('  finishingCost:', finishingCost);
-        
-        // Double the cost if applied to both sides
-        if (sideInfo === 'Both') {
-          finishingCost = finishingCost * 2;
-        }
         break;
         
       case 'Folding':
@@ -3881,28 +3875,12 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
   const calculateFinishingCosts = () => {
     let totalFinishingCost = 0;
     
-    // REQUIREMENT: Finishing costs should be calculated once at the end, not per paper
-    // Collect all unique finishing types across all products
-    const allFinishingTypes = new Set<string>();
-    
-    formData.products.forEach((product) => {
+    formData.products.forEach((product, productIndex) => {
       if (product.finishing && product.finishing.length > 0) {
         product.finishing.forEach(finishingName => {
-          allFinishingTypes.add(finishingName);
+          // Use auto-calculated cost (no manual overrides)
+          totalFinishingCost += calculateIndividualFinishingCost(finishingName, product, productIndex);
         });
-      }
-    });
-    
-    // Calculate cost for each unique finishing type once
-    allFinishingTypes.forEach(finishingName => {
-      // Use the first product that has this finishing type for calculation
-      const productWithFinishing = formData.products.find(product => 
-        product.finishing && product.finishing.includes(finishingName)
-      );
-      
-      if (productWithFinishing) {
-        const productIndex = formData.products.indexOf(productWithFinishing);
-        totalFinishingCost += calculateIndividualFinishingCost(finishingName, productWithFinishing, productIndex);
       }
     });
     
@@ -4423,7 +4401,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           }`}
                           value={opPaper?.enteredSheets ?? recommendedSheets ?? ""}
                           onChange={(e) => {
-                              handlePaperOpChange(globalPaperIndex, "enteredSheets", e.target.value);
+                            handlePaperOpChange(globalPaperIndex, "enteredSheets", e.target.value);
                           }}
                         />
                         {opPaper?.enteredSheets && opPaper.enteredSheets < recommendedSheets && (
@@ -4810,9 +4788,19 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         <Calculator className="w-4 h-4 mr-2 text-[#27aae1]" />
                         Production Costs
                       </h5>
-                      <div className="text-xs text-slate-500">
-                        ✓ Auto-calculated
-                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          handlePlatesChange("");
+                          handleUnitsChange("");
+                        }}
+                        className="text-xs h-8 px-3 self-start sm:self-auto"
+                      >
+                        <Calculator className="w-3 h-3 mr-1" />
+                        Auto-calculate
+                      </Button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                       <div className="space-y-2">
@@ -4831,18 +4819,28 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         />
                         {!formData.operational.plates ? (
                           <div className="text-[#27aae1] text-xs mt-1">
-                            ✓ Auto-calculated: {plates}
+                            ✓ Using calculated value: {plates}
                           </div>
                         ) : (
                           <div className="text-amber-600 text-xs mt-1 flex items-center justify-between">
-                            <span>⚠ Custom value (auto: {plates})</span>
+                            <span>⚠ Custom value set (calculated: {plates})</span>
                             <button
                               type="button"
                               onClick={() => handlePlatesChange("")}
                               className="text-xs text-[#27aae1] hover:text-[#27aae1] underline"
                             >
-                              Reset
+                              Reset to calculated
                             </button>
+                          </div>
+                        )}
+                        {formData.operational.plates && plates > 0 && Math.abs(formData.operational.plates - plates) > plates * 0.5 && (
+                          <div className="text-orange-600 text-xs mt-1">
+                            ⚠️ Warning: Custom value differs significantly from calculated value
+                          </div>
+                        )}
+                        {formData.operational.plates && formData.operational.plates === 0 && plates > 0 && (
+                          <div className="text-[#27aae1] text-xs mt-1">
+                            ℹ️ Note: Set to 0 (Digital printing - no plates needed)
                           </div>
                         )}
                       </div>
@@ -4855,25 +4853,35 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           min="0"
                           placeholder="e.g. 1000"
                           className={`border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10 w-full ${
-                            !formData.operational.units ? 'bg-[#27aae1]/10 border-[#27aae1]/30' : 'bg-white'
+                            !formData.operational.plates ? 'bg-[#27aae1]/10 border-[#27aae1]/30' : 'bg-white'
                           }`}
                           value={formData.operational.units ?? units ?? ""} 
                           onChange={(e) => handleUnitsChange(e.target.value)}
                         />
                         {!formData.operational.units ? (
                           <div className="text-[#27aae1] text-xs mt-1">
-                            ✓ Auto-calculated: {units}
+                            ✓ Using calculated value: {units}
                           </div>
                         ) : (
                           <div className="text-amber-600 text-xs mt-1 flex items-center justify-between">
-                            <span>⚠ Custom value (auto: {units})</span>
+                            <span>⚠ Custom value set (calculated: {units})</span>
                             <button
                               type="button"
                               onClick={() => handleUnitsChange("")}
                               className="text-xs text-[#27aae1] hover:text-[#27aae1] underline"
                             >
-                              Reset
+                              Reset to calculated
                             </button>
+                          </div>
+                        )}
+                        {formData.operational.units && Math.abs(formData.operational.units - units) > units * 0.5 && (
+                          <div className="text-orange-600 text-xs mt-1">
+                            ⚠️ Warning: Custom value differs significantly from calculated value
+                          </div>
+                        )}
+                        {formData.operational.units && formData.operational.units === 0 && units > 0 && (
+                          <div className="text-[#27aae1] text-xs mt-1">
+                            ℹ️ Note: Set to 0 (No units specified)
                           </div>
                         )}
                       </div>
@@ -4887,9 +4895,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           type="number"
                           min="0"
                           placeholder="e.g. 5000"
-                          className={`border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10 w-full ${
-                            !formData.operational.impressions ? 'bg-[#27aae1]/10 border-[#27aae1]/30' : 'bg-white'
-                          }`}
+                          className="border-slate-300 focus:border-[#27aae1] focus:ring-[#27aae1] rounded-xl h-10 w-full"
                           value={formData.operational.impressions ?? ""} 
                           onChange={(e) => {
                             const impressions = e.target.value === "" ? null : parseFloat(e.target.value);
@@ -4902,36 +4908,143 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                             }));
                           }}
                         />
-                        {!formData.operational.impressions ? (
-                          <div className="text-[#27aae1] text-xs mt-1">
-                            ✓ Enter manually or leave empty
                       </div>
-                        ) : (
-                          <div className="text-amber-600 text-xs mt-1 flex items-center justify-between">
-                            <span>⚠ Custom value set</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  operational: {
-                                    ...prev.operational,
-                                    impressions: null,
-                                  },
-                                }));
-                              }}
-                              className="text-xs text-[#27aae1] hover:text-[#27aae1] underline"
-                            >
-                              Reset
-                            </button>
+
                     </div>
-                        )}
+                  </div>
+
+                  {/* Dynamic Finishing Costs Section - From Previous Step */}
+                  {product.finishing.length > 0 && (
+                    <div className="space-y-4">
+                      <h5 className="text-md font-semibold text-slate-700 flex items-center">
+                        <Settings className="w-4 h-4 mr-2 text-[#27aae1]" />
+                        Finishing Costs 
+                        <span className="ml-2 text-xs text-slate-500">(Auto-calculated)</span>
+                      </h5>
+                      <div className="space-y-4">
+                        {product.finishing.map((finishingName) => {
+                          const baseFinishingName = finishingName.split('-')[0];
+                          const calculatedCost = calculateIndividualFinishingCost(finishingName, product, productIndex);
+                          
+                          return (
+                            <div key={finishingName} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-slate-700">{baseFinishingName}</span>
+                                  {finishingName.includes('-') && (
+                                    <span className="text-xs bg-[#27aae1]/20 text-[#27aae1] px-2 py-1 rounded">
+                                      {finishingName.split('-')[1]}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-lg font-bold text-[#27aae1]">{fmt(calculatedCost)}</span>
+                                  <span className="text-xs text-slate-500">total cost</span>
+                                </div>
                               </div>
                               
+                              {/* Cost breakdown based on finishing type */}
+                              <div className="text-xs text-slate-600 space-y-1">
+                                {(() => {
+                                  const actualSheetsNeeded = formData.operational.papers[productIndex]?.enteredSheets ?? 
+                                                           perPaperCalc[productIndex]?.[0]?.recommendedSheets ?? 0;
+                                  // Use impressions field if available, otherwise fall back to product quantity
+                                  const totalQuantity = formData.operational.impressions || product.quantity || 0;
+                                  
+                                  switch (baseFinishingName) {
+                                    case 'Lamination':
+                                      return (
+                                        <div>
+                                          <div>Formula: 75 AED minimum + (0.75 AED × {actualSheetsNeeded} sheets)</div>
+                                          <div>Calculation: 75 + ({actualSheetsNeeded} × 0.75) = {fmt(calculatedCost)}</div>
                                         </div>
+                                      );
+                                    case 'Velvet Lamination':
+                                      return (
+                                        <div>
+                                          <div>Formula: 100 AED minimum + (1 AED × {actualSheetsNeeded} sheets)</div>
+                                          <div>Calculation: 100 + ({actualSheetsNeeded} × 1) = {fmt(calculatedCost)}</div>
                                         </div>
-
-                  {/* Note: Finishing costs are now calculated once at the end, not per product */}
+                                      );
+                                                                         case 'Embossing':
+                                       const embossingImpressions = Math.max(1000, totalQuantity);
+                                       const embossingThousands = Math.ceil(embossingImpressions / 1000);
+                                       return (
+                                         <div>
+                                           <div>Formula: 50 AED per 1000 impressions (minimum 75 AED)</div>
+                                           <div>Calculation: {embossingThousands} × 1000 impressions × 50 AED = {fmt(calculatedCost)}</div>
+                                         </div>
+                                       );
+                                     case 'Foiling':
+                                       const foilingImpressions = Math.max(1000, totalQuantity);
+                                       const foilingThousands = Math.ceil(foilingImpressions / 1000);
+                                       return (
+                                         <div>
+                                           <div>Formula: 75 AED per 1000 impressions (minimum 75 AED)</div>
+                                           <div>Calculation: {foilingThousands} × 1000 impressions × 75 AED = {fmt(calculatedCost)}</div>
+                                         </div>
+                                       );
+                                     case 'Die Cutting':
+                                       const dieCuttingImpressions = Math.max(1000, totalQuantity);
+                                       const dieCuttingThousands = Math.ceil(dieCuttingImpressions / 1000);
+                                       const minCharge = (() => {
+                                         if (product.flatSize && product.flatSize.width && product.flatSize.height) {
+                                           const area = product.flatSize.width * product.flatSize.height;
+                                           if (area <= 210 * 148) return 75; // A5
+                                           if (area <= 297 * 210) return 100; // A4
+                                           if (area <= 420 * 297) return 150; // A3
+                                           return 200; // A2+
+                                         }
+                                         return 75; // Default
+                                       })();
+                                       return (
+                                         <div>
+                                           <div>Formula: 50 AED per 1000 impressions (minimum {minCharge} AED by size)</div>
+                                           <div>Calculation: {dieCuttingThousands} × 1000 impressions × 50 AED = {fmt(calculatedCost)}</div>
+                                         </div>
+                                       );
+                                     case 'UV Spot':
+                                       const uvSpotImpressions = Math.max(1000, totalQuantity);
+                                       const uvSpotThousands = Math.ceil(uvSpotImpressions / 1000);
+                                       return (
+                                         <div>
+                                           <div>Formula: 350 AED per 1000 impressions (minimum 350 AED)</div>
+                                           <div>Calculation: {uvSpotThousands} × 1000 impressions × 350 AED = {fmt(calculatedCost)}</div>
+                                         </div>
+                                       );
+                                     case 'Folding':
+                                       const foldingImpressions = Math.max(1000, totalQuantity);
+                                       const foldingThousands = Math.ceil(foldingImpressions / 1000);
+                                       return (
+                                         <div>
+                                           <div>Formula: 25 AED per 1000 impressions (minimum 25 AED)</div>
+                                           <div>Calculation: {foldingThousands} × 1000 impressions × 25 AED = {fmt(calculatedCost)}</div>
+                                         </div>
+                                       );
+                                    default:
+                                      return <div>Auto-calculated based on finishing type and quantity</div>;
+                                  }
+                                })()}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        
+                        <div className="border-t pt-3 mt-4">
+                          <div className="flex justify-between items-center bg-green-50 p-3 rounded-lg border border-green-200">
+                            <span className="font-semibold text-slate-800">Total Finishing Cost:</span>
+                            <span className="text-lg font-bold text-green-600">
+                              {fmt(
+                                product.finishing.reduce((acc, finishingName) => 
+                                  acc + calculateIndividualFinishingCost(finishingName, product, productIndex), 0
+                                )
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Additional Costs Section */}
                   <div className="space-y-4">
@@ -5022,62 +5135,6 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         Add Additional Cost
                       </Button>
                     </div>
-
-                    {/* Finishing Costs Section - Inside Additional Costs */}
-                    {(() => {
-                      // Collect all unique finishing types across all products
-                      const allFinishingTypes = new Set<string>();
-                      formData.products.forEach((product) => {
-                        if (product.finishing && product.finishing.length > 0) {
-                          product.finishing.forEach(finishingName => {
-                            allFinishingTypes.add(finishingName);
-                          });
-                        }
-                      });
-
-                      if (allFinishingTypes.size > 0) {
-                        const totalFinishingCost = calculateFinishingCosts();
-                        
-                        return (
-                          <div className="space-y-4 mt-6 pt-4 border-t border-slate-200">
-                            {/* Header Section */}
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                              <div className="flex items-center">
-                                <Settings className="w-4 h-4 mr-2 text-[#27aae1]" />
-                                <h5 className="text-md font-semibold text-slate-700">
-                                  Finishing Costs
-                                </h5>
-                                <span className="ml-2 text-xs text-slate-500">(Calculated once at the end)</span>
-                              </div>
-                            </div>
-
-                            {/* Cost and Button Section */}
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                              <div className="flex items-center space-x-3">
-                                <span className="text-xl font-bold text-[#27aae1]">
-                                  {fmt(totalFinishingCost)}
-                                </span>
-                                <span className="text-sm text-slate-500">total cost</span>
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowFinishingDetails(true)}
-                                className="text-xs border-[#27aae1] text-[#27aae1] hover:bg-[#27aae1] hover:text-white w-full sm:w-auto"
-                              >
-                                View Details
-                              </Button>
-                            </div>
-
-                            {/* Summary Section */}
-                            <div className="text-sm text-slate-600">
-                              {allFinishingTypes.size} finishing type{allFinishingTypes.size > 1 ? 's' : ''} applied • Total cost includes all finishing options
-                            </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
                   </div>
                 </CardContent>
               </Card>
@@ -7032,7 +7089,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-sm text-slate-600">Price per Sheet:</span>
-                            <span className="font-semibold text-green-700">{fmt(opPaper.pricePerSheet)}</span>
+                            <span className="font-semibold text-green-700">${opPaper.pricePerSheet.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-slate-600">Sheets Required:</span>
@@ -7042,7 +7099,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                             <div className="flex justify-between">
                               <span className="font-semibold text-green-800">Total Cost:</span>
                               <span className="text-xl font-bold text-green-800">
-                                {fmt(opPaper.pricePerSheet * actualSheetsNeeded)}
+                                ${(opPaper.pricePerSheet * actualSheetsNeeded).toFixed(2)}
                               </span>
                             </div>
                           </div>
@@ -7056,7 +7113,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-sm text-slate-600">Price per Packet:</span>
-                            <span className="font-semibold text-green-700">{fmt(opPaper.pricePerPacket)}</span>
+                            <span className="font-semibold text-green-700">${opPaper.pricePerPacket.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-slate-600">Sheets per Packet:</span>
@@ -7065,14 +7122,14 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           <div className="flex justify-between">
                             <span className="text-sm text-slate-600">Effective Price per Sheet:</span>
                             <span className="font-semibold text-green-700">
-                              {fmt(opPaper.pricePerPacket / opPaper.sheetsPerPacket)}
+                              ${(opPaper.pricePerPacket / opPaper.sheetsPerPacket).toFixed(2)}
                             </span>
                           </div>
                           <div className="border-t pt-2 mt-2">
                             <div className="flex justify-between">
                               <span className="font-semibold text-green-800">Total Cost:</span>
                               <span className="text-xl font-bold text-green-800">
-                                {fmt(opPaper.pricePerPacket * Math.ceil(actualSheetsNeeded / opPaper.sheetsPerPacket))}
+                                ${(opPaper.pricePerPacket * Math.ceil(actualSheetsNeeded / opPaper.sheetsPerPacket)).toFixed(2)}
                               </span>
                             </div>
                           </div>
@@ -7094,37 +7151,32 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                   </div>
                 </div>
 
-                {/* Cost Calculation - Using Hybrid Pricing Logic */}
-                {(opPaper?.pricePerSheet != null || opPaper?.pricePerPacket != null) && (
+                {/* Cost Calculation */}
+                {pricePerSheet && (
                   <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-[#ea078b]/30">
                     <h3 className="text-lg font-semibold text-[#ea078b] mb-4 flex items-center">
                       <Calculator className="w-5 h-5 mr-2" />
                       Cost Calculation
                     </h3>
                     <div className="bg-white rounded-lg p-4 border border-[#ea078b]/30">
-                      {(() => {
-                        const pricingBreakdown = getPricingBreakdown(opPaper, actualSheetsNeeded);
-                        const { breakdown, totalCost } = pricingBreakdown;
-                        
-                        return (
                       <div className="space-y-3">
-                            {breakdown.map((item, index) => (
-                              <div key={index} className="flex justify-between">
-                                <span className="text-sm text-slate-600">{item.description}:</span>
-                                <span className="font-semibold text-[#ea078b]">{fmt(item.total)}</span>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-slate-600">Unit Cost:</span>
+                          <span className="font-semibold text-[#ea078b]">${pricePerSheet.toFixed(2)} per sheet</span>
                         </div>
-                            ))}
+                        <div className="flex justify-between">
+                          <span className="text-sm text-slate-600">Quantity:</span>
+                          <span className="font-semibold text-[#ea078b]">{actualSheetsNeeded} sheets</span>
+                        </div>
                         <div className="border-t pt-3 mt-3">
                           <div className="flex justify-between">
                             <span className="font-semibold text-[#ea078b]">Total Paper Cost:</span>
                             <span className="text-xl font-bold text-[#ea078b]">
-                                  {fmt(totalCost)}
+                              ${(pricePerSheet * actualSheetsNeeded).toFixed(2)}
                             </span>
                           </div>
                         </div>
                       </div>
-                        );
-                      })()}
                     </div>
                   </div>
                 )}
@@ -7323,170 +7375,6 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
           </CardContent>
         </Card>
       )}
-
-      {/* Finishing Details Popup Modal */}
-      <Dialog open={showFinishingDetails} onOpenChange={setShowFinishingDetails}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto w-[95vw] sm:w-full">
-          <DialogHeader>
-            <DialogTitle className="text-xl text-slate-800 flex items-center">
-              <Settings className="w-5 h-5 mr-2 text-[#27aae1]" />
-              Finishing Costs Breakdown
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            {(() => {
-              // Collect all unique finishing types across all products
-              const allFinishingTypes = new Set<string>();
-              formData.products.forEach((product) => {
-                if (product.finishing && product.finishing.length > 0) {
-                  product.finishing.forEach(finishingName => {
-                    allFinishingTypes.add(finishingName);
-                  });
-                }
-              });
-
-              return Array.from(allFinishingTypes).map((finishingName) => {
-                const baseFinishingName = finishingName.split('-')[0];
-                // Find the first product that has this finishing type for calculation
-                const productWithFinishing = formData.products.find(product => 
-                  product.finishing && product.finishing.includes(finishingName)
-                );
-                const productIndex = productWithFinishing ? formData.products.indexOf(productWithFinishing) : 0;
-                const calculatedCost = calculateIndividualFinishingCost(finishingName, productWithFinishing, productIndex);
-                
-                return (
-                  <div key={finishingName} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        <span className="text-sm font-medium text-slate-700">{baseFinishingName}</span>
-                        {finishingName.includes('-') && (
-                          <span className="text-xs bg-[#27aae1]/20 text-[#27aae1] px-2 py-1 rounded w-fit">
-                            {finishingName.split('-')[1]}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg font-bold text-[#27aae1]">{fmt(calculatedCost)}</span>
-                        <span className="text-xs text-slate-500">total cost</span>
-                      </div>
-                    </div>
-                    
-                    {/* Cost breakdown based on finishing type */}
-                    <div className="text-xs text-slate-600 space-y-1">
-                      {(() => {
-                        const actualSheetsNeeded = formData.operational.papers[productIndex]?.enteredSheets ?? 
-                                                 perPaperCalc[productIndex]?.[0]?.recommendedSheets ?? 0;
-                        // Use impressions field if available, otherwise fall back to product quantity
-                        const totalQuantity = formData.operational.impressions || productWithFinishing?.quantity || 1000;
-                        
-                        switch (baseFinishingName) {
-                          case 'Lamination':
-                            const sideInfoLam = finishingName.includes('-') ? finishingName.split('-')[1] : 'Front';
-                            const isBothSidesLam = sideInfoLam === 'Both';
-                            return (
-                              <div>
-                                <div>Formula: 75 AED minimum + (0.75 AED × {actualSheetsNeeded} sheets){isBothSidesLam ? ' × 2 for both sides' : ''}</div>
-                                <div>Calculation: 75 + ({actualSheetsNeeded} × 0.75){isBothSidesLam ? ' × 2' : ''} = {fmt(calculatedCost)}</div>
-                              </div>
-                            );
-                          case 'Velvet Lamination':
-                            const sideInfoVL = finishingName.includes('-') ? finishingName.split('-')[1] : 'Front';
-                            const isBothSidesVL = sideInfoVL === 'Both';
-                            return (
-                              <div>
-                                <div>Formula: 100 AED minimum + (1 AED × {actualSheetsNeeded} sheets){isBothSidesVL ? ' × 2 for both sides' : ''}</div>
-                                <div>Calculation: 100 + ({actualSheetsNeeded} × 1){isBothSidesVL ? ' × 2' : ''} = {fmt(calculatedCost)}</div>
-                              </div>
-                            );
-                          case 'Embossing':
-                             const embossingImpressions = Math.max(1000, totalQuantity);
-                             const embossingThousands = Math.ceil(embossingImpressions / 1000);
-                             const sideInfoEmb = finishingName.includes('-') ? finishingName.split('-')[1] : 'Front';
-                             const isBothSidesEmb = sideInfoEmb === 'Both';
-                             return (
-                               <div>
-                                 <div>Formula: 50 AED per 1000 impressions (minimum 75 AED){isBothSidesEmb ? ' × 2 for both sides' : ''}</div>
-                                 <div>Calculation: {embossingThousands} × 1000 impressions × 50 AED{isBothSidesEmb ? ' × 2' : ''} = {fmt(calculatedCost)}</div>
-                               </div>
-                             );
-                           case 'Foiling':
-                             const foilingImpressions = Math.max(1000, totalQuantity);
-                             const foilingThousands = Math.ceil(foilingImpressions / 1000);
-                             const sideInfoFoil = finishingName.includes('-') ? finishingName.split('-')[1] : 'Front';
-                             const isBothSidesFoil = sideInfoFoil === 'Both';
-                             return (
-                               <div>
-                                 <div>Formula: 75 AED per 1000 impressions (minimum 75 AED){isBothSidesFoil ? ' × 2 for both sides' : ''}</div>
-                                 <div>Calculation: {foilingThousands} × 1000 impressions × 75 AED{isBothSidesFoil ? ' × 2' : ''} = {fmt(calculatedCost)}</div>
-                               </div>
-                             );
-                           case 'Die Cutting':
-                             const dieCuttingImpressions = Math.max(1000, totalQuantity);
-                             const dieCuttingThousands = Math.ceil(dieCuttingImpressions / 1000);
-                             const minCharge = (() => {
-                               if (productWithFinishing?.flatSize && productWithFinishing.flatSize.width && productWithFinishing.flatSize.height) {
-                                 const area = productWithFinishing.flatSize.width * productWithFinishing.flatSize.height;
-                                 if (area <= 210 * 148) return 75; // A5
-                                 if (area <= 297 * 210) return 100; // A4
-                                 if (area <= 420 * 297) return 150; // A3
-                                 return 200; // A2+
-                               }
-                               return 75; // Default
-                             })();
-                             return (
-                               <div>
-                                 <div>Formula: 50 AED per 1000 impressions (minimum {minCharge} AED by size)</div>
-                                 <div>Calculation: {dieCuttingThousands} × 1000 impressions × 50 AED = {fmt(calculatedCost)}</div>
-                               </div>
-                             );
-                           case 'UV Spot':
-                             const uvSpotImpressions = Math.max(1000, totalQuantity);
-                             const uvSpotThousands = Math.ceil(uvSpotImpressions / 1000);
-                             const sideInfoUV = finishingName.includes('-') ? finishingName.split('-')[1] : 'Front';
-                             const isBothSidesUV = sideInfoUV === 'Both';
-                             return (
-                               <div>
-                                 <div>Formula: 350 AED per 1000 impressions (minimum 350 AED){isBothSidesUV ? ' × 2 for both sides' : ''}</div>
-                                 <div>Calculation: {uvSpotThousands} × 1000 impressions × 350 AED{isBothSidesUV ? ' × 2' : ''} = {fmt(calculatedCost)}</div>
-                               </div>
-                             );
-                           case 'Folding':
-                             const foldingImpressions = Math.max(1000, totalQuantity);
-                             const foldingThousands = Math.ceil(foldingImpressions / 1000);
-                             return (
-                               <div>
-                                 <div>Formula: 25 AED per 1000 impressions (minimum 25 AED)</div>
-                                 <div>Calculation: {foldingThousands} × 1000 impressions × 25 AED = {fmt(calculatedCost)}</div>
-                               </div>
-                             );
-                          default:
-                            return <div>Auto-calculated based on finishing type and quantity</div>;
-                        }
-                      })()}
-                    </div>
-                  </div>
-                );
-              });
-            })()}
-            
-            <div className="border-t pt-4 mt-4">
-              <div className="flex justify-between items-center bg-green-50 p-4 rounded-lg border border-green-200">
-                <span className="font-semibold text-slate-800">Total Finishing Cost:</span>
-                <span className="text-xl font-bold text-green-600">
-                  {fmt(calculateFinishingCosts())}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button onClick={() => setShowFinishingDetails(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
