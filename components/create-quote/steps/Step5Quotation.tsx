@@ -38,6 +38,7 @@ interface Step5Props {
   isEditMode?: boolean;
   selectedQuoteId?: string | null;
   onSubmitQuote?: (formData: QuoteFormData) => Promise<void>; // Add this prop for actual submission
+  onApprovalStatusChange?: (requiresApproval: boolean, approvalReason?: string) => void; // Add callback for approval status
 }
 
 const Step5Quotation: React.FC<Step5Props> = ({
@@ -49,6 +50,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
   isEditMode,
   selectedQuoteId,
   onSubmitQuote,
+  onApprovalStatusChange,
 }) => {
   // State for included/excluded products
   const [includedProducts, setIncludedProducts] = React.useState<Set<number>>(
@@ -79,6 +81,17 @@ const Step5Quotation: React.FC<Step5Props> = ({
     approvalReason: ''
   });
 
+  // Quote approver state (separate from discount approver)
+  const [quoteApprover, setQuoteApprover] = React.useState<{
+    approvedBy: string;
+    reason: string;
+    approvedAt: Date;
+  }>({
+    approvedBy: '',
+    reason: '',
+    approvedAt: new Date(),
+  });
+
 
 
   // Sales person state (for display only)
@@ -86,6 +99,16 @@ const Step5Quotation: React.FC<Step5Props> = ({
 
   // Quote submission action
   const [submissionAction, setSubmissionAction] = React.useState<QuoteSubmission['action']>('Save Draft');
+
+  // Handle submission action changes with approval logic
+  const handleSubmissionActionChange = (action: QuoteSubmission['action']) => {
+    if (action === 'Send to Customer' && quoteApproval.requiresApproval) {
+      // If approval is required, automatically switch to Send for Approval
+      setSubmissionAction('Send for Approval');
+    } else {
+      setSubmissionAction(action);
+    }
+  };
 
   // Load sales persons for display
   React.useEffect(() => {
@@ -106,21 +129,45 @@ const Step5Quotation: React.FC<Step5Props> = ({
     loadSalesPersons();
   }, []);
 
-  // Available approvers (this could come from user management or be hardcoded)
-  const availableApprovers = [
-    'Manager',
-    'Director',
-    'CEO',
-    'Finance Manager',
-    'Sales Manager'
-  ];
+  // Available approvers - fetch from database dynamically
+  const [availableApprovers, setAvailableApprovers] = React.useState<string[]>([]);
+
+  // Load approvers from database
+  React.useEffect(() => {
+    const loadApprovers = async () => {
+      try {
+        const response = await fetch('/api/users');
+        if (response.ok) {
+          const usersData = await response.json();
+          // Filter for users with admin or manager roles who can approve
+          const approverUsers = usersData
+            .filter((user: any) => ['admin', 'manager'].includes(user.role?.toLowerCase()))
+            .map((user: any) => user.name)
+            .filter((name: string) => name && name.trim() !== '');
+          
+          // If no approvers found in database, use fallback
+          if (approverUsers.length === 0) {
+            setAvailableApprovers(['Manager', 'Director', 'CEO']);
+          } else {
+            setAvailableApprovers(approverUsers);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading approvers:', error);
+        // Fallback to default approvers if API fails
+        setAvailableApprovers(['Manager', 'Director', 'CEO']);
+      }
+    };
+
+    loadApprovers();
+  }, []);
 
 
 
   // Check if quote requires approval based on current values
   React.useEffect(() => {
     const currentDiscountPercentage = discount.isApplied ? discount.percentage : 0;
-    const currentMarginPercentage = formData.calculation.marginPercentage || 15;
+    const currentMarginPercentage = formData.calculation.marginPercentage || 30;
     const currentTotalAmount = formData.calculation.totalPrice || 0;
     
     const needsApproval = requiresApproval(
@@ -140,7 +187,12 @@ const Step5Quotation: React.FC<Step5Props> = ({
       requiresApproval: needsApproval,
       approvalReason: needsApproval ? approvalReason : undefined
     }));
-  }, [discount, formData.calculation.marginPercentage, formData.calculation.totalPrice]);
+
+    // Notify parent component about approval status changes
+    if (onApprovalStatusChange) {
+      onApprovalStatusChange(needsApproval, needsApproval ? approvalReason : undefined);
+    }
+  }, [discount, formData.calculation.marginPercentage, formData.calculation.totalPrice, onApprovalStatusChange]);
 
   // Sync discount data with form data
   React.useEffect(() => {
@@ -162,7 +214,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
         amount
       }));
     }
-  }, [discount.percentage, discount.isApplied, includedProducts]);
+  }, [discount.percentage, discount.isApplied, includedProducts, otherQuantities]);
 
   // Validate form data before allowing save
   const validateFormData = () => {
@@ -205,6 +257,16 @@ const Step5Quotation: React.FC<Step5Props> = ({
       }
     }
 
+    // Validate quote approver if sending for approval
+    if (submissionAction === 'Send for Approval') {
+      if (!quoteApprover.approvedBy) {
+        errors.push("Quote approver must be selected when sending for approval");
+      }
+      if (!quoteApproval.approvalNotes?.trim()) {
+        errors.push("Approval notes are required when sending for approval");
+      }
+    }
+
     // Check if sales person is selected
     if (!formData.salesPersonId) {
       errors.push("Sales person must be selected");
@@ -222,7 +284,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
         ...formData,
         calculation: {
           ...formData.calculation,
-          marginPercentage: 15,
+          marginPercentage: 30,
           discount: discount.isApplied ? {
             ...discount,
             approval: discountApproval.approvedBy && discountApproval.reason ? discountApproval : undefined
@@ -234,7 +296,12 @@ const Step5Quotation: React.FC<Step5Props> = ({
           status: 'Pending Approval' as const,
           requiresApproval: true,
           approvalReason: quoteApproval.approvalReason,
-          approvalNotes: quoteApproval.approvalNotes
+          approvalNotes: quoteApproval.approvalNotes,
+          approver: quoteApprover.approvedBy ? {
+            approvedBy: quoteApprover.approvedBy,
+            reason: quoteApprover.reason,
+            approvedAt: quoteApprover.approvedAt
+          } : undefined
         } : submissionAction === 'Send to Customer' ? {
           status: 'Approved' as const,
           requiresApproval: false
@@ -374,7 +441,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
 
     // 4. Calculate subtotal, margin, and VAT
     const subtotal = paperCost + platesCost + finishingCost;
-    const marginPercentage = 15; // 15% margin
+    const marginPercentage = 30; // 30% margin (hidden from user)
     const marginAmount = subtotal * (marginPercentage / 100);
     const total = subtotal + marginAmount;
     const vat = total * 0.05; // 5% VAT on total including margin
@@ -392,12 +459,20 @@ const Step5Quotation: React.FC<Step5Props> = ({
     };
   };
 
-  // Calculate grand total based on included products
+  // Calculate grand total based on included products and supplementary quantities
   const calculateGrandTotal = () => {
     let total = 0;
+    
+    // Add main products
     includedProducts.forEach((index) => {
       const costs = calculateProductCosts(index);
       total += costs.total;
+    });
+    
+    // Add supplementary quantities
+    otherQuantities.forEach((otherQty) => {
+      const prices = calculateOtherQtyPrice(otherQty);
+      total += prices.total;
     });
     
     // Apply discount if enabled
@@ -412,14 +487,23 @@ const Step5Quotation: React.FC<Step5Props> = ({
   // Calculate grand total without discount for percentage calculation
   const calculateGrandTotalWithoutDiscount = () => {
     let total = 0;
+    
+    // Add main products
     includedProducts.forEach((index) => {
       const costs = calculateProductCosts(index);
       total += costs.total;
     });
+    
+    // Add supplementary quantities
+    otherQuantities.forEach((otherQty) => {
+      const prices = calculateOtherQtyPrice(otherQty);
+      total += prices.total;
+    });
+    
     return total;
   };
 
-  // Calculate summary totals for all included products
+  // Calculate summary totals for all included products and supplementary quantities
   const calculateSummaryTotals = () => {
     let totalPaperCost = 0;
     let totalPlatesCost = 0;
@@ -430,6 +514,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
     let totalVAT = 0;
     let grandTotal = 0;
 
+    // Add main products
     includedProducts.forEach((index) => {
       const costs = calculateProductCosts(index);
       totalPaperCost += costs.paperCost;
@@ -439,6 +524,23 @@ const Step5Quotation: React.FC<Step5Props> = ({
       totalMarginAmount += costs.marginAmount;
       totalVAT += costs.vat;
       grandTotal += costs.total;
+    });
+
+    // Add supplementary quantities
+    otherQuantities.forEach((otherQty) => {
+      const prices = calculateOtherQtyPrice(otherQty);
+      // For supplementary quantities, we add the total price (which includes VAT)
+      // We need to break it down for proper calculation
+      const basePrice = prices.base;
+      const vat = prices.vat;
+      const total = prices.total;
+      
+      grandTotal += total;
+      totalVAT += vat;
+      // For supplementary quantities, the base price already includes margin
+      totalSubtotal += basePrice;
+      // Note: We don't add paper/plates/finishing costs for supplementary quantities
+      // as they are calculated proportionally from the main product
     });
 
     // Apply discount if enabled
@@ -454,7 +556,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
       totalPlatesCost,
       totalFinishingCost,
       totalSubtotal,
-      totalMargin: 15, // 15% margin
+      totalMargin: 30, // 30% margin (hidden from user)
       totalMarginAmount,
       totalVAT,
       grandTotal,
@@ -475,14 +577,14 @@ const Step5Quotation: React.FC<Step5Props> = ({
         ...prev.calculation,
         basePrice: summaryTotals.totalSubtotal,
         marginAmount: summaryTotals.totalMarginAmount,
-        marginPercentage: 15,
+        marginPercentage: 30,
         subtotal: summaryTotals.totalSubtotal + summaryTotals.totalMarginAmount,
         finalSubtotal: summaryTotals.totalSubtotal + summaryTotals.totalMarginAmount,
         vatAmount: summaryTotals.totalVAT,
         totalPrice: finalTotal
       }
     }));
-  }, [includedProducts, formData.operational.papers, formData.operational.plates, formData.operational.units, formData.operational.finishing, setFormData]);
+  }, [includedProducts, otherQuantities, formData.operational.papers, formData.operational.plates, formData.operational.units, formData.operational.finishing, setFormData]);
 
   // Handle product inclusion/exclusion
   const toggleProductInclusion = (productIndex: number) => {
@@ -682,323 +784,6 @@ const Step5Quotation: React.FC<Step5Props> = ({
         </div>
       </div>
 
-      {/* Price summary */}
-      <div className="bg-white rounded-2xl border-0 shadow-lg p-4 sm:p-6 lg:p-8 mx-4 sm:mx-0">
-        <div className="flex items-center justify-between mb-6">
-          <h4 className="text-lg sm:text-xl font-semibold text-slate-800 flex items-center">
-            <div className="w-3 h-3 bg-[#27aae1] rounded-full mr-3"></div>
-            Price Summary
-          </h4>
-        </div>
-
-        {/* Desktop Table - Hidden on mobile */}
-        <div className="hidden lg:block overflow-hidden rounded-xl border border-slate-200">
-          <Table>
-            <TableHeader className="bg-[#27aae1]/10">
-              <TableRow className="border-slate-200">
-                <TableHead className="text-slate-700 font-semibold py-4 px-6 w-12">
-                  <Checkbox
-                    checked={includedProducts.size === formData.products.length}
-                    onCheckedChange={(checked) => {
-                      if (Boolean(checked)) {
-                        setIncludedProducts(new Set(formData.products.map((_, index) => index)));
-                      } else {
-                        setIncludedProducts(new Set());
-                      }
-                    }}
-                  />
-                </TableHead>
-                <TableHead className="text-slate-700 font-semibold py-4 px-6">Product Name</TableHead>
-                <TableHead className="text-slate-700 font-semibold py-4 px-6">Quantity</TableHead>
-                <TableHead className="text-right text-slate-700 font-semibold py-4 px-6">Paper Cost</TableHead>
-                <TableHead className="text-right text-slate-700 font-semibold py-4 px-6">Plates Cost</TableHead>
-                <TableHead className="text-right text-slate-700 font-semibold py-4 px-6">Finishing Cost</TableHead>
-                <TableHead className="text-right text-slate-700 font-semibold py-4 px-6">Subtotal</TableHead>
-                <TableHead className="text-right text-slate-700 font-semibold py-4 px-6">Margin (15%)</TableHead>
-                <TableHead className="text-right text-slate-700 font-semibold py-4 px-6">VAT (5%)</TableHead>
-                <TableHead className="text-right text-slate-700 font-semibold py-4 px-6">Total Price</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {formData.products.map((product, index) => {
-                const costs = calculateProductCosts(index);
-                const isIncluded = includedProducts.has(index);
-                
-                return (
-                                      <TableRow key={index} className="border-slate-200 hover:bg-slate-50 transition-colors">
-                    <TableCell className="py-4 px-6">
-                      <Checkbox
-                        checked={isIncluded}
-                        onCheckedChange={() => toggleProductInclusion(index)}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium text-slate-800 py-4 px-6">
-                      {product.productName}
-                    </TableCell>
-                    <TableCell className="text-slate-700 py-4 px-6">
-                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#f89d1d]/20 text-[#f89d1d]">
-                    {product.quantity || 0}
-                  </span>
-                    </TableCell>
-                    <TableCell className="text-right text-slate-700 py-4 px-6 font-medium">
-                      {isIncluded ? currency(costs.paperCost) : "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-slate-700 py-4 px-6 font-medium">
-                      {isIncluded ? currency(costs.platesCost) : "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-slate-700 py-4 px-6 font-medium">
-                      {isIncluded ? currency(costs.finishingCost) : "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-slate-700 py-4 px-6 font-medium">
-                      {isIncluded ? currency(costs.subtotal) : "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-slate-700 py-4 px-6 font-medium">
-                      {isIncluded ? currency(costs.marginAmount) : "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-slate-700 py-4 px-6">
-                      {isIncluded ? (
-                        <span className="text-green-600 font-medium">{currency(costs.vat)}</span>
-                      ) : "—"}
-                    </TableCell>
-                    <TableCell className="text-right py-4 px-6">
-                      {isIncluded ? (
-                        <span className="text-lg font-bold text-[#ea078b]">{currency(costs.total)}</span>
-                      ) : "—"}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Mobile Cards - Visible only on mobile */}
-        <div className="lg:hidden space-y-4">
-          {formData.products.map((product, index) => {
-            const costs = calculateProductCosts(index);
-            const isIncluded = includedProducts.has(index);
-            
-            return (
-              <div key={index} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                {/* Header with checkbox and product name */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      checked={isIncluded}
-                      onCheckedChange={() => toggleProductInclusion(index)}
-                    />
-                    <h4 className="font-medium text-slate-800 text-sm sm:text-base">{product.productName}</h4>
-                  </div>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-[#f89d1d]/20 text-[#f89d1d]">
-                    Qty: {product.quantity || 0}
-                  </span>
-                </div>
-                
-                {/* Cost breakdown grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Paper Cost:</span>
-                    <span className="font-medium">{isIncluded ? currency(costs.paperCost) : "—"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Plates Cost:</span>
-                    <span className="font-medium">{isIncluded ? currency(costs.platesCost) : "—"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Finishing Cost:</span>
-                    <span className="font-medium">{isIncluded ? currency(costs.finishingCost) : "—"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Subtotal:</span>
-                    <span className="font-medium">{isIncluded ? currency(costs.subtotal) : "—"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Margin (15%):</span>
-                    <span className="font-medium">{isIncluded ? currency(costs.marginAmount) : "—"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">VAT (5%):</span>
-                    <span className="font-medium">{isIncluded ? (
-                      <span className="text-green-600">{currency(costs.vat)}</span>
-                    ) : "—"}</span>
-                  </div>
-                </div>
-                
-                {/* Total Price */}
-                <div className="mt-3 pt-3 border-t border-slate-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-700 font-semibold text-sm sm:text-base">Total Price:</span>
-                    <span className="text-base sm:text-lg font-bold text-[#ea078b]">
-                      {isIncluded ? currency(costs.total) : "—"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Cost Breakdown Summary */}
-        <div className="mt-8 space-y-4">
-          <div className="bg-[#27aae1]/10 rounded-2xl p-4 sm:p-6 lg:p-8 border border-[#27aae1]/30 shadow-lg">
-            <h5 className="text-lg sm:text-xl font-bold text-slate-800 mb-6 flex items-center justify-center text-center">
-              <Calculator className="w-6 h-6 mr-3 text-[#27aae1]" />
-              Cost Breakdown Summary
-            </h5>
-            
-            {/* Cost Categories Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-              {/* Paper Cost */}
-              <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-[#27aae1] rounded-full mr-3"></div>
-                    <span className="text-xs sm:text-sm font-medium text-slate-600">Paper Cost</span>
-                  </div>
-                  <Package className="w-4 h-4 sm:w-5 sm:h-5 text-[#f89d1d]" />
-                </div>
-                <div className="text-lg sm:text-2xl font-bold text-slate-800">{currency(summaryTotals.totalPaperCost)}</div>
-                <div className="text-xs text-slate-500 mt-1">Based on sheets & paper type</div>
-              </div>
-
-              {/* Plates Cost */}
-              <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-[#ea078b] rounded-full mr-3"></div>
-                    <span className="text-xs sm:text-sm font-medium text-slate-600">Plates Cost</span>
-                  </div>
-                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-[#ea078b]" />
-                </div>
-                <div className="text-lg sm:text-2xl font-bold text-slate-800">{currency(summaryTotals.totalPlatesCost)}</div>
-                <div className="text-xs text-slate-500 mt-1">Printing plates setup</div>
-              </div>
-
-              {/* Finishing Cost */}
-              <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-[#f89d1d] rounded-full mr-3"></div>
-                    <span className="text-xs sm:text-sm font-medium text-slate-600">Finishing Cost</span>
-                  </div>
-                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-[#f89d1d]" />
-                </div>
-                <div className="text-lg sm:text-2xl font-bold text-slate-800">{currency(summaryTotals.totalFinishingCost)}</div>
-                <div className="text-xs text-slate-500 mt-1">UV, lamination & special effects</div>
-              </div>
-
-              {/* Margin */}
-              <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-[#f89d1d] rounded-full mr-3"></div>
-                    <span className="text-xs sm:text-sm font-medium text-slate-600">Margin (15%)</span>
-                  </div>
-                  <Percent className="w-4 h-4 sm:w-5 sm:h-5 text-[#f89d1d]" />
-                </div>
-                <div className="text-lg sm:text-2xl font-bold text-slate-800">{currency(summaryTotals.totalMarginAmount)}</div>
-                <div className="text-xs text-slate-500 mt-1">Standard business margin</div>
-              </div>
-            </div>
-
-            {/* Cost Breakdown Details */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-              <h6 className="text-lg font-semibold text-slate-700 mb-4 flex items-center">
-                <Calculator className="w-4 h-4 mr-2 text-slate-600" />
-                Detailed Breakdown
-              </h6>
-              
-              <div className="space-y-3">
-                {/* Paper Cost Detail */}
-                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-[#27aae1] rounded-full mr-3"></div>
-                    <span className="text-slate-600">Paper & Materials</span>
-                  </div>
-                  <span className="font-semibold text-slate-800">{currency(summaryTotals.totalPaperCost)}</span>
-                </div>
-
-                {/* Plates Cost Detail */}
-                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-[#ea078b] rounded-full mr-3"></div>
-                    <span className="text-slate-600">Printing Plates</span>
-                  </div>
-                  <span className="font-semibold text-slate-800">{currency(summaryTotals.totalPlatesCost)}</span>
-                </div>
-
-                {/* Finishing Cost Detail */}
-                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                    <span className="text-slate-600">Finishing Services</span>
-                  </div>
-                  <span className="font-semibold text-slate-800">{currency(summaryTotals.totalFinishingCost)}</span>
-                </div>
-
-                {/* Subtotal before margin */}
-                <div className="flex justify-between items-center py-3 border-b border-slate-200">
-                  <span className="text-slate-600">Subtotal (Before Margin)</span>
-                  <span className="font-semibold text-slate-800">{currency(summaryTotals.totalSubtotal)}</span>
-                </div>
-
-                {/* Margin */}
-                <div className="flex justify-between items-center py-2 border-b-2 border-slate-200">
-                  <span className="text-lg font-semibold text-slate-700">Margin (15%)</span>
-                  <span className="text-lg font-bold text-orange-600">{currency(summaryTotals.totalMarginAmount)}</span>
-                </div>
-
-                {/* Subtotal after margin */}
-                <div className="flex justify-between items-center py-3 border-b-2 border-slate-200">
-                  <span className="text-lg font-semibold text-slate-700">Subtotal (After Margin)</span>
-                  <span className="text-lg font-bold text-slate-800">{currency(summaryTotals.totalSubtotal + summaryTotals.totalMarginAmount)}</span>
-                </div>
-
-                {/* VAT */}
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-slate-600">VAT (5%)</span>
-                  <span className="font-semibold text-green-600">{currency(summaryTotals.totalVAT)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Grand Total */}
-            <div className="mt-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 sm:p-6 text-white shadow-lg">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 text-center sm:text-left">
-                <div>
-                  <div className="text-sm text-white/90 mb-1">Total Amount</div>
-                  <div className="text-xl sm:text-2xl font-bold text-white">Grand Total</div>
-                  {discount.isApplied && discount.percentage > 0 && (
-                    <div className="text-sm text-white/90 mt-2">
-                      Includes {discount.percentage}% discount
-                    </div>
-                  )}
-                </div>
-                <div className="sm:text-right">
-                  <div className="text-3xl sm:text-4xl font-bold text-white">{currency(summaryTotals.finalTotal)}</div>
-                  <div className="text-sm text-white/90 mt-1">
-                    {discount.isApplied && discount.percentage > 0 
-                      ? `After ${discount.percentage}% discount`
-                      : 'Including VAT & 15% margin'
-                    }
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Additional Info */}
-            <div className="mt-4 text-center">
-              <div className="text-xs text-slate-500">
-                * All prices are in AED (UAE Dirham) and include applicable taxes
-              </div>
-              <div className="text-xs text-slate-500 mt-1">
-                ** Quote valid for 30 days from date of issue
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Discount Management Section */}
       <div className="bg-white rounded-2xl border-0 shadow-lg p-4 sm:p-6 lg:p-8 mx-4 sm:mx-0">
         <div className="flex items-center justify-between mb-6">
@@ -1177,15 +962,30 @@ const Step5Quotation: React.FC<Step5Props> = ({
 
                 {discountApproval.approvedBy && discountApproval.reason && (
                   <div className="mt-4 p-4 bg-white rounded-lg border border-orange-200">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="text-sm text-orange-700">
                         <span className="font-medium">Approved by:</span> {discountApproval.approvedBy}
                       </div>
-                      <div className="text-sm text-orange-700">
-                        <span className="font-medium">Date:</span> {discountApproval.approvedAt.toLocaleDateString()}
-                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs px-2 py-1 h-6 border-orange-300 text-orange-700 hover:bg-orange-50"
+                        onClick={() => {
+                          setDiscountApproval(prev => ({
+                            ...prev,
+                            approvedBy: '',
+                            reason: ''
+                          }));
+                        }}
+                      >
+                        Change Approver
+                      </Button>
                     </div>
-                    <div className="mt-2 text-sm text-orange-700">
+                    <div className="text-sm text-orange-700 mb-2">
+                      <span className="font-medium">Date:</span> {discountApproval.approvedAt.toLocaleDateString()}
+                    </div>
+                    <div className="text-sm text-orange-700">
                       <span className="font-medium">Reason:</span> {discountApproval.reason}
                     </div>
                   </div>
@@ -1220,6 +1020,268 @@ const Step5Quotation: React.FC<Step5Props> = ({
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Price summary */}
+      <div className="bg-white rounded-2xl border-0 shadow-lg p-4 sm:p-6 lg:p-8 mx-4 sm:mx-0">
+        <div className="flex items-center justify-between mb-6">
+          <h4 className="text-lg sm:text-xl font-semibold text-slate-800 flex items-center">
+            <div className="w-3 h-3 bg-[#27aae1] rounded-full mr-3"></div>
+            Price Summary
+          </h4>
+        </div>
+
+        {/* Desktop Table - Hidden on mobile */}
+        <div className="hidden lg:block overflow-hidden rounded-xl border border-slate-200">
+          <Table>
+            <TableHeader className="bg-[#27aae1]/10">
+              <TableRow className="border-slate-200">
+                <TableHead className="text-slate-700 font-semibold py-4 px-6 w-12">
+                  <Checkbox
+                    checked={includedProducts.size === formData.products.length}
+                    onCheckedChange={(checked) => {
+                      if (Boolean(checked)) {
+                        setIncludedProducts(new Set(formData.products.map((_, index) => index)));
+                      } else {
+                        setIncludedProducts(new Set());
+                      }
+                    }}
+                  />
+                </TableHead>
+                <TableHead className="text-slate-700 font-semibold py-4 px-6">Product Name</TableHead>
+                <TableHead className="text-slate-700 font-semibold py-4 px-6">Quantity</TableHead>
+                <TableHead className="text-right text-slate-700 font-semibold py-4 px-6">Total Price</TableHead>
+                <TableHead className="text-right text-slate-700 font-semibold py-4 px-6">VAT (5%)</TableHead>
+                <TableHead className="text-right text-slate-700 font-semibold py-4 px-6">Final Price</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {/* Main Products */}
+              {formData.products.map((product, index) => {
+                const costs = calculateProductCosts(index);
+                const isIncluded = includedProducts.has(index);
+                
+                return (
+                  <TableRow key={`product-${index}`} className="border-slate-200 hover:bg-slate-50 transition-colors">
+                    <TableCell className="py-4 px-6">
+                      <Checkbox
+                        checked={isIncluded}
+                        onCheckedChange={() => toggleProductInclusion(index)}
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium text-slate-800 py-4 px-6">
+                      {product.productName}
+                    </TableCell>
+                    <TableCell className="text-slate-700 py-4 px-6">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#f89d1d]/20 text-[#f89d1d]">
+                        {product.quantity || 0}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right text-slate-700 py-4 px-6 font-medium">
+                      {isIncluded ? (
+                        <span className="text-lg font-bold text-[#ea078b]">{currency(costs.total - costs.vat)}</span>
+                      ) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right text-slate-700 py-4 px-6">
+                      {isIncluded ? (
+                        <span className="text-green-600 font-medium">{currency(costs.vat)}</span>
+                      ) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right py-4 px-6">
+                      {isIncluded ? (
+                        <span className="text-lg font-bold text-[#ea078b]">{currency(costs.total)}</span>
+                      ) : "—"}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              
+              {/* Supplementary Quantities */}
+              {otherQuantities.map((otherQty, index) => {
+                const prices = calculateOtherQtyPrice(otherQty);
+                
+                return (
+                  <TableRow key={`other-${index}`} className="border-slate-200 hover:bg-slate-50 transition-colors bg-blue-50/30">
+                    <TableCell className="py-4 px-6">
+                      <div className="w-4 h-4 rounded border-2 border-blue-300 bg-blue-100 flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium text-slate-800 py-4 px-6">
+                      <span className="text-blue-700">{otherQty.productName}</span>
+                      <span className="text-xs text-blue-600 block">(Supplementary)</span>
+                    </TableCell>
+                    <TableCell className="text-slate-700 py-4 px-6">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                        {otherQty.quantity || 0}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right text-slate-700 py-4 px-6 font-medium">
+                      <span className="text-lg font-bold text-[#ea078b]">{currency(prices.base)}</span>
+                    </TableCell>
+                    <TableCell className="text-right text-slate-700 py-4 px-6">
+                      <span className="text-green-600 font-medium">{currency(prices.vat)}</span>
+                    </TableCell>
+                    <TableCell className="text-right py-4 px-6">
+                      <span className="text-lg font-bold text-[#ea078b]">{currency(prices.total)}</span>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Cards - Visible only on mobile */}
+        <div className="lg:hidden space-y-4">
+          {/* Main Products */}
+          {formData.products.map((product, index) => {
+            const costs = calculateProductCosts(index);
+            const isIncluded = includedProducts.has(index);
+            
+            return (
+              <div key={`product-${index}`} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                {/* Header with checkbox and product name */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      checked={isIncluded}
+                      onCheckedChange={() => toggleProductInclusion(index)}
+                    />
+                    <h4 className="font-medium text-slate-800 text-sm sm:text-base">{product.productName}</h4>
+                  </div>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-[#f89d1d]/20 text-[#f89d1d]">
+                    Qty: {product.quantity || 0}
+                  </span>
+                </div>
+                
+                {/* Simplified cost breakdown */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Total Price:</span>
+                    <span className="font-medium">{isIncluded ? currency(costs.total - costs.vat) : "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">VAT (5%):</span>
+                    <span className="font-medium">{isIncluded ? (
+                      <span className="text-green-600">{currency(costs.vat)}</span>
+                    ) : "—"}</span>
+                  </div>
+                </div>
+                
+                {/* Total Price */}
+                <div className="mt-3 pt-3 border-t border-slate-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-700 font-semibold text-sm sm:text-base">Total Price:</span>
+                    <span className="text-base sm:text-lg font-bold text-[#ea078b]">
+                      {isIncluded ? currency(costs.total) : "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          
+          {/* Supplementary Quantities */}
+          {otherQuantities.map((otherQty, index) => {
+            const prices = calculateOtherQtyPrice(otherQty);
+            
+            return (
+              <div key={`other-${index}`} className="bg-blue-50/30 rounded-xl border border-blue-200 p-4 shadow-sm">
+                {/* Header with indicator and product name */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-4 h-4 rounded border-2 border-blue-300 bg-blue-100 flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-blue-700 text-sm sm:text-base">{otherQty.productName}</h4>
+                      <span className="text-xs text-blue-600">(Supplementary)</span>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-700">
+                    Qty: {otherQty.quantity || 0}
+                  </span>
+                </div>
+                
+                {/* Simplified cost breakdown */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Total Price:</span>
+                    <span className="font-medium">{currency(prices.base)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">VAT (5%):</span>
+                    <span className="font-medium">
+                      <span className="text-green-600">{currency(prices.vat)}</span>
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Total Price */}
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-700 font-semibold text-sm sm:text-base">Total Price:</span>
+                    <span className="text-base sm:text-lg font-bold text-[#ea078b]">
+                      {currency(prices.total)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Simplified Price Summary */}
+        <div className="mt-8 space-y-4">
+          <div className="bg-[#27aae1]/10 rounded-2xl p-4 sm:p-6 lg:p-8 border border-[#27aae1]/30 shadow-lg">
+            <h5 className="text-lg sm:text-xl font-bold text-slate-800 mb-6 flex items-center justify-center text-center">
+              <Calculator className="w-6 h-6 mr-3 text-[#27aae1]" />
+              Price Summary
+            </h5>
+            
+            {/* Simplified Price Breakdown */}
+            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+              <div className="space-y-4">
+                {/* Total Price */}
+                <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                  <span className="text-lg font-semibold text-slate-700">Total Price</span>
+                  <span className="text-lg font-bold text-slate-800">{currency(summaryTotals.grandTotal - summaryTotals.totalVAT)}</span>
+                </div>
+
+                {/* Discount - Show when applied */}
+                {discount.isApplied && discount.percentage > 0 && (
+                  <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                    <span className="text-lg font-semibold text-slate-700">Discount ({discount.percentage}%)</span>
+                    <span className="text-lg font-bold text-red-600">-{currency(summaryTotals.discountAmount)}</span>
+                  </div>
+                )}
+
+                {/* VAT */}
+                <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                  <span className="text-lg font-semibold text-slate-700">VAT (5%)</span>
+                  <span className="text-lg font-bold text-green-600">{currency(summaryTotals.totalVAT)}</span>
+                </div>
+
+                {/* Final Total */}
+                <div className="flex justify-between items-center py-4 border-t-2 border-slate-300 bg-slate-50 rounded-lg px-4">
+                  <span className="text-xl font-bold text-slate-800">Final Price</span>
+                  <span className="text-2xl font-bold text-[#ea078b]">{currency(summaryTotals.finalTotal)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Info */}
+            <div className="mt-4 text-center">
+              <div className="text-xs text-slate-500">
+                * All prices are in AED (UAE Dirham) and include applicable taxes
+              </div>
+              <div className="text-xs text-slate-500 mt-1">
+                ** Quote valid for 30 days from date of issue
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1368,6 +1430,9 @@ const Step5Quotation: React.FC<Step5Props> = ({
                   <div className="bg-white rounded-lg p-4 border border-orange-200">
                     <h6 className="font-medium text-orange-800 mb-2">Approval Reasons:</h6>
                     <p className="text-orange-700 text-sm">{quoteApproval.approvalReason}</p>
+                    <div className="mt-2 text-xs text-orange-600">
+                      <strong>Note:</strong> Approval is required for quotes over AED 5,000, high discounts (≥20%), or low margins (&lt;10%).
+                    </div>
                   </div>
                   
                   <div className="bg-white rounded-lg p-4 border border-orange-200">
@@ -1493,7 +1558,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                   ? 'bg-[#27aae1] hover:bg-[#1e8bc3] text-white' 
                   : 'border-slate-300 text-slate-700 hover:bg-slate-50'
               }`}
-              onClick={() => setSubmissionAction('Save Draft')}
+              onClick={() => handleSubmissionActionChange('Save Draft')}
             >
               💾 Save Draft
             </Button>
@@ -1505,7 +1570,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                   ? 'bg-[#f89d1d] hover:bg-[#e88a0a] text-white' 
                   : 'border-slate-300 text-slate-700 hover:bg-slate-50'
               }`}
-              onClick={() => setSubmissionAction('Send for Approval')}
+              onClick={() => handleSubmissionActionChange('Send for Approval')}
             >
               📋 Send for Approval
             </Button>
@@ -1516,8 +1581,10 @@ const Step5Quotation: React.FC<Step5Props> = ({
                 submissionAction === 'Send to Customer' 
                   ? 'bg-[#ea078b] hover:bg-[#d4067a] text-white' 
                   : 'border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
-              onClick={() => setSubmissionAction('Send to Customer')}
+              } ${quoteApproval.requiresApproval ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={() => handleSubmissionActionChange('Send to Customer')}
+              disabled={quoteApproval.requiresApproval}
+              title={quoteApproval.requiresApproval ? 'Approval required before sending to customer' : 'Send quote directly to customer'}
             >
               📧 Send to Customer
             </Button>
@@ -1546,9 +1613,71 @@ const Step5Quotation: React.FC<Step5Props> = ({
                   placeholder="Add any notes or context for the approval request..."
                 />
               </div>
-                              <div className="text-sm text-black">
-                  <strong>Note:</strong> This quote will be marked as "Pending Approval" and will require manager approval before it can be sent to the customer.
+
+              {/* Approver Selection */}
+              <div>
+                <Label className="text-sm font-medium text-black mb-2 block">
+                  Select Approver
+                </Label>
+                <Select
+                  value={quoteApprover.approvedBy}
+                  onValueChange={(value) =>
+                    setQuoteApprover(prev => ({
+                      ...prev,
+                      approvedBy: value,
+                      reason: quoteApproval.approvalReason || 'Quote requires approval due to amount or discount threshold',
+                      approvedAt: new Date()
+                    }))
+                  }
+                >
+                  <SelectTrigger className="border-[#f89d1d]/50 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl bg-white">
+                    <SelectValue placeholder="Select approver" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-slate-200 shadow-lg">
+                    {availableApprovers.map((approver) => (
+                      <SelectItem key={approver} value={approver} className="hover:bg-slate-50">
+                        {approver}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Show selected approver with change option */}
+              {quoteApprover.approvedBy && (
+                <div className="mt-4 p-4 bg-white rounded-lg border border-[#f89d1d]/30">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-sm text-[#f89d1d]">
+                      <span className="font-medium">Selected Approver:</span> {quoteApprover.approvedBy}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-[#f89d1d] border-[#f89d1d] hover:bg-[#f89d1d] hover:text-white"
+                      onClick={() => {
+                        setQuoteApprover(prev => ({
+                          ...prev,
+                          approvedBy: '',
+                          reason: ''
+                        }));
+                      }}
+                    >
+                      Change Approver
+                    </Button>
+                  </div>
+                  <div className="text-sm text-[#f89d1d] mb-2">
+                    <span className="font-medium">Reason:</span> {quoteApprover.reason}
+                  </div>
+                  <div className="text-xs text-[#f89d1d]">
+                    <span className="font-medium">Selected:</span> {quoteApprover.approvedAt.toLocaleDateString()}
+                  </div>
                 </div>
+              )}
+
+              <div className="text-sm text-black">
+                <strong>Note:</strong> This quote will be marked as "Pending Approval" and will require manager approval before it can be sent to the customer.
+              </div>
             </div>
           </div>
         )}
@@ -1559,12 +1688,29 @@ const Step5Quotation: React.FC<Step5Props> = ({
               📧 Customer Communication
             </h5>
             <div className="text-sm text-black">
-              <p className="mb-2">
-                <strong>Note:</strong> This quote will be sent directly to the customer.
-              </p>
-              <p>
-                Customer PDF download and "Send to Customer" options are enabled for this quote.
-              </p>
+              {quoteApproval.requiresApproval ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                    <span className="font-semibold text-red-800">Approval Required</span>
+                  </div>
+                  <p className="text-red-700">
+                    <strong>Cannot send to customer:</strong> This quote requires management approval before it can be sent to the customer.
+                  </p>
+                  <p className="text-red-600 text-xs mt-2">
+                    Please use "Send for Approval" instead to submit this quote for management review.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="mb-2">
+                    <strong>Note:</strong> This quote will be sent directly to the customer.
+                  </p>
+                  <p>
+                    Customer PDF download and "Send to Customer" options are enabled for this quote.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -1592,7 +1738,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
                   ? 'bg-orange-600 hover:bg-orange-700 text-white'
                   : 'bg-green-600 hover:bg-green-700 text-white'
               }`}
-              disabled={validationErrors.length > 0}
+              disabled={validationErrors.length > 0 || (submissionAction === 'Send to Customer' && quoteApproval.requiresApproval)}
             >
               {submissionAction === 'Save Draft' && '💾 Save Quote'}
               {submissionAction === 'Send for Approval' && '📋 Send for Approval'}

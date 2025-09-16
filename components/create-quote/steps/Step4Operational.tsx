@@ -7377,7 +7377,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         const actualSheetsNeeded = formData.operational.papers[productIndex]?.enteredSheets ?? 
                                                  perPaperCalc[productIndex]?.[0]?.recommendedSheets ?? 0;
                         // Use impressions field if available, otherwise fall back to product quantity
-                        const totalQuantity = formData.operational.impressions || productWithFinishing?.quantity || 1000;
+                        const totalQuantity = formData.operational.impressions || productWithFinishing?.quantity || 0;
                         
                         switch (baseFinishingName) {
                           case 'Lamination':

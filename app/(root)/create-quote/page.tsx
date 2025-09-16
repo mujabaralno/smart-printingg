@@ -46,6 +46,8 @@ function CreateQuoteContent() {
   const [quoteMode, setQuoteMode] = useState<"new" | "existing" | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [requiresApproval, setRequiresApproval] = useState(false);
+  const [approvalReason, setApprovalReason] = useState<string | undefined>();
   const [selectedCustomer, setSelectedCustomer] = useState<{
     id?: string; // Add optional ID field for existing customers
     clientType: 'Individual' | 'Company';
@@ -68,39 +70,13 @@ function CreateQuoteContent() {
 
   const [formData, setFormData] = useState<QuoteFormData>({
     client: { ...EMPTY_CLIENT },
-    products: [
-      {
-        productName: "Business Card",
-        quantity: 1000,
-        sides: "1" as const,
-        printingSelection: "Digital" as const,
-        flatSize: { width: 9, height: 5.5, spine: null },
-        closeSize: { width: 9, height: 5.5, spine: null },
-        useSameAsFlat: false,
-        papers: [{ name: "Art Paper", gsm: "300" }],
-        finishing: ["UV Spot", "Lamination"],
-        paperName: "Book",
-      },
-    ],
+    products: [],
     operational: {
-      papers: [
-        {
-          inputWidth: 65,
-          inputHeight: 90,
-          pricePerPacket: 240,
-          sheetsPerPacket: 500,
-          recommendedSheets: 125,
-          enteredSheets: 130,
-          outputWidth: null,
-          outputHeight: null,
-        },
-      ],
-      finishing: [
-        { name: "UV Spot", cost: 20 },
-        { name: "Lamination", cost: 15 },
-      ],
+      papers: [],
+      finishing: [],
       plates: null,
       units: null,
+      impressions: null,
     },
     calculation: {
       basePrice: 0,
@@ -115,13 +91,7 @@ function CreateQuoteContent() {
 
   // ===== NEW: state untuk Other Quantities di parent
   const mainProduct = formData.products[0];
-  const [otherQuantities, setOtherQuantities] = useState<OtherQty[]>([
-    {
-      productName: mainProduct?.productName ?? "Business Card",
-      quantity: 500,
-      price: 115,
-    },
-  ]);
+  const [otherQuantities, setOtherQuantities] = useState<OtherQty[]>([]);
 
   useEffect(() => {
     setOtherQuantities((prev) =>
@@ -1430,7 +1400,7 @@ function CreateQuoteContent() {
           return total + (pricePerPacket * actualUnitsNeeded);
         }, 0);
 
-        const platesCost = (formData.operational.plates || 0) * 25; // $25 per plate
+        const platesCost = (formData.operational.plates || 0) * 35; // $35 per plate (consistent with main calculation)
         const finishingCost = formData.operational.finishing.reduce((total, f) => {
           const isUsedByAnyProduct = formData.products.some(product => 
             product.finishing && product.finishing.includes(f.name)
@@ -1467,10 +1437,10 @@ function CreateQuoteContent() {
           papers: {
             create: formData.operational.papers.map((operationalPaper, index) => {
               // Get the corresponding paper name and gsm from product papers
-              const productPaper = formData.products[0]?.papers[index] || { name: "Standard Paper", gsm: "150" };
+              const productPaper = formData.products[0]?.papers[index] || null;
               return {
-                name: productPaper.name || "Standard Paper",
-                gsm: parseInt(productPaper.gsm) || 150,
+                name: productPaper?.name || "Standard Paper",
+                gsm: productPaper?.gsm ? parseInt(productPaper.gsm) : 150,
                 inputWidth: operationalPaper.inputWidth || 0,
                 inputHeight: operationalPaper.inputHeight || 0,
                 pricePerPacket: operationalPaper.pricePerPacket || 0,
@@ -1555,7 +1525,7 @@ function CreateQuoteContent() {
           return total + (pricePerPacket * actualUnitsNeeded);
         }, 0);
 
-        const platesCost = (formData.operational.plates || 0) * 25; // $25 per plate
+        const platesCost = (formData.operational.plates || 0) * 35; // $35 per plate (consistent with main calculation)
         const finishingCost = formData.operational.finishing.reduce((total, f) => {
           const isUsedByAnyProduct = formData.products.some(product => 
             product.finishing && product.finishing.includes(f.name)
@@ -1593,10 +1563,10 @@ function CreateQuoteContent() {
           papers: {
             create: formData.operational.papers.map((operationalPaper, index) => {
               // Get the corresponding paper name and gsm from product papers
-              const productPaper = formData.products[0]?.papers[index] || { name: "Standard Paper", gsm: "150" };
+              const productPaper = formData.products[0]?.papers[index] || null;
               return {
-                name: productPaper.name || "Standard Paper",
-                gsm: parseInt(productPaper.gsm) || 150,
+                name: productPaper?.name || "Standard Paper",
+                gsm: productPaper?.gsm ? parseInt(productPaper.gsm) : 150,
                 inputWidth: operationalPaper.inputWidth || 0,
                 inputHeight: operationalPaper.inputHeight || 0,
                 pricePerPacket: operationalPaper.pricePerPacket || 0,
@@ -1690,6 +1660,12 @@ function CreateQuoteContent() {
   const handleCloseAndGoHome = () => {
     setSaveModalOpen(false);
     router.push("/");
+  };
+
+  // Handle approval status changes from Step5
+  const handleApprovalStatusChange = (needsApproval: boolean, reason?: string) => {
+    setRequiresApproval(needsApproval);
+    setApprovalReason(reason);
   };
 
   const renderStepContent = () => {
@@ -1863,6 +1839,7 @@ function CreateQuoteContent() {
                 throw error; // Re-throw to let Step5Quotation handle the error
               }
             }}
+            onApprovalStatusChange={handleApprovalStatusChange}
           />
         );
       default:
@@ -1987,26 +1964,54 @@ function CreateQuoteContent() {
                 Quote Submitted Successfully!
               </h3>
               <p className="text-slate-600 mb-6 text-sm sm:text-base">
-                Your quote has been submitted and will appear in the Quote Management page.
+                {requiresApproval 
+                  ? "Your quote has been submitted for management approval and will appear in the Quote Management page once approved."
+                  : "Your quote has been submitted and will appear in the Quote Management page."
+                }
               </p>
+              
+              {requiresApproval && approvalReason && (
+                <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">!</span>
+                    </div>
+                    <span className="font-semibold text-orange-800">Approval Required</span>
+                  </div>
+                  <p className="text-orange-700 text-sm">{approvalReason}</p>
+                  <p className="text-orange-600 text-xs mt-2">
+                    Management will be notified automatically. You'll receive an update once approved.
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-4">
-                <Button className="w-full bg-[#ea078b] hover:bg-[#d4067a] text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                  <Link href={`mailto:${formData.client.email}`}>
-                    Send to Customer
-                  </Link>
-                </Button>
-                <Button
-                  className="w-full bg-[#f89d1d] hover:bg-[#e88a0a] text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                  onClick={handleDownloadCustomerFromModal}
-                >
-                  Download for Customer
-                </Button>
-                <Button
-                  className="w-full bg-[#27aae1] hover:bg-[#1e8bc3] text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                  onClick={handleDownloadOpsFromModal}
-                >
-                  Download Operations Copy
-                </Button>
+                {!requiresApproval && (
+                  <>
+                    <Button className="w-full bg-[#ea078b] hover:bg-[#d4067a] text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                      <Link href={`mailto:${formData.client.email}`}>
+                        Send to Customer
+                      </Link>
+                    </Button>
+                    <Button
+                      className="w-full bg-[#f89d1d] hover:bg-[#e88a0a] text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                      onClick={handleDownloadCustomerFromModal}
+                    >
+                      Download for Customer
+                    </Button>
+                  </>
+                )}
+
+                {/* Only show Operations Copy download if approval is not required */}
+                {!requiresApproval && (
+                  <Button
+                    className="w-full bg-[#27aae1] hover:bg-[#1e8bc3] text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                    onClick={handleDownloadOpsFromModal}
+                  >
+                    Download Operations Copy
+                  </Button>
+                )}
+                
                 <Button
                   variant="outline"
                   onClick={() => {

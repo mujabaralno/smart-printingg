@@ -45,7 +45,7 @@ const calculateOtherQtyPrice = (formData: QuoteFormData, otherQty: OtherQty) => 
   }, 0) * quantityRatio;
 
   // 2. Plates Cost (per plate, using Excel standard)
-  const PLATE_COST_PER_PLATE = 120; // Excel standard plate cost
+  const PLATE_COST_PER_PLATE = 35; // Consistent with main calculation
   const platesCost = (formData.operational.plates || 0) * PLATE_COST_PER_PLATE * quantityRatio;
 
   // 3. Finishing Costs (cost per unit × actual units needed)
@@ -58,7 +58,7 @@ const calculateOtherQtyPrice = (formData: QuoteFormData, otherQty: OtherQty) => 
   }, 0);
 
   // 4. Calculate base price and add margin (15% aligned with Step 5)
-  const MARGIN_PERCENTAGE = 0.15;
+  const MARGIN_PERCENTAGE = 0.30;
   const basePrice = paperCost + platesCost + finishingCost;
   const marginAmount = basePrice * MARGIN_PERCENTAGE;
   const subtotal = basePrice + marginAmount;
@@ -95,7 +95,7 @@ const calculateMainProductPrice = (formData: QuoteFormData, product: QuoteFormDa
   }, 0);
 
   // 2. Plates Cost (per plate, using Excel standard)
-  const PLATE_COST_PER_PLATE = 120; // Excel standard plate cost
+  const PLATE_COST_PER_PLATE = 35; // Consistent with main calculation
   const platesCost = (formData.operational.plates || 0) * PLATE_COST_PER_PLATE;
 
   // 3. Finishing Costs (cost per unit × actual units needed)
@@ -108,7 +108,7 @@ const calculateMainProductPrice = (formData: QuoteFormData, product: QuoteFormDa
   }, 0);
 
   // 4. Calculate base price and add margin (15% aligned with Step 5)
-  const MARGIN_PERCENTAGE = 0.15;
+  const MARGIN_PERCENTAGE = 0.30;
   const basePrice = paperCost + platesCost + finishingCost;
   const marginAmount = basePrice * MARGIN_PERCENTAGE;
   const subtotal = basePrice + marginAmount;
