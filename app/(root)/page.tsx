@@ -1125,7 +1125,8 @@ export default function DashboardPage() {
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
-                              <Button
+                              {/* Download button hidden as requested */}
+                              {/* <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDownloadPDF(quote)}
@@ -1134,7 +1135,7 @@ export default function DashboardPage() {
                                 data-quote-id={quote.id}
                               >
                                 <Download className="w-4 h-4" />
-                              </Button>
+                              </Button> */}
                             </div>
                           </div>
                         </td>
@@ -1225,7 +1226,8 @@ export default function DashboardPage() {
                               <Edit className="w-4 h-4 mr-1" />
                               Edit
                             </Button>
-                            <Button
+                            {/* Download button hidden as requested */}
+                            {/* <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleDownloadPDF(quote)}
@@ -1234,7 +1236,7 @@ export default function DashboardPage() {
                             >
                               <Download className="w-4 h-4 mr-1" />
                               PDF
-                            </Button>
+                            </Button> */}
                           </div>
                         </div>
                       </div>

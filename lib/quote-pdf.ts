@@ -1,6 +1,57 @@
 // lib/quote-pdf.ts
 import type { QuoteFormData } from "@/types";
 
+// Simple test function to check if PDF generation works
+export async function downloadTestPdf() {
+  try {
+    const { jsPDF } = (await import("jspdf")) as JsPDFModule;
+    const doc = new jsPDF();
+    
+    doc.text("Test PDF - This is a simple test", 20, 20);
+    doc.text("If you can read this, PDF generation is working", 20, 30);
+    doc.text("Date: " + new Date().toISOString(), 20, 40);
+    
+    doc.save("test-pdf.pdf");
+    console.log("Test PDF generated successfully");
+    return true;
+  } catch (error) {
+    console.error("Test PDF generation failed:", error);
+    return false;
+  }
+}
+
+// Simple working PDF generation
+export async function downloadSimplePdf(quoteData: any) {
+  try {
+    console.log("Creating simple PDF...");
+    const { jsPDF } = (await import("jspdf")) as JsPDFModule;
+    const doc = new jsPDF();
+    
+    // Add simple content
+    doc.text("QUOTATION", 20, 20);
+    doc.text(`Client: ${quoteData.clientName || 'Unknown'}`, 20, 30);
+    doc.text(`Product: ${quoteData.product || 'Printing Product'}`, 20, 40);
+    doc.text(`Quantity: ${quoteData.quantity || 100}`, 20, 50);
+    doc.text(`Amount: ${quoteData.amount || 1000}`, 20, 60);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 70);
+    
+    // Test PDF output before saving
+    const pdfData = doc.output('datauristring');
+    console.log("Simple PDF data length:", pdfData.length);
+    
+    if (pdfData.length < 1000) {
+      throw new Error("PDF appears to be empty");
+    }
+    
+    doc.save(`simple-quote-${Date.now()}.pdf`);
+    console.log("Simple PDF saved successfully");
+    return true;
+  } catch (error) {
+    console.error("Simple PDF generation failed:", error);
+    return false;
+  }
+}
+
 export interface OtherQty {
   productName: string;
   quantity: number | "";
@@ -125,10 +176,12 @@ export async function downloadCustomerPdf(
   otherQuantities: OtherQty[]
 ) {
   try {
+    console.log("Starting customer PDF generation...", { formData, otherQuantities });
     const { jsPDF } = (await import("jspdf")) as JsPDFModule;
     const autoTable = (await import("jspdf-autotable")).default as AutoTableModule["default"];
 
     const doc: JsPdfWithAutoTable = new jsPDF();
+    console.log("PDF document created successfully");
 
     // Validate form data
     if (!formData.products || formData.products.length === 0) {
@@ -168,7 +221,7 @@ export async function downloadCustomerPdf(
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(71, 85, 105);
-    doc.text("Professional Printing & Design Services", 20, 28);
+    doc.text("Professional Printing and Design Services", 20, 28);
     
     // Quote information box
     doc.setFillColor(255, 255, 255);
@@ -728,7 +781,7 @@ export async function downloadCustomerPdf(
     doc.setTextColor(30, 64, 175);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text("TERMS & CONDITIONS", 25, termsY + 12);
+    doc.text("TERMS AND CONDITIONS", 25, termsY + 12);
     
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
@@ -768,7 +821,9 @@ export async function downloadCustomerPdf(
     doc.text("Email: info@smartprinting.ae  |  Phone: +971 123 456 789", 25, footerY + 20);
 
     // Save the PDF
-    doc.save(`customer-quote-Q-001.pdf`);
+    const customerFilename = `customer-quote-${new Date().getTime()}.pdf`;
+    console.log("Saving customer PDF as:", customerFilename);
+    doc.save(customerFilename);
     console.log("Customer PDF generated successfully");
   } catch (error) {
     console.error("Error generating customer PDF:", error);
@@ -781,10 +836,12 @@ export async function downloadOpsPdf(
   otherQuantities: OtherQty[]
 ) {
   try {
+    console.log("Starting operations PDF generation...", { formData, otherQuantities });
     const { jsPDF } = (await import("jspdf")) as JsPDFModule;
     const autoTable = (await import("jspdf-autotable")).default as AutoTableModule["default"];
 
     const doc: JsPdfWithAutoTable = new jsPDF();
+    console.log("Operations PDF document created successfully");
 
     const op = formData.operational;
 
@@ -1210,7 +1267,9 @@ export async function downloadOpsPdf(
     doc.text("Email: info@smartprinting.ae  |  Phone: +971 123 456 789  |  OPERATIONS COPY", 25, footerY + 20);
 
     // Save the PDF
-    doc.save("quotation-operations.pdf");
+    const operationsFilename = `operations-quote-${new Date().getTime()}.pdf`;
+    console.log("Saving operations PDF as:", operationsFilename);
+    doc.save(operationsFilename);
     console.log("Operations PDF generated successfully");
   } catch (error) {
     console.error("Error generating operations PDF:", error);
@@ -1247,13 +1306,14 @@ export async function generateOperationalPDF(
   quoteId: string,
   formData: QuoteFormData
 ): Promise<Uint8Array> {
-  const [JsPDF, autoTableModule] = await Promise.all([
-    import("jspdf"),
-    import("jspdf-autotable"),
-  ]);
-  
-  const autoTable = autoTableModule.default;
-  const doc = new JsPDF.jsPDF() as JsPdfWithAutoTable;
+  try {
+    const [JsPDF, autoTableModule] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
+    
+    const autoTable = autoTableModule.default;
+    const doc = new JsPDF.jsPDF() as JsPdfWithAutoTable;
 
   // ============================================================================
   // PROFESSIONAL HEADER SECTION - OPERATIONS
@@ -1476,4 +1536,8 @@ export async function generateOperationalPDF(
   doc.text("Email: info@smartprinting.ae  |  Phone: +971 123 456 789  |  OPERATIONS COPY", 25, footerY + 20);
 
   return new Uint8Array(doc.output('arraybuffer'));
+  } catch (error) {
+    console.error("Error generating operational PDF:", error);
+    throw new Error(`Failed to generate operational PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }

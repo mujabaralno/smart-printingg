@@ -60,7 +60,11 @@ export async function PUT(
     console.log('📝 Update data:', JSON.stringify(body, null, 2));
     
     const dbService = getDatabaseService();
-    const updatedQuote = await dbService.updateQuote(id, body);
+    
+    // Use updateQuoteWithDetails if amounts are provided, otherwise use updateQuote
+    const updatedQuote = body.amounts 
+      ? await dbService.updateQuoteWithDetails(id, body)
+      : await dbService.updateQuote(id, body);
     
     console.log('✅ API: Quote updated successfully:', updatedQuote.id);
     return NextResponse.json(updatedQuote);

@@ -20,7 +20,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { downloadCustomerPdf, downloadOpsPdf } from "@/lib/quote-pdf";
+import { downloadCustomerPdf, downloadOpsPdf, downloadTestPdf, downloadSimplePdf } from "@/lib/quote-pdf";
 
 
 type Status = "Approved" | "Pending" | "Rejected";
@@ -77,6 +77,7 @@ export default function QuoteManagementPage() {
   const [showNewQuoteNotification, setShowNewQuoteNotification] = React.useState(false);
   const [newQuoteCount, setNewQuoteCount] = React.useState(0);
   const [downloadingPDF, setDownloadingPDF] = React.useState<string | null>(null);
+  const [downloadSuccess, setDownloadSuccess] = React.useState<string | null>(null);
   const [isCreateQuoteModalOpen, setIsCreateQuoteModalOpen] = React.useState(false);
 
   // ===== filter & paging =====
@@ -139,7 +140,7 @@ export default function QuoteManagementPage() {
       try {
         setLoading(true);
         // Add cache-busting to ensure fresh data
-        const response = await fetch('/api/quotes/direct?t=' + Date.now());
+        const response = await fetch('/api/quotes?t=' + Date.now());
         console.log('🔍 DEBUG: API Response status:', response.status, response.statusText);
         if (response.ok) {
           const quotes = await response.json();
@@ -464,10 +465,9 @@ export default function QuoteManagementPage() {
       // Update quote in database with correct schema mapping
       const updateData = {
         clientId: clientId,
-        date: new Date(draft.date + 'T00:00:00.000Z').toISOString(), // Ensure proper date format
+        date: new Date(draft.date + 'T00:00:00.000Z'), // Convert to Date object
         status: draft.status,
-        // Temporarily exclude userId to debug foreign key issue
-        // userId: draft.userId || null, // Allow null if no user assigned
+        userId: draft.userId || null, // Include userId
         product: draft.productName?.trim() || "Printing Product",
         quantity: draft.quantity === "" ? 0 : Number(draft.quantity),
         sides: draft.sides || "1", // Default to 1 side since not in edit form
@@ -482,9 +482,7 @@ export default function QuoteManagementPage() {
         closeSizeSpine: draft.closeSize?.spine || null,
         useSameAsFlat: draft.useSameAsFlat,
         colors: draft.colors ? JSON.stringify(draft.colors) : null,
-        // Temporarily exclude papers and finishing to debug foreign key issue
-        // papers: draft.papers || [],
-        // finishing: draft.finishing || [],
+        // Handle amounts separately - this will be processed by the API
         amounts: {
           base: Number(draft.amount) * 0.8, // Calculate base amount (80% of total)
           vat: Number(draft.amount) * 0.2,  // Calculate VAT (20% of total)
@@ -547,7 +545,23 @@ export default function QuoteManagementPage() {
       setOpenEdit(false);
     } catch (error) {
       console.error('Error updating quote:', error);
-      alert(`Error updating quote: ${error instanceof Error ? error.message : 'Please try again.'}`);
+      
+      // Show more specific error message
+      let errorMessage = 'Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Handle specific error cases
+        if (error.message.includes('Client ID not found')) {
+          errorMessage = 'Client information is missing. Please refresh the page and try again.';
+        } else if (error.message.includes('Failed to update quote')) {
+          errorMessage = 'Database update failed. Please check your internet connection and try again.';
+        } else if (error.message.includes('Foreign key constraint')) {
+          errorMessage = 'Invalid data reference. Please refresh the page and try again.';
+        }
+      }
+      
+      alert(`Error updating quote: ${errorMessage}`);
     }
   };
 
@@ -588,10 +602,17 @@ export default function QuoteManagementPage() {
 
   const handleDownloadPDF = async (quote: Row, type: 'customer' | 'operations') => {
     const downloadId = `${quote.id}-${type}`;
+    
+    // Prevent concurrent downloads
+    if (downloadingPDF) {
+      console.log('Download already in progress, please wait...');
+      return;
+    }
+    
     setDownloadingPDF(downloadId);
     
     try {
-      // Create a mock QuoteFormData structure for PDF generation
+      // Create a comprehensive QuoteFormData structure for PDF generation
       const mockFormData = {
         client: {
           clientType: "Company" as const,
@@ -608,9 +629,9 @@ export default function QuoteManagementPage() {
           country: "UAE"
         },
         products: [{
-          productName: quote.product || quote.productName || "Printing Product",
+          productName: String(quote.product || quote.productName || "Printing Product"),
           paperName: "Premium Paper",
-          quantity: quote.quantity || 0,
+          quantity: Number(quote.quantity) || 100,
           sides: "2" as const,
           printingSelection: "Offset" as const,
           flatSize: { width: 21, height: 29.7, spine: 0 },
@@ -641,26 +662,44 @@ export default function QuoteManagementPage() {
             cost: 0.25
           }],
           plates: 2,
-          units: quote.quantity || 100
+          units: Number(quote.quantity) || 100
         },
         calculation: {
-          basePrice: quote.amount,
+          basePrice: Number(quote.amount) || 1000,
           marginAmount: 0,
-          subtotal: quote.amount,
+          subtotal: Number(quote.amount) || 1000,
           vatAmount: 0,
-          totalPrice: quote.amount
+          totalPrice: Number(quote.amount) || 1000
         }
       };
 
+      console.log("Starting PDF download for:", { type, quoteId: quote.id });
+      
+      // Call the appropriate PDF generation function
       if (type === 'customer') {
         await downloadCustomerPdf(mockFormData, []);
-      } else {
-        // Use the operational PDF for operations team
+        setDownloadSuccess(`${quote.id} - Customer PDF downloaded successfully!`);
+      } else if (type === 'operations') {
         await downloadOpsPdf(mockFormData, []);
+        setDownloadSuccess(`${quote.id} - Operations PDF downloaded successfully!`);
       }
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setDownloadSuccess(null);
+      }, 3000);
+      
     } catch (error) {
-      console.error('Error downloading PDF:', error);
-      alert('Failed to download PDF. Please try again.');
+      console.error('❌ Error downloading PDF:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        type: typeof error
+      });
+      
+      // Show more specific error message
+      const errorMessage = error.message || 'Unknown error occurred';
+      alert(`Failed to download PDF: ${errorMessage}\n\nPlease check the browser console for more details.`);
     } finally {
       setDownloadingPDF(null);
     }
@@ -934,7 +973,6 @@ export default function QuoteManagementPage() {
                                   <Button 
                                     variant="ghost" 
                                     size="sm"
-                                    onClick={() => handleDownloadPDF(row, 'customer')}
                                     className="text-purple-600 hover:bg-purple-50 rounded-lg p-2"
                                   >
                                     <Download className="h-4 w-4" />
@@ -946,16 +984,34 @@ export default function QuoteManagementPage() {
                                     disabled={downloadingPDF === `${row.id}-customer`}
                                     className="text-green-700 hover:text-green-800 hover:bg-green-50"
                                   >
-                                    <Download className="h-3 w-3 mr-2" />
-                                    Customer PDF
+                                    {downloadingPDF === `${row.id}-customer` ? (
+                                      <>
+                                        <div className="h-3 w-3 mr-2 border-2 border-green-700 border-t-transparent rounded-full animate-spin" />
+                                        Downloading...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Download className="h-3 w-3 mr-2" />
+                                        Customer PDF
+                                      </>
+                                    )}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
                                     onClick={() => handleDownloadPDF(row, 'operations')}
                                     disabled={downloadingPDF === `${row.id}-operations`}
                                     className="text-orange-700 hover:text-orange-800 hover:bg-orange-50"
                                   >
-                                    <Download className="h-3 w-3 mr-2" />
-                                    Operations PDF
+                                    {downloadingPDF === `${row.id}-operations` ? (
+                                      <>
+                                        <div className="h-3 w-3 mr-2 border-2 border-orange-700 border-t-transparent rounded-full animate-spin" />
+                                        Downloading...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Download className="h-3 w-3 mr-2" />
+                                        Operations PDF
+                                      </>
+                                    )}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -1068,7 +1124,6 @@ export default function QuoteManagementPage() {
                               <Button 
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleDownloadPDF(row, 'customer')}
                                 className="text-purple-600 border-purple-200 hover:bg-purple-50"
                               >
                                 <Download className="w-4 h-4 mr-1" />
@@ -1081,16 +1136,34 @@ export default function QuoteManagementPage() {
                                 disabled={downloadingPDF === `${row.id}-customer`}
                                 className="text-green-700 hover:text-green-800 hover:bg-green-50"
                               >
+                                {downloadingPDF === `${row.id}-customer` ? (
+                                  <>
+                                    <div className="h-3 w-3 mr-2 border-2 border-green-700 border-t-transparent rounded-full animate-spin" />
+                                    Downloading...
+                                  </>
+                                ) : (
+                                  <>
                                 <Download className="h-3 w-3 mr-2" />
                                 Customer PDF
+                                  </>
+                                )}
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleDownloadPDF(row, 'operations')}
                                 disabled={downloadingPDF === `${row.id}-operations`}
                                 className="text-orange-700 hover:text-orange-800 hover:bg-orange-50"
                               >
+                                {downloadingPDF === `${row.id}-operations` ? (
+                                  <>
+                                    <div className="h-3 w-3 mr-2 border-2 border-orange-700 border-t-transparent rounded-full animate-spin" />
+                                    Downloading...
+                                  </>
+                                ) : (
+                                  <>
                                 <Download className="h-3 w-3 mr-2" />
                                 Operations PDF
+                                  </>
+                                )}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1665,6 +1738,14 @@ export default function QuoteManagementPage() {
         onClose={() => setIsCreateQuoteModalOpen(false)}
         onSubmit={handleCreateQuote}
       />
+
+      {/* Download Success Message */}
+      {downloadSuccess && (
+        <div className="fixed top-4 left-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-2">
+          <Download className="w-5 h-5" />
+          <span>{downloadSuccess}</span>
+        </div>
+      )}
     </div>
   );
 }

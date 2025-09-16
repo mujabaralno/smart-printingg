@@ -390,6 +390,22 @@ export class DatabaseService {
 
   async updateQuote(id: string, data: any) {
     try {
+      // Validate userId if provided
+      if (data.userId) {
+        try {
+          const userExists = await this.prisma.user.findUnique({
+            where: { id: data.userId }
+          });
+          if (!userExists) {
+            console.log(`Invalid userId: ${data.userId}, removing it`);
+            delete data.userId;
+          }
+        } catch (error) {
+          console.log(`Error validating userId: ${data.userId}, removing it`);
+          delete data.userId;
+        }
+      }
+      
       return await this.prisma.quote.update({
         where: { id },
         data,
@@ -425,18 +441,129 @@ export class DatabaseService {
 
   async updateQuoteWithDetails(id: string, data: any) {
     try {
-      return await this.prisma.quote.update({
+      // Extract related data
+      const { amounts, papers, finishing, operational, ...quoteData } = data;
+      
+      // Validate userId if provided
+      if (quoteData.userId) {
+        try {
+          const userExists = await this.prisma.user.findUnique({
+            where: { id: quoteData.userId }
+          });
+          if (!userExists) {
+            console.log(`Invalid userId: ${quoteData.userId}, removing it`);
+            delete quoteData.userId;
+          }
+        } catch (error) {
+          console.log(`Error validating userId: ${quoteData.userId}, removing it`);
+          delete quoteData.userId;
+        }
+      }
+      
+      // Start a transaction
+      const result = await this.prisma.$transaction(async (tx) => {
+        // Update the main quote
+        const updatedQuote = await tx.quote.update({
+          where: { id },
+          data: {
+            ...quoteData,
+            updatedAt: new Date()
+          },
+        });
+
+        // Update amounts if provided
+        if (amounts) {
+          // Check if amounts exist
+          const existingAmounts = await tx.quoteAmount.findMany({
+            where: { quoteId: id }
+          });
+
+          if (existingAmounts.length > 0) {
+            // Update existing amounts
+            for (const amount of existingAmounts) {
+              await tx.quoteAmount.update({
+                where: { id: amount.id },
+                data: {
+                  base: amounts.base || 0,
+                  vat: amounts.vat || 0,
+                  total: amounts.total || 0,
+                }
+              });
+            }
+          } else {
+            // Create new amounts
+            await tx.quoteAmount.create({
+              data: {
+                quoteId: id,
+                base: amounts.base || 0,
+                vat: amounts.vat || 0,
+                total: amounts.total || 0,
+              }
+            });
+          }
+        }
+
+        // Update papers if provided
+        if (papers && Array.isArray(papers)) {
+          // Delete existing papers
+          await tx.paper.deleteMany({
+            where: { quoteId: id }
+          });
+
+          // Create new papers
+          for (const paper of papers) {
+            await tx.paper.create({
+              data: {
+                quoteId: id,
+                name: paper.name || "Standard Paper",
+                gsm: paper.gsm ? Number(paper.gsm) : 150,
+                inputWidth: paper.inputWidth ? Number(paper.inputWidth) : null,
+                inputHeight: paper.inputHeight ? Number(paper.inputHeight) : null,
+                pricePerPacket: paper.pricePerPacket ? Number(paper.pricePerPacket) : null,
+                pricePerSheet: paper.pricePerSheet ? Number(paper.pricePerSheet) : null,
+                sheetsPerPacket: paper.sheetsPerPacket ? Number(paper.sheetsPerPacket) : null,
+                recommendedSheets: paper.recommendedSheets ? Number(paper.recommendedSheets) : null,
+                enteredSheets: paper.enteredSheets ? Number(paper.enteredSheets) : null,
+                outputWidth: paper.outputWidth ? Number(paper.outputWidth) : null,
+                outputHeight: paper.outputHeight ? Number(paper.outputHeight) : null,
+                selectedColors: paper.selectedColors ? String(paper.selectedColors) : null,
+              }
+            });
+          }
+        }
+
+        // Update finishing if provided
+        if (finishing && Array.isArray(finishing)) {
+          // Delete existing finishing
+          await tx.finishing.deleteMany({
+            where: { quoteId: id }
+          });
+
+          // Create new finishing
+          for (const finish of finishing) {
+            await tx.finishing.create({
+              data: {
+                quoteId: id,
+                name: finish.name || "Standard Finishing",
+                cost: finish.cost ? Number(finish.cost) : 0,
+              }
+            });
+          }
+        }
+
+        // Return the updated quote
+        return updatedQuote;
+      });
+
+      // Fetch the complete quote with relations after transaction
+      return await this.prisma.quote.findUnique({
         where: { id },
-        data: {
-          ...data,
-          updatedAt: new Date()
-        },
         include: {
           client: true,
           user: true,
+          amounts: true,
           papers: true,
           finishing: true,
-          amounts: true
         },
       });
     } catch (error) {
