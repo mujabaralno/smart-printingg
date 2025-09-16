@@ -1575,19 +1575,6 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
         </div>
       )}
 
-      {/* New Customer Indicator */}
-      {isNewCustomer && client.firstName && (
-        <div className="bg-[#27aae1]/10 border border-[#27aae1]/30 rounded-lg p-3 sm:p-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-5 h-5 rounded-full bg-[#27aae1]/100 flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-xs font-bold">+</span>
-            </div>
-            <p className="text-[#27aae1] font-medium text-sm sm:text-base">
-              New customer will be added to database
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
