@@ -6021,7 +6021,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                     </h6>
                     <div className="space-y-3">
                       {formData.products[0]?.finishing && formData.operational.finishing
-                        .filter((f) => formData.products[0].finishing.includes(f.name))
+                        .filter((f) => formData.products[0].finishing?.includes(f.name))
                         .map((f) => {
                           const actualSheetsNeeded = openData?.op?.enteredSheets ?? openData?.calc?.recommendedSheets ?? 0;
                           return (
@@ -6044,7 +6044,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           <span className="text-2xl font-bold text-green-600">
                             {fmt(
                               formData.products[0]?.finishing ? formData.operational.finishing
-                                .filter((f) => formData.products[0].finishing.includes(f.name))
+                                .filter((f) => formData.products[0].finishing?.includes(f.name))
                                 .reduce((acc, f) => {
                                   const actualSheetsNeeded = openData?.op?.enteredSheets ?? openData?.calc?.recommendedSheets ?? 0;
                                   return acc + ((f.cost ?? 0) * actualSheetsNeeded);
@@ -6132,7 +6132,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                         <span className="font-semibold text-[#27aae1]">
                           {fmt(
                             (formData.products[0]?.finishing ? formData.operational.finishing
-                              .filter((f) => formData.products[0].finishing.includes(f.name))
+                              .filter((f) => formData.products[0].finishing?.includes(f.name))
                               .reduce((acc, f) => {
                                 const actualSheetsNeeded = openData?.op?.enteredSheets ?? openData?.calc?.recommendedSheets ?? 0;
                                 return acc + ((f.cost ?? 0) * actualSheetsNeeded);
@@ -6146,7 +6146,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                           {fmt(
                             (calculateTotalCost(openData.op, openData.op?.enteredSheets ?? openData.calc?.recommendedSheets ?? 0) + 
                              (formData.products[0]?.finishing ? formData.operational.finishing
-                               .filter((f) => formData.products[0].finishing.includes(f.name))
+                               .filter((f) => formData.products[0].finishing?.includes(f.name))
                                .reduce((acc, f) => {
                                  const actualSheetsNeeded = openData?.op?.enteredSheets ?? openData?.calc?.recommendedSheets ?? 0;
                                  return acc + ((f.cost ?? 0) * actualSheetsNeeded);
@@ -6199,7 +6199,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                     {fmt(
                       calculateTotalCost(openData.op, openData.op?.enteredSheets ?? openData.calc?.recommendedSheets ?? 0) +
                         (formData.products[0]?.finishing ? formData.operational.finishing
-                          .filter((f) => formData.products[0].finishing.includes(f.name))
+                          .filter((f) => formData.products[0].finishing?.includes(f.name))
                           .reduce((acc, f) => {
                             const actualSheetsNeeded = openData?.op?.enteredSheets ?? openData?.calc?.recommendedSheets ?? 0;
                             return acc + ((f.cost ?? 0) * actualSheetsNeeded);

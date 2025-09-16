@@ -423,13 +423,14 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
 
   // Check if this is a template-based quote (has pre-filled product data)
   const isTemplateQuote = formData.products.length > 0 && 
+    formData.products[0] && // Ensure product exists
     formData.products[0].productName && 
     formData.products[0].productName !== "" &&
     formData.products[0].productName !== "Business Card" && // Exclude default "Business Card"
-    (formData.products[0].papers.length > 0 && formData.products[0].papers[0].name !== "") || // Has paper info
-    (formData.products[0].finishing.length > 0) || // Has finishing info
+    ((formData.products[0].papers && formData.products[0].papers.length > 0 && formData.products[0].papers[0].name !== "") || // Has paper info
+    (formData.products[0].finishing && formData.products[0].finishing.length > 0) || // Has finishing info
     (formData.products[0].colors && (formData.products[0].colors.front || formData.products[0].colors.back)) || // Has color info
-    (formData.products[0].quantity && formData.products[0].quantity > 100); // Has meaningful quantity
+    (formData.products[0].quantity && formData.products[0].quantity > 100)); // Has meaningful quantity
 
   const updateProduct = (idx: number, patch: Partial<Product>) => {
     const next = [...formData.products];
@@ -600,8 +601,8 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
       ];
       
       const finishingChecks = allFinishingOptions.reduce((acc, option) => {
-        acc[`${option}CaseInsensitive`] = formData.products[0].finishing.some(f => f.toLowerCase() === option.toLowerCase());
-        acc[`${option}StartsWith`] = formData.products[0].finishing.some(f => f.toLowerCase().startsWith(option.toLowerCase()));
+        acc[`${option}CaseInsensitive`] = formData.products[0].finishing?.some(f => f.toLowerCase() === option.toLowerCase()) || false;
+        acc[`${option}StartsWith`] = formData.products[0].finishing?.some(f => f.toLowerCase().startsWith(option.toLowerCase())) || false;
         return acc;
       }, {});
       
@@ -667,9 +668,10 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
   const toggleFinishing = (pIdx: number, option: string, side?: string) => {
     const product = formData.products[pIdx];
     const finishingKey = side ? `${option}-${side}` : option;
-    const finishing = product.finishing.includes(finishingKey)
-      ? product.finishing.filter((x) => x !== finishingKey)
-      : [...product.finishing, finishingKey];
+    const currentFinishing = product.finishing || [];
+    const finishing = currentFinishing.includes(finishingKey)
+      ? currentFinishing.filter((x) => x !== finishingKey)
+      : [...currentFinishing, finishingKey];
     updateProduct(pIdx, { finishing });
   };
 
@@ -1211,7 +1213,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                         {product.papers.length > 0 && product.papers[0].name && 
                           `, Paper: ${product.papers[0].name} ${product.papers[0].gsm}gsm`
                         }
-                        {product.finishing.length > 0 && 
+                        {product.finishing && product.finishing.length > 0 && 
                           `, Finishing: ${product.finishing.join(', ')}`
                         }
                         {product.colors && (product.colors.front || product.colors.back) && 
@@ -1892,7 +1894,8 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                                 console.log(`🔄 Checkbox ${option} changed to:`, checked);
                                 if (!checked) {
                                   // Remove all variants of this finishing option (case-insensitive)
-                                  const updatedFinishing = product.finishing.filter(f => {
+                                  const currentFinishing = product.finishing || [];
+                                  const updatedFinishing = currentFinishing.filter(f => {
                                     if (typeof f === 'string') {
                                       const normalizedFinishing = f.toLowerCase();
                                       const normalizedOption = option.toLowerCase();
@@ -1904,7 +1907,8 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                                 } else {
                                   // Add default side when checked (except for Folding and Die Cutting)
                                   const finishingKey = product.sides === "2" && !["Folding", "Die Cutting"].includes(option) ? `${option}-Front` : option;
-                                  const updatedFinishing = [...product.finishing.filter(f => {
+                                  const currentFinishing = product.finishing || [];
+                                  const updatedFinishing = [...currentFinishing.filter(f => {
                                     if (typeof f === 'string') {
                                       const normalizedFinishing = f.toLowerCase();
                                       const normalizedOption = option.toLowerCase();
@@ -1934,10 +1938,11 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
                         
                         {product.sides === "2" && isFinishingSelected(product, option) && !["Folding", "Die Cutting"].includes(option) && (
                           <Select
-                            value={product.finishing.find(f => f.startsWith(option))?.split('-')[1] || "Front"}
+                            value={product.finishing?.find(f => f.startsWith(option))?.split('-')[1] || "Front"}
                             onValueChange={(side) => {
                               // Remove old variants and add new one
-                              const updatedFinishing = product.finishing.filter(f => !f.startsWith(option));
+                              const currentFinishing = product.finishing || [];
+                              const updatedFinishing = currentFinishing.filter(f => !f.startsWith(option));
                               updatedFinishing.push(`${option}-${side}`);
                               updateProduct(idx, { finishing: updatedFinishing });
                             }}

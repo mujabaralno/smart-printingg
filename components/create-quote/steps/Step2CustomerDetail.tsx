@@ -761,11 +761,16 @@ const Step2CustomerDetail: FC<Step2Props> = ({ formData, setFormData }) => {
     try {
       setIsLoadingCustomers(true);
       const response = await fetch('/api/clients');
+      console.log('Response status:', response.status, 'Response ok:', response.ok);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetched customers:', data.length);
         setCustomers(data);
       } else {
-        console.error('Failed to fetch customers');
+        console.error('Failed to fetch customers - Status:', response.status);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
         setCustomers([]);
       }
     } catch (error) {
