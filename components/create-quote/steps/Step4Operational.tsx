@@ -2167,9 +2167,10 @@ function calculateCutStrategy(sheetWidth: number, sheetHeight: number, maxWidth:
   const piecesPerRow = Math.floor(sheetWidth / maxWidth);
   const piecesPerCol = Math.floor(sheetHeight / maxHeight);
   
-  // Calculate actual piece dimensions
-  const pieceWidth = sheetWidth / piecesPerRow;
-  const pieceHeight = sheetHeight / piecesPerCol;
+  // Each cut piece should be the machine max dimensions (52x72)
+  // This ensures consistent cut piece sizes regardless of input sheet size
+  const pieceWidth = maxWidth;
+  const pieceHeight = maxHeight;
   
   // Generate pieces
   for (let row = 0; row < piecesPerCol; row++) {
@@ -2306,11 +2307,12 @@ function drawFinalPrintingLayout(
     const pieceWidth = piece.width * scale;
     const pieceHeight = piece.height * scale;
     
-    // Calculate how many output items fit on this piece
+    // Calculate how many output items fit on this cut piece
+    // Use the actual output dimensions passed to the function
     const itemsPerRow = Math.floor(piece.width / outputWidth);
     const itemsPerCol = Math.floor(piece.height / outputHeight);
     
-    // Draw output items
+    // Draw output items on the cut piece
     for (let row = 0; row < itemsPerCol; row++) {
       for (let col = 0; col < itemsPerRow; col++) {
         const itemX = pieceX + col * (outputWidth * scale);
@@ -2357,7 +2359,7 @@ function drawFinalPrintingLayout(
   ctx.fillStyle = 'rgba(30, 64, 175, 0.9)';
   ctx.fillText(infoText, 15, 12);
 
-  // Draw efficiency information
+  // Draw efficiency information - use actual output dimensions for calculation
   const totalOutputItems = cutPieces.pieces.reduce((total, piece) => {
     const itemsPerRow = Math.floor(piece.width / outputWidth);
     const itemsPerCol = Math.floor(piece.height / outputHeight);
@@ -5085,8 +5087,9 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
             
 
-            {/* Cutting Layout Visualization */}
-                        <Card className="border-0 shadow-lg w-full mx-0">
+            {/* Cutting Layout Visualization - TEMPORARILY HIDDEN FOR CLIENT CLARIFICATION */}
+            {false && (
+            <Card className="border-0 shadow-lg w-full mx-0">
               <CardHeader className="pb-3">
                 <CardTitle className="text-xl md:text-2xl font-bold text-slate-800 flex items-center">
                   <Settings className="w-6 h-6 md:w-7 md:h-7 mr-2 md:mr-3 text-red-600" />
@@ -5095,9 +5098,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               </CardHeader>
               <CardContent className="space-y-4 w-full px-2 md:px-4">
                 <div className="space-y-3">
-                                      <h5 className="text-base md:text-lg font-semibold text-slate-700">How the 100×70cm Input Sheet is Cut for Machine Compatibility</h5>
+                  <h5 className="text-base md:text-lg font-semibold text-slate-700">How the 100×70cm Input Sheet is Cut for Machine Compatibility</h5>
                   
-                  {/* Cutting Layout Canvas */}
                   <div className="w-full h-[250px] sm:h-[350px] md:h-[450px] lg:h-[500px] bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-lg p-1 shadow-lg overflow-hidden">
                     <div className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
                       <canvas
@@ -5129,9 +5131,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                     </div>
                   </div>
 
-                  {/* Cutting Information Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    {/* Cutting Strategy */}
                     <div className="bg-white rounded-xl p-4 border border-red-200 shadow-sm">
                       <h6 className="font-semibold text-slate-800 mb-3 text-center flex items-center justify-center">
                         <Settings className="w-4 h-4 mr-2 text-red-600" />
@@ -5159,7 +5159,6 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                       </div>
                     </div>
 
-                    {/* Cutting Results */}
                     <div className="bg-white rounded-xl p-4 border border-red-200 shadow-sm">
                       <h6 className="font-semibold text-slate-800 mb-3 text-center flex items-center justify-center">
                         <Calculator className="w-4 h-4 mr-2 text-red-600" />
@@ -5193,9 +5192,11 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 </div>
               </CardContent>
             </Card>
+            )}
 
-            {/* Final Printing Layout Visualization */}
-                        <Card className="border-0 shadow-lg w-full mx-0">
+            {/* Final Printing Layout Visualization - TEMPORARILY HIDDEN FOR CLIENT CLARIFICATION */}
+            {false && (
+            <Card className="border-0 shadow-lg w-full mx-0">
               <CardHeader className="pb-3">
                 <CardTitle className="text-xl md:text-2xl font-bold text-slate-800 flex items-center">
                   <Palette className="w-6 h-6 md:w-7 md:h-7 mr-2 md:mr-3 text-green-600" />
@@ -5204,9 +5205,8 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
               </CardHeader>
               <CardContent className="space-y-4 w-full px-2 md:px-4">
                 <div className="space-y-3">
-                                      <h5 className="text-base md:text-lg font-semibold text-slate-700">Final Printing on Cut Pieces (e.g., 50×35cm)</h5>
+                  <h5 className="text-base md:text-lg font-semibold text-slate-700">Final Printing on Cut Pieces (e.g., 50×35cm)</h5>
                   
-                  {/* Final Printing Layout Canvas */}
                   <div className="w-full h-[250px] sm:h-[350px] md:h-[450px] lg:h-[500px] bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-1 shadow-lg overflow-hidden">
                     <div className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
                       <canvas
@@ -5235,11 +5235,10 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                       )}
                     </div>
                   </div>
-
-
                 </div>
               </CardContent>
             </Card>
+            )}
 
             {/* Enhanced Sheet Optimization Preview - MAXIMUM SCALE */}
             <Card className="border-0 shadow-lg w-full mx-0">
