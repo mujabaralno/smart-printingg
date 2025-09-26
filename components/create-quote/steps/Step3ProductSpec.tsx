@@ -1194,7 +1194,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
 
         {/* Template Quote Indicator */}
         {isTemplateQuote && (
-          <div className="bg-[#27aae1]/10 border border-[#27aae1]/30 rounded-lg p-3 sm:p-4">
+          <div className="bg-[#27aae1]/10 border border-[#27aae1]/30 border-dashed rounded-lg p-3 sm:p-4">
             <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start space-x-2">
                 <div className="w-5 h-5 rounded-full bg-[#27aae1]/100 flex items-center justify-center mt-0.5 flex-shrink-0">
@@ -1249,7 +1249,7 @@ const Step3ProductSpec: FC<Step3Props> = ({ formData, setFormData }) => {
 
         {/* Products */}
         {formData.products.map((product, idx) => (
-          <Card key={idx} className="border-0 shadow-lg">
+          <Card key={idx} className="border border-slate-300 shadow-lg">
             <CardHeader className="pb-3 sm:pb-4">
               <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center space-x-3">

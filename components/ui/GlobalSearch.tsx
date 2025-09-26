@@ -1,13 +1,22 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Search, Clock, TrendingUp, X, User, Building, FileText, Package } from "lucide-react";
+import {
+  Search,
+  Clock,
+  TrendingUp,
+  X,
+  User,
+  Building,
+  FileText,
+  Package,
+} from "lucide-react";
 import { Button } from "./button";
 import { useRouter } from "next/navigation";
 
 interface SearchResult {
   id: string;
-  type: 'quote' | 'client' | 'supplier' | 'material' | 'user';
+  type: "quote" | "client" | "supplier" | "material" | "user";
   title: string;
   subtitle: string;
   data: any;
@@ -25,13 +34,65 @@ export default function GlobalSearch() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isMac, setIsMac] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const inEditable = !!target?.closest(
+        'input, textarea, [contenteditable="true"], [role="textbox"]'
+      );
+
+      // ESC to close
+      if (e.key === "Escape" && isOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(false);
+        setQuery("");
+        setResults([]);
+        setSearchError(null);
+        return;
+      }
+
+      // Cmd+K (Mac) or Ctrl+K (Win/Linux)
+      const isCmdK =
+        (e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey);
+      // Fallback: Ctrl+P
+      const isCtrlP = (e.key === "p" || e.key === "P") && e.ctrlKey;
+
+      if (!inEditable && (isCmdK || isCtrlP)) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(true);
+        setShowHistory(true);
+        setTimeout(() => inputRef.current?.focus(), 50);
+        return;
+      }
+
+      // "/" to open search
+      if (e.key === "/" && !isOpen && !e.ctrlKey && !e.metaKey && !inEditable) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(true);
+        setTimeout(() => inputRef.current?.focus(), 50);
+        return;
+      }
+    };
+
+    // use capture: true to override browser default (especially Ctrl+K)
+    document.addEventListener("keydown", handler, { capture: true });
+    return () =>
+      document.removeEventListener("keydown", handler, {
+        capture: true,
+      } as any);
+  }, [isOpen]);
 
   // Load search history from API
   useEffect(() => {
     const loadSearchHistory = async () => {
       try {
         setIsLoadingHistory(true);
-        const response = await fetch('/api/search/history');
+        const response = await fetch("/api/search/history");
         if (response.ok) {
           const history = await response.json();
           if (Array.isArray(history)) {
@@ -40,17 +101,17 @@ export default function GlobalSearch() {
             setSearchHistory([]);
           }
         } else {
-          console.warn('Search history not available:', response.status);
+          console.warn("Search history not available:", response.status);
           setSearchHistory([]);
         }
       } catch (error) {
-        console.warn('Search history not available:', error);
+        console.warn("Search history not available:", error);
         setSearchHistory([]);
       } finally {
         setIsLoadingHistory(false);
       }
     };
-    
+
     if (isOpen) {
       loadSearchHistory();
     }
@@ -59,7 +120,10 @@ export default function GlobalSearch() {
   // Handle click outside to close search
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
         setQuery("");
         setResults([]);
@@ -97,18 +161,20 @@ export default function GlobalSearch() {
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
-      
+
       // Focus trap: keep focus within modal
       const handleTabKey = (e: KeyboardEvent) => {
-        if (e.key === 'Tab') {
+        if (e.key === "Tab") {
           const focusableElements = searchRef.current?.querySelectorAll(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
           );
-          
+
           if (focusableElements && focusableElements.length > 0) {
             const firstElement = focusableElements[0] as HTMLElement;
-            const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-            
+            const lastElement = focusableElements[
+              focusableElements.length - 1
+            ] as HTMLElement;
+
             if (e.shiftKey) {
               if (document.activeElement === firstElement) {
                 e.preventDefault();
@@ -123,9 +189,9 @@ export default function GlobalSearch() {
           }
         }
       };
-      
-      document.addEventListener('keydown', handleTabKey);
-      return () => document.removeEventListener('keydown', handleTabKey);
+
+      document.addEventListener("keydown", handleTabKey);
+      return () => document.removeEventListener("keydown", handleTabKey);
     }
   }, [isOpen]);
 
@@ -140,38 +206,45 @@ export default function GlobalSearch() {
     setSearchError(null);
     try {
       // Search using API
-      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+      const response = await fetch(
+        `/api/search?q=${encodeURIComponent(searchQuery)}`
+      );
       if (response.ok) {
         const results = await response.json();
         setResults(results);
       } else {
-        console.error('Search API error:', response.status, response.statusText);
+        console.error(
+          "Search API error:",
+          response.status,
+          response.statusText
+        );
         setResults([]);
-        setSearchError('Search failed. Please try again.');
+        setSearchError("Search failed. Please try again.");
         // Show error message to user
         setShowHistory(false);
       }
-      
+
       // Save search history
       if (searchQuery.trim()) {
         try {
-          await fetch('/api/search/history', {
-            method: 'POST',
+          await fetch("/api/search/history", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({ query: searchQuery.trim() }),
           });
         } catch (historyError) {
-          console.error('Failed to save search history:', historyError);
+          console.error("Failed to save search history:", historyError);
           // Don't show error to user for history saving
         }
       }
-
     } catch (error) {
-      console.error('Search error:', error);
+      console.error("Search error:", error);
       setResults([]);
-      setSearchError('Search failed. Please check your connection and try again.');
+      setSearchError(
+        "Search failed. Please check your connection and try again."
+      );
       setShowHistory(false);
     } finally {
       setIsSearching(false);
@@ -201,17 +274,17 @@ export default function GlobalSearch() {
 
   const getResultIcon = (type: string) => {
     switch (type) {
-      case 'quote':
+      case "quote":
         return <FileText className="w-4 h-4 text-blue-600" />;
-      case 'client':
+      case "client":
         return <Building className="w-4 h-4 text-green-600" />;
-      case 'supplier':
+      case "supplier":
         return <Package className="w-4 h-4 text-purple-600" />;
-      case 'material':
+      case "material":
         return <Package className="w-4 h-4 text-orange-600" />;
-      case 'user':
+      case "user":
         return <User className="w-4 h-4 text-indigo-600" />;
-      case 'salesPerson':
+      case "salesPerson":
         return <User className="w-4 h-4 text-teal-600" />;
       default:
         return <Search className="w-4 h-4 text-gray-600" />;
@@ -220,52 +293,58 @@ export default function GlobalSearch() {
 
   const getResultTypeLabel = (type: string) => {
     switch (type) {
-      case 'quote':
-        return 'Quote';
-      case 'client':
-        return 'Client';
-      case 'supplier':
-        return 'Supplier';
-      case 'material':
-        return 'Material';
-      case 'user':
-        return 'User';
-      case 'salesPerson':
-        return 'Sales Person';
+      case "quote":
+        return "Quote";
+      case "client":
+        return "Client";
+      case "supplier":
+        return "Supplier";
+      case "material":
+        return "Material";
+      case "user":
+        return "User";
+      case "salesPerson":
+        return "Sales Person";
       default:
-        return 'Item';
+        return "Item";
     }
   };
 
   const handleResultClick = (result: SearchResult) => {
     // Handle result click based on type with proper navigation
     switch (result.type) {
-      case 'quote':
+      case "quote":
         // Navigate to quote management page with the specific quote
-        router.push(`/quote-management?quoteId=${result.data.quoteId || result.data.id}`);
+        router.push(
+          `/quote-management?quoteId=${result.data.quoteId || result.data.id}`
+        );
         break;
-      case 'client':
+      case "client":
         // Navigate to client management page with the specific client
         router.push(`/client-management?clientId=${result.data.id}`);
         break;
-      case 'supplier':
+      case "supplier":
         // Navigate to supplier management page with the specific supplier
         router.push(`/supplier-management?supplierId=${result.data.id}`);
         break;
-      case 'material':
+      case "material":
         // Navigate to supplier management page with the specific material
         router.push(`/supplier-management?materialId=${result.data.id}`);
         break;
-      case 'user':
+      case "user":
         // Navigate to user management page with the specific user
         router.push(`/user-management?userId=${result.data.id}`);
         break;
-      case 'salesPerson':
+      case "salesPerson":
         // Navigate to sales person management page with the specific sales person
-        router.push(`/sales-person?salesPersonId=${result.data.salesPersonId || result.data.id}`);
+        router.push(
+          `/sales-person?salesPersonId=${
+            result.data.salesPersonId || result.data.id
+          }`
+        );
         break;
     }
-    
+
     // Close search modal
     setIsOpen(false);
     setQuery("");
@@ -278,17 +357,29 @@ export default function GlobalSearch() {
       {/* Search Trigger Button */}
       <Button
         variant="outline"
-        className="w-full justify-start text-xs sm:text-sm text-muted-foreground bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 rounded-2xl shadow-sm hover:shadow-md"
+        size="lg"
+        className="w-full justify-start text-xs sm:text-sm text-muted-foreground bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 rounded-xl shadow-sm hover:shadow-md h-12"
         onClick={() => setIsOpen(true)}
       >
         <Search className="mr-2 sm:mr-3 h-4 w-4 text-gray-400" />
-        <span className="text-gray-600 truncate">Search quotes, clients, suppliers, sales persons...</span>
-        {/* Keyboard shortcut indicator removed */}
+        <span className="text-gray-400 truncate">
+          Search quotes, clients, suppliers, sales persons...
+        </span>
+
+        {/* shortcut hint */}
+        <span className="ml-auto hidden sm:flex items-center gap-1 text-[11px] text-gray-500">
+          <kbd className="px-1.5 py-1 rounded bg-gray-100 border border-gray-200 font-mono">
+            {isMac ? "⌘" : "Ctrl"}
+          </kbd>
+          <kbd className="px-1.5 py-1 rounded bg-gray-100 border border-gray-200 font-mono">
+            K
+          </kbd>
+        </span>
       </Button>
 
       {/* Search Modal */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-start justify-center pt-16 sm:pt-20 px-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -303,7 +394,9 @@ export default function GlobalSearch() {
             {/* Search Input */}
             <div className="p-4 sm:p-6 border-b border-gray-100">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Global Search</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Global Search
+                </h3>
                 <button
                   type="button"
                   onClick={() => {
@@ -391,17 +484,29 @@ export default function GlobalSearch() {
                   </div>
                 </div>
               ) : isSearching ? (
-                <div className="p-12 text-center text-gray-500">
-                  <div className="flex items-center justify-center space-x-3">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span className="text-gray-600">Searching...</span>
-                  </div>
+                <div className="p-3 space-y-3">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center space-x-4 p-4 border border-transparent rounded-lg bg-gray-50 animate-pulse"
+                    >
+                      {/* Icon skeleton */}
+                      <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-lg" />
+
+                      {/* Text skeleton */}
+                      <div className="flex-1 space-y-2">
+                        <div className="w-24 h-3 bg-gray-200 rounded" />
+                        <div className="w-40 h-3 bg-gray-200 rounded" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : results.length > 0 ? (
                 <div className="p-3">
                   <div className="mb-3 px-2">
                     <p className="text-sm text-gray-600">
-                      Found {results.length} result{results.length !== 1 ? 's' : ''} for "{query}"
+                      Found {results.length} result
+                      {results.length !== 1 ? "s" : ""} for "{query}"
                     </p>
                   </div>
                   {results.map((result) => (
@@ -435,7 +540,9 @@ export default function GlobalSearch() {
               ) : showHistory && searchHistory.length > 0 ? (
                 <div className="p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-gray-700">Recent Searches</h3>
+                    <h3 className="text-sm font-semibold text-gray-700">
+                      Recent Searches
+                    </h3>
                     <button
                       onClick={clearHistory}
                       className="text-sm text-gray-500 hover:text-gray-700 transition-colors px-2 py-1 rounded hover:bg-gray-100"
@@ -447,7 +554,9 @@ export default function GlobalSearch() {
                     {isLoadingHistory ? (
                       <div className="p-3 text-center text-gray-500">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                        <span className="text-gray-600">Loading history...</span>
+                        <span className="text-gray-600">
+                          Loading history...
+                        </span>
                       </div>
                     ) : searchHistory.length === 0 ? (
                       <div className="p-3 text-center text-gray-500">
@@ -461,7 +570,9 @@ export default function GlobalSearch() {
                           className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-all duration-200 group border border-transparent hover:border-gray-200"
                         >
                           <Clock className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                          <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors flex-1">{historyItem}</span>
+                          <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors flex-1">
+                            {historyItem}
+                          </span>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                           </div>
@@ -479,7 +590,9 @@ export default function GlobalSearch() {
                     <div className="space-y-2">
                       <p className="text-gray-600">No results found for</p>
                       <p className="text-gray-900 font-medium">"{query}"</p>
-                      <p className="text-sm text-gray-400">Try different keywords or check spelling</p>
+                      <p className="text-sm text-gray-400">
+                        Try different keywords or check spelling
+                      </p>
                     </div>
                     <div className="pt-4">
                       <button
@@ -502,7 +615,13 @@ export default function GlobalSearch() {
             {/* Footer */}
             <div className="p-3 sm:p-4 border-t border-gray-100 bg-gray-50">
               <div className="text-center text-xs text-gray-500">
-                <span>Press <kbd className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">Esc</kbd> to close or click the <X className="w-3 h-3 inline" /> button</span>
+                <span>
+                  Press{" "}
+                  <kbd className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">
+                    Esc
+                  </kbd>{" "}
+                  to close or click the <X className="w-3 h-3 inline" /> button
+                </span>
               </div>
             </div>
           </div>

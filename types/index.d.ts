@@ -395,3 +395,15 @@ export interface ApprovalDecision {
   notes?: string;
   reason?: string;
 }
+
+
+export type MetricCard = {
+  title: string;
+  value: string | number;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  trend: Trend;             // "up" | "down" | "flat"
+  deltaLabel: string;       // contoh: "+12.5%" / "-20%" / "±0%"
+  highlight: string;        // subjudul tebal (contoh: "Trending up this month")
+  caption: string;          // deskripsi kecil (contoh: "Visitors for the last 6 months")
+  filterValue: string;      // untuk klik filter
+};

@@ -51,7 +51,7 @@ export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperPro
           {isNavbarOpen && (
             <div className="lg:hidden absolute inset-0 bg-black/20 pointer-events-none z-10" />
           )}
-          <div className="max-w-7xl mx-auto w-full">
+          <div className=" mx-auto p-1 px-5 md:px-0 md:py-5 lg:mx-auto w-full">
             {children}
           </div>
         </main>

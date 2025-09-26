@@ -96,6 +96,28 @@
   --radius: 16px;
 }
 
+/* Light mode (default) */
+:root {
+  --background: 248 250 252; /* rgb(248,250,252) */
+  --foreground: 15 23 42;    /* rgb(15,23,42) */
+  --card: 255 255 255;
+  --muted: 241 245 249;
+}
+
+/* Dark mode (aktif saat <html class="dark">) */
+:root.dark {
+  --background: 9 13 23;     /* rgb(9,13,23) */
+  --foreground: 226 232 240; /* rgb(226,232,240) */
+  --card: 17 24 39;
+  --muted: 30 41 59;
+}
+
+/* Util agar bisa dipakai seperti Tailwind utilities */
+.bg-background { background-color: rgb(var(--background)); }
+.text-foreground { color: rgb(var(--foreground)); }
+.bg-card { background-color: rgb(var(--card)); }
+.bg-muted { background-color: rgb(var(--muted)); }
+
 /* Typography Stack - SF Pro Rounded Feel */
 @font-face {
   font-family: 'SF Pro Rounded';
@@ -1114,4 +1136,19 @@ header {
   .client-management-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
+}
+
+@keyframes spin-slow { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
+.animate-spin-slow { animation: spin-slow 2s linear infinite; }
+
+@keyframes blink {
+  0%, 100% { opacity: 0.3; background-color: rgb(226 232 240 / 0.3); }
+  25% { opacity: 0.8; background-color: rgb(226 232 240 / 0.8); }
+  50% { opacity: 0.5; background-color: rgb(226 232 240 / 0.6); }
+  75% { opacity: 0.9; background-color: rgb(226 232 240 / 0.9); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }

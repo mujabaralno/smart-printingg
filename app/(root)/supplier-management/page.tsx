@@ -1,22 +1,46 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  Suspense,
+} from "react";
 import { useSearchParams } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Pencil, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Plus, Pencil, PackageIcon, Calendar } from "lucide-react";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { materials as EXISTING_MATERIALS } from "@/constants";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Remove the static import and define the interface
+// =====================================
+// Types (keep original logic intact)
+// =====================================
 interface MaterialRow {
   id: string;
   materialId: string;
@@ -51,7 +75,9 @@ interface SupplierRow {
   materials: MaterialRow[];
 }
 
-// Fallback data structure for when API fails
+// =====================================
+// Fallback data (unchanged)
+// =====================================
 const createFallbackData = () => {
   const suppliers: SupplierRow[] = [
     {
@@ -63,10 +89,10 @@ const createFallbackData = () => {
       countryCode: "+971",
       country: "UAE",
       status: "Active",
-      materials: []
+      materials: [],
     },
     {
-      id: "fallback-2", 
+      id: "fallback-2",
       name: "Apex Papers",
       contact: "Contact Person",
       email: "apexpapers@example.com",
@@ -74,8 +100,8 @@ const createFallbackData = () => {
       countryCode: "+971",
       country: "UAE",
       status: "Active",
-      materials: []
-    }
+      materials: [],
+    },
   ];
 
   const materials: MaterialRow[] = [
@@ -88,33 +114,35 @@ const createFallbackData = () => {
       cost: 0.5,
       unit: "per_sheet",
       lastUpdated: "2025-08-20",
-      status: "Active"
+      status: "Active",
     },
     {
       id: "fallback-m-2",
-      materialId: "M-002", 
+      materialId: "M-002",
       name: "Art Paper",
       gsm: "150",
       supplier: suppliers[0],
       cost: 0.18,
       unit: "per_sheet",
       lastUpdated: "2025-08-20",
-      status: "Active"
-    }
+      status: "Active",
+    },
   ];
 
-  // Link materials to suppliers
   suppliers[0].materials = materials;
   suppliers[1].materials = [];
 
   return { suppliers, materials };
 };
 
-const currency = new Intl.NumberFormat("en-AE", { 
-  style: "currency", 
+// =====================================
+// Utils (unchanged)
+// =====================================
+const currency = new Intl.NumberFormat("en-AE", {
+  style: "currency",
   currency: "AED",
   minimumFractionDigits: 2,
-  maximumFractionDigits: 2
+  maximumFractionDigits: 2,
 });
 
 const fmtDate = (iso?: string) =>
@@ -128,34 +156,90 @@ const fmtDate = (iso?: string) =>
 
 const unitLabel = (unit: string) => {
   switch (unit) {
-    case "per_sheet": return "Per Sheet";
-    case "per_packet": return "Per Packet";
-    case "per_kg": return "Per KG";
-    default: return unit;
+    case "per_sheet":
+      return "Per Sheet";
+    case "per_packet":
+      return "Per Packet";
+    case "per_kg":
+      return "Per KG";
+    default:
+      return unit;
   }
 };
 
-const PAGE_SIZE = 20;
+// =====================================
+// Skeleton rows (match ClientTable style)
+// =====================================
+function TableSkeletonRow() {
+  return (
+    <TableRow>
+      <TableCell className="py-4">
+        <div className="h-6 w-24 rounded bg-slate-200 animate-pulse" />
+      </TableCell>
+      <TableCell>
+        <div className="h-4 w-40 rounded bg-slate-200 animate-pulse" />
+      </TableCell>
+      <TableCell>
+        <div className="h-6 w-14 rounded bg-slate-200 animate-pulse" />
+      </TableCell>
+      <TableCell>
+        <div className="h-4 w-36 rounded bg-slate-200 animate-pulse" />
+      </TableCell>
+      <TableCell>
+        <div className="h-4 w-24 rounded bg-slate-200 animate-pulse" />
+      </TableCell>
+      <TableCell>
+        <div className="h-4 w-20 rounded bg-slate-200 animate-pulse" />
+      </TableCell>
+      <TableCell>
+        <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
+      </TableCell>
+      <TableCell>
+        <div className="h-6 w-20 rounded bg-slate-200 animate-pulse" />
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="ml-auto h-8 w-8 rounded-md bg-slate-200 animate-pulse" />
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function TableSkeleton({ rows = 10 }: { rows?: number }) {
+  return (
+    <TableBody>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableSkeletonRow key={i} />
+      ))}
+    </TableBody>
+  );
+}
+
+// =====================================
+// Main content (keeps original logic, adjusts TABLE + PAGINATION styling)
+// =====================================
+const DEFAULT_PAGE_SIZE = 10;
+
 type Mode = "add" | "edit";
 
-// Component that uses useSearchParams - must be wrapped in Suspense
 function SupplierManagementContent() {
   const searchParams = useSearchParams();
   const [suppliers, setSuppliers] = useState<SupplierRow[]>([]);
   const [materials, setMaterials] = useState<MaterialRow[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // ===== filter & paging =====
+
+  // filters
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState<string>("");
   const [to, setTo] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "Active" | "Inactive">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "Active" | "Inactive"
+  >("all");
   const [unitFilter, setUnitFilter] = useState<"all" | string>("all");
-  const [page, setPage] = useState(1);
-  const [showAll, setShowAll] = useState(false);
-  
-  // Handle search params for material highlighting
-  const [highlightedMaterialId, setHighlightedMaterialId] = useState<string | null>(null);
+
+  // highlight by URL param (unchanged)
+  const [highlightedMaterialId, setHighlightedMaterialId] = useState<
+    string | null
+  >(null);
   const highlightedMaterialRef = useRef<HTMLTableRowElement>(null);
 
   // modal
@@ -172,93 +256,74 @@ function SupplierManagementContent() {
     status: "Active",
   });
 
-  // Handle URL parameters for material highlighting
+  // ===== pagination state MATCHING ClientTable =====
+  const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
+  const [page, setPage] = useState(1);
+
   useEffect(() => {
-    const materialId = searchParams.get('materialId');
+    const materialId = searchParams.get("materialId");
     if (materialId) {
       setHighlightedMaterialId(materialId);
-      // Clear the highlight after 5 seconds
       setTimeout(() => setHighlightedMaterialId(null), 5000);
-      
-      // Scroll to the highlighted material after a short delay to ensure it's rendered
       setTimeout(() => {
         if (highlightedMaterialRef.current) {
-          highlightedMaterialRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
+          highlightedMaterialRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
           });
         }
       }, 100);
     }
   }, [searchParams]);
 
-  // Load data from database
+  // Load data (unchanged logic)
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        console.log('Loading supplier and material data...');
-        
-        // Load suppliers
-        const suppliersResponse = await fetch('/api/suppliers');
-        console.log('Suppliers response status:', suppliersResponse.status);
+        const suppliersResponse = await fetch("/api/suppliers");
         if (suppliersResponse.ok) {
           const suppliersData = await suppliersResponse.json();
-          console.log('Suppliers data loaded:', suppliersData.length, 'suppliers');
           setSuppliers(suppliersData);
         } else {
-          console.error('Failed to load suppliers:', suppliersResponse.status);
-          // Fallback to static data if API fails
-          const { suppliers: fallbackSuppliers, materials: fallbackMaterials } = createFallbackData();
-          setSuppliers(fallbackSuppliers);
-          setMaterials(fallbackMaterials);
-          console.log('Using fallback suppliers and materials');
+          const { suppliers: fs, materials: fm } = createFallbackData();
+          setSuppliers(fs);
+          setMaterials(fm);
         }
-        
-        // Load materials
-        const materialsResponse = await fetch('/api/materials');
-        console.log('Materials response status:', materialsResponse.status);
+
+        const materialsResponse = await fetch("/api/materials");
         if (materialsResponse.ok) {
           const materialsData = await materialsResponse.json();
-          console.log('Materials data loaded:', materialsData.length, 'materials');
           setMaterials(materialsData);
         } else {
-          console.error('Failed to load materials:', materialsResponse.status);
-          // Fallback to static data if API fails
-          const { suppliers: fallbackSuppliers, materials: fallbackMaterials } = createFallbackData();
-          setSuppliers(fallbackSuppliers);
-          setMaterials(fallbackMaterials);
-          console.log('Using fallback suppliers and materials');
+          const { suppliers: fs, materials: fm } = createFallbackData();
+          setSuppliers(fs);
+          setMaterials(fm);
         }
-      } catch (error) {
-        console.error('Error loading data:', error);
-        // Fallback to static data on error
-        const { suppliers: fallbackSuppliers, materials: fallbackMaterials } = createFallbackData();
-        setSuppliers(fallbackSuppliers);
-        setMaterials(fallbackMaterials);
-        console.log('Using fallback suppliers and materials due to error');
+      } catch (e) {
+        const { suppliers: fs, materials: fm } = createFallbackData();
+        setSuppliers(fs);
+        setMaterials(fm);
       } finally {
         setLoading(false);
-        console.log('Data loading completed');
       }
     };
 
     loadData();
   }, []);
 
-  // filter
+  // filter (unchanged)
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     return materials.filter((r) => {
       const hitSearch =
-        s === "" || 
+        s === "" ||
         r.name.toLowerCase().includes(s) ||
         r.supplier.name.toLowerCase().includes(s) ||
         r.materialId.toLowerCase().includes(s);
 
       const hitStatus = statusFilter === "all" || r.status === statusFilter;
       const hitUnit = unitFilter === "all" || r.unit === unitFilter;
-
       const hitFrom = from === "" || r.lastUpdated >= from;
       const hitTo = to === "" || r.lastUpdated <= to;
 
@@ -266,13 +331,21 @@ function SupplierManagementContent() {
     });
   }, [materials, search, from, to, statusFilter, unitFilter]);
 
-  // pagination
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  useEffect(() => setPage(1), [search, from, to, statusFilter, unitFilter]);
-  const start = (page - 1) * PAGE_SIZE;
-  const current = showAll ? filtered : filtered.slice(start, start + PAGE_SIZE);
+  // keep page in range when data/rowsPerPage change
+  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
+  useEffect(() => {
+    const newTotal = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
+    if (page > newTotal) setPage(1);
+  }, [filtered.length, rowsPerPage, page]);
 
-  // helpers
+  const startIndex = (page - 1) * rowsPerPage;
+  const endIndex = Math.min(startIndex + rowsPerPage, filtered.length);
+  const pageData = useMemo(
+    () => filtered.slice(startIndex, endIndex),
+    [filtered, startIndex, endIndex]
+  );
+
+  // helpers (unchanged)
   const newId = useCallback(() => {
     const n = materials.length + 1;
     return `M-${String(n).padStart(3, "0")}`;
@@ -301,8 +374,6 @@ function SupplierManagementContent() {
     setOpen(true);
   };
 
-
-
   const onSubmit = async () => {
     if (!draft.name || !draft.supplier?.id || draft.cost === undefined) {
       alert("Please complete all required fields.");
@@ -322,55 +393,60 @@ function SupplierManagementContent() {
 
       let response;
       if (mode === "add") {
-        response = await fetch('/api/materials', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        response = await fetch("/api/materials", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(materialData),
         });
       } else {
         response = await fetch(`/api/materials/${draft.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(materialData),
         });
       }
 
       if (response.ok) {
         const newMaterial = await response.json();
-        
         if (mode === "add") {
-          setMaterials(prev => [...prev, newMaterial]);
+          setMaterials((prev) => [...prev, newMaterial]);
         } else {
-          setMaterials(prev => prev.map(m => m.id === draft.id ? newMaterial : m));
+          setMaterials((prev) =>
+            prev.map((m) => (m.id === draft.id ? newMaterial : m))
+          );
         }
-        
         setOpen(false);
       } else {
         const errorData = await response.json();
-        alert(`Error: ${errorData.error || 'Failed to save material'}`);
+        alert(`Error: ${errorData.error || "Failed to save material"}`);
       }
     } catch (error) {
-      console.error('Error saving material:', error);
-      alert('Error saving material');
+      console.error("Error saving material:", error);
+      alert("Error saving material");
     }
   };
 
-
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-[#27aae1] to-[#ea078b] bg-clip-text text-transparent">
-            Supplier Management
-          </h1>
-          <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
-            Manage your suppliers and materials. Track costs, monitor inventory, and optimize your supply chain.
-          </p>
+        
+        <div className="flex gap-5">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#27aae1] rounded-full shadow-lg">
+            <PackageIcon className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              Supplier Management
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Manage your suppliers and materials. Track costs, monitor
+              inventory, and optimize your supply chain.
+            </p>
+          </div>
         </div>
 
-        {/* Search and Add Supplier */}
+        {/* Search + Add */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <Input
@@ -381,7 +457,7 @@ function SupplierManagementContent() {
             />
           </div>
           <Button
-            onClick={() => setOpen(true)}
+            onClick={onAdd}
             className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
           >
             <Plus className="h-5 w-5 mr-2" />
@@ -390,44 +466,63 @@ function SupplierManagementContent() {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:flex md:flex-row md:items-center bg-white p-4 shadow-sm border border-slate-200 rounded-2xl gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Updated From</label>
-            <Input 
-              type="date" 
-              value={from} 
-              onChange={(e) => setFrom(e.target.value)}
-              className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10 text-base"
-            />
+            <label className="text-sm font-medium text-slate-700">
+              Updated From
+            </label>
+            {loading ? (
+             <Skeleton className="h-8 w-80"/> 
+            ): (
+            <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-2">
+              <Calendar className="h-4 w-4 text-slate-500" />
+              <input
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                className="h-9 w-[9.5rem] text-sm outline-none"
+              />
+              <span className="text-slate-400">–</span>
+              <input
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                className="h-9 w-[9.5rem] text-sm outline-none"
+              />
+            </div>
+            )}
           </div>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Updated To</label>
-            <Input 
-              type="date" 
-              value={to} 
-              onChange={(e) => setTo(e.target.value)}
-              className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10 text-base"
-            />
-          </div>
-
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Status</label>
-            <Select value={statusFilter} onValueChange={(v: "all" | "Active" | "Inactive") => setStatusFilter(v)}>
-              <SelectTrigger className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+            {loading ? (
+              <Skeleton className="h-8 w-28" />
+            ): (
+              <Select
+                value={statusFilter}
+                onValueChange={(v: "all" | "Active" | "Inactive") =>
+                  setStatusFilter(v)
+                }
+              >
+                <SelectTrigger className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
-
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Unit</label>
-            <Select value={unitFilter} onValueChange={(v: "all" | string) => setUnitFilter(v)}>
+            {loading ? (
+              <Skeleton className="h-8 w-28" />
+            ): (
+            <Select
+              value={unitFilter}
+              onValueChange={(v: "all" | string) => setUnitFilter(v)}
+            >
               <SelectTrigger className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10">
                 <SelectValue placeholder="All Units" />
               </SelectTrigger>
@@ -438,40 +533,18 @@ function SupplierManagementContent() {
                 <SelectItem value="per_kg">Per KG</SelectItem>
               </SelectContent>
             </Select>
+            )}
           </div>
         </div>
 
-        {/* Results Summary */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-sm text-slate-600">
-          <span>Showing {current.length} of {filtered.length} materials</span>
-          {filtered.length > PAGE_SIZE && (
-            <Button
-              variant="ghost"
-              onClick={() => setShowAll(!showAll)}
-              className="text-[#f89d1d] hover:text-[#e88a0a] hover:bg-[#f89d1d]/10 rounded-xl px-4 py-2 transition-all duration-200"
-            >
-              {showAll ? (
-                <>
-                  <ChevronUp className="h-4 w-4 mr-2" />
-                  Show Less
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4 mr-2" />
-                  Show All ({filtered.length})
-                </>
-              )}
-            </Button>
-          )}
-        </div>
-
-        {/* Search Result Highlight Banner */}
+        {/* Highlight banner (unchanged) */}
         {highlightedMaterialId && (
           <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-center space-x-2">
               <span className="text-yellow-800">🔍</span>
               <span className="text-yellow-800 font-medium">
-                Material found from search! The highlighted row will automatically scroll into view.
+                Material found from search! The highlighted row will
+                automatically scroll into view.
               </span>
               <button
                 onClick={() => setHighlightedMaterialId(null)}
@@ -483,173 +556,218 @@ function SupplierManagementContent() {
           </div>
         )}
 
-        {/* Desktop Table - Completely Fixed Width */}
-        <div className="hidden lg:block border border-slate-200 rounded-2xl">
-          <Table className="w-full table-fixed" style={{ tableLayout: 'fixed', width: '100%', overflow: 'hidden' }}>
-            <TableHeader className="bg-slate-50">
-              <TableRow className="border-slate-200">
-                <TableHead className="text-slate-700 font-semibold p-4 w-24">Material ID</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-40">Material</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-20">GSM</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-36">Supplier</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-24">Cost</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-20">Unit</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-28">Last Updated</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-24">Status</TableHead>
-                <TableHead className="text-slate-700 font-semibold p-4 w-28">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+        {/* ====== DESKTOP TABLE — Styled to match ClientTable ====== */}
+        <div className="hidden lg:block overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="overflow-x-auto">
+            <Table
+              className="w-full table-fixed"
+              style={{
+                tableLayout: "fixed",
+                width: "100%",
+                overflow: "hidden",
+              }}
+            >
+              <TableHeader className="bg-slate-50">
+                <TableRow className="border-slate-200">
+                  <TableHead className="text-slate-700 font-semibold p-4 w-24">
+                    Material ID
+                  </TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-40">
+                    Material
+                  </TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-20">
+                    GSM
+                  </TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-36">
+                    Supplier
+                  </TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-24">
+                    Cost
+                  </TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-20">
+                    Unit
+                  </TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-28">
+                    Last Updated
+                  </TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-24">
+                    Status
+                  </TableHead>
+                  <TableHead className="text-slate-700 font-semibold p-4 w-24 text-right">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center py-16 text-slate-500">
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                      <span>Loading materials...</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : current.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center py-16 text-slate-500">
-                    No materials found with current filters.
-                  </TableCell>
-                </TableRow>
+                <TableSkeleton rows={rowsPerPage} />
+              ) : pageData.length === 0 ? (
+                <TableBody>
+                  <TableRow>
+                    <TableCell
+                      colSpan={9}
+                      className="py-14 text-center text-slate-500"
+                    >
+                      No materials found with current filters.
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
               ) : (
-                current.map((r) => (
-                  <TableRow 
-                    key={r.id} 
-                    ref={(highlightedMaterialId === r.id || highlightedMaterialId === r.materialId) ? highlightedMaterialRef : null}
-                    className={`hover:bg-slate-50 transition-colors duration-200 border-slate-100 ${
-                      highlightedMaterialId === r.id || highlightedMaterialId === r.materialId 
-                        ? 'bg-yellow-50 border-yellow-200 shadow-md' 
-                        : ''
-                    }`}
-                  >
-                    <TableCell className="font-medium text-slate-900 p-4 w-20">
-                      <div className="truncate">
-                        <div className="flex items-center space-x-2">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                            {r.materialId}
-                          </span>
-                          {(highlightedMaterialId === r.id || highlightedMaterialId === r.materialId) && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 animate-pulse">
-                              🔍 Found
-                            </span>
-                          )}
+                <TableBody>
+                  {pageData.map((r) => (
+                    <TableRow
+                      key={r.id}
+                      ref={
+                        highlightedMaterialId === r.id ||
+                        highlightedMaterialId === r.materialId
+                          ? highlightedMaterialRef
+                          : null
+                      }
+                      className={`hover:bg-slate-50 transition-colors duration-200 border-slate-100 ${
+                        highlightedMaterialId === r.id ||
+                        highlightedMaterialId === r.materialId
+                          ? "bg-yellow-50 border-yellow-200 shadow-md"
+                          : ""
+                      }`}
+                    >
+                      <TableCell className="p-4 w-24">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                          {r.materialId}
+                        </span>
+                      </TableCell>
+                      <TableCell className="p-4 w-40">
+                        <div className="font-medium text-slate-900 truncate">
+                          {r.name}
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-40 wrap-text">
-                      <div>{r.name}</div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-24">
-                      <div>
+                      </TableCell>
+                      <TableCell className="p-4 w-20">
                         {r.gsm ? (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#27aae1]/20 text-[#27aae1] whitespace-nowrap">
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-[#27aae1]/20 text-[#27aae1] border border-[#27aae1]/30 whitespace-nowrap">
                             {r.gsm} gsm
                           </span>
                         ) : (
                           <span className="text-slate-400">—</span>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-36 wrap-text">
-                      <div>{r.supplier.name}</div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-24">
-                      <div>{currency.format(r.cost)}</div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-20">
-                      <div>{unitLabel(r.unit)}</div>
-                    </TableCell>
-                    <TableCell className="text-slate-700 p-4 w-28">
-                      <div>{fmtDate(r.lastUpdated)}</div>
-                    </TableCell>
-                    <TableCell className="p-4 w-24">
-                      <div>
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                          r.status === "Active" 
-                            ? "bg-green-100 text-green-800" 
-                            : "bg-red-100 text-red-800"
-                        }`}>
+                      </TableCell>
+                      <TableCell className="p-4 w-36">
+                        <div className="text-sm text-slate-900 truncate">
+                          {r.supplier.name}
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-4 w-24">
+                        <div className="text-sm text-slate-900">
+                          {currency.format(r.cost)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-4 w-20">
+                        <div className="text-sm text-slate-900">
+                          {unitLabel(r.unit)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-4 w-28">
+                        <div className="text-sm text-slate-900">
+                          {fmtDate(r.lastUpdated)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-4 w-24">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                            r.status === "Active"
+                              ? "bg-green-100 text-green-700 border border-green-200"
+                              : "bg-rose-100 text-rose-700 border border-rose-200"
+                          }`}
+                        >
                           {r.status}
                         </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="p-4 w-28">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Edit Material"
-                            onClick={() => onEdit(r)}
-                            className="w-8 h-8 hover:bg-[#f89d1d]/10 hover:text-[#f89d1d] transition-colors duration-200"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                      <TableCell className="p-4 w-24 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Edit Material"
+                          onClick={() => onEdit(r)}
+                          className="h-8 w-8"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
               )}
-            </TableBody>
-          </Table>
+            </Table>
+          </div>
+
+          {/* ===== Footer Pagination (MATCH ClientTable) ===== */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200">
+            <div className="text-xs sm:text-sm text-slate-600">
+              {loading
+                ? `Loading ${rowsPerPage} rows…`
+                : filtered.length > 0
+                ? `${startIndex + 1}–${endIndex} of ${filtered.length} rows`
+                : "0 of 0 rows"}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">Rows per page</span>
+                <select
+                  value={rowsPerPage}
+                  disabled={loading}
+                  onChange={(e) => {
+                    setRowsPerPage(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="h-8 rounded-md border border-slate-300 bg-white px-2 text-sm disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#27aae1]/40"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(1)}
+                  disabled={loading || page === 1}
+                >
+                  «
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={loading || page === 1}
+                >
+                  ‹
+                </Button>
+                <span className="text-xs sm:text-sm text-slate-600 px-2">
+                  Page <b>{page}</b> / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={loading || page === totalPages}
+                >
+                  ›
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(totalPages)}
+                  disabled={loading || page === totalPages}
+                >
+                  »
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-center gap-2 pb-6">
-          <Button
-            variant="ghost"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="w-10 h-10 rounded-xl hover:bg-slate-100"
-          >
-            ‹
-          </Button>
-
-          {Array.from({ length: Math.min(pageCount, 5) }).map((_, i) => {
-            const n = i + 1;
-            if (pageCount > 5 && n === 4) {
-              return (
-                <React.Fragment key="dots">
-                  <span className="px-3 text-slate-500">…</span>
-                  <Button
-                    variant={page === pageCount ? "default" : "ghost"}
-                    onClick={() => setPage(pageCount)}
-                    className="w-10 h-10 rounded-xl"
-                  >
-                    {pageCount}
-                  </Button>
-                </React.Fragment>
-              );
-            }
-            if (pageCount > 5 && n > 3) return null;
-            return (
-              <Button
-                key={n}
-                variant={page === n ? "default" : "ghost"}
-                onClick={() => setPage(n)}
-                className="w-10 h-10 rounded-xl"
-              >
-                {n}
-              </Button>
-            );
-          })}
-
-          <Button
-            variant="ghost"
-            disabled={page >= pageCount}
-            onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-            className="w-10 h-10 rounded-xl hover:bg-slate-100"
-          >
-            ›
-          </Button>
-        </div>
-
-        {/* Mobile Cards */}
+        {/* ===== MOBILE CARDS (kept) ===== */}
         <div className="lg:hidden space-y-4 p-4">
           {loading ? (
             <div className="text-center py-16 text-slate-500">
@@ -658,31 +776,35 @@ function SupplierManagementContent() {
                 <span>Loading materials...</span>
               </div>
             </div>
-          ) : current.length === 0 ? (
+          ) : pageData.length === 0 ? (
             <div className="text-center py-16 text-slate-500">
               No materials found with current filters.
             </div>
           ) : (
-            current.map((r) => (
-              <Card key={r.id} className="p-4 border-slate-200 bg-white shadow-sm">
+            pageData.map((r) => (
+              <Card
+                key={r.id}
+                className="p-4 border-slate-200 bg-white shadow-sm"
+              >
                 <div className="space-y-4">
-                  {/* Header with Material ID and Status */}
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm font-medium text-slate-900 bg-green-100 text-green-800 px-3 py-2 rounded-lg">
+                    <span className="font-mono text-sm font-medium text-slate-900 bg-green-100  px-3 py-2 rounded-lg">
                       {r.materialId}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      r.status === "Active" 
-                        ? "bg-green-100 text-green-700 border-green-200"
-                        : "bg-red-100 text-red-700 border-red-200"
-                    }`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        r.status === "Active"
+                          ? "bg-green-100 text-green-700 border-green-200"
+                          : "bg-red-100 text-red-700 border-red-200"
+                      }`}
+                    >
                       {r.status}
                     </span>
                   </div>
-                  
-                  {/* Material Info */}
                   <div className="bg-slate-50 p-3 rounded-lg">
-                    <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Material</div>
+                    <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
+                      Material
+                    </div>
                     <div className="font-semibold text-slate-900">{r.name}</div>
                     {r.gsm && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mt-2">
@@ -690,32 +812,42 @@ function SupplierManagementContent() {
                       </span>
                     )}
                   </div>
-                  
-                  {/* Supplier and Cost */}
                   <div className="grid grid-cols-1 gap-3">
                     <div className="bg-slate-50 p-3 rounded-lg">
-                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Supplier</div>
-                      <div className="font-medium text-slate-900">{r.supplier.name}</div>
+                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
+                        Supplier
+                      </div>
+                      <div className="font-medium text-slate-900">
+                        {r.supplier.name}
+                      </div>
                     </div>
                     <div className="bg-slate-50 p-3 rounded-lg">
-                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Cost</div>
-                      <div className="font-semibold text-slate-900">{currency.format(r.cost)}</div>
+                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
+                        Cost
+                      </div>
+                      <div className="font-semibold text-slate-900">
+                        {currency.format(r.cost)}
+                      </div>
                     </div>
                   </div>
-                  
-                  {/* Unit and Last Updated */}
                   <div className="grid grid-cols-1 gap-3">
                     <div className="bg-slate-50 p-3 rounded-lg">
-                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Unit</div>
-                      <div className="font-medium text-slate-900">{unitLabel(r.unit)}</div>
+                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
+                        Unit
+                      </div>
+                      <div className="font-medium text-slate-900">
+                        {unitLabel(r.unit)}
+                      </div>
                     </div>
                     <div className="bg-slate-50 p-3 rounded-lg">
-                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Last Updated</div>
-                      <div className="font-medium text-slate-900">{fmtDate(r.lastUpdated)}</div>
+                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
+                        Last Updated
+                      </div>
+                      <div className="font-medium text-slate-900">
+                        {fmtDate(r.lastUpdated)}
+                      </div>
                     </div>
                   </div>
-                  
-                  {/* Actions */}
                   <div className="flex items-center justify-center pt-3 border-t border-slate-200">
                     <Button
                       variant="outline"
@@ -734,7 +866,7 @@ function SupplierManagementContent() {
         </div>
       </div>
 
-      {/* ===== Modal Add/Edit Material ===== */}
+      {/* ===== Modal Add/Edit Material (unchanged) ===== */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[520px] rounded-2xl">
           <DialogHeader>
@@ -746,18 +878,30 @@ function SupplierManagementContent() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               <div>
-                <Label htmlFor="materialId" className="text-sm font-medium text-slate-700">Material ID</Label>
+                <Label
+                  htmlFor="materialId"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Material ID
+                </Label>
                 <Input
                   id="materialId"
                   placeholder="e.g. ART-001"
                   value={draft.materialId}
-                  onChange={(e) => setDraft({ ...draft, materialId: e.target.value })}
+                  onChange={(e) =>
+                    setDraft({ ...draft, materialId: e.target.value })
+                  }
                   className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl"
                   disabled={mode === "edit"}
                 />
               </div>
               <div>
-                <Label htmlFor="name" className="text-sm font-medium text-slate-700">Material Name</Label>
+                <Label
+                  htmlFor="name"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Material Name
+                </Label>
                 <Input
                   id="name"
                   placeholder="e.g. Art Paper"
@@ -767,7 +911,12 @@ function SupplierManagementContent() {
                 />
               </div>
               <div>
-                <Label htmlFor="gsm" className="text-sm font-medium text-slate-700">GSM (Paper Weight)</Label>
+                <Label
+                  htmlFor="gsm"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  GSM (Paper Weight)
+                </Label>
                 <Input
                   id="gsm"
                   placeholder="e.g. 300, 150, 80"
@@ -775,26 +924,46 @@ function SupplierManagementContent() {
                   onChange={(e) => setDraft({ ...draft, gsm: e.target.value })}
                   className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl"
                 />
-                <p className="text-xs text-slate-500 mt-1">Leave empty for non-paper materials</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Leave empty for non-paper materials
+                </p>
               </div>
               <div>
-                <Label htmlFor="supplier" className="text-sm font-medium text-slate-700">Supplier</Label>
-                                 <Select value={draft.supplier?.id} onValueChange={(v: string) => {
-                   const selectedSupplier = suppliers.find(s => s.id === v);
-                   setDraft({ ...draft, supplier: { id: v, name: selectedSupplier?.name || '' } });
-                 }}>
+                <Label
+                  htmlFor="supplier"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Supplier
+                </Label>
+                <Select
+                  value={draft.supplier?.id}
+                  onValueChange={(v: string) => {
+                    const selectedSupplier = suppliers.find((s) => s.id === v);
+                    setDraft({
+                      ...draft,
+                      supplier: { id: v, name: selectedSupplier?.name || "" },
+                    });
+                  }}
+                >
                   <SelectTrigger className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl">
                     <SelectValue placeholder="Select supplier" />
                   </SelectTrigger>
                   <SelectContent>
-                    {suppliers.map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    {suppliers.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="cost" className="text-sm font-medium text-slate-700">Cost</Label>
+                <Label
+                  htmlFor="cost"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Cost
+                </Label>
                 <Input
                   id="cost"
                   type="number"
@@ -802,13 +971,23 @@ function SupplierManagementContent() {
                   min="0"
                   placeholder="0.00"
                   value={draft.cost}
-                  onChange={(e) => setDraft({ ...draft, cost: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setDraft({ ...draft, cost: Number(e.target.value) })
+                  }
                   className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl"
                 />
               </div>
               <div>
-                <Label htmlFor="unit" className="text-sm font-medium text-slate-700">Unit</Label>
-                <Select value={draft.unit} onValueChange={(v: string) => setDraft({ ...draft, unit: v })}>
+                <Label
+                  htmlFor="unit"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Unit
+                </Label>
+                <Select
+                  value={draft.unit}
+                  onValueChange={(v: string) => setDraft({ ...draft, unit: v })}
+                >
                   <SelectTrigger className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl">
                     <SelectValue placeholder="Select unit" />
                   </SelectTrigger>
@@ -820,18 +999,35 @@ function SupplierManagementContent() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="lastUpdated" className="text-sm font-medium text-slate-700">Last Updated</Label>
+                <Label
+                  htmlFor="lastUpdated"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Last Updated
+                </Label>
                 <Input
                   id="lastUpdated"
                   type="date"
                   value={draft.lastUpdated}
-                  onChange={(e) => setDraft({ ...draft, lastUpdated: e.target.value })}
+                  onChange={(e) =>
+                    setDraft({ ...draft, lastUpdated: e.target.value })
+                  }
                   className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl"
                 />
               </div>
               <div>
-                <Label htmlFor="status" className="text-sm font-medium text-slate-700">Status</Label>
-                <Select value={draft.status} onValueChange={(v: "Active" | "Inactive") => setDraft({ ...draft, status: v })}>
+                <Label
+                  htmlFor="status"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Status
+                </Label>
+                <Select
+                  value={draft.status}
+                  onValueChange={(v: "Active" | "Inactive") =>
+                    setDraft({ ...draft, status: v })
+                  }
+                >
                   <SelectTrigger className="border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -845,14 +1041,14 @@ function SupplierManagementContent() {
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => setOpen(false)}
               className="border-slate-300 hover:border-slate-400 hover:bg-slate-50 px-6 py-2 rounded-xl"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={onSubmit}
               className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-2 rounded-xl"
             >
@@ -865,17 +1061,19 @@ function SupplierManagementContent() {
   );
 }
 
-// Main wrapper component with Suspense boundary
+// Main wrapper with Suspense (unchanged)
 export default function SupplierManagementPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f89d1d] mx-auto"></div>
-          <p className="text-slate-600">Loading supplier management...</p>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f89d1d] mx-auto"></div>
+            <p className="text-slate-600">Loading supplier management...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <SupplierManagementContent />
     </Suspense>
   );

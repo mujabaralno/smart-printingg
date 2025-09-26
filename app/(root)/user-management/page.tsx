@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -32,13 +33,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Edit3, Crown, User, Calculator, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Edit3, Crown, User, Calculator, UsersIcon } from "lucide-react";
 import RoleBadge from "@/components/shared/RoleBadge";
 import StatusChip from "@/components/shared/StatusChip";
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { getDisplayId } from "@/lib/auth";
-import { useState } from "react";
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleDateString("id-ID", {
@@ -47,111 +46,154 @@ const fmt = (iso: string) =>
     year: "numeric",
   });
 
+// ===== Skeleton matching ClientTable style =====
+function SkeletonBlock({ className = "" }: { className?: string }) {
+  return <div className={`bg-slate-200 animate-pulse rounded ${className}`} />;
+}
+function TableSkeletonRow() {
+  return (
+    <TableRow>
+      <TableCell className="py-4">
+        <SkeletonBlock className="h-6 w-24" />
+      </TableCell>
+      <TableCell>
+        <SkeletonBlock className="h-6 w-40" />
+      </TableCell>
+      <TableCell>
+        <SkeletonBlock className="h-4 w-28" />
+      </TableCell>
+      <TableCell>
+        <SkeletonBlock className="h-6 w-24" />
+      </TableCell>
+      <TableCell>
+        <SkeletonBlock className="h-6 w-24" />
+      </TableCell>
+      <TableCell className="text-center">
+        <SkeletonBlock className="h-8 w-20 mx-auto" />
+      </TableCell>
+      <TableCell className="text-center">
+        <SkeletonBlock className="h-6 w-14 mx-auto" />
+      </TableCell>
+    </TableRow>
+  );
+}
+function TableSkeleton({ rows = 10 }: { rows?: number }) {
+  return (
+    <TableBody>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableSkeletonRow key={i} />
+      ))}
+    </TableBody>
+  );
+}
+
 export default function UserManagementPage() {
-  const [users, setUsers] = useState<AppUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<AppUserRole>("user");
-  const [active, setActive] = useState(true);
-  const [error, setError] = useState("");
-  const [profilePictureData, setProfilePictureData] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | AppUserRole>("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "Active" | "Inactive">("all");
-  const [showAll, setShowAll] = useState(false);
+  // ===== Original state & logic (kept) =====
+  const [users, setUsers] = React.useState<AppUser[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [open, setOpen] = React.useState(false);
+  const [editingUserId, setEditingUserId] = React.useState<string | null>(null);
+  const [name, setName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [role, setRole] = React.useState<AppUserRole>("user");
+  const [active, setActive] = React.useState(true);
+  const [error, setError] = React.useState("");
+  const [profilePictureData, setProfilePictureData] = React.useState<
+    string | null
+  >(null);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [roleFilter, setRoleFilter] = React.useState<"all" | AppUserRole>(
+    "all"
+  );
+  const [statusFilter, setStatusFilter] = React.useState<
+    "all" | "Active" | "Inactive"
+  >("all");
 
-  const PAGE_SIZE = 10;
+  // ===== New: ClientTable-style pagination state =====
+  const DEFAULT_PAGE_SIZE = 20;
+  const [rowsPerPage, setRowsPerPage] = React.useState(DEFAULT_PAGE_SIZE);
+  const [page, setPage] = React.useState(1);
 
-  // Load users from database on page load
   React.useEffect(() => {
     const loadUsers = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/users');
+        const response = await fetch("/api/users");
         if (response.ok) {
           const usersData = await response.json();
           if (usersData.length > 0) {
-            // Transform database users to match AppUser format
-            const transformedUsers = usersData.map((user: any, index: number) => ({
-              id: user.id, // Keep the database ID for operations
-              displayId: getDisplayId(user.id), // Display ID for UI
+            const transformedUsers = usersData.map((user: any) => ({
+              id: user.id,
+              displayId: getDisplayId(user.id),
               name: user.name,
               email: user.email,
-              joined: user.createdAt ? user.createdAt.split('T')[0] : new Date().toISOString().slice(0, 10),
+              joined: user.createdAt
+                ? user.createdAt.split("T")[0]
+                : new Date().toISOString().slice(0, 10),
               role: user.role as AppUserRole,
-              status: "Active" as const, // Default to Active
-              password: "", // Don't load passwords from database for security
-              profilePicture: user.profilePicture || null, // Include profile picture
+              status: "Active" as const,
+              password: "",
+              profilePicture: user.profilePicture || null,
             }));
             setUsers(transformedUsers);
           } else {
-            // If no users in database, use seed users
-            console.log('No users in database, using seed users');
-            const seedUsersWithDisplayIds = seedUsers.map(user => ({
+            const seedUsersWithDisplayIds = seedUsers.map((user) => ({
               ...user,
-              displayId: getDisplayId(user.id)
+              displayId: getDisplayId(user.id),
             }));
             setUsers(seedUsersWithDisplayIds);
           }
         } else {
-          console.error('Failed to load users');
-          // Fallback to seed users if API fails
-          const seedUsersWithDisplayIds = seedUsers.map(user => ({
+          const seedUsersWithDisplayIds = seedUsers.map((user) => ({
             ...user,
-            displayId: getDisplayId(user.id)
+            displayId: getDisplayId(user.id),
           }));
           setUsers(seedUsersWithDisplayIds);
         }
       } catch (error) {
-        console.error('Error loading users:', error);
-        // Fallback to seed users if API fails
-        const seedUsersWithDisplayIds = seedUsers.map(user => ({
+        const seedUsersWithDisplayIds = seedUsers.map((user) => ({
           ...user,
-          displayId: getDisplayId(user.id)
+          displayId: getDisplayId(user.id),
         }));
         setUsers(seedUsersWithDisplayIds);
+        console.error(error);
       } finally {
         setLoading(false);
       }
     };
-
     loadUsers();
   }, []);
 
-  // Filter users based on search and filters
+  // ===== Filtering (kept) =====
   const filtered = users.filter((u) => {
-    const matchesSearch = 
-      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (u.displayId || u.id).toLowerCase().includes(searchTerm.toLowerCase());
-    
+    const q = searchTerm.toLowerCase();
+    const matchesSearch =
+      u.name.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      (u.displayId || u.id).toLowerCase().includes(q);
     const matchesRole = roleFilter === "all" || u.role === roleFilter;
     const matchesStatus = statusFilter === "all" || u.status === statusFilter;
-    
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  // Paginate results
-  const current = showAll ? filtered : filtered.slice(0, PAGE_SIZE);
+  // ===== Pagination derived data =====
+  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
+  React.useEffect(() => {
+    // Reset page if out of range when filters or rowsPerPage change
+    const newTotal = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
+    if (page > newTotal) setPage(1);
+  }, [filtered.length, rowsPerPage, page]);
 
-  // Helper function to get role icon
-  const getRoleIcon = (role: AppUserRole) => {
-    switch (role) {
-      case "admin":
-        return <Crown className="h-4 w-4 text-yellow-600" />;
-      case "estimator":
-        return <Calculator className="h-4 w-4 text-[#f89d1d]" />;
-      default:
-        return <User className="h-4 w-4 text-[#27aae1]" />;
-    }
-  };
+  const startIndex = (page - 1) * rowsPerPage;
+  const endIndex = Math.min(startIndex + rowsPerPage, filtered.length);
+  const pageData = React.useMemo(
+    () => filtered.slice(startIndex, endIndex),
+    [filtered, startIndex, endIndex]
+  );
 
-  // Reset form
+  // ===== Helpers / Actions (kept) =====
   const resetForm = () => {
     setName("");
     setEmail("");
@@ -164,18 +206,15 @@ export default function UserManagementPage() {
     setEditingUserId(null);
   };
 
-  // Add new user
   const addUser = async () => {
     if (!name || !email || (!editingUserId && !password)) {
       setError("Please fill in all required fields");
       return;
     }
-
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
-
     try {
       const userData = {
         name,
@@ -183,40 +222,41 @@ export default function UserManagementPage() {
         password: password || undefined,
         role,
         status: active ? "Active" : "Inactive",
-        profilePicture: profilePictureData
+        profilePicture: profilePictureData,
       };
-
       if (editingUserId) {
-        // Update existing user
         const response = await fetch(`/api/users/${editingUserId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData)
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userData),
         });
-
         if (response.ok) {
           const updatedUser = await response.json();
-          setUsers(users.map(u => u.id === editingUserId ? {
-            ...u,
-            name: updatedUser.name,
-            email: updatedUser.email,
-            role: updatedUser.role,
-            status: updatedUser.status,
-            profilePicture: updatedUser.profilePicture
-          } : u));
+          setUsers((prev) =>
+            prev.map((u) =>
+              u.id === editingUserId
+                ? {
+                    ...u,
+                    name: updatedUser.name,
+                    email: updatedUser.email,
+                    role: updatedUser.role,
+                    status: updatedUser.status,
+                    profilePicture: updatedUser.profilePicture,
+                  }
+                : u
+            )
+          );
           setOpen(false);
           resetForm();
         } else {
           setError("Failed to update user");
         }
       } else {
-        // Create new user
-        const response = await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData)
+        const response = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userData),
         });
-
         if (response.ok) {
           const newUser = await response.json();
           const userWithDisplayId = {
@@ -224,22 +264,21 @@ export default function UserManagementPage() {
             displayId: getDisplayId(newUser.id),
             joined: new Date().toISOString().slice(0, 10),
             password: "",
-            status: newUser.status
+            status: newUser.status,
           };
-          setUsers([userWithDisplayId, ...users]);
+          setUsers((prev) => [userWithDisplayId, ...prev]);
           setOpen(false);
           resetForm();
         } else {
           setError("Failed to create user");
         }
       }
-    } catch (error) {
-      console.error('Error saving user:', error);
+    } catch (e) {
+      console.error("Error saving user:", e);
       setError("An error occurred while saving the user");
     }
   };
 
-  // Edit user
   const editUser = (user: AppUser) => {
     setEditingUserId(user.id);
     setName(user.name);
@@ -253,53 +292,49 @@ export default function UserManagementPage() {
     setOpen(true);
   };
 
-  // Toggle user status
   const toggleStatus = async (userId: string) => {
     try {
-      const user = users.find(u => u.id === userId);
+      const user = users.find((u) => u.id === userId);
       if (!user) return;
-
       const newStatus = user.status === "Active" ? "Inactive" : "Active";
-      
       const response = await fetch(`/api/users/${userId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
       });
-
       if (response.ok) {
-        setUsers(users.map(u => 
-          u.id === userId ? { ...u, status: newStatus } : u
-        ));
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u))
+        );
       } else {
-        console.error('Failed to update user status');
+        console.error("Failed to update user status");
       }
-    } catch (error) {
-      console.error('Error updating user status:', error);
+    } catch (e) {
+      console.error("Error updating user status:", e);
     }
   };
 
+  // ===== UI =====
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen  p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-[#27aae1] to-[#ea078b] bg-clip-text text-transparent leading-tight py-2">
-            User Management
-          </h1>
-          <p className="text-slate-600 text-lg max-w-2xl mx-auto">
-            Manage your team members, their roles, and access permissions. 
-            Add new users, modify existing ones, and control system access.
-          </p>
+        <div className="flex gap-5">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#27aae1] rounded-full shadow-lg">
+            <UsersIcon className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              User Management
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Manage your team members, their roles, and access permissions.
+            </p>
+          </div>
         </div>
-
-
-
-        {/* Main Content */}
-        <Card className="shadow-xl border-0 bg-white">
-          <CardContent className="p-4 sm:p-6 lg:p-8">
-            {/* Search and Add User */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div>
+          {/* Search + Add */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
               <div className="flex-1">
                 <Input
                   placeholder="Search users by name, email, or ID..."
@@ -312,16 +347,22 @@ export default function UserManagementPage() {
                 onClick={() => setOpen(true)}
                 className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12"
               >
-                <Plus className="h-5 w-5 mr-2" />
-                Add New User
+                <Plus className="h-5 w-5 mr-2" /> Add New User
               </Button>
             </div>
 
             {/* Filters */}
-            <div className="user-management-filters grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:flex md:flex-row md:items-center gap-4 mb-4 bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Role</label>
-                <Select value={roleFilter} onValueChange={(v: "all" | "admin" | "user" | "estimator") => setRoleFilter(v)}>
+                <label className="text-sm font-medium text-slate-700">
+                  Role
+                </label>
+                <Select
+                  value={roleFilter}
+                  onValueChange={(v: "all" | "admin" | "user" | "estimator") =>
+                    setRoleFilter(v)
+                  }
+                >
                   <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12">
                     <SelectValue placeholder="All Roles" />
                   </SelectTrigger>
@@ -333,10 +374,16 @@ export default function UserManagementPage() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Status</label>
-                <Select value={statusFilter} onValueChange={(v: "all" | "Active" | "Inactive") => setStatusFilter(v)}>
+                <label className="text-sm font-medium text-slate-700">
+                  Status
+                </label>
+                <Select
+                  value={statusFilter}
+                  onValueChange={(v: "all" | "Active" | "Inactive") =>
+                    setStatusFilter(v)
+                  }
+                >
                   <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
@@ -348,266 +395,218 @@ export default function UserManagementPage() {
                 </Select>
               </div>
             </div>
+        </div>
 
-            {/* Results Summary */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-sm text-slate-600 mb-4">
-              <span>Showing {current.length} of {filtered.length} users</span>
-              {filtered.length > PAGE_SIZE && (
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowAll(!showAll)}
-                  className="text-[#27aae1] hover:text-[#1e8bc3] hover:bg-[#27aae1]/10 rounded-xl px-4 py-2 transition-all duration-200"
-                >
-                  {showAll ? (
-                    <>
-                      <ChevronUp className="h-4 w-4 mr-2" />
-                      Show Less
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-4 w-4 mr-2" />
-                      Show All ({filtered.length})
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
+        <Card className="w-full">
+          <CardContent className="p-0">
+            
 
-            {/* Table - Mobile Responsive */}
-            <div className="overflow-hidden border border-slate-200 rounded-2xl">
-              {/* Desktop Table */}
-              <div className="hidden lg:block">
+            {/* ===== TABLE (ClientTable styling) ===== */}
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-slate-50">
                     <TableRow className="border-slate-200">
-                      <TableHead className="w-[15%] text-slate-700 font-semibold p-6">ID</TableHead>
-                      <TableHead className="w-[30%] text-slate-700 font-semibold p-6">User</TableHead>
-                      <TableHead className="text-slate-700 font-semibold p-6">Joined</TableHead>
-                      <TableHead className="text-slate-700 font-semibold p-6">Role</TableHead>
-                      <TableHead className="text-slate-700 font-semibold p-6">Status</TableHead>
-                      <TableHead className="text-center text-slate-700 font-semibold p-6">Edit</TableHead>
-                      <TableHead className="text-center text-slate-700 font-semibold p-6">Status Toggle</TableHead>
+                      <TableHead className="w-40 text-slate-600 text-md font-semibold">
+                        ID
+                      </TableHead>
+                      <TableHead className="w-64 text-slate-600 text-md font-semibold">
+                        User
+                      </TableHead>
+                      <TableHead className="w-64 text-slate-600 text-md font-semibold">
+                        Joined
+                      </TableHead>
+                      <TableHead className="w-32 text-slate-600 text-md font-semibold">
+                        Role
+                      </TableHead>
+                      <TableHead className="w-32 text-slate-600 text-md font-semibold">
+                        Status
+                      </TableHead>
+                      <TableHead className="w-10 text-slate-600 text-md font-semibold">
+                        Edit
+                      </TableHead>
+                      <TableHead className="w-32 text-center  text-slate-600 text-md font-semibold">
+                        Status Toggle
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-16 text-slate-500">
-                          Loading users...
-                        </TableCell>
-                      </TableRow>
-                    ) : current.map((u) => (
-                      <TableRow key={u.id} className="hover:bg-slate-50 transition-colors duration-200 border-slate-100">
-                        {/* ID */}
-                        <TableCell className="p-6">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#ea078b]/20 text-[#ea078b]">
-                            {u.displayId || u.id}
-                          </span>
-                        </TableCell>
-                        
-                        {/* User (nama + email) */}
-                        <TableCell className="p-6">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-1 h-8 w-8 rounded-full bg-gradient-to-br from-[#27aae1] to-[#ea078b] flex items-center justify-center overflow-hidden">
-                              {u.profilePicture ? (
-                                <>
-                                  <img 
-                                    src={u.profilePicture} 
-                                    alt={`${u.name}'s profile`}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      // Fallback to initial if image fails to load
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                      const fallback = target.nextElementSibling as HTMLElement;
-                                      if (fallback) fallback.style.display = 'flex';
-                                    }}
-                                  />
-                                  <span 
-                                    className="text-white text-xs font-medium absolute"
-                                    style={{ display: 'none' }}
-                                  >
-                                    {u.name.charAt(0).toUpperCase()}
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="text-white text-xs font-medium">
-                                  {u.name.charAt(0).toUpperCase()}
-                                </span>
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-medium text-slate-900">{u.name}</div>
-                              <div className="text-xs text-slate-500">
-                                {u.email}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
 
-                        {/* Joined */}
-                        <TableCell className="text-sm text-slate-700 p-6">{fmt(u.joined)}</TableCell>
-
-                        {/* Role badge with icon */}
-                        <TableCell className="p-6">
-                          <div className="flex items-center gap-2">
-                            {getRoleIcon(u.role)}
-                            <RoleBadge role={u.role} />
-                          </div>
-                        </TableCell>
-
-                        {/* Status text */}
-                        <TableCell className="p-6">
-                          <StatusChip value={u.status} />
-                        </TableCell>
-
-                        {/* Edit button */}
-                        <TableCell className="text-center p-6">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => editUser(u)}
-                            className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:border-blue-600 rounded-xl px-4 py-2 transition-all duration-200"
-                          >
-                            <Edit3 className="h-4 w-4 mr-2" />
-                            Edit
-                          </Button>
-                        </TableCell>
-
-                        {/* Action switch */}
-                        <TableCell className="text-center p-6">
-                          <div className="flex flex-col items-center space-y-2">
-                            <Switch
-                              checked={u.status === "Active"}
-                              onCheckedChange={() => toggleStatus(u.id)}
-                              className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-600 data-[state=checked]:to-purple-600"
-                            />
-                            <span className="text-xs text-slate-500 font-medium">
-                              {u.status === "Active" ? "Active" : "Inactive"}
-                            </span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {current.length === 0 && (
+                  {loading ? (
+                    <TableSkeleton rows={rowsPerPage} />
+                  ) : pageData.length === 0 ? (
+                    <TableBody>
                       <TableRow>
                         <TableCell
                           colSpan={7}
-                          className="text-center py-16 text-slate-500"
+                          className="py-14 text-center text-slate-500"
                         >
-                          {filtered.length === 0 ? "No users found matching your filters." : "No users to display."}
+                          No users found.
                         </TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
+                    </TableBody>
+                  ) : (
+                    <TableBody>
+                      {pageData.map((u) => (
+                        <TableRow
+                          key={u.id}
+                          className="hover:bg-slate-50 transition-colors duration-200 border-slate-100"
+                        >
+                          {/* ID */}
+                          <TableCell className="">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                              {u.displayId || u.id}
+                            </span>
+                          </TableCell>
+                          {/* User */}
+                          <TableCell className="">
+                            <div className="flex items-start gap-3">
+                              <div className="mt-1 h-8 w-8 rounded-full bg-gradient-to-br from-[#27aae1] to-[#ea078b] flex items-center justify-center overflow-hidden">
+                                {u.profilePicture ? (
+                                  <img
+                                    src={u.profilePicture}
+                                    alt={`${u.name}'s profile`}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      (
+                                        e.target as HTMLImageElement
+                                      ).style.display = "none";
+                                    }}
+                                  />
+                                ) : (
+                                  <span className="text-white text-xs font-medium">
+                                    {u.name.charAt(0).toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-medium text-slate-900">
+                                  {u.name}
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {u.email}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          {/* Joined */}
+                          <TableCell className="text-sm text-slate-700 p-4">
+                            {fmt(u.joined)}
+                          </TableCell>
+                          {/* Role */}
+                          <TableCell className="">
+                            <div className="flex items-center gap-2">
+                              <RoleBadge role={u.role} />
+                            </div>
+                          </TableCell>
+                          {/* Status */}
+                          <TableCell className="">
+                            <StatusChip value={u.status} />
+                          </TableCell>
+                          {/* Edit */}
+                          <TableCell className="">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => editUser(u)}
+                              className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:border-blue-600 rounded-xl px-4 py-2"
+                            >
+                              <Edit3 className="h-4 w-4 mr-2" /> Edit
+                            </Button>
+                          </TableCell>
+                          {/* Toggle */}
+                          <TableCell className="">
+                            <div className="flex flex-col items-center space-y-2">
+                              <Switch
+                                checked={u.status === "Active"}
+                                onCheckedChange={() => toggleStatus(u.id)}
+                                className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-600 data-[state=checked]:to-purple-600"
+                              />
+                              <span className="text-xs text-slate-500 font-medium">
+                                {u.status === "Active" ? "Active" : "Inactive"}
+                              </span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  )}
                 </Table>
               </div>
 
-              {/* Mobile Cards */}
-              <div className="lg:hidden space-y-4 p-4">
-                {loading ? (
-                  <div className="text-center py-16 text-slate-500">
-                    Loading users...
+              {/* ===== Footer pagination (ClientTable style) ===== */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200">
+                <div className="text-xs sm:text-sm text-slate-600">
+                  {loading
+                    ? `Loading ${rowsPerPage} rows…`
+                    : filtered.length > 0
+                    ? `${startIndex + 1}–${endIndex} of ${filtered.length} rows`
+                    : "0 of 0 rows"}
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500">
+                      Rows per page
+                    </span>
+                    <select
+                      value={rowsPerPage}
+                      disabled={loading}
+                      onChange={(e) => {
+                        setRowsPerPage(Number(e.target.value));
+                        setPage(1);
+                      }}
+                      className="h-8 rounded-md border border-slate-300 bg-white px-2 text-sm disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#27aae1]/40"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
                   </div>
-                ) : current.map((u) => (
-                  <Card key={u.id} className="p-4 border-slate-200 bg-white shadow-sm">
-                    <div className="space-y-4">
-                      {/* Header with ID and Status */}
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-sm font-medium text-slate-900 bg-purple-100 text-purple-800 px-3 py-2 rounded-lg">
-                          {u.displayId || u.id}
-                        </span>
-                        <StatusChip value={u.status} />
-                      </div>
-                      
-                      {/* User Info */}
-                      <div className="bg-slate-50 p-3 rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden">
-                            {u.profilePicture ? (
-                              <>
-                                <img 
-                                  src={u.profilePicture} 
-                                  alt={`${u.name}'s profile`}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = 'none';
-                                    const fallback = target.nextElementSibling as HTMLElement;
-                                    if (fallback) fallback.style.display = 'flex';
-                                  }}
-                                />
-                                <span 
-                                  className="text-white text-sm font-medium absolute"
-                                  style={{ display: 'none' }}
-                                >
-                                  {u.name.charAt(0).toUpperCase()}
-                                </span>
-                              </>
-                            ) : (
-                              <span className="text-white text-sm font-medium">
-                                {u.name.charAt(0).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">User</div>
-                            <div className="font-semibold text-slate-900">{u.name}</div>
-                            <div className="text-sm text-slate-600">{u.email}</div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Role and Join Date */}
-                      <div className="grid grid-cols-1 gap-3">
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Role</div>
-                          <div className="flex items-center gap-2">
-                            {getRoleIcon(u.role)}
-                            <RoleBadge role={u.role} />
-                          </div>
-                        </div>
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Joined</div>
-                          <div className="font-medium text-slate-900">{fmt(u.joined || new Date().toISOString().slice(0, 10))}</div>
-                        </div>
-                      </div>
-                      
-                      {/* Actions */}
-                      <div className="flex flex-col space-y-2 pt-3 border-t border-slate-200">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => editUser(u)}
-                          className="w-full border-blue-500 text-blue-600 hover:bg-blue-50 hover:border-blue-600"
-                        >
-                          <Edit3 className="h-4 w-4 mr-2" />
-                          Edit User
-                        </Button>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-slate-600 font-medium">Status:</span>
-                          <Switch
-                            checked={u.status === "Active"}
-                            onCheckedChange={() => toggleStatus(u.id)}
-                            className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-600 data-[state=checked]:to-purple-600"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-                
-                {current.length === 0 && (
-                  <div className="text-center py-16 text-slate-500">
-                    {filtered.length === 0 ? "No users found matching your filters." : "No users to display."}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(1)}
+                      disabled={loading || page === 1}
+                    >
+                      «
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={loading || page === 1}
+                    >
+                      ‹
+                    </Button>
+                    <span className="text-xs sm:text-sm text-slate-600 px-2">
+                      Page <b>{page}</b> / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      disabled={loading || page === totalPages}
+                    >
+                      ›
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(totalPages)}
+                      disabled={loading || page === totalPages}
+                    >
+                      »
+                    </Button>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* ===== Modal Add New User ===== */}
+        {/* ===== Modal (logic kept) ===== */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="sm:max-w-[520px] rounded-2xl">
             <DialogHeader>
@@ -615,11 +614,12 @@ export default function UserManagementPage() {
                 {editingUserId ? "Edit User" : "Add New User"}
               </DialogTitle>
             </DialogHeader>
-
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Full Name</label>
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">
+                    Full Name
+                  </label>
                   <Input
                     placeholder="e.g. John Doe"
                     value={name}
@@ -628,7 +628,9 @@ export default function UserManagementPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Email</label>
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">
+                    Email
+                  </label>
                   <Input
                     type="email"
                     placeholder="user@mail.com"
@@ -637,57 +639,42 @@ export default function UserManagementPage() {
                     className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                   />
                 </div>
-                
-                {/* Profile Picture Upload */}
                 <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Profile Picture</label>
-                  <div className="flex items-center gap-3">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center overflow-hidden">
-                      {editingUserId && users.find(u => u.id === editingUserId)?.profilePicture ? (
-                        <img 
-                          src={users.find(u => u.id === editingUserId)?.profilePicture || ''} 
-                          alt="Current profile" 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-8 h-8 text-white" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            // File size validation (max 2MB)
-                            if (file.size > 2 * 1024 * 1024) {
-                              alert('Profile picture must be less than 2MB. Please choose a smaller image.');
-                              return;
-                            }
-                            
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                              const result = e.target?.result as string;
-                              // Store the profile picture data for later upload
-                              setProfilePictureData(result);
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                        className="w-full text-sm"
-                      />
-                      <p className="text-xs text-slate-500 mt-1">Max 2MB, will be automatically compressed</p>
-                    </div>
-                  </div>
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">
+                    Profile Picture
+                  </label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 2 * 1024 * 1024) {
+                          alert("Profile picture must be < 2MB");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (ev) =>
+                          setProfilePictureData(ev.target?.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-2 block">
-                    Password {editingUserId && <span className="text-slate-400 font-normal">(leave blank to keep current)</span>}
+                    Password{" "}
+                    {editingUserId && (
+                      <span className="text-slate-400 font-normal">
+                        (leave blank to keep current)
+                      </span>
+                    )}
                   </label>
                   <Input
                     type="password"
-                    placeholder={editingUserId ? "Leave blank to keep current" : "********"}
+                    placeholder={
+                      editingUserId ? "Leave blank to keep current" : "********"
+                    }
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
@@ -695,18 +682,27 @@ export default function UserManagementPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-2 block">
-                    Confirm Password {editingUserId && <span className="text-slate-400 font-normal">(leave blank to keep current)</span>}
+                    Confirm Password{" "}
+                    {editingUserId && (
+                      <span className="text-slate-400 font-normal">
+                        (leave blank to keep current)
+                      </span>
+                    )}
                   </label>
                   <Input
                     type="password"
-                    placeholder={editingUserId ? "Leave blank to keep current" : "********"}
+                    placeholder={
+                      editingUserId ? "Leave blank to keep current" : "********"
+                    }
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Role</label>
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">
+                    Role
+                  </label>
                   <Select
                     value={role}
                     onValueChange={(v) => setRole(v as AppUserRole)}
@@ -743,22 +739,27 @@ export default function UserManagementPage() {
                       {active ? "Active" : "Inactive"}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
-                      {editingUserId ? "Toggle user status" : "New users are Active by default"}
+                      {editingUserId
+                        ? "Toggle user status"
+                        : "New users are Active by default"}
                     </div>
                   </div>
-                  <Switch 
-                    checked={active} 
+                  <Switch
+                    checked={active}
                     onCheckedChange={setActive}
                     className="data-[state=checked]:bg-[#ea078b]"
                   />
                 </div>
-                {error && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg border border-red-200">{error}</p>}
+                {error && (
+                  <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg border border-red-200">
+                    {error}
+                  </p>
+                )}
               </div>
             </div>
-
             <DialogFooter>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => {
                   setOpen(false);
                   resetForm();
@@ -767,7 +768,7 @@ export default function UserManagementPage() {
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={addUser}
                 className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-2 rounded-xl"
               >

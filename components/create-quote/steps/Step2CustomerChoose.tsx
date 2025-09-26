@@ -1,12 +1,45 @@
 "use client";
-
+import React, { useMemo } from "react";
 import type { FC, Dispatch, SetStateAction } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Eye, Search, X, Edit, FileText, Calendar, DollarSign } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Eye,
+  Search,
+  X,
+  Edit,
+  FileText,
+  Calendar,
+  DollarSign,
+  MoreHorizontal,
+  Pencil,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import type { QuoteFormData } from "@/types";
+import {
+  Table,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import StatusPill from "@/components/shared/StatusPill";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "@/components/ui/LoadingSkeleton";
 
 interface Step2Props {
   formData: QuoteFormData;
@@ -44,7 +77,7 @@ interface Quote {
   sides: "1" | "2";
   printing: string;
   colors?: string | { front?: string; back?: string }; // Can be JSON string or object
-  
+
   // Enhanced Step 3 fields for product specifications
   productName?: string;
   printingSelection?: string;
@@ -55,12 +88,12 @@ interface Quote {
   closeSizeHeight?: number;
   closeSizeSpine?: number;
   useSameAsFlat?: boolean;
-  
+
   // Enhanced paper and finishing with operational data
-  papers?: Array<{ 
-    id: string; 
-    name: string; 
-    gsm: string; 
+  papers?: Array<{
+    id: string;
+    name: string;
+    gsm: string;
     quoteId: string;
     inputWidth?: number;
     inputHeight?: number;
@@ -73,13 +106,13 @@ interface Quote {
     outputHeight?: number;
     selectedColors?: string;
   }>;
-  finishing?: Array<{ 
-    id: string; 
-    name: string; 
+  finishing?: Array<{
+    id: string;
+    name: string;
     quoteId: string;
     cost?: number;
   }>;
-  
+
   // Client with enhanced address fields
   client: {
     id: string;
@@ -96,13 +129,13 @@ interface Quote {
     postalCode?: string;
     country?: string;
   };
-  
+
   amounts?: {
     base?: number;
     vat?: number;
     total: number;
   };
-  
+
   // Operational data
   operational?: {
     plates?: number;
@@ -110,12 +143,17 @@ interface Quote {
   };
 }
 
-const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomerSelect, onQuoteSelect }) => {
+const Step2CustomerChoose: FC<Step2Props> = ({
+  formData,
+  setFormData,
+  onCustomerSelect,
+  onQuoteSelect,
+}) => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
-  
+
   // Separate state for view and edit modals
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -123,7 +161,9 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null); // New state for editing
   const [quoteItems, setQuoteItems] = useState<Quote[]>([]);
   const [loadingQuoteItems, setLoadingQuoteItems] = useState(false);
-  
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(1);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
@@ -134,17 +174,17 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
     const fetchQuotes = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/quotes');
+        const response = await fetch("/api/quotes");
         if (response.ok) {
           const data = await response.json();
-          console.log('Fetched quotes from database:', data);
+          console.log("Fetched quotes from database:", data);
           setQuotes(data);
         } else {
-          console.error('Failed to fetch quotes');
+          console.error("Failed to fetch quotes");
           setQuotes([]);
         }
       } catch (error) {
-        console.error('Error fetching quotes:', error);
+        console.error("Error fetching quotes:", error);
         setQuotes([]);
       } finally {
         setLoading(false);
@@ -154,19 +194,40 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
     fetchQuotes();
   }, []);
 
-  const filteredQuotes = quotes.filter(quote =>
-    (quote.client?.companyName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (quote.client?.contactPerson?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (quote.client?.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (quote.quoteId?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (quote.product?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+  const filteredQuotes = quotes.filter(
+    (quote) =>
+      (quote.client?.companyName?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase()
+      ) ||
+      (quote.client?.contactPerson?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase()
+      ) ||
+      (quote.client?.email?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase()
+      ) ||
+      (quote.quoteId?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (quote.product?.toLowerCase() || "").includes(searchTerm.toLowerCase())
   );
 
   // Pagination calculations
-  const totalPages = Math.ceil(filteredQuotes.length / quotesPerPage);
-  const startIndex = (currentPage - 1) * quotesPerPage;
-  const endIndex = startIndex + quotesPerPage;
-  const currentQuotes = showAll ? filteredQuotes : filteredQuotes.slice(startIndex, endIndex);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredQuotes.length / rowsPerPage)
+  );
+  const startIndex = (page - 1) * rowsPerPage;
+  const endIndex = Math.min(startIndex + rowsPerPage, filteredQuotes.length);
+  const currentQuotes = useMemo(
+    () => filteredQuotes.slice(startIndex, endIndex),
+    [filteredQuotes, startIndex, endIndex]
+  );
+
+  useEffect(() => {
+    const newTotal = Math.max(
+      1,
+      Math.ceil(filteredQuotes.length / rowsPerPage)
+    );
+    if (page > newTotal) setPage(1);
+  }, [filteredQuotes.length, rowsPerPage, page]);
 
   // Reset to first page when search term changes
   useEffect(() => {
@@ -174,19 +235,19 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
   }, [searchTerm]);
 
   const handleQuoteSelect = (quoteId: string) => {
-    const selected = quotes.find(q => q.id === quoteId);
+    const selected = quotes.find((q) => q.id === quoteId);
     if (selected) {
       setSelectedQuote(selected);
-      
+
       // Call the quote selection callback to inform parent about the selected quote
       if (onQuoteSelect) {
-        console.log('Calling onQuoteSelect with quote:', selected);
+        console.log("Calling onQuoteSelect with quote:", selected);
         onQuoteSelect(selected);
       }
-      
+
       // Also call the customer selection callback for backward compatibility
       if (onCustomerSelect && selected.client) {
-        console.log('Calling onCustomerSelect with:', selected.client);
+        console.log("Calling onCustomerSelect with:", selected.client);
         onCustomerSelect(selected.client);
       }
     }
@@ -198,20 +259,22 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
     setQuoteForModal(quote);
     setLoadingQuoteItems(true);
     setShowViewModal(true);
-    
+
     try {
       // Fetch all quotes with the same quoteId to get all products for this quote
-      const response = await fetch('/api/quotes');
+      const response = await fetch("/api/quotes");
       if (response.ok) {
         const allQuotes = await response.json();
-        const relatedQuotes = allQuotes.filter((q: Quote) => q.quoteId === quote.quoteId);
+        const relatedQuotes = allQuotes.filter(
+          (q: Quote) => q.quoteId === quote.quoteId
+        );
         setQuoteItems(relatedQuotes);
       } else {
-        console.error('Failed to fetch quote items');
+        console.error("Failed to fetch quote items");
         setQuoteItems([quote]); // Fallback to just the current quote
       }
     } catch (error) {
-      console.error('Error fetching quote items:', error);
+      console.error("Error fetching quote items:", error);
       setQuoteItems([quote]); // Fallback to just the current quote
     } finally {
       setLoadingQuoteItems(false);
@@ -230,28 +293,28 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
   // Function to update editing quote data
   const updateEditingQuote = (field: string, value: any, subField?: string) => {
     if (!editingQuote) return;
-    
-    setEditingQuote(prev => {
+
+    setEditingQuote((prev) => {
       if (!prev) return prev;
-      
+
       if (subField) {
         // Handle nested fields like client.companyName
         const currentField = prev[field as keyof Quote] as any;
-        if (currentField && typeof currentField === 'object') {
+        if (currentField && typeof currentField === "object") {
           return {
             ...prev,
             [field]: {
               ...currentField,
-              [subField]: value
-            }
+              [subField]: value,
+            },
           };
         }
       }
-      
+
       // Handle direct fields
       return {
         ...prev,
-        [field]: value
+        [field]: value,
       };
     });
   };
@@ -259,33 +322,35 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
   // Function to save changes
   const handleSaveChanges = async () => {
     if (!editingQuote) return;
-    
+
     try {
       // Update the quote in the database
       const response = await fetch(`/api/quotes/${editingQuote.id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(editingQuote),
       });
-      
+
       if (response.ok) {
         // Update local state
-        setQuotes(prev => prev.map(q => q.id === editingQuote.id ? editingQuote : q));
+        setQuotes((prev) =>
+          prev.map((q) => (q.id === editingQuote.id ? editingQuote : q))
+        );
         setQuoteForModal(editingQuote);
-        
+
         // Close modal
         setShowEditModal(false);
         setEditingQuote(null);
-        
+
         // Show success message (you can add a toast notification here)
-        console.log('Quote updated successfully');
+        console.log("Quote updated successfully");
       } else {
-        console.error('Failed to update quote');
+        console.error("Failed to update quote");
       }
     } catch (error) {
-      console.error('Error updating quote:', error);
+      console.error("Error updating quote:", error);
     }
   };
 
@@ -295,17 +360,27 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
     <div className="space-y-6">
       {/* Page Title - Clear explanation of what we're selecting */}
       <div className="text-center">
-        <h2 className="font-bold text-3xl text-gray-900">Select Quote Template</h2>
-        <p className="text-gray-600 mt-2">Choose an existing quote to use as a template. The customer details and product specifications will be automatically filled in the next steps.</p>
+        <h2 className="font-bold text-3xl text-gray-900">
+          Select Quote Template
+        </h2>
+        <p className="text-gray-600 mt-2">
+          Choose an existing quote to use as a template. The customer details
+          and product specifications will be automatically filled in the next
+          steps.
+        </p>
       </div>
 
       {/* Select Existing Customer Section - White card container */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <h4 className="text-lg font-semibold text-gray-900">Existing Customer Quotes</h4>
+          <h4 className="text-lg font-semibold text-gray-900">
+            Existing Customer Quotes
+          </h4>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">
-              {loading ? 'Loading...' : `${quotes.length} quote templates available`}
+              {loading
+                ? "Loading..."
+                : `${quotes.length} quote templates available`}
             </span>
             {!loading && totalPages > 1 && !showAll && (
               <span className="text-sm text-gray-500">
@@ -322,21 +397,20 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                 }}
                 className="text-[#27aae1] hover:text-[#1e8bc3] hover:bg-[#27aae1]/10 px-3 py-1 rounded-md text-sm font-medium transition-colors"
               >
-                {showAll ? 'Show Paged' : `Show All (${filteredQuotes.length})`}
+                {showAll ? "Show Paged" : `Show All (${filteredQuotes.length})`}
               </button>
             )}
           </div>
         </div>
 
         {loading ? (
-          <div className="text-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#27aae1] mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading quotes...</p>
-          </div>
+          <TableSkeleton />
         ) : quotes.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p>No quotes found in the database.</p>
-            <p className="text-sm mt-2">Please ensure the database is properly seeded.</p>
+            <p className="text-sm mt-2">
+              Please ensure the database is properly seeded.
+            </p>
           </div>
         ) : (
           <>
@@ -364,33 +438,57 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
               {/* Mobile responsive table */}
               <div className="block md:hidden">
                 {currentQuotes.map((quote) => (
-                  <div 
-                    key={quote.id} 
+                  <div
+                    key={quote.id}
                     className={`p-4 border-b border-slate-200 hover:bg-slate-50 transition-colors duration-200 cursor-pointer ${
-                      selectedQuote?.id === quote.id ? 'bg-[#27aae1]/10 ring-2 ring-[#27aae1]/20' : ''
+                      selectedQuote?.id === quote.id
+                        ? "bg-[#27aae1]/10 ring-2 ring-[#27aae1]/20"
+                        : ""
                     }`}
                     onClick={() => handleQuoteSelect(quote.id)}
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-900 text-sm">Quote ID:</span>
-                        <span className="font-medium text-slate-700 text-sm">{quote.quoteId}</span>
+                        <span className="font-semibold text-slate-900 text-sm">
+                          Quote ID:
+                        </span>
+                        <span className="font-medium text-slate-700 text-sm">
+                          {quote.quoteId}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-900 text-sm">Product:</span>
-                        <span className="text-slate-700 text-sm">{quote.product}</span>
+                        <span className="font-semibold text-slate-900 text-sm">
+                          Product:
+                        </span>
+                        <span className="text-slate-700 text-sm">
+                          {quote.product}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-900 text-sm">Customer:</span>
-                        <span className="text-slate-700 text-sm">{quote.client?.companyName || quote.client?.contactPerson || 'N/A'}</span>
+                        <span className="font-semibold text-slate-900 text-sm">
+                          Customer:
+                        </span>
+                        <span className="text-slate-700 text-sm">
+                          {quote.client?.companyName ||
+                            quote.client?.contactPerson ||
+                            "N/A"}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-900 text-sm">Date:</span>
-                        <span className="text-slate-700 text-sm">{new Date(quote.date).toISOString().slice(0, 10)}</span>
+                        <span className="font-semibold text-slate-900 text-sm">
+                          Date:
+                        </span>
+                        <span className="text-slate-700 text-sm">
+                          {new Date(quote.date).toISOString().slice(0, 10)}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-900 text-sm">Status:</span>
-                        <span className="text-slate-700 text-sm">{quote.status}</span>
+                        <span className="font-semibold text-slate-900 text-sm">
+                          Status:
+                        </span>
+                        <span className="text-slate-700 text-sm">
+                          {quote.status}
+                        </span>
                       </div>
                       <div className="flex items-center justify-center w-full pt-3">
                         <div className="flex items-center gap-3">
@@ -414,104 +512,165 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                   </div>
                 ))}
               </div>
-              
+
               {/* Desktop table */}
-              <table className="w-full hidden md:table">
-                <thead className="bg-slate-50">
-                  <tr className="border-slate-200">
-                    <th className="text-slate-700 font-semibold p-6 text-left">Quote ID</th>
-                    <th className="text-slate-700 font-semibold p-6 text-left">Product</th>
-                    <th className="text-slate-700 font-semibold p-6 text-left">Customer</th>
-                    <th className="text-slate-700 font-semibold p-6 text-left">Date</th>
-                    <th className="text-slate-700 font-semibold p-6 text-left">Status</th>
-                    <th className="text-slate-700 font-semibold p-6 text-left">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentQuotes.map((quote) => (
-                    <tr 
-                      key={quote.id} 
-                      className={`hover:bg-slate-50 transition-colors duration-200 border-slate-100 cursor-pointer ${
-                        selectedQuote?.id === quote.id ? 'bg-[#27aae1]/10 ring-2 ring-[#27aae1]/20' : ''
-                      }`}
-                      onClick={() => handleQuoteSelect(quote.id)}
-                    >
-                      <td className="font-medium text-slate-900 p-6">{quote.quoteId}</td>
-                      <td className="text-slate-700 p-6">{quote.product}</td>
-                      <td className="text-slate-700 p-6">{quote.client?.companyName || quote.client?.contactPerson || 'N/A'}</td>
-                      <td className="text-slate-700 p-6">{new Date(quote.date).toISOString().slice(0, 10)}</td>
-                      <td className="text-slate-700 p-6">{quote.status}</td>
-                      <td className="p-6">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => handleViewQuote(quote, e)}
-                            className="w-8 h-8 hover:bg-[#27aae1]/10 hover:text-[#27aae1] transition-colors duration-200 p-2 rounded-md"
-                            title="View Quote Details"
+              <Table>
+                <TableHeader className="bg-slate-50">
+                  <TableRow className="border-slate-200">
+                    <TableHead className="w-40 text-slate-600 text-xs font-semibold">
+                      Quote ID
+                    </TableHead>
+                    <TableHead className="w-64 text-slate-600 text-xs font-semibold">
+                      Client Name
+                    </TableHead>
+                    <TableHead className="w-64 text-slate-600 text-xs font-semibold">
+                      Product
+                    </TableHead>
+                    <TableHead className="w-32 text-slate-600 text-xs font-semibold">
+                      Date
+                    </TableHead>
+                    <TableHead className="w-32 text-slate-600 text-xs font-semibold">
+                      Status
+                    </TableHead>
+                    <TableHead className="w-10 text-right text-slate-600 text-xs font-semibold">
+                      {" "}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                {currentQuotes.map((quote) => (
+                  <TableRow
+                    key={quote.id}
+                    onClick={() => handleQuoteSelect(quote.id)}
+                    className={`hover:bg-slate-50 transition-colors duration-200 border-slate-100 cursor-pointer ${
+                      selectedQuote?.id === quote.id
+                        ? "bg-[#27aae1]/10 ring-2 ring-[#27aae1]/20"
+                        : ""
+                    }`}
+                  >
+                    <TableCell>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                        {quote.quoteId}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-medium text-slate-900 truncate">
+                      {quote.client?.companyName ||
+                        quote.client?.contactPerson ||
+                        "N/A"}
+                    </TableCell>
+                    <TableCell className="text-slate-700 truncate">
+                      {quote.product}
+                    </TableCell>
+                    <TableCell className="text-slate-700">
+                      {new Date(quote.date).toISOString().slice(0, 10)}
+                    </TableCell>
+                    <TableCell>
+                      <StatusPill status={quote.status} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu modal={false}>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
                           >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          <button
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-44 bg-white"
+                        >
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem
                             onClick={(e) => handleEditQuote(quote, e)}
-                            className="w-8 h-8 hover:bg-[#27aae1]/10 hover:text-[#27aae1] transition-colors duration-200 p-2 rounded-md"
-                            title="Edit Quote"
                           >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                            <Pencil className="h-4 w-4 mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => handleViewQuote(quote, e)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" /> View
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </Table>
             </div>
 
             {/* Pagination Controls */}
-            {totalPages > 1 && !showAll && (
-              <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
-                <div className="text-sm text-gray-600 text-center sm:text-left w-full sm:w-auto">
-                  Showing {startIndex + 1} to {Math.min(endIndex, filteredQuotes.length)} of {filteredQuotes.length} quotes
+            {filteredQuotes.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200">
+                <div className="text-xs sm:text-sm text-slate-600">
+                  {filteredQuotes.length > 0
+                    ? `${startIndex + 1}–${endIndex} of ${
+                        filteredQuotes.length
+                      } rows`
+                    : "0 of 0 rows"}
                 </div>
-                <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors w-full sm:w-auto ${
-                      currentPage === 1
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    Previous
-                  </button>
-                  
-                  {/* Page Numbers - Mobile friendly */}
-                  <div className="flex items-center justify-center space-x-1 flex-wrap w-full sm:w-auto max-w-full overflow-hidden">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`px-2 py-2 text-sm font-medium rounded-md transition-colors min-w-[36px] h-[36px] flex items-center justify-center ${
-                          currentPage === page
-                            ? 'bg-[#27aae1] text-white'
-                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
+
+                <div className="flex items-center gap-3">
+                  {/* Rows per page */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500">
+                      Rows per page
+                    </span>
+                    <select
+                      value={rowsPerPage}
+                      onChange={(e) => {
+                        setRowsPerPage(Number(e.target.value));
+                        setPage(1);
+                      }}
+                      className="h-8 rounded-md border border-slate-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#27aae1]/40"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
                   </div>
-                  
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors w-full sm:w-auto ${
-                      currentPage === totalPages
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    Next
-                  </button>
+
+                  {/* Pager */}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(1)}
+                      disabled={page === 1}
+                    >
+                      «
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      ‹
+                    </Button>
+                    <span className="text-xs sm:text-sm text-slate-600 px-2">
+                      Page <b>{page}</b> / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      disabled={page === totalPages}
+                    >
+                      ›
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(totalPages)}
+                      disabled={page === totalPages}
+                    >
+                      »
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -526,7 +685,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
         )}
       </div>
 
-                  {/* Selection Status */}
+      {/* Selection Status */}
       {isSelectionValid && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center space-x-2">
@@ -534,13 +693,20 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
               <span className="text-white text-xs font-bold">✓</span>
             </div>
             <div className="text-green-700">
-              <p className="font-medium mb-1">Quote template selected successfully!</p>
-              <p className="text-sm">
-                <strong>Quote ID:</strong> {selectedQuote?.quoteId} | 
-                <strong> Product:</strong> {selectedQuote?.product} | 
-                <strong> Customer:</strong> {selectedQuote?.client.companyName || selectedQuote?.client.contactPerson}
+              <p className="font-medium mb-1">
+                Quote template selected successfully!
               </p>
-              <p className="text-sm mt-1">Customer details and product specifications will be auto-filled in the next steps.</p>
+              <p className="text-sm">
+                <strong>Quote ID:</strong> {selectedQuote?.quoteId} |
+                <strong> Product:</strong> {selectedQuote?.product} |
+                <strong> Customer:</strong>{" "}
+                {selectedQuote?.client.companyName ||
+                  selectedQuote?.client.contactPerson}
+              </p>
+              <p className="text-sm mt-1">
+                Customer details and product specifications will be auto-filled
+                in the next steps.
+              </p>
             </div>
           </div>
         </div>
@@ -553,9 +719,14 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
             <div className="w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center">
               <span className="text-white text-xs font-bold">!</span>
             </div>
-                          <div className="text-yellow-700">
-              <p className="font-medium mb-1">Please select a quote template to continue</p>
-              <p className="text-sm">Click on any quote row in the table above to use it as a template for your new quote.</p>
+            <div className="text-yellow-700">
+              <p className="font-medium mb-1">
+                Please select a quote template to continue
+              </p>
+              <p className="text-sm">
+                Click on any quote row in the table above to use it as a
+                template for your new quote.
+              </p>
             </div>
           </div>
         </div>
@@ -570,7 +741,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
               Quote Details - {quoteForModal?.quoteId}
             </DialogTitle>
           </DialogHeader>
-          
+
           {quoteForModal && (
             <div className="space-y-6">
               {/* Quote Header */}
@@ -579,17 +750,28 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                   <div className="flex items-center space-x-2">
                     <FileText className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-600">Quote ID:</span>
-                    <span className="font-medium text-gray-900">{quoteForModal.quoteId}</span>
+                    <span className="font-medium text-gray-900">
+                      {quoteForModal.quoteId}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-600">Quote Date:</span>
-                    <span className="font-medium text-gray-900">{new Date(quoteForModal.date).toISOString().slice(0, 10)}</span>
+                    <span className="font-medium text-gray-900">
+                      {new Date(quoteForModal.date).toISOString().slice(0, 10)}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <DollarSign className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-600">Total Amount:</span>
-                                            <span className="font-bold text-lg text-[#27aae1]">AED {(quoteForModal.amounts && quoteForModal.amounts.length > 0 ? quoteForModal.amounts[0].total : 0).toFixed(2)}</span>
+                    <span className="font-bold text-lg text-[#27aae1]">
+                      AED{" "}
+                      {(quoteForModal.amounts &&
+                      quoteForModal.amounts.length > 0
+                        ? quoteForModal.amounts[0].total
+                        : 0
+                      ).toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-gray-600">Status:</span>
@@ -602,48 +784,78 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                 <div className="space-y-3">
                   <div className="text-sm">
                     <span className="text-gray-600">Company:</span>
-                    <span className="font-medium text-gray-900 ml-2">{quoteForModal.client.companyName || 'Individual'}</span>
+                    <span className="font-medium text-gray-900 ml-2">
+                      {quoteForModal.client.companyName || "Individual"}
+                    </span>
                   </div>
                   <div className="text-sm">
                     <span className="text-gray-600">Contact Person:</span>
-                    <span className="font-medium text-gray-900 ml-2">{quoteForModal.client.contactPerson}</span>
+                    <span className="font-medium text-gray-900 ml-2">
+                      {quoteForModal.client.contactPerson}
+                    </span>
                   </div>
                   <div className="text-sm">
                     <span className="text-gray-600">Email:</span>
-                    <span className="font-medium text-gray-900 ml-2">{quoteForModal.client.email}</span>
+                    <span className="font-medium text-gray-900 ml-2">
+                      {quoteForModal.client.email}
+                    </span>
                   </div>
                   <div className="text-sm">
                     <span className="text-gray-600">Phone:</span>
-                    <span className="font-medium text-gray-900 ml-2">{quoteForModal.client.phone}</span>
+                    <span className="font-medium text-gray-900 ml-2">
+                      {quoteForModal.client.phone}
+                    </span>
                   </div>
                   {quoteForModal.client.role && (
                     <div className="text-sm">
                       <span className="text-gray-600">Role:</span>
-                      <span className="font-medium text-gray-900 ml-2">{quoteForModal.client.role}</span>
+                      <span className="font-medium text-gray-900 ml-2">
+                        {quoteForModal.client.role}
+                      </span>
                     </div>
                   )}
                   {quoteForModal.client.countryCode && (
                     <div className="text-sm">
                       <span className="text-gray-600">Country Code:</span>
-                      <span className="font-medium text-gray-900 ml-2">{quoteForModal.client.countryCode}</span>
+                      <span className="font-medium text-gray-900 ml-2">
+                        {quoteForModal.client.countryCode}
+                      </span>
                     </div>
                   )}
-                  
+
                   {/* Address Information */}
-                  {(quoteForModal.client.address || quoteForModal.client.city || quoteForModal.client.state || quoteForModal.client.postalCode || quoteForModal.client.country) && (
+                  {(quoteForModal.client.address ||
+                    quoteForModal.client.city ||
+                    quoteForModal.client.state ||
+                    quoteForModal.client.postalCode ||
+                    quoteForModal.client.country) && (
                     <div className="pt-2 border-t border-gray-100">
-                      <div className="text-xs font-medium text-gray-600 mb-1">Address:</div>
+                      <div className="text-xs font-medium text-gray-600 mb-1">
+                        Address:
+                      </div>
                       <div className="space-y-1">
                         {quoteForModal.client.address && (
-                          <div className="text-sm text-gray-900">{quoteForModal.client.address}</div>
-                        )}
-                        {(quoteForModal.client.city || quoteForModal.client.state || quoteForModal.client.postalCode) && (
                           <div className="text-sm text-gray-900">
-                            {[quoteForModal.client.city, quoteForModal.client.state, quoteForModal.client.postalCode].filter(Boolean).join(', ')}
+                            {quoteForModal.client.address}
+                          </div>
+                        )}
+                        {(quoteForModal.client.city ||
+                          quoteForModal.client.state ||
+                          quoteForModal.client.postalCode) && (
+                          <div className="text-sm text-gray-900">
+                            {[
+                              quoteForModal.client.city,
+                              quoteForModal.client.state,
+                              quoteForModal.client.postalCode,
+                            ]
+                              .filter(Boolean)
+                              .join(", ")}
                           </div>
                         )}
                         {quoteForModal.client.country && (
-                          <div className="text-sm text-gray-900">{quoteForModal.client.country}</div>
+                          <div className="text-sm text-gray-900">
+                            {quoteForModal.client.country}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -653,98 +865,227 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
 
               {/* Quote Items */}
               <div>
-                <h5 className="text-md font-semibold text-gray-900 mb-3">Quote Items</h5>
+                <h5 className="text-md font-semibold text-gray-900 mb-3">
+                  Quote Items
+                </h5>
                 <div className="bg-gray-50 rounded-lg p-4">
                   {loadingQuoteItems ? (
                     <div className="text-center py-4">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#27aae1] mx-auto mb-2"></div>
-                      <p className="text-gray-600 text-sm">Loading quote items...</p>
+                      <p className="text-gray-600 text-sm">
+                        Loading quote items...
+                      </p>
                     </div>
                   ) : (
                     <>
                       <div className="space-y-3">
                         {quoteItems.map((item, idx) => {
                           // Calculate individual item price if available
-                          const itemPrice = item.amounts && item.amounts.length > 0 ? item.amounts[0].total : 0;
-                          
+                          const itemPrice =
+                            item.amounts && item.amounts.length > 0
+                              ? item.amounts[0].total
+                              : 0;
+
                           // Parse colors if they exist as JSON string
-                          let colorInfo = '';
+                          let colorInfo = "";
                           if (item.colors) {
                             try {
-                              const colors = typeof item.colors === 'string' ? JSON.parse(item.colors) : item.colors;
+                              const colors =
+                                typeof item.colors === "string"
+                                  ? JSON.parse(item.colors)
+                                  : item.colors;
                               if (colors.front || colors.back) {
-                                colorInfo = ` • Colors: ${colors.front || ''}${colors.front && colors.back ? ' / ' : ''}${colors.back || ''}`;
+                                colorInfo = ` • Colors: ${colors.front || ""}${
+                                  colors.front && colors.back ? " / " : ""
+                                }${colors.back || ""}`;
                               }
                             } catch (e) {
                               // If parsing fails, treat as string
-                              if (typeof item.colors === 'string' && item.colors) {
+                              if (
+                                typeof item.colors === "string" &&
+                                item.colors
+                              ) {
                                 colorInfo = ` • Colors: ${item.colors}`;
                               }
                             }
                           }
-                          
+
                           return (
-                            <div key={idx} className="bg-white p-3 rounded border border-gray-200">
+                            <div
+                              key={idx}
+                              className="bg-white p-3 rounded border border-gray-200"
+                            >
                               <div className="flex justify-between items-start">
                                 <div className="flex-1">
-                                  <span className="text-gray-900 font-medium text-base">{item.productName || item.product || 'Product'}</span>
+                                  <span className="text-gray-900 font-medium text-base">
+                                    {item.productName ||
+                                      item.product ||
+                                      "Product"}
+                                  </span>
                                   <div className="text-sm text-gray-600 mt-1 space-y-1">
                                     <div>
-                                      <span className="font-medium">Quantity:</span> {item.quantity} units
-                                      {item.sides && <span> • <span className="font-medium">Sides:</span> {item.sides}</span>}
-                                      {(item.printingSelection || item.printing) && <span> • <span className="font-medium">Printing:</span> {item.printingSelection || item.printing}</span>}
+                                      <span className="font-medium">
+                                        Quantity:
+                                      </span>{" "}
+                                      {item.quantity} units
+                                      {item.sides && (
+                                        <span>
+                                          {" "}
+                                          •{" "}
+                                          <span className="font-medium">
+                                            Sides:
+                                          </span>{" "}
+                                          {item.sides}
+                                        </span>
+                                      )}
+                                      {(item.printingSelection ||
+                                        item.printing) && (
+                                        <span>
+                                          {" "}
+                                          •{" "}
+                                          <span className="font-medium">
+                                            Printing:
+                                          </span>{" "}
+                                          {item.printingSelection ||
+                                            item.printing}
+                                        </span>
+                                      )}
                                     </div>
                                     {item.papers && item.papers.length > 0 && (
                                       <div>
-                                        <span className="font-medium">Paper:</span> {item.papers[0].name} {item.papers[0].gsm}gsm
-                                        {item.papers[0].inputWidth && item.papers[0].inputHeight && (
-                                          <span> • Input: {item.papers[0].inputWidth} × {item.papers[0].inputHeight} cm</span>
-                                        )}
-                                        {item.papers[0].outputWidth && item.papers[0].outputHeight && (
-                                          <span> • Output: {item.papers[0].outputWidth} × {item.papers[0].outputHeight} cm</span>
-                                        )}
+                                        <span className="font-medium">
+                                          Paper:
+                                        </span>{" "}
+                                        {item.papers[0].name}{" "}
+                                        {item.papers[0].gsm}gsm
+                                        {item.papers[0].inputWidth &&
+                                          item.papers[0].inputHeight && (
+                                            <span>
+                                              {" "}
+                                              • Input:{" "}
+                                              {item.papers[0].inputWidth} ×{" "}
+                                              {item.papers[0].inputHeight} cm
+                                            </span>
+                                          )}
+                                        {item.papers[0].outputWidth &&
+                                          item.papers[0].outputHeight && (
+                                            <span>
+                                              {" "}
+                                              • Output:{" "}
+                                              {
+                                                item.papers[0].outputWidth
+                                              } × {item.papers[0].outputHeight}{" "}
+                                              cm
+                                            </span>
+                                          )}
                                         {item.papers[0].sheetsPerPacket && (
-                                          <span> • Sheets per packet: {item.papers[0].sheetsPerPacket}</span>
+                                          <span>
+                                            {" "}
+                                            • Sheets per packet:{" "}
+                                            {item.papers[0].sheetsPerPacket}
+                                          </span>
                                         )}
                                         {item.papers[0].pricePerSheet && (
-                                          <span> • Price per sheet: AED {item.papers[0].pricePerSheet}</span>
+                                          <span>
+                                            {" "}
+                                            • Price per sheet: AED{" "}
+                                            {item.papers[0].pricePerSheet}
+                                          </span>
                                         )}
                                       </div>
                                     )}
-                                    {item.finishing && item.finishing.length > 0 && (
-                                      <div>
-                                        <span className="font-medium">Finishing:</span> {item.finishing.map(f => f.name).join(', ')}
-                                        {item.finishing.some(f => f.cost) && (
-                                          <span> • Total cost: AED {item.finishing.reduce((sum, f) => sum + (f.cost || 0), 0).toFixed(2)}</span>
-                                        )}
-                                      </div>
-                                    )}
+                                    {item.finishing &&
+                                      item.finishing.length > 0 && (
+                                        <div>
+                                          <span className="font-medium">
+                                            Finishing:
+                                          </span>{" "}
+                                          {item.finishing
+                                            .map((f) => f.name)
+                                            .join(", ")}
+                                          {item.finishing.some(
+                                            (f) => f.cost
+                                          ) && (
+                                            <span>
+                                              {" "}
+                                              • Total cost: AED{" "}
+                                              {item.finishing
+                                                .reduce(
+                                                  (sum, f) =>
+                                                    sum + (f.cost || 0),
+                                                  0
+                                                )
+                                                .toFixed(2)}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
                                     {colorInfo && (
-                                      <div><span className="font-medium">Colors:</span> {colorInfo.replace(' • Colors: ', '')}</div>
-                                    )}
-                                    {(item.flatSizeWidth || item.flatSizeHeight) && (
                                       <div>
-                                        <span className="font-medium">Flat Size:</span> {item.flatSizeWidth || 0} × {item.flatSizeHeight || 0} cm
-                                        {item.flatSizeSpine && <span> × {item.flatSizeSpine} cm (spine)</span>}
+                                        <span className="font-medium">
+                                          Colors:
+                                        </span>{" "}
+                                        {colorInfo.replace(" • Colors: ", "")}
                                       </div>
                                     )}
-                                    {(item.closeSizeWidth || item.closeSizeHeight) && !item.useSameAsFlat && (
+                                    {(item.flatSizeWidth ||
+                                      item.flatSizeHeight) && (
                                       <div>
-                                        <span className="font-medium">Close Size:</span> {item.closeSizeWidth || 0} × {item.closeSizeHeight || 0} cm
-                                        {item.closeSizeSpine && <span> × {item.closeSizeSpine} cm (spine)</span>}
+                                        <span className="font-medium">
+                                          Flat Size:
+                                        </span>{" "}
+                                        {item.flatSizeWidth || 0} ×{" "}
+                                        {item.flatSizeHeight || 0} cm
+                                        {item.flatSizeSpine && (
+                                          <span>
+                                            {" "}
+                                            × {item.flatSizeSpine} cm (spine)
+                                          </span>
+                                        )}
                                       </div>
                                     )}
+                                    {(item.closeSizeWidth ||
+                                      item.closeSizeHeight) &&
+                                      !item.useSameAsFlat && (
+                                        <div>
+                                          <span className="font-medium">
+                                            Close Size:
+                                          </span>{" "}
+                                          {item.closeSizeWidth || 0} ×{" "}
+                                          {item.closeSizeHeight || 0} cm
+                                          {item.closeSizeSpine && (
+                                            <span>
+                                              {" "}
+                                              × {item.closeSizeSpine} cm (spine)
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
                                     {item.operational && (
                                       <div>
-                                        <span className="font-medium">Operational:</span> 
-                                        {item.operational.plates && <span> {item.operational.plates} plates</span>}
-                                        {item.operational.units && <span> • {item.operational.units} units</span>}
+                                        <span className="font-medium">
+                                          Operational:
+                                        </span>
+                                        {item.operational.plates && (
+                                          <span>
+                                            {" "}
+                                            {item.operational.plates} plates
+                                          </span>
+                                        )}
+                                        {item.operational.units && (
+                                          <span>
+                                            {" "}
+                                            • {item.operational.units} units
+                                          </span>
+                                        )}
                                       </div>
                                     )}
                                   </div>
                                 </div>
                                 <div className="text-right ml-4">
-                                  <span className="font-bold text-lg text-[#27aae1]">AED {itemPrice.toFixed(2)}</span>
+                                  <span className="font-bold text-lg text-[#27aae1]">
+                                    AED {itemPrice.toFixed(2)}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -752,9 +1093,21 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                         })}
                       </div>
                       <div className="border-t border-gray-200 mt-3 pt-3 flex justify-between items-center">
-                        <span className="font-semibold text-gray-900">Total:</span>
+                        <span className="font-semibold text-gray-900">
+                          Total:
+                        </span>
                         <span className="font-bold text-lg text-[#27aae1]">
-                          AED {quoteItems.reduce((total, item) => total + (item.amounts && item.amounts.length > 0 ? item.amounts[0].total : 0), 0).toFixed(2)}
+                          AED{" "}
+                          {quoteItems
+                            .reduce(
+                              (total, item) =>
+                                total +
+                                (item.amounts && item.amounts.length > 0
+                                  ? item.amounts[0].total
+                                  : 0),
+                              0
+                            )
+                            .toFixed(2)}
                         </span>
                       </div>
                     </>
@@ -775,109 +1128,181 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
               Edit Quote - {editingQuote?.quoteId}
             </DialogTitle>
           </DialogHeader>
-          
+
           {editingQuote && (
             <div className="space-y-6">
               {/* Customer Information Section */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-3">Customer Information</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">
+                  Customer Information
+                </h4>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Company Name
+                    </label>
                     <Input
-                      value={editingQuote.client.companyName || ''}
-                      onChange={(e) => updateEditingQuote('client', e.target.value, 'companyName')}
+                      value={editingQuote.client.companyName || ""}
+                      onChange={(e) =>
+                        updateEditingQuote(
+                          "client",
+                          e.target.value,
+                          "companyName"
+                        )
+                      }
                       className="w-full"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Contact Person
+                    </label>
                     <Input
-                      value={editingQuote.client?.contactPerson || ''}
-                      onChange={(e) => updateEditingQuote('client', e.target.value, 'contactPerson')}
+                      value={editingQuote.client?.contactPerson || ""}
+                      onChange={(e) =>
+                        updateEditingQuote(
+                          "client",
+                          e.target.value,
+                          "contactPerson"
+                        )
+                      }
                       className="w-full"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email
+                    </label>
                     <Input
                       type="email"
-                      value={editingQuote.client?.email || ''}
-                      onChange={(e) => updateEditingQuote('client', e.target.value, 'email')}
+                      value={editingQuote.client?.email || ""}
+                      onChange={(e) =>
+                        updateEditingQuote("client", e.target.value, "email")
+                      }
                       className="w-full"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone
+                    </label>
                     <Input
-                      value={editingQuote.client?.phone || ''}
-                      onChange={(e) => updateEditingQuote('client', e.target.value, 'phone')}
+                      value={editingQuote.client?.phone || ""}
+                      onChange={(e) =>
+                        updateEditingQuote("client", e.target.value, "phone")
+                      }
                       className="w-full"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Country Code</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Country Code
+                    </label>
                     <Input
-                      value={editingQuote.client.countryCode || '+971'}
-                      onChange={(e) => updateEditingQuote('client', e.target.value, 'countryCode')}
+                      value={editingQuote.client.countryCode || "+971"}
+                      onChange={(e) =>
+                        updateEditingQuote(
+                          "client",
+                          e.target.value,
+                          "countryCode"
+                        )
+                      }
                       className="w-full"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Role
+                    </label>
                     <Input
-                      value={editingQuote.client.role || ''}
-                      onChange={(e) => updateEditingQuote('client', e.target.value, 'role')}
+                      value={editingQuote.client.role || ""}
+                      onChange={(e) =>
+                        updateEditingQuote("client", e.target.value, "role")
+                      }
                       className="w-full"
                     />
                   </div>
                 </div>
-                
+
                 {/* Address Fields */}
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h5 className="text-sm font-medium text-gray-700 mb-3">Address Information</h5>
+                  <h5 className="text-sm font-medium text-gray-700 mb-3">
+                    Address Information
+                  </h5>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">Address</label>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">
+                        Address
+                      </label>
                       <Input
-                        value={editingQuote.client.address || ''}
-                        onChange={(e) => updateEditingQuote('client', e.target.value, 'address')}
+                        value={editingQuote.client.address || ""}
+                        onChange={(e) =>
+                          updateEditingQuote(
+                            "client",
+                            e.target.value,
+                            "address"
+                          )
+                        }
                         className="w-full"
                         placeholder="Street address"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">City</label>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">
+                        City
+                      </label>
                       <Input
-                        value={editingQuote.client.city || ''}
-                        onChange={(e) => updateEditingQuote('client', e.target.value, 'city')}
+                        value={editingQuote.client.city || ""}
+                        onChange={(e) =>
+                          updateEditingQuote("client", e.target.value, "city")
+                        }
                         className="w-full"
                         placeholder="City"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">State/Province</label>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">
+                        State/Province
+                      </label>
                       <Input
-                        value={editingQuote.client.state || ''}
-                        onChange={(e) => updateEditingQuote('client', e.target.value, 'state')}
+                        value={editingQuote.client.state || ""}
+                        onChange={(e) =>
+                          updateEditingQuote("client", e.target.value, "state")
+                        }
                         className="w-full"
                         placeholder="State or province"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">Postal Code</label>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">
+                        Postal Code
+                      </label>
                       <Input
-                        value={editingQuote.client.postalCode || ''}
-                        onChange={(e) => updateEditingQuote('client', e.target.value, 'postalCode')}
+                        value={editingQuote.client.postalCode || ""}
+                        onChange={(e) =>
+                          updateEditingQuote(
+                            "client",
+                            e.target.value,
+                            "postalCode"
+                          )
+                        }
                         className="w-full"
                         placeholder="Postal code"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">Country</label>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">
+                        Country
+                      </label>
                       <Input
-                        value={editingQuote.client.country || ''}
-                        onChange={(e) => updateEditingQuote('client', e.target.value, 'country')}
+                        value={editingQuote.client.country || ""}
+                        onChange={(e) =>
+                          updateEditingQuote(
+                            "client",
+                            e.target.value,
+                            "country"
+                          )
+                        }
                         className="w-full"
                         placeholder="Country"
                       />
@@ -888,13 +1313,19 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
 
               {/* Quote Details Section */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-3">Quote Details</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">
+                  Quote Details
+                </h4>
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quote Date</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Quote Date
+                    </label>
                     <Input
                       type="date"
-                      value={new Date(quoteForModal.date).toISOString().slice(0, 10)}
+                      value={new Date(quoteForModal.date)
+                        .toISOString()
+                        .slice(0, 10)}
                       onChange={(e) => {
                         console.log("Date updated:", e.target.value);
                       }}
@@ -902,7 +1333,9 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
                     <select
                       value={quoteForModal.status}
                       onChange={(e) => {
@@ -917,9 +1350,15 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Total Amount</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Total Amount
+                    </label>
                     <Input
-                                              value={`AED ${(quoteForModal.amounts && quoteForModal.amounts.length > 0 ? quoteForModal.amounts[0].total : 0).toFixed(2)}`}
+                      value={`AED ${(quoteForModal.amounts &&
+                      quoteForModal.amounts.length > 0
+                        ? quoteForModal.amounts[0].total
+                        : 0
+                      ).toFixed(2)}`}
                       onChange={(e) => {
                         console.log("Amount updated:", e.target.value);
                       }}
@@ -931,12 +1370,18 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
 
               {/* Step 3 Product Specifications Section */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-3">Product Specifications (Step 3)</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">
+                  Product Specifications (Step 3)
+                </h4>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Product Name
+                    </label>
                     <Input
-                      value={quoteForModal.productName || quoteForModal.product || ''}
+                      value={
+                        quoteForModal.productName || quoteForModal.product || ""
+                      }
                       onChange={(e) => {
                         console.log("Product name updated:", e.target.value);
                       }}
@@ -945,11 +1390,20 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Printing Selection</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Printing Selection
+                    </label>
                     <select
-                      value={quoteForModal.printingSelection || quoteForModal.printing || 'Digital'}
+                      value={
+                        quoteForModal.printingSelection ||
+                        quoteForModal.printing ||
+                        "Digital"
+                      }
                       onChange={(e) => {
-                        console.log("Printing selection updated:", e.target.value);
+                        console.log(
+                          "Printing selection updated:",
+                          e.target.value
+                        );
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#27aae1] focus:border-transparent"
                     >
@@ -960,7 +1414,9 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Quantity
+                    </label>
                     <Input
                       type="number"
                       value={quoteForModal.quantity}
@@ -972,7 +1428,9 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Sides</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Sides
+                    </label>
                     <select
                       value={quoteForModal.sides}
                       onChange={(e) => {
@@ -988,99 +1446,136 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
 
                 {/* Size Specifications */}
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h5 className="text-sm font-medium text-gray-700 mb-3">Size Specifications</h5>
+                  <h5 className="text-sm font-medium text-gray-700 mb-3">
+                    Size Specifications
+                  </h5>
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">Flat Size Width (cm)</label>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">
+                        Flat Size Width (cm)
+                      </label>
                       <Input
                         type="number"
                         step="0.1"
-                        value={quoteForModal.flatSizeWidth || ''}
+                        value={quoteForModal.flatSizeWidth || ""}
                         onChange={(e) => {
-                          console.log("Flat size width updated:", e.target.value);
+                          console.log(
+                            "Flat size width updated:",
+                            e.target.value
+                          );
                         }}
                         className="w-full"
                         placeholder="Width"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">Flat Size Height (cm)</label>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">
+                        Flat Size Height (cm)
+                      </label>
                       <Input
                         type="number"
                         step="0.1"
-                        value={quoteForModal.flatSizeHeight || ''}
+                        value={quoteForModal.flatSizeHeight || ""}
                         onChange={(e) => {
-                          console.log("Flat size height updated:", e.target.value);
+                          console.log(
+                            "Flat size height updated:",
+                            e.target.value
+                          );
                         }}
                         className="w-full"
                         placeholder="Height"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">Flat Size Spine (cm)</label>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">
+                        Flat Size Spine (cm)
+                      </label>
                       <Input
                         type="number"
                         step="0.1"
-                        value={quoteForModal.flatSizeSpine || ''}
+                        value={quoteForModal.flatSizeSpine || ""}
                         onChange={(e) => {
-                          console.log("Flat size spine updated:", e.target.value);
+                          console.log(
+                            "Flat size spine updated:",
+                            e.target.value
+                          );
                         }}
                         className="w-full"
                         placeholder="Spine"
                       />
                     </div>
                   </div>
-                  
+
                   <div className="mt-3">
                     <label className="flex items-center space-x-2">
                       <input
                         type="checkbox"
                         checked={quoteForModal.useSameAsFlat || false}
                         onChange={(e) => {
-                          console.log("Use same as flat updated:", e.target.checked);
+                          console.log(
+                            "Use same as flat updated:",
+                            e.target.checked
+                          );
                         }}
                         className="rounded border-gray-300 text-[#27aae1] focus:ring-[#27aae1]"
                       />
-                      <span className="text-sm font-medium text-gray-700">Use same dimensions for close size</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        Use same dimensions for close size
+                      </span>
                     </label>
                   </div>
 
                   {!quoteForModal.useSameAsFlat && (
                     <div className="grid md:grid-cols-3 gap-4 mt-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Close Size Width (cm)</label>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Close Size Width (cm)
+                        </label>
                         <Input
                           type="number"
                           step="0.1"
-                          value={quoteForModal.closeSizeWidth || ''}
+                          value={quoteForModal.closeSizeWidth || ""}
                           onChange={(e) => {
-                            console.log("Close size width updated:", e.target.value);
+                            console.log(
+                              "Close size width updated:",
+                              e.target.value
+                            );
                           }}
                           className="w-full"
                           placeholder="Width"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Close Size Height (cm)</label>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Close Size Height (cm)
+                        </label>
                         <Input
                           type="number"
                           step="0.1"
-                          value={quoteForModal.closeSizeHeight || ''}
+                          value={quoteForModal.closeSizeHeight || ""}
                           onChange={(e) => {
-                            console.log("Close size height updated:", e.target.value);
+                            console.log(
+                              "Close size height updated:",
+                              e.target.value
+                            );
                           }}
                           className="w-full"
                           placeholder="Height"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Close Size Spine (cm)</label>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Close Size Spine (cm)
+                        </label>
                         <Input
                           type="number"
                           step="0.1"
-                          value={quoteForModal.closeSizeSpine || ''}
+                          value={quoteForModal.closeSizeSpine || ""}
                           onChange={(e) => {
-                            console.log("Close size spine updated:", e.target.value);
+                            console.log(
+                              "Close size spine updated:",
+                              e.target.value
+                            );
                           }}
                           className="w-full"
                           placeholder="Spine"
@@ -1107,7 +1602,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     + Add Item
                   </Button>
                 </div>
-                
+
                 <div className="space-y-3">
                   {/* Display actual quote data with enhanced fields */}
                   <div className="bg-white p-4 rounded border border-gray-200">
@@ -1115,18 +1610,29 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                       {/* Basic Product Info */}
                       <div className="grid md:grid-cols-3 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Product Name</label>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Product Name
+                          </label>
                           <Input
-                            value={quoteForModal.productName || quoteForModal.product || ''}
+                            value={
+                              quoteForModal.productName ||
+                              quoteForModal.product ||
+                              ""
+                            }
                             onChange={(e) => {
-                              console.log(`Product name updated:`, e.target.value);
+                              console.log(
+                                `Product name updated:`,
+                                e.target.value
+                              );
                             }}
                             className="w-full text-sm"
                             placeholder="Product name"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Quantity
+                          </label>
                           <Input
                             type="number"
                             value={quoteForModal.quantity}
@@ -1138,9 +1644,15 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Total Price</label>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Total Price
+                          </label>
                           <Input
-                            value={`AED ${(quoteForModal.amounts && quoteForModal.amounts.length > 0 ? quoteForModal.amounts[0].total : 0).toFixed(2)}`}
+                            value={`AED ${(quoteForModal.amounts &&
+                            quoteForModal.amounts.length > 0
+                              ? quoteForModal.amounts[0].total
+                              : 0
+                            ).toFixed(2)}`}
                             onChange={(e) => {
                               console.log(`Price updated:`, e.target.value);
                             }}
@@ -1151,106 +1663,148 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                       </div>
 
                       {/* Paper Specifications */}
-                      {quoteForModal.papers && quoteForModal.papers.length > 0 && (
-                        <div className="border-t border-gray-100 pt-3">
-                          <h6 className="text-xs font-medium text-gray-700 mb-2">Paper Specifications</h6>
-                          <div className="grid md:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium text-gray-500 mb-1">Paper Type</label>
-                              <Input
-                                value={quoteForModal.papers[0].name}
-                                onChange={(e) => {
-                                  console.log(`Paper name updated:`, e.target.value);
-                                }}
-                                className="w-full text-sm"
-                                placeholder="Paper name"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-500 mb-1">GSM</label>
-                              <Input
-                                value={quoteForModal.papers[0].gsm}
-                                onChange={(e) => {
-                                  console.log(`GSM updated:`, e.target.value);
-                                }}
-                                className="w-full text-sm"
-                                placeholder="GSM"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-500 mb-1">Input Size (W × H cm)</label>
-                              <div className="flex space-x-2">
+                      {quoteForModal.papers &&
+                        quoteForModal.papers.length > 0 && (
+                          <div className="border-t border-gray-100 pt-3">
+                            <h6 className="text-xs font-medium text-gray-700 mb-2">
+                              Paper Specifications
+                            </h6>
+                            <div className="grid md:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                  Paper Type
+                                </label>
                                 <Input
-                                  type="number"
-                                  step="0.1"
-                                  value={quoteForModal.papers[0].inputWidth || ''}
+                                  value={quoteForModal.papers[0].name}
                                   onChange={(e) => {
-                                    console.log(`Input width updated:`, e.target.value);
+                                    console.log(
+                                      `Paper name updated:`,
+                                      e.target.value
+                                    );
                                   }}
                                   className="w-full text-sm"
-                                  placeholder="Width"
+                                  placeholder="Paper name"
                                 />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                  GSM
+                                </label>
                                 <Input
-                                  type="number"
-                                  step="0.1"
-                                  value={quoteForModal.papers[0].inputHeight || ''}
+                                  value={quoteForModal.papers[0].gsm}
                                   onChange={(e) => {
-                                    console.log(`Input height updated:`, e.target.value);
+                                    console.log(`GSM updated:`, e.target.value);
                                   }}
                                   className="w-full text-sm"
-                                  placeholder="Height"
+                                  placeholder="GSM"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                  Input Size (W × H cm)
+                                </label>
+                                <div className="flex space-x-2">
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    value={
+                                      quoteForModal.papers[0].inputWidth || ""
+                                    }
+                                    onChange={(e) => {
+                                      console.log(
+                                        `Input width updated:`,
+                                        e.target.value
+                                      );
+                                    }}
+                                    className="w-full text-sm"
+                                    placeholder="Width"
+                                  />
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    value={
+                                      quoteForModal.papers[0].inputHeight || ""
+                                    }
+                                    onChange={(e) => {
+                                      console.log(
+                                        `Input height updated:`,
+                                        e.target.value
+                                      );
+                                    }}
+                                    className="w-full text-sm"
+                                    placeholder="Height"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                  Price per Sheet
+                                </label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={
+                                    quoteForModal.papers[0].pricePerSheet || ""
+                                  }
+                                  onChange={(e) => {
+                                    console.log(
+                                      `Price per sheet updated:`,
+                                      e.target.value
+                                    );
+                                  }}
+                                  className="w-full text-sm"
+                                  placeholder="Price"
                                 />
                               </div>
                             </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-500 mb-1">Price per Sheet</label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={quoteForModal.papers[0].pricePerSheet || ''}
-                                onChange={(e) => {
-                                  console.log(`Price per sheet updated:`, e.target.value);
-                                }}
-                                className="w-full text-sm"
-                                placeholder="Price"
-                              />
-                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Finishing Specifications */}
-                      {quoteForModal.finishing && quoteForModal.finishing.length > 0 && (
-                        <div className="border-t border-gray-100 pt-3">
-                          <h6 className="text-xs font-medium text-gray-700 mb-2">Finishing Specifications</h6>
-                          <div className="grid md:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium text-gray-500 mb-1">Finishing Type</label>
-                              <Input
-                                value={quoteForModal.finishing[0].name}
-                                onChange={(e) => {
-                                  console.log(`Finishing name updated:`, e.target.value);
-                                }}
-                                className="w-full text-sm"
-                                placeholder="Finishing name"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-500 mb-1">Cost</label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={quoteForModal.finishing[0].cost || ''}
-                                onChange={(e) => {
-                                  console.log(`Finishing cost updated:`, e.target.value);
-                                }}
-                                className="w-full text-sm"
-                                placeholder="Cost"
-                              />
+                      {quoteForModal.finishing &&
+                        quoteForModal.finishing.length > 0 && (
+                          <div className="border-t border-gray-100 pt-3">
+                            <h6 className="text-xs font-medium text-gray-700 mb-2">
+                              Finishing Specifications
+                            </h6>
+                            <div className="grid md:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                  Finishing Type
+                                </label>
+                                <Input
+                                  value={quoteForModal.finishing[0].name}
+                                  onChange={(e) => {
+                                    console.log(
+                                      `Finishing name updated:`,
+                                      e.target.value
+                                    );
+                                  }}
+                                  className="w-full text-sm"
+                                  placeholder="Finishing name"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                  Cost
+                                </label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={quoteForModal.finishing[0].cost || ""}
+                                  onChange={(e) => {
+                                    console.log(
+                                      `Finishing cost updated:`,
+                                      e.target.value
+                                    );
+                                  }}
+                                  className="w-full text-sm"
+                                  placeholder="Cost"
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Actions */}
                       <div className="border-t border-gray-100 pt-3 flex justify-end">
@@ -1272,13 +1826,17 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
 
               {/* Operational Data Section */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-3">Operational Data</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">
+                  Operational Data
+                </h4>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Plates</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Plates
+                    </label>
                     <Input
                       type="number"
-                      value={quoteForModal.operational?.plates || ''}
+                      value={quoteForModal.operational?.plates || ""}
                       onChange={(e) => {
                         console.log("Plates updated:", e.target.value);
                       }}
@@ -1287,10 +1845,12 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Units
+                    </label>
                     <Input
                       type="number"
-                      value={quoteForModal.operational?.units || ''}
+                      value={quoteForModal.operational?.units || ""}
                       onChange={(e) => {
                         console.log("Units updated:", e.target.value);
                       }}
@@ -1303,7 +1863,9 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
 
               {/* Additional Notes Section */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-3">Additional Notes</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">
+                  Additional Notes
+                </h4>
                 <textarea
                   placeholder="Add any additional notes, special requirements, or comments..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#27aae1] focus:border-transparent"
@@ -1326,11 +1888,7 @@ const Step2CustomerChoose: FC<Step2Props> = ({ formData, setFormData, onCustomer
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleSaveChanges}
-            >
-              Save Changes
-            </Button>
+            <Button onClick={handleSaveChanges}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

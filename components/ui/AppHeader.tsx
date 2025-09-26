@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Printer, Settings, Shield, UserCheck, LogOut, User, X, Activity, ChevronRight, ChevronLeft } from "lucide-react";
+import { Settings, Shield, UserCheck, LogOut, User, X, Activity, ChevronRight, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import GlobalSearch from "./GlobalSearch";
 import { getCurrentUser, updateUserProfile, updateProfilePicture, updatePassword, convertToEmpFormat } from "@/lib/auth";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {ThemeToggle} from "../shared/ThemeToggle";
 
 interface AppHeaderProps {
   className?: string;
@@ -19,7 +20,7 @@ interface AppHeaderProps {
   isNavbarOpen?: boolean;
 }
 
-export default function AppHeader({ className = "", isNavbarExpanded = false, onNavbarHover, onNavbarToggle, isNavbarOpen }: AppHeaderProps) {
+export default function AppHeader({ className = "", onNavbarHover, onNavbarToggle, isNavbarOpen }: AppHeaderProps) {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -630,6 +631,7 @@ export default function AppHeader({ className = "", isNavbarExpanded = false, on
                 <X className="w-4 h-4" />
               </button>
             </div>
+            
             
             <div className="p-4 space-y-4">
               <div className="space-y-2">
