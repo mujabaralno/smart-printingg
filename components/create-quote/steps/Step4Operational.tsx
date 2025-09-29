@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import type { FC, Dispatch, SetStateAction } from "react";
@@ -12,7 +15,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Package, Calculator, Settings, BarChart3, Edit3, AlertTriangle, Database, Palette, Info, Clock, DollarSign, Search, Building, Plus, Minus, Printer, Scissors, GripHorizontal } from "lucide-react";
 import { getProductConfig, getShoppingBagPreset } from "@/constants/product-config";
 import type { QuoteFormData, DigitalPricing, OffsetPricing, DigitalCostingResult, OffsetCostingResult } from "@/types";
@@ -796,6 +800,28 @@ function drawCuttingLayout(
   ctx.fillText(infoText, 15, 12);
 }
 
+
+function createRoundedRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
 // Professional visualization drawing function with HD resolution
 function drawProfessionalVisualization(
   canvas: HTMLCanvasElement,
@@ -1215,54 +1241,39 @@ function drawPrintView(ctx: CanvasRenderingContext2D, canvasWidth: number, canva
       
       // No individual position adjustments needed - grid layout handles positioning correctly
       
-      // Draw bleed area (red) - only for rectangular products
-      if (productShape === 'rectangular') {
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
-      ctx.fillRect(x - scaledBleedWidth, y - scaledBleedWidth, 
-                   scaledProductWidth + (2 * scaledBleedWidth), 
-                   scaledProductHeight + (2 * scaledBleedWidth));
-      
-        // Draw final trim area (black) for rectangular products
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(x, y, scaledProductWidth, scaledProductHeight);
-      } else {
-        // For circular products (cups), use the specialized drawing function
-        if (productShape === 'circular') {
-          drawCircularProduct(ctx, x, y, scaledProductWidth, scaledProductHeight, settings, productData, row, col, currentProduct);
-        } else {
-          drawProductShape(ctx, x, y, scaledProductWidth, scaledProductHeight, productShape, settings, productData);
-        }
-      }
-      
-      // Draw enhanced product dimensions label using actual Step 3 dimensions
       const actualProductWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
       const actualProductHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
-      
-      // Only draw text label for rectangular products (cups have their own label in drawCircularProduct)
+
       if (productShape === 'rectangular') {
-        // Background for dimension label
-        const labelWidth = 60;
-        const labelHeight = 20;
-        const labelX = x + scaledProductWidth / 2 - labelWidth / 2;
-        const labelY = y + scaledProductHeight / 2 - labelHeight / 2;
-        
-        // Draw background with modern styling
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-        ctx.fillRect(labelX, labelY, labelWidth, labelHeight);
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(labelX, labelY, labelWidth, labelHeight);
-        
-        // Draw dimension text
-        ctx.fillStyle = '#1e40af';
+        if (settings.showBleed) {
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.18)';
+          ctx.fillRect(
+            x - scaledBleedWidth,
+            y - scaledBleedWidth,
+            scaledProductWidth + (2 * scaledBleedWidth),
+            scaledProductHeight + (2 * scaledBleedWidth)
+          );
+        }
+        drawProductShape(ctx, x, y, scaledProductWidth, scaledProductHeight, 'rectangular', settings, currentProduct);
+      } else if (productShape === 'circular') {
+        drawCircularProduct(ctx, x, y, scaledProductWidth, scaledProductHeight, settings, productData, row, col, currentProduct);
+      } else {
+        drawComplex3DProduct(ctx, x, y, scaledProductWidth, scaledProductHeight, settings, currentProduct);
+      }
+
+      if (productShape === 'rectangular') {
+        const labelText = `${actualProductWidth.toFixed(1)}×${actualProductHeight.toFixed(1)} cm`;
         ctx.font = 'bold 9px Inter, system-ui, sans-serif';
+        const labelWidth = ctx.measureText(labelText).width + 16;
+        const labelHeight = 16;
+        const labelX = x + scaledProductWidth - labelWidth - 4;
+        const labelY = y + 4;
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.fillRect(labelX, labelY, labelWidth, labelHeight);
+        ctx.fillStyle = '#f8fafc';
         ctx.textAlign = 'center';
-      ctx.fillText(`${actualProductWidth}×${actualProductHeight}`, x + scaledProductWidth / 2, y + scaledProductHeight / 2 + 3);
-        
-        // Add unit label
-        ctx.fillStyle = '#6b7280';
-        ctx.font = '8px Inter, system-ui, sans-serif';
-        ctx.fillText('cm', x + scaledProductWidth / 2, y + scaledProductHeight / 2 + 12);
+        ctx.fillText(labelText, labelX + labelWidth / 2, labelY + 11);
       }
     }
   }
@@ -1539,54 +1550,39 @@ function drawGripperView(ctx: CanvasRenderingContext2D, canvasWidth: number, can
       
       // No individual position adjustments needed - grid layout handles positioning correctly
       
-      // Draw bleed area (red) - only for rectangular products
-      if (productShape === 'rectangular') {
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
-      ctx.fillRect(x - scaledBleedWidth, y - scaledBleedWidth, 
-                   scaledProductWidth + (2 * scaledBleedWidth), 
-                   scaledProductHeight + (2 * scaledBleedWidth));
-      
-        // Draw final trim area (black) for rectangular products
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(x, y, scaledProductWidth, scaledProductHeight);
-      } else {
-        // For circular products (cups), use the specialized drawing function
-        if (productShape === 'circular') {
-          drawCircularProduct(ctx, x, y, scaledProductWidth, scaledProductHeight, settings, productData, row, col, currentProduct);
-        } else {
-          drawProductShape(ctx, x, y, scaledProductWidth, scaledProductHeight, productShape, settings, productData);
-        }
-      }
-      
-      // Draw enhanced product dimensions label using actual Step 3 dimensions
       const actualProductWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
       const actualProductHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
-      
-      // Only draw text label for rectangular products (cups have their own label in drawCircularProduct)
+
       if (productShape === 'rectangular') {
-        // Background for dimension label
-        const labelWidth = 60;
-        const labelHeight = 20;
-        const labelX = x + scaledProductWidth / 2 - labelWidth / 2;
-        const labelY = y + scaledProductHeight / 2 - labelHeight / 2;
-        
-        // Draw background with modern styling
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-        ctx.fillRect(labelX, labelY, labelWidth, labelHeight);
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(labelX, labelY, labelWidth, labelHeight);
-        
-        // Draw dimension text
-        ctx.fillStyle = '#1e40af';
+        if (settings.showBleed) {
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.18)';
+          ctx.fillRect(
+            x - scaledBleedWidth,
+            y - scaledBleedWidth,
+            scaledProductWidth + (2 * scaledBleedWidth),
+            scaledProductHeight + (2 * scaledBleedWidth)
+          );
+        }
+        drawProductShape(ctx, x, y, scaledProductWidth, scaledProductHeight, 'rectangular', settings, currentProduct);
+      } else if (productShape === 'circular') {
+        drawCircularProduct(ctx, x, y, scaledProductWidth, scaledProductHeight, settings, productData, row, col, currentProduct);
+      } else {
+        drawComplex3DProduct(ctx, x, y, scaledProductWidth, scaledProductHeight, settings, currentProduct);
+      }
+
+      if (productShape === 'rectangular') {
+        const labelText = `${actualProductWidth.toFixed(1)}×${actualProductHeight.toFixed(1)} cm`;
         ctx.font = 'bold 9px Inter, system-ui, sans-serif';
+        const labelWidth = ctx.measureText(labelText).width + 16;
+        const labelHeight = 16;
+        const labelX = x + scaledProductWidth - labelWidth - 4;
+        const labelY = y + 4;
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.fillRect(labelX, labelY, labelWidth, labelHeight);
+        ctx.fillStyle = '#f8fafc';
         ctx.textAlign = 'center';
-      ctx.fillText(`${actualProductWidth}×${actualProductHeight}`, x + scaledProductWidth / 2, y + scaledProductHeight / 2 + 3);
-        
-        // Add unit label
-        ctx.fillStyle = '#6b7280';
-        ctx.font = '8px Inter, system-ui, sans-serif';
-        ctx.fillText('cm', x + scaledProductWidth / 2, y + scaledProductHeight / 2 + 12);
+        ctx.fillText(labelText, labelX + labelWidth / 2, labelY + 11);
       }
     }
   }
@@ -1733,66 +1729,91 @@ function drawProductShape(
   settings: VisualizationSettings,
   productData?: any
 ) {
-  switch (productShape) {
-    case 'rectangular':
-      drawRectangularProduct(ctx, x, y, width, height, settings, productData);
-      break;
-    case 'circular':
-      drawCircularProduct(ctx, x, y, width, height, settings, productData);
-      break;
-    case 'complex-3d':
-      drawComplex3DProduct(ctx, x, y, width, height, settings, productData);
-      break;
-  }
-}
+  const bleed = (settings.bleedWidth || 0.3) * Math.min(width, height) / Math.max(productData?.flatSize?.width || 1, 1);
+  const radius = Math.min(width, height) * 0.16;
+  const safeInset = Math.max(Math.min(width, height) * 0.12, bleed * 3);
+  const accent = productShape === 'rectangular' ? '#1d4ed8' : '#6366f1';
 
-// Draw rectangular products (Business Cards, Flyers)
-function drawRectangularProduct(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  settings: VisualizationSettings,
-  productData?: any
-) {
-  // Product background with gradient
-  const productGradient = ctx.createLinearGradient(x, y, x + width, y + height);
-  productGradient.addColorStop(0, '#ffffff');
-  productGradient.addColorStop(0.5, '#f8fafc');
-  productGradient.addColorStop(1, '#f1f5f9');
-  
-  ctx.fillStyle = productGradient;
-  ctx.fillRect(x, y, width, height);
+  ctx.save();
+  ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
+  ctx.fillRect(
+    x - bleed,
+    y - bleed,
+    width + bleed * 2,
+    height + bleed * 2
+  );
+  ctx.restore();
 
-  // Professional border
-  ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, width, height);
+  ctx.save();
+  ctx.shadowColor = 'rgba(15, 23, 42, 0.18)';
+  ctx.shadowBlur = Math.max(8, width * 0.15);
+  ctx.shadowOffsetY = Math.max(4, height * 0.08);
+  ctx.beginPath();
+  createRoundedRectPath(ctx, x, y, width, height, radius);
+  const faceGradient = ctx.createLinearGradient(x, y, x + width, y + height);
+  faceGradient.addColorStop(0, 'rgba(226, 232, 240, 0.96)');
+  faceGradient.addColorStop(0.6, 'rgba(241, 245, 249, 0.86)');
+  faceGradient.addColorStop(1, 'rgba(248, 250, 252, 0.96)');
+  ctx.fillStyle = faceGradient;
+  ctx.fill();
+  ctx.restore();
 
-  // Inner content area (with bleed consideration)
-  const bleedWidth = settings.bleedWidth * (width / (productData?.flatSize?.width || 100));
-  const contentX = x + bleedWidth;
-  const contentY = y + bleedWidth;
-  const contentWidth = width - 2 * bleedWidth;
-  const contentHeight = height - 2 * bleedWidth;
+  const borderGradient = ctx.createLinearGradient(x, y, x + width, y + height);
+  borderGradient.addColorStop(0, accent);
+  borderGradient.addColorStop(1, 'rgba(37, 99, 235, 0.55)');
+  ctx.lineWidth = 1.6;
+  ctx.strokeStyle = borderGradient;
+  ctx.beginPath();
+  createRoundedRectPath(ctx, x, y, width, height, radius);
+  ctx.stroke();
 
-  // Content background
-  ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
-  ctx.fillRect(contentX, contentY, contentWidth, contentHeight);
+  ctx.fillStyle = 'rgba(59, 130, 246, 0.12)';
+  ctx.fillRect(x + 6, y + 6, width - 12, Math.max(4, height * 0.08));
 
-  // Content border
-  ctx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
+  ctx.save();
+  ctx.setLineDash([6, 4]);
+  ctx.strokeStyle = 'rgba(59, 130, 246, 0.35)';
   ctx.lineWidth = 1;
-  ctx.setLineDash([3, 3]);
-  ctx.strokeRect(contentX, contentY, contentWidth, contentHeight);
-  ctx.setLineDash([]);
+  ctx.beginPath();
+  createRoundedRectPath(
+    ctx,
+    x + safeInset,
+    y + safeInset,
+    width - safeInset * 2,
+    height - safeInset * 2,
+    Math.max(radius - safeInset * 0.7, 4)
+  );
+  ctx.stroke();
+  ctx.restore();
 
-  // Product dimensions label
-  ctx.fillStyle = 'rgba(55, 65, 81, 0.9)';
-  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(`${(productData?.flatSize?.width || 9).toFixed(1)}cm × ${(productData?.flatSize?.height || 5.5).toFixed(1)}cm`, x + width / 2, y + height / 2);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
+  ctx.lineWidth = 1;
+  const cornerLen = Math.min(width, height) * 0.14;
+  const corners: Array<[number, number]> = [
+    [x - bleed, y - bleed],
+    [x + width + bleed, y - bleed],
+    [x + width + bleed, y + height + bleed],
+    [x - bleed, y + height + bleed],
+  ];
+  corners.forEach(([cx, cy]) => {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + cornerLen);
+    ctx.lineTo(cx, cy);
+    ctx.lineTo(cx + cornerLen, cy);
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  ctx.save();
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.moveTo(x + width - 14, y + 10);
+  ctx.lineTo(x + width - 6, y + 14);
+  ctx.lineTo(x + width - 14, y + 18);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
 // Draw circular products (Cups) - Technical Drawing Style with Proper Gap Compliance
@@ -1810,124 +1831,93 @@ function drawCircularProduct(
 ) {
   const centerX = x + width / 2;
   const centerY = y + height / 2;
-  
-  // Ensure cup design fits within allocated space with proper safety gaps
-  // The width and height already include safety gaps from the layout calculation
-  const safetyGap = 0.5; // 0.5cm safety gap
-  const bleedWidth = settings.bleedWidth || 0.3;
-  const totalMargin = safetyGap + bleedWidth;
-  const availableWidth = width - (2 * totalMargin);
-  const availableHeight = height - (2 * totalMargin);
-  
-  // For smaller cups (4oz, 6oz), use more conservative sizing to ensure proper spacing
-  const isSmallCup = (product?.cupSizeOz === 4 || product?.cupSizeOz === 6);
-  
-  // Debug cup drawing dimensions
-  console.log(`🍵 Drawing Cup ${row}-${col}:`, {
-    cupSizeOz: product?.cupSizeOz,
-    isSmallCup,
-    allocatedWidth: width,
-    allocatedHeight: height,
-    safetyGap,
-    bleedWidth,
-    totalMargin,
-    availableWidth,
-    availableHeight
-  });
-  
-  // Clean technical drawing style - simple and professional
-  const cupSizeOz = product?.cupSizeOz || 8;
-  
-  // Simple dimensions that fit within available space
-  const sleeveWidth = availableWidth * 0.85;
-  const sleeveHeight = availableHeight * 0.6;
-  const baseRadius = Math.min(sleeveWidth, sleeveHeight) * 0.15;
-  
-  // Position elements
-  const sleeveX = centerX - sleeveWidth / 2;
-  const sleeveY = centerY - sleeveHeight / 2;
-  const baseX = centerX;
-  const baseY = sleeveY + sleeveHeight + baseRadius + 5;
-  
-  // Draw clean arc-shaped trapezoid sleeve
-  ctx.strokeStyle = '#2563eb'; // Clean blue outline
-  ctx.lineWidth = 1.5;
-  ctx.fillStyle = '#f8fafc'; // Very light fill
-  
-  // Create simple arc-shaped trapezoid
+  const bleed = (settings.bleedWidth || 0.3) * Math.min(width, height) / Math.max(productData?.flatSize?.width || 1, 1);
+  const rimHeight = height * 0.18;
+  const bodyHeight = height * 0.6;
+  const baseHeight = height * 0.12;
+  const bodyTopWidth = width * 0.88;
+  const bodyBottomWidth = width * 0.6;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
   ctx.beginPath();
-  
-  // Top edge (slightly curved outward)
-  const topCurve = sleeveHeight * 0.1;
-  ctx.moveTo(sleeveX + sleeveWidth * 0.1, sleeveY);
-  ctx.quadraticCurveTo(centerX, sleeveY - topCurve, sleeveX + sleeveWidth * 0.9, sleeveY);
-  
-  // Right side
-  ctx.lineTo(sleeveX + sleeveWidth * 0.85, sleeveY + sleeveHeight);
-  
-  // Bottom edge (slightly curved inward)
-  const bottomCurve = sleeveHeight * 0.05;
-  ctx.quadraticCurveTo(centerX, sleeveY + sleeveHeight + bottomCurve, sleeveX + sleeveWidth * 0.15, sleeveY + sleeveHeight);
-  
-  // Left side
-  ctx.lineTo(sleeveX + sleeveWidth * 0.1, sleeveY);
-  
+  ctx.ellipse(centerX, centerY, width / 2 + bleed, height / 2 + bleed, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(30, 64, 175, 0.18)';
+  ctx.shadowBlur = Math.max(8, width * 0.18);
+  ctx.shadowOffsetY = Math.max(4, height * 0.08);
+  ctx.beginPath();
+  ctx.moveTo(centerX - bodyTopWidth / 2, centerY - bodyHeight / 2);
+  ctx.quadraticCurveTo(centerX, centerY - bodyHeight / 2 - rimHeight * 0.25, centerX + bodyTopWidth / 2, centerY - bodyHeight / 2);
+  ctx.lineTo(centerX + bodyBottomWidth / 2, centerY + bodyHeight / 2);
+  ctx.quadraticCurveTo(centerX, centerY + bodyHeight / 2 + baseHeight * 0.6, centerX - bodyBottomWidth / 2, centerY + bodyHeight / 2);
   ctx.closePath();
+  const bodyGradient = ctx.createLinearGradient(x, y, x + width, y + height);
+  bodyGradient.addColorStop(0, 'rgba(248, 250, 252, 0.96)');
+  bodyGradient.addColorStop(0.5, 'rgba(241, 245, 249, 0.82)');
+  bodyGradient.addColorStop(1, 'rgba(226, 232, 240, 0.96)');
+  ctx.fillStyle = bodyGradient;
   ctx.fill();
-  ctx.stroke();
+  ctx.restore();
 
-  // Draw clean fold lines (red dashed)
-  ctx.strokeStyle = '#dc2626';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([4, 2]);
-  
-  // Three fold lines
-  const foldPositions = [0.2, 0.5, 0.8];
-  foldPositions.forEach(pos => {
+  ctx.save();
+  ctx.lineWidth = 1.6;
+  ctx.strokeStyle = 'rgba(37, 99, 235, 0.65)';
   ctx.beginPath();
-    ctx.moveTo(sleeveX + sleeveWidth * pos, sleeveY);
-    ctx.lineTo(sleeveX + sleeveWidth * pos, sleeveY + sleeveHeight);
+  ctx.moveTo(centerX - bodyTopWidth / 2, centerY - bodyHeight / 2);
+  ctx.quadraticCurveTo(centerX, centerY - bodyHeight / 2 - rimHeight * 0.25, centerX + bodyTopWidth / 2, centerY - bodyHeight / 2);
+  ctx.lineTo(centerX + bodyBottomWidth / 2, centerY + bodyHeight / 2);
+  ctx.quadraticCurveTo(centerX, centerY + bodyHeight / 2 + baseHeight * 0.4, centerX - bodyBottomWidth / 2, centerY + bodyHeight / 2);
+  ctx.closePath();
   ctx.stroke();
-  });
-  
-  ctx.setLineDash([]); // Reset line dash
+  ctx.restore();
 
-  // Draw clean circular base
-  ctx.fillStyle = '#f8fafc';
-  ctx.strokeStyle = '#2563eb';
-  ctx.lineWidth = 1.5;
+  ctx.save();
+  ctx.fillStyle = 'rgba(59, 130, 246, 0.12)';
   ctx.beginPath();
-  ctx.arc(baseX, baseY, baseRadius, 0, 2 * Math.PI);
+  ctx.ellipse(centerX, centerY - bodyHeight / 2, bodyTopWidth / 2, rimHeight / 2, 0, 0, Math.PI * 2);
   ctx.fill();
+  ctx.strokeStyle = 'rgba(37, 99, 235, 0.6)';
+  ctx.lineWidth = 1.2;
   ctx.stroke();
+  ctx.restore();
 
-  // Enhanced cup size label with modern styling
-  const labelWidth = 40;
-  const labelHeight = 16;
-  const labelX = centerX - labelWidth / 2;
-  const labelY = sleeveY - 20;
-  
-  // Draw background for label
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-  ctx.fillRect(labelX, labelY, labelWidth, labelHeight);
-  ctx.strokeStyle = 'rgba(37, 99, 235, 0.3)';
+  ctx.save();
+  ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
+  ctx.beginPath();
+  ctx.ellipse(centerX, centerY + bodyHeight / 2, bodyBottomWidth / 2, baseHeight / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
   ctx.lineWidth = 1;
-  ctx.strokeRect(labelX, labelY, labelWidth, labelHeight);
-  
-  // Draw cup size text
-  ctx.fillStyle = '#1e40af';
+  ctx.stroke();
+  ctx.restore();
+
+  const safeRadius = Math.min(bodyBottomWidth, bodyHeight) * 0.35;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(37, 99, 235, 0.45)';
+  ctx.setLineDash([5, 4]);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, safeRadius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  const cupSizeOz = product?.cupSizeOz ?? productData?.cupSizeOz ?? 8;
+  const pillText = `${cupSizeOz}oz`;
+  ctx.save();
   ctx.font = 'bold 10px Inter, system-ui, sans-serif';
+  const pillWidth = ctx.measureText(pillText).width + 14;
+  const pillX = centerX - pillWidth / 2;
+  const pillY = centerY - bodyHeight / 2 - rimHeight - 18;
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+  ctx.fillRect(pillX, pillY, pillWidth, 18);
+  ctx.fillStyle = '#f1f5f9';
   ctx.textAlign = 'center';
-  ctx.fillText(`${cupSizeOz}oz`, centerX, labelY + 11);
-  
-  // Output object coordinates for verification
-  console.log(`🍵 Cup Object ${row}-${col} (${cupSizeOz}oz):`, {
-    sleeve: { x: sleeveX, y: sleeveY, width: sleeveWidth, height: sleeveHeight },
-    base: { x: baseX, y: baseY, radius: baseRadius },
-    safetyGap: safetyGap,
-    bleedWidth: bleedWidth,
-    withinPrintableArea: true
-  });
+  ctx.fillText(pillText, centerX, pillY + 12);
+  ctx.restore();
 }
 
 // Draw complex 3D products (Shopping Bags)
@@ -1948,62 +1938,34 @@ function drawComplex3DProduct(
       flatSize: productData.flatSize
     } : 'undefined'
   });
-  
-  const centerX = x + width / 2;
-  const centerY = y + height / 2;
-  
-  // Get shopping bag preset from product data or use default
+
   const bagPresetName = productData?.bagPreset || 'Medium';
   const bagPreset = getShoppingBagPreset(bagPresetName);
-  
-  console.log('🛍️ Bag preset lookup:', { bagPresetName, bagPreset });
-  
   if (!bagPreset) {
     console.error('Shopping bag preset not found:', bagPresetName);
     return;
   }
-  
-  // Use the actual Step 3 dimensions from productData
-  const step3Width = productData?.flatSize?.width || bagPreset.width;
-  const step3Height = productData?.flatSize?.height || bagPreset.height;
-  
-  // For shopping bags, we need to calculate the total dieline dimensions
-  // The Step 3 dimensions are the individual panel dimensions, not the total dieline
-  const W = bagPreset.width;   // Individual panel width (cm)
-  const H = bagPreset.height;  // Individual panel height (cm)
-  const G = bagPreset.gusset;  // Gusset width (cm)
-  
-  // Fixed dimensions for shopping bags
-  const T = Math.max(3, W * 0.12); // Top hem (proportional to width)
-  const B = Math.max(6, W * 0.25); // Bottom flaps (proportional to width)
-  
-  const FIXED = {
-    bleed: 0.3,    // cm
-    safety: 0.3,   // cm
-    glueFlap: 2,   // cm
-    handleDia: 0.6, // cm
-  };
-  
-  // Calculate total dieline dimensions (same as in Step 4 layout calculation)
-  const totalW = W + G + W + G + FIXED.glueFlap; // Back + Gusset + Front + Gusset + Glue
-  const totalH = T + H + B; // Top hem + Body height + Bottom flaps
-  
-  // Debug logging to verify dimensions
+
+  const W = bagPreset.width;
+  const H = bagPreset.height;
+  const G = bagPreset.gusset;
+  const T = Math.max(3, W * 0.12);
+  const B = Math.max(6, W * 0.25);
+  const FIXED = { bleed: 0.3, safety: 0.3, glueFlap: 2, handleDia: 0.6 };
+
+  const totalW = W + G + W + G + FIXED.glueFlap;
+  const totalH = T + H + B;
   console.log('🛍️ drawComplex3DProduct dimensions:', {
     bagPreset: bagPresetName,
-    step3Width: step3Width,
-    step3Height: step3Height,
     individualPanel: { W, H, G },
     calculatedTotal: { totalW, totalH },
     canvasSpace: { width, height }
   });
-  
-  // Scale to fit within the allocated canvas space
+
   const scaleX = (width * 0.8) / totalW;
   const scaleY = (height * 0.8) / totalH;
   const scale = Math.min(scaleX, scaleY);
-  
-  // Scaled dimensions
+
   const scaledW = W * scale;
   const scaledH = H * scale;
   const scaledG = G * scale;
@@ -2011,139 +1973,126 @@ function drawComplex3DProduct(
   const scaledB = B * scale;
   const scaledGlueFlap = FIXED.glueFlap * scale;
   const scaledHandleDia = FIXED.handleDia * scale;
-  
-  // Calculate scaled total dimensions
+
   const scaledBodyW = scaledW + scaledG + scaledW + scaledG + scaledGlueFlap;
   const scaledBodyH = scaledT + scaledH;
   const scaledTotalW = scaledBodyW;
   const scaledTotalH = scaledBodyH + scaledB;
-  
-  // Position bag centered
+
+  const centerX = x + width / 2;
+  const centerY = y + height / 2;
   const bagX = centerX - scaledTotalW / 2;
   const bagY = centerY - scaledTotalH / 2;
-  
-  // Positions of vertical seams from left
+
   const xBack = bagX;
   const xG1 = xBack + scaledW;
   const xFront = xG1 + scaledG;
   const xG2 = xFront + scaledW;
   const xGlue = xG2 + scaledG;
-  
-  // Handle positions
-  const slotY = bagY + scaledT / 2;
+
+  const slotY = bagY + scaledT * 0.55;
   const slotOffsetX = scaledW / 4;
   const slotR = scaledHandleDia / 2;
-  
-  // Set drawing styles
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 1;
-  ctx.fillStyle = '#ffffff';
-  
-  // Draw outer cut rectangle for body
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(15, 23, 42, 0.18)';
+  ctx.shadowBlur = Math.max(10, scaledTotalW * 0.12);
+  ctx.shadowOffsetY = Math.max(6, scaledTotalH * 0.08);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.98)';
+  ctx.fillRect(bagX, bagY, scaledTotalW, scaledTotalH);
+  ctx.restore();
+
+  ctx.save();
+  const panelGradient = ctx.createLinearGradient(bagX, bagY, bagX, bagY + scaledBodyH);
+  panelGradient.addColorStop(0, 'rgba(148, 163, 184, 0.08)');
+  panelGradient.addColorStop(1, 'rgba(226, 232, 240, 0.12)');
+  ctx.fillStyle = panelGradient;
+  ctx.fillRect(bagX, bagY, scaledTotalW, scaledBodyH);
+  ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
+  ctx.fillRect(xBack, bagY, scaledW, scaledBodyH);
+  ctx.fillRect(xFront, bagY, scaledW, scaledBodyH);
+  ctx.fillStyle = 'rgba(59, 130, 246, 0.12)';
+  ctx.fillRect(xG1, bagY, scaledG, scaledBodyH);
+  ctx.fillRect(xG2, bagY, scaledG, scaledBodyH);
+  ctx.fillStyle = 'rgba(14, 165, 233, 0.08)';
+  ctx.fillRect(xGlue, bagY, scaledGlueFlap, scaledBodyH);
+  ctx.fillStyle = 'rgba(226, 232, 240, 0.25)';
+  ctx.fillRect(bagX, bagY + scaledBodyH, scaledTotalW, scaledB);
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(15, 23, 42, 0.45)';
+  ctx.lineWidth = 1.2;
   ctx.strokeRect(bagX, bagY, scaledTotalW, scaledBodyH);
-  
-  // Draw bottom flaps (cut rectangles)
-  ctx.strokeRect(bagX, bagY + scaledBodyH, scaledW, scaledB);
-  ctx.strokeRect(xG1, bagY + scaledBodyH, scaledG, scaledB);
-  ctx.strokeRect(xFront, bagY + scaledBodyH, scaledW, scaledB);
-  ctx.strokeRect(xG2, bagY + scaledBodyH, scaledG, scaledB);
-  
-  // Draw glue flap (cut rectangle)
-  ctx.strokeRect(xGlue, bagY, scaledGlueFlap, scaledTotalH);
-  
-  // Draw vertical fold/seam lines (dashed)
-  ctx.setLineDash([4, 2]);
-  ctx.strokeStyle = '#666666';
-  ctx.lineWidth = 0.5;
-  
-  // Vertical fold lines
-  ctx.beginPath();
-  ctx.moveTo(xG1, bagY);
-  ctx.lineTo(xG1, bagY + scaledTotalH);
-  ctx.stroke();
-  
-  ctx.beginPath();
-  ctx.moveTo(xFront, bagY);
-  ctx.lineTo(xFront, bagY + scaledTotalH);
-  ctx.stroke();
-  
-  ctx.beginPath();
-  ctx.moveTo(xG2, bagY);
-  ctx.lineTo(xG2, bagY + scaledTotalH);
-  ctx.stroke();
-  
-  ctx.beginPath();
-  ctx.moveTo(xGlue, bagY);
-  ctx.lineTo(xGlue, bagY + scaledTotalH);
-  ctx.stroke();
-  
-  // Top hem fold line
+  ctx.strokeRect(bagX, bagY + scaledBodyH, scaledTotalW, scaledB);
+  ctx.strokeRect(xGlue, bagY, scaledGlueFlap, scaledBodyH + scaledB);
+  ctx.restore();
+
+  ctx.save();
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = 'rgba(30, 64, 175, 0.45)';
+  ctx.lineWidth = 0.8;
+  for (const seamX of [xG1, xFront, xG2, xGlue]) {
+    ctx.beginPath();
+    ctx.moveTo(seamX, bagY);
+    ctx.lineTo(seamX, bagY + scaledTotalH);
+    ctx.stroke();
+  }
   ctx.beginPath();
   ctx.moveTo(bagX, bagY + scaledT);
   ctx.lineTo(bagX + scaledTotalW, bagY + scaledT);
   ctx.stroke();
-  
-  // Bottom flap fold line
   ctx.beginPath();
   ctx.moveTo(bagX, bagY + scaledBodyH);
   ctx.lineTo(bagX + scaledTotalW, bagY + scaledBodyH);
   ctx.stroke();
-  
-  // Gusset triangular fold lines on bottom flaps
-  // Left gusset
-  ctx.beginPath();
-  ctx.moveTo(xG1, bagY + scaledTotalH);
-  ctx.lineTo(xG1 + scaledG / 2, bagY + scaledBodyH);
-  ctx.stroke();
-  
-  ctx.beginPath();
-  ctx.moveTo(xG1 + scaledG, bagY + scaledTotalH);
-  ctx.lineTo(xG1 + scaledG / 2, bagY + scaledBodyH);
-  ctx.stroke();
-  
-  // Right gusset
-  ctx.beginPath();
-  ctx.moveTo(xG2, bagY + scaledTotalH);
-  ctx.lineTo(xG2 + scaledG / 2, bagY + scaledBodyH);
-  ctx.stroke();
-  
-  ctx.beginPath();
-  ctx.moveTo(xG2 + scaledG, bagY + scaledTotalH);
-  ctx.lineTo(xG2 + scaledG / 2, bagY + scaledBodyH);
-  ctx.stroke();
-  
-  // Reset line dash for solid lines
   ctx.setLineDash([]);
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 1;
-  
-  // Draw handle slots (circles)
-  ctx.beginPath();
-  ctx.arc(xBack + scaledW / 2 - slotOffsetX, slotY, slotR, 0, 2 * Math.PI);
-  ctx.stroke();
-  
-  ctx.beginPath();
-  ctx.arc(xBack + scaledW / 2 + slotOffsetX, slotY, slotR, 0, 2 * Math.PI);
-  ctx.stroke();
-  
-  ctx.beginPath();
-  ctx.arc(xFront + scaledW / 2 - slotOffsetX, slotY, slotR, 0, 2 * Math.PI);
-  ctx.stroke();
-  
-  ctx.beginPath();
-  ctx.arc(xFront + scaledW / 2 + slotOffsetX, slotY, slotR, 0, 2 * Math.PI);
-  ctx.stroke();
-  
-  // Shopping bag label
-  ctx.fillStyle = '#000000';
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(30, 64, 175, 0.55)';
+  ctx.lineWidth = 0.9;
+  const gussetLines: Array<[number, number]> = [
+    [xG1, xG1 + scaledG],
+    [xG2, xG2 + scaledG]
+  ];
+  gussetLines.forEach(([startX, endX]) => {
+    ctx.beginPath();
+    ctx.moveTo(startX, bagY + scaledTotalH);
+    ctx.lineTo(startX + (endX - startX) / 2, bagY + scaledBodyH);
+    ctx.lineTo(endX, bagY + scaledTotalH);
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(15, 23, 42, 0.7)';
+  ctx.lineWidth = 1.2;
+  for (const handleX of [
+    xBack + scaledW / 2 - slotOffsetX,
+    xBack + scaledW / 2 + slotOffsetX,
+    xFront + scaledW / 2 - slotOffsetX,
+    xFront + scaledW / 2 + slotOffsetX
+  ]) {
+    ctx.beginPath();
+    ctx.ellipse(handleX, slotY, slotR, slotR * 0.65, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  const dimensionLabel = `${totalW.toFixed(1)}×${totalH.toFixed(1)} cm`;
+  ctx.save();
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
   ctx.font = 'bold 10px Inter, system-ui, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('Shopping Bag', centerX, bagY - 8);
+  ctx.fillText('Shopping Bag Dieline', centerX, bagY - 14);
+  ctx.fillStyle = 'rgba(55, 65, 81, 0.75)';
+  ctx.font = '9px Inter, system-ui, sans-serif';
+  ctx.fillText(dimensionLabel, centerX, bagY - 2);
+  ctx.restore();
 }
 
-/**
- * Calculate optimal cutting pieces for the input sheet
- */
+
 function calculateCutPieces(inputWidth: number, inputHeight: number, machineMaxWidth: number, machineMaxHeight: number) {
   // Determine the best cutting strategy
   const strategy1 = calculateCutStrategy(inputWidth, inputHeight, machineMaxWidth, machineMaxHeight);
@@ -5089,102 +5038,538 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
 
             {/* Cutting Layout Visualization - TEMPORARILY HIDDEN FOR CLIENT CLARIFICATION */}
             {false && (
+
             <Card className="border-0 shadow-lg w-full mx-0">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-xl md:text-2xl font-bold text-slate-800 flex items-center">
-                  <Settings className="w-6 h-6 md:w-7 md:h-7 mr-2 md:mr-3 text-red-600" />
-                  Cutting Layout Visualization
-                </CardTitle>
+              <CardHeader className="pb-5 border-b border-slate-200/70">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <CardTitle className="text-xl md:text-2xl font-bold text-slate-800 flex items-center">
+                      <BarChart3 className="w-6 h-6 md:w-7 md:h-7 mr-2 md:mr-3 text-[#27aae1]" />
+                      Single Sheet Layout Visualization
+                    </CardTitle>
+                    <CardDescription className="text-sm text-slate-500">
+                      Visualize how each item is imposed on the parent sheet with production overlays.
+                    </CardDescription>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="w-fit border-[#27aae1]/40 bg-[#27aae1]/10 text-[#27aae1] uppercase tracking-wide text-xs font-semibold"
+                  >
+                    Operational preview
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4 w-full px-2 md:px-4">
-                <div className="space-y-3">
-                  <h5 className="text-base md:text-lg font-semibold text-slate-700">How the 100×70cm Input Sheet is Cut for Machine Compatibility</h5>
-                  
-                  <div className="w-full h-[250px] sm:h-[350px] md:h-[450px] lg:h-[500px] bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-lg p-1 shadow-lg overflow-hidden">
-                    <div className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
+              <CardContent className="space-y-6 w-full px-2 md:px-4">
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <h5 className="text-base md:text-lg font-semibold text-slate-800">
+                      Single Sheet Layout Pattern
+                    </h5>
+                    <p className="text-sm text-slate-500 max-w-2xl mx-auto">
+                      All sheets share the same imposition pattern. Toggle the modes below to inspect print, cutting, and gripper considerations.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm">
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Items per sheet</p>
+                      <p className="text-lg md:text-2xl font-semibold text-slate-900">
+                        {layout.itemsPerSheet > 0 ? layout.itemsPerSheet : 'n/a'}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {layout.itemsPerRow && layout.itemsPerCol
+                          ? `${layout.itemsPerRow} x ${layout.itemsPerCol} grid`
+                          : 'Awaiting layout calculation'}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm">
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Parent sheet</p>
+                      <p className="text-lg md:text-xl font-semibold text-slate-900">
+                        {inputWidth && inputHeight
+                          ? `${inputWidth.toFixed(1)} cm x ${inputHeight.toFixed(1)} cm`
+                          : 'Set sheet dimensions'}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {inputWidth && inputHeight
+                          ? `${(inputWidth * inputHeight).toFixed(1)} sq cm`
+                          : 'Area appears after both sides are provided'}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm">
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Output item</p>
+                      <p className="text-lg md:text-xl font-semibold text-slate-900">
+                        {outputDimensions[productIndex]?.width && outputDimensions[productIndex]?.height
+                          ? `${Number(outputDimensions[productIndex]?.width).toFixed(1)} cm x ${Number(outputDimensions[productIndex]?.height).toFixed(1)} cm`
+                          : 'Complete Step 3 sizing'}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Efficiency {Number.isFinite(layout.efficiency) ? `${layout.efficiency.toFixed(1)}%` : 'pending'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Professional Visualization Type Selector */}
+                  <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setVisualizationType('print')}
+                      aria-pressed={visualizationType === 'print'}
+                      className={`group flex items-center gap-3 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all ${
+                        visualizationType === 'print'
+                          ? 'border-transparent bg-[#27aae1] text-white shadow-lg shadow-[#27aae1]/35'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-[#27aae1]/40 hover:text-[#27aae1]'
+                      }`}
+                    >
+                      <Printer className="h-5 w-5 shrink-0" />
+                      <span className="flex flex-col text-left leading-tight">
+                        <span>Print Layout</span>
+                        <span className={`text-xs ${visualizationType === 'print' ? 'text-white/80' : 'text-slate-400'}`}>
+                          Imposition & bleed
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVisualizationType('cut')}
+                      aria-pressed={visualizationType === 'cut'}
+                      className={`group flex items-center gap-3 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all ${
+                        visualizationType === 'cut'
+                          ? 'border-transparent bg-orange-500 text-white shadow-lg shadow-orange-500/35'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-orange-400/40 hover:text-orange-500'
+                      }`}
+                    >
+                      <Scissors className="h-5 w-5 shrink-0" />
+                      <span className="flex flex-col text-left leading-tight">
+                        <span>Cutting Operations</span>
+                        <span className={`text-xs ${visualizationType === 'cut' ? 'text-white/80' : 'text-slate-400'}`}>
+                          Knife paths & trims
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVisualizationType('gripper')}
+                      aria-pressed={visualizationType === 'gripper'}
+                      className={`group flex items-center gap-3 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all ${
+                        visualizationType === 'gripper'
+                          ? 'border-transparent bg-purple-600 text-white shadow-lg shadow-purple-600/35'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-purple-400/40 hover:text-purple-600'
+                      }`}
+                    >
+                      <GripHorizontal className="h-5 w-5 shrink-0" />
+                      <span className="flex flex-col text-left leading-tight">
+                        <span>Gripper Handling</span>
+                        <span className={`text-xs ${visualizationType === 'gripper' ? 'text-white/80' : 'text-slate-400'}`}>
+                          Feeding & margins
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                  {/* Single Sheet Canvas Visualization */}
+                  <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-2 shadow-lg">
+                    <div className="relative w-full h-full bg-white rounded-xl shadow-inner overflow-hidden">
                       <canvas
-                        id={`cutting-canvas-${productIndex}-${paperIndex}`}
-                        className="w-full h-full rounded-lg transition-all duration-500 hover:shadow-md"
+                        id={`ultra-canvas-${productIndex}-${paperIndex}`}
+                        className="w-full h-full rounded-xl transition-all duration-500 hover:shadow-md"
                         style={{ maxWidth: '100%', maxHeight: '100%' }}
                         ref={(canvas) => {
-                          if (canvas && opPaper?.inputWidth && opPaper?.inputHeight) {
+                          if (canvas && layout.itemsPerSheet > 0 && opPaper?.inputWidth && opPaper?.inputHeight) {
                             setTimeout(() => {
-                              // Machine constraints: 52x72 or 50x35 cm
-                              const machineMaxWidth = 52;
-                              const machineMaxHeight = 72;
                               if (opPaper.inputWidth && opPaper.inputHeight) {
-                                drawCuttingLayout(canvas, opPaper.inputWidth, opPaper.inputHeight, machineMaxWidth, machineMaxHeight);
+                                const currentProduct = formData.products[productIndex];
+                                const productName = currentProduct?.productName || 'business-cards';
+                                const productConfig = getProductConfig(productName);
+                                const productShape =
+                                  productName === 'cups'
+                                    ? 'circular'
+                                    : productName === 'shopping-bags'
+                                    ? 'complex-3d'
+                                    : 'rectangular';
+
+                                let step3ProductWidth = currentProduct?.flatSize?.width || productConfig?.defaultSizes?.width || 9;
+                                let step3ProductHeight = currentProduct?.flatSize?.height || productConfig?.defaultSizes?.height || 5.5;
+
+                                if (productName === 'Shopping Bag' && currentProduct?.bagPreset) {
+                                  const bagPreset = getShoppingBagPreset(currentProduct.bagPreset);
+                                  if (bagPreset) {
+                                    const W = bagPreset.width;
+                                    const H = bagPreset.height;
+                                    const G = bagPreset.gusset;
+                                    const T = Math.max(3, W * 0.12);
+                                    const B = Math.max(6, W * 0.25);
+                                    const glueFlap = 2;
+
+                                    step3ProductWidth = W + G + W + G + glueFlap;
+                                    step3ProductHeight = T + H + B;
+
+                                    const printableWidth = 34.0;
+                                    const printableHeight = 48.1;
+                                    const safetyGap = 0.5;
+                                    const bleedWidth = 0.3;
+
+                                    const effectiveBagWidth = step3ProductWidth + (2 * bleedWidth) + (2 * safetyGap);
+                                    const effectiveBagHeight = step3ProductHeight + (2 * bleedWidth) + (2 * safetyGap);
+
+                                    const bagsPerRow = Math.floor(printableWidth / effectiveBagWidth);
+                                    const bagsPerCol = Math.floor(printableHeight / effectiveBagHeight);
+                                    const totalBags = bagsPerRow * bagsPerCol;
+
+                                    const rotatedBagsPerRow = Math.floor(printableWidth / effectiveBagHeight);
+                                    const rotatedBagsPerCol = Math.floor(printableHeight / effectiveBagWidth);
+                                    const rotatedTotalBags = rotatedBagsPerRow * rotatedBagsPerCol;
+
+                                    console.log('Shopping bag layout optimization:', {
+                                      preset: currentProduct.bagPreset,
+                                      bagDimensions: { width: step3ProductWidth, height: step3ProductHeight },
+                                      effectiveDimensions: { width: effectiveBagWidth, height: effectiveBagHeight },
+                                      printableArea: { width: printableWidth, height: printableHeight },
+                                      normalLayout: { bagsPerRow, bagsPerCol, totalBags },
+                                      rotatedLayout: { bagsPerRow: rotatedBagsPerRow, bagsPerCol: rotatedBagsPerCol, totalBags: rotatedTotalBags },
+                                      recommendedLayout: rotatedTotalBags > totalBags ? 'rotated' : 'normal'
+                                    });
+                                  }
+                                }
+
+                                const settings: VisualizationSettings = {
+                                  type: visualizationType,
+                                  showGripper: visualizationType === 'gripper',
+                                  showCutLines: visualizationType === 'cut',
+                                  showBleed: true,
+                                  showGaps: true,
+                                  gripperWidth: 0.9,
+                                  bleedWidth: 0.3,
+                                  gapWidth: 0.5
+                                };
+
+                                console.log('About to call drawProfessionalVisualization:', {
+                                  productName: currentProduct?.productName,
+                                  bagPreset: currentProduct?.bagPreset,
+                                  layout: layout
+                                    ? {
+                                        itemsPerRow: layout.itemsPerRow,
+                                        itemsPerCol: layout.itemsPerCol,
+                                        itemsPerSheet: layout.itemsPerSheet
+                                      }
+                                    : 'null',
+                                  visualizationType,
+                                  step3ProductWidth,
+                                  step3ProductHeight
+                                });
+
+                                drawProfessionalVisualization(
+                                  canvas,
+                                  layout,
+                                  visualizationType,
+                                  settings,
+                                  currentProduct,
+                                  opPaper.inputWidth,
+                                  opPaper.inputHeight,
+                                  step3ProductWidth,
+                                  step3ProductHeight,
+                                  formData,
+                                  productIndex
+                                );
                               }
                             }, 150);
                           }
                         }}
                       />
-                      {(!opPaper?.inputWidth || !opPaper?.inputHeight) && (
-                        <div className="absolute inset-0 grid place-items-center text-sm md:text-lg text-slate-500 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
-                          <div className="text-center p-3 md:p-4 lg:p-8 max-w-[90%]">
-                            <div className="text-red-400 mb-2 md:mb-4 text-2xl md:text-3xl lg:text-5xl">✂️</div>
-                            <div className="font-semibold text-slate-600 text-sm md:text-base lg:text-xl">Input Dimensions Required</div>
-                            <div className="text-xs md:text-sm text-slate-400 mt-2 md:mt-3">Set input sheet dimensions to preview cutting layout</div>
-                          </div>
+                      {layout.itemsPerSheet > 0 &&
+                        !dimensionError &&
+                        opPaper?.inputWidth &&
+                        opPaper?.inputHeight &&
+                        outputDimensions[productIndex]?.width &&
+                        outputDimensions[productIndex]?.height && (
+                          <>
+                            <div className="pointer-events-none absolute inset-3 flex flex-col justify-between text-[10px] md:text-xs text-slate-500">
+                              <div className="flex items-center justify-between">
+                                <span className="rounded bg-white/90 px-2 py-1 shadow-sm">
+                                  Sheet width: {opPaper.inputWidth.toFixed(1)} cm
+                                </span>
+                                <span className="rounded bg-white/90 px-2 py-1 shadow-sm">
+                                  Row count: {layout.itemsPerRow}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="rounded bg-white/90 px-2 py-1 shadow-sm">
+                                  Sheet height: {opPaper.inputHeight.toFixed(1)} cm
+                                </span>
+                                <span className="rounded bg-white/90 px-2 py-1 shadow-sm">
+                                  Column count: {layout.itemsPerCol}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="pointer-events-none absolute bottom-3 left-3 right-3">
+                              <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white/90 px-4 py-3 text-[11px] md:text-xs text-slate-600 shadow-sm">
+                                <span className="font-semibold text-slate-700">Legend</span>
+                                <span className="flex items-center gap-2">
+                                  <span className="h-2.5 w-2.5 rounded-full bg-[#27aae1]" />
+                                  Item footprint
+                                </span>
+                                <span className="flex items-center gap-2">
+                                  <span className="h-0.5 w-6 rounded-full bg-slate-400" />
+                                  {visualizationType === 'cut'
+                                    ? 'Cut path focus'
+                                    : visualizationType === 'gripper'
+                                    ? 'Gripper margin'
+                                    : 'Bleed allowance'}
+                                </span>
+                                <span className="ml-auto uppercase tracking-wide text-[10px] font-semibold text-[#27aae1]">
+                                  {visualizationType === 'cut'
+                                    ? 'Cutting view'
+                                    : visualizationType === 'gripper'
+                                    ? 'Gripper view'
+                                    : 'Print view'}
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      {(layout.itemsPerSheet === 0 ||
+                        dimensionError ||
+                        !opPaper?.inputWidth ||
+                        !opPaper?.inputHeight ||
+                        !outputDimensions[productIndex]?.width ||
+                        !outputDimensions[productIndex]?.height) && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/90 text-center backdrop-blur-sm">
+                          <AlertTriangle className="h-10 w-10 text-[#27aae1]" />
+                          <p className="text-sm md:text-base font-semibold text-slate-600">
+                            {dimensionError
+                              ? 'Dimensions exceed the available sheet.'
+                              : !opPaper?.inputWidth || !opPaper?.inputHeight
+                              ? 'Add parent sheet dimensions to generate the preview.'
+                              : !outputDimensions[productIndex]?.width || !outputDimensions[productIndex]?.height
+                              ? 'Complete the output size in Step 3 to render the layout.'
+                              : 'Imposition data is not available yet.'}
+                          </p>
+                          <p className="text-xs md:text-sm text-slate-500 max-w-sm">
+                            {dimensionError
+                              ? 'Adjust the item size or choose a larger sheet to continue.'
+                              : 'Once dimensions are filled in, this panel displays the production-ready layout with precise overlays.'}
+                          </p>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    <div className="bg-white rounded-xl p-4 border border-red-200 shadow-sm">
+                  {/* Enhanced Information Cards - Below Canvas */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                    {/* Advanced Sheet Analysis */}
+                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                       <h6 className="font-semibold text-slate-800 mb-3 text-center flex items-center justify-center">
-                        <Settings className="w-4 h-4 mr-2 text-red-600" />
-                        Cutting Strategy
+                        <Package className="w-4 h-4 mr-2 text-[#27aae1]" />
+                        Advanced Sheet Analysis
                       </h6>
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-slate-600">Input Sheet:</span>
-                          <span className="font-semibold text-red-600">
-                            {opPaper?.inputWidth?.toFixed(1) ?? "100"} × {opPaper?.inputHeight?.toFixed(1) ?? "70"} cm
+                          <span className="font-semibold">
+                            {inputWidth && inputHeight
+                              ? `${inputWidth.toFixed(1)} cm x ${inputHeight.toFixed(1)} cm`
+                              : 'Set both width and height'}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-600">Machine Max:</span>
+                          <span className="text-slate-600">Sheet Area:</span>
                           <span className="font-semibold text-[#27aae1]">
-                            52 × 72 cm
+                            {inputWidth && inputHeight
+                              ? `${(inputWidth * inputHeight).toFixed(1)} sq cm`
+                              : 'Area pending dimensions'}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-600">Alternative:</span>
-                          <span className="font-semibold text-[#27aae1]">
-                            50 × 35 cm
+                          <span className="text-slate-600">Material Efficiency:</span>
+                          <span className={`font-semibold ${layout.efficiency > 85 ? 'text-green-600' : layout.efficiency > 70 ? 'text-yellow-600' : 'text-red-600'}`}>
+                            {Number.isFinite(layout.efficiency) ? `${layout.efficiency.toFixed(1)}%` : 'n/a'}
                           </span>
+                        </div>
+
+                        {/* Waste Analysis */}
+                        <div className="border-t pt-2 mt-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-600">Used Area:</span>
+                            <span className="font-semibold text-green-600">
+                              {inputWidth && inputHeight && outputDimensions[productIndex]?.width && outputDimensions[productIndex]?.height && layout.itemsPerSheet > 0
+                                ? `${(layout.itemsPerSheet * outputDimensions[productIndex].width * outputDimensions[productIndex].height).toFixed(1)} sq cm`
+                                : 'n/a'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-600">Waste Area:</span>
+                            <span className="font-semibold text-red-600">
+                              {inputWidth && inputHeight && outputDimensions[productIndex]?.width && outputDimensions[productIndex]?.height && layout.itemsPerSheet > 0
+                                ? `${((inputWidth * inputHeight) - (layout.itemsPerSheet * outputDimensions[productIndex].width * outputDimensions[productIndex].height)).toFixed(1)} sq cm`
+                                : 'n/a'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Performance Rating */}
+                        <div className="bg-slate-50 p-2 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-slate-700 flex items-center">
+                              <BarChart3 className="w-4 h-4 mr-2 text-[#27aae1]" />
+                              Performance:
+                            </span>
+                            <div className="flex items-center space-x-1">
+                              {[...Array(5)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className={`w-2 h-2 rounded-full ${
+                                    i < Math.ceil((layout.efficiency / 100) * 5)
+                                      ? layout.efficiency > 85
+                                        ? 'bg-green-500'
+                                        : layout.efficiency > 70
+                                        ? 'bg-yellow-500'
+                                        : 'bg-red-500'
+                                      : 'bg-gray-200'
+                                  }`}
+                                />
+                              ))}
+                              <span className="text-xs font-semibold ml-1">
+                                {layout.efficiency > 85 ? 'Excellent' : layout.efficiency > 70 ? 'Good' : layout.efficiency > 50 ? 'Fair' : 'Poor'}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-4 border border-red-200 shadow-sm">
+                    {/* Production Intelligence */}
+                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                       <h6 className="font-semibold text-slate-800 mb-3 text-center flex items-center justify-center">
-                        <Calculator className="w-4 h-4 mr-2 text-red-600" />
-                        Cutting Results
+                        <Edit3 className="w-4 h-4 mr-2 text-[#27aae1]" />
+                        Production Intelligence
                       </h6>
                       <div className="space-y-3">
                         <div className="flex justify-between">
-                          <span className="text-slate-600">Cut Pieces:</span>
-                          <span className="font-semibold text-red-600">
-                            {opPaper?.inputWidth && opPaper?.inputHeight ? 
-                              calculateCutPieces(opPaper.inputWidth!, opPaper.inputHeight!, 52, 72).totalPieces : "–"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-600">Layout:</span>
+                          <span className="text-slate-600">Item Size:</span>
                           <span className="font-semibold text-[#27aae1]">
-                            {opPaper?.inputWidth && opPaper?.inputHeight ? 
-                              `${calculateCutPieces(opPaper.inputWidth!, opPaper.inputHeight!, 52, 72).piecesPerRow}×${calculateCutPieces(opPaper.inputWidth!, opPaper.inputHeight!, 52, 72).piecesPerCol}` : "–"}
+                            {outputDimensions[productIndex]?.width && outputDimensions[productIndex]?.height
+                              ? `${Number(outputDimensions[productIndex]?.width).toFixed(1)} cm x ${Number(outputDimensions[productIndex]?.height).toFixed(1)} cm`
+                              : 'Awaiting size'}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-600">Efficiency:</span>
-                          <span className="font-semibold text-green-600">
-                            {opPaper?.inputWidth && opPaper?.inputHeight ? 
-                              ((52 * 72 * calculateCutPieces(opPaper.inputWidth!, opPaper.inputHeight!, 52, 72).totalPieces) / (opPaper.inputWidth! * opPaper.inputHeight!) * 100).toFixed(1) : "–"}%
+                          <span className="text-slate-600">Layout Strategy:</span>
+                          <span className={`font-semibold ${layout.orientation === 'rotated' ? 'text-[#ea078b]' : 'text-green-600'}`}>
+                            {layout.orientation === 'rotated' ? 'Rotated for best fit' : 'Standard orientation'}
                           </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Grid Pattern:</span>
+                          <span className="font-semibold">
+                            {layout.itemsPerRow && layout.itemsPerCol
+                              ? `${layout.itemsPerRow} x ${layout.itemsPerCol} grid`
+                              : 'Pending calculation'}
+                          </span>
+                        </div>
+
+                        {/* Layout Optimization */}
+                        <div className="border-t pt-2 mt-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-600">Items per Sheet:</span>
+                            <span className="font-bold text-[#27aae1] text-lg">{layout.itemsPerSheet}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-600">Space Utilization:</span>
+                            <span className={`font-semibold ${layout.efficiency > 80 ? 'text-green-600' : 'text-yellow-600'}`}>
+                              {inputWidth && inputHeight && outputDimensions[productIndex]?.width && outputDimensions[productIndex]?.height && layout.itemsPerSheet > 0
+                                ? `${((layout.itemsPerRow * outputDimensions[productIndex].width) / inputWidth * 100).toFixed(1)}% width | ${((layout.itemsPerCol * outputDimensions[productIndex].height) / inputHeight * 100).toFixed(1)}% height`
+                                : 'n/a'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Optimization Recommendations */}
+                        <div className="bg-[#27aae1]/10 p-2 rounded-lg">
+                          <p className="text-xs text-[#27aae1] font-medium">
+                            {layout.efficiency > 85
+                              ? 'Layout is production ready.'
+                              : layout.efficiency > 70
+                              ? 'Consider alternative orientations or spacing tweaks.'
+                              : 'Efficiency is low—revisit sheet or product dimensions.'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Operations Dashboard */}
+                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                      <h6 className="font-semibold text-slate-800 mb-3 text-center flex items-center justify-center">
+                        <BarChart3 className="w-4 h-4 mr-2 text-[#27aae1]" />
+                        Operations Dashboard
+                      </h6>
+                      <div className="space-y-3">
+                        {/* Production Metrics */}
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="bg-[#27aae1]/10 p-2 rounded">
+                            <div className="text-[#27aae1] font-medium">Required</div>
+                            <div className="font-bold text-[#27aae1]">{qty || 0}</div>
+                          </div>
+                          <div className="bg-orange-50 p-2 rounded">
+                            <div className="text-orange-600 font-medium">Sheets</div>
+                            <div className="font-bold text-orange-800">{sheetsNeeded}</div>
+                          </div>
+                        </div>
+
+                        {enteredSheets && (
+                          <div className="flex justify-between bg-[#ea078b]/10 p-2 rounded">
+                            <span className="text-[#ea078b] font-medium">Planned Sheets:</span>
+                            <span className="font-bold text-[#ea078b]">{enteredSheets}</span>
+                          </div>
+                        )}
+
+                        {/* Production Efficiency */}
+                        <div className="border-t pt-2">
+                          <div className="flex justify-between bg-green-50 p-2 rounded border border-green-200">
+                            <span className="text-green-700 font-medium">Production Yield:</span>
+                            <span className="font-bold text-green-800">{totalItemsPossible}</span>
+                          </div>
+
+                          {totalItemsPossible > qty && (
+                            <div className="mt-2 space-y-1">
+                              <div className="flex justify-between bg-amber-50 p-2 rounded border border-amber-200">
+                                <span className="text-amber-700 font-medium">Overproduction:</span>
+                                <span className="font-bold text-amber-800">{totalItemsPossible - qty}</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-slate-600">Waste Rate:</span>
+                                <span className="font-semibold text-red-600">
+                                  {((totalItemsPossible - qty) / totalItemsPossible * 100).toFixed(1)}%
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Cost Efficiency Indicator */}
+                        <div className="bg-slate-50 p-2 rounded">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-slate-700">Cost Efficiency:</span>
+                            <div className="text-right">
+                              <div className="font-bold text-slate-800">
+                                {pricePerSheet ? `${(pricePerSheet * actualSheetsNeeded / qty).toFixed(4)}` : '–'}
+                              </div>
+                              <div className="text-xs text-slate-500">per item</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Operational Recommendations */}
+                        <div
+                          className={`p-2 rounded text-xs font-medium ${
+                            layout.efficiency > 85 && totalItemsPossible - qty < qty * 0.1
+                              ? 'bg-green-50 text-green-800'
+                              : totalItemsPossible - qty > qty * 0.2
+                              ? 'bg-red-50 text-red-800'
+                              : 'bg-yellow-50 text-yellow-800'
+                          }`}
+                        >
+                          {layout.efficiency > 85 && totalItemsPossible - qty < qty * 0.1
+                            ? 'Configuration looks balanced for production.'
+                            : totalItemsPossible - qty > qty * 0.2
+                            ? 'Waste level is high—consider reducing the planned sheets.'
+                            : 'Review the setup to capture more efficiency.'}
                         </div>
                       </div>
                     </div>
@@ -5192,6 +5577,7 @@ const Step4Operational: FC<Step4Props> = ({ formData, setFormData }) => {
                 </div>
               </CardContent>
             </Card>
+
             )}
 
             {/* Final Printing Layout Visualization - TEMPORARILY HIDDEN FOR CLIENT CLARIFICATION */}
