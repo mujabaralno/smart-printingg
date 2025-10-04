@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Plus, Sparkles, Copy, FileText, Eye, Edit, Search, Save } from "lucide-react";
+import { Plus, Sparkles, Copy, FileText, Save, FilePlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import StepIndicator from "@/components/create-quote/StepIndicator";
@@ -37,7 +38,6 @@ const EMPTY_CLIENT: QuoteFormData["client"] = {
   additionalInfo: "",
 };
 
-
 // Create a separate component that uses useSearchParams
 function CreateQuoteContent() {
   const router = useRouter();
@@ -50,7 +50,7 @@ function CreateQuoteContent() {
   const [approvalReason, setApprovalReason] = useState<string | undefined>();
   const [selectedCustomer, setSelectedCustomer] = useState<{
     id?: string; // Add optional ID field for existing customers
-    clientType: 'Individual' | 'Company';
+    clientType: "Individual" | "Company";
     companyName: string | null;
     contactPerson: string;
     email: string;
@@ -109,25 +109,25 @@ function CreateQuoteContent() {
 
   // Monitor form data changes
   useEffect(() => {
-    console.log('Parent: Form data updated:', formData);
-    console.log('Parent: Client data:', formData.client);
-    console.log('Parent: Client firstName:', formData.client.firstName);
-    console.log('Parent: Client lastName:', formData.client.lastName);
-    console.log('Parent: Client contactPerson:', formData.client.contactPerson);
+    console.log("Parent: Form data updated:", formData);
+    console.log("Parent: Client data:", formData.client);
+    console.log("Parent: Client firstName:", formData.client.firstName);
+    console.log("Parent: Client lastName:", formData.client.lastName);
+    console.log("Parent: Client contactPerson:", formData.client.contactPerson);
   }, [formData]);
 
   // Handle URL parameters for step and edit mode
   useEffect(() => {
-    const stepParam = searchParams.get('step');
-    const editParam = searchParams.get('edit');
-    
+    const stepParam = searchParams.get("step");
+    const editParam = searchParams.get("edit");
+
     if (stepParam) {
       const stepNumber = parseInt(stepParam);
       if (stepNumber >= 1 && stepNumber <= 5) {
         setCurrentStep(stepNumber);
       }
     }
-    
+
     if (editParam) {
       setQuoteMode("existing");
       setSelectedQuoteId(null); // Will be set when a specific quote is selected
@@ -137,9 +137,9 @@ function CreateQuoteContent() {
 
   // Memoize the products finishing check to prevent unnecessary re-renders
   const productsFinishingCheck = React.useMemo(() => {
-    return formData.products.map(product => ({
+    return formData.products.map((product) => ({
       productName: product.productName,
-      finishing: product.finishing
+      finishing: product.finishing,
     }));
   }, [formData.products]);
 
@@ -147,63 +147,75 @@ function CreateQuoteContent() {
   useEffect(() => {
     // Get all unique finishing names from all products
     const allFinishingNames = new Set<string>();
-    
+
     // Safety check: ensure formData.products exists and is valid
-    if (!formData.products || !Array.isArray(formData.products) || formData.products.length === 0) {
-      console.log('🔄 Finishing synchronization skipped: no products available');
+    if (
+      !formData.products ||
+      !Array.isArray(formData.products) ||
+      formData.products.length === 0
+    ) {
+      console.log(
+        "🔄 Finishing synchronization skipped: no products available"
+      );
       return;
     }
-    
-    formData.products.forEach(product => {
+
+    formData.products.forEach((product) => {
       if (product.finishing && Array.isArray(product.finishing)) {
         // Filter out any undefined or null values
-        const validFinishing = product.finishing.filter(f => f != null && f !== undefined);
-        validFinishing.forEach(finishing => {
+        const validFinishing = product.finishing.filter(
+          (f) => f != null && f !== undefined
+        );
+        validFinishing.forEach((finishing) => {
           // Handle both simple strings and "option-side" format
-          if (typeof finishing === 'string') {
-            const baseName = finishing.includes('-') ? finishing.split('-')[0] : finishing;
+          if (typeof finishing === "string") {
+            const baseName = finishing.includes("-")
+              ? finishing.split("-")[0]
+              : finishing;
             allFinishingNames.add(baseName);
           }
         });
       }
     });
 
-    console.log('🔄 Finishing synchronization triggered:', {
-      productFinishing: formData.products.map(p => p.finishing),
+    console.log("🔄 Finishing synchronization triggered:", {
+      productFinishing: formData.products.map((p) => p.finishing),
       allFinishingNames: Array.from(allFinishingNames),
-      currentOperationalFinishing: formData.operational.finishing
+      currentOperationalFinishing: formData.operational.finishing,
     });
 
     // Update operational finishing to include all selected finishing options
-    setFormData(prev => {
+    setFormData((prev) => {
       const currentOperationalFinishing = prev.operational.finishing || [];
       const newOperationalFinishing = [...currentOperationalFinishing];
 
       // Add new finishing options that don't exist yet
-      allFinishingNames.forEach(finishingName => {
-        const existingFinishing = currentOperationalFinishing.find(f => f.name === finishingName);
+      allFinishingNames.forEach((finishingName) => {
+        const existingFinishing = currentOperationalFinishing.find(
+          (f) => f.name === finishingName
+        );
         if (!existingFinishing) {
           // Add with default cost
           newOperationalFinishing.push({
             name: finishingName,
-            cost: 0 // Default cost, user can edit in step 4
+            cost: 0, // Default cost, user can edit in step 4
           });
         }
       });
 
       // Remove finishing options that are no longer selected by any product
-      const filteredFinishing = newOperationalFinishing.filter(finishing => 
+      const filteredFinishing = newOperationalFinishing.filter((finishing) =>
         allFinishingNames.has(finishing.name)
       );
 
-      console.log('✅ Updated operational finishing:', filteredFinishing);
+      console.log("✅ Updated operational finishing:", filteredFinishing);
 
       return {
         ...prev,
         operational: {
           ...prev.operational,
-          finishing: filteredFinishing
-        }
+          finishing: filteredFinishing,
+        },
       };
     });
   }, [formData.products]);
@@ -214,74 +226,34 @@ function CreateQuoteContent() {
 
     // 1. Paper Costs (price per sheet × entered sheets)
     const paperCost = formData.operational.papers.reduce((total, p) => {
-      // Manual pricing override: use direct price per sheet if provided, otherwise use packet pricing
-      const pricePerSheet = p.pricePerSheet || 
-        (p.pricePerPacket && p.sheetsPerPacket && p.sheetsPerPacket > 0 
-          ? p.pricePerPacket / p.sheetsPerPacket 
-          : 0);
+      const pricePerSheet = (p.pricePerPacket || 0) / (p.sheetsPerPacket || 1);
       const actualSheetsNeeded = p.enteredSheets || 0;
-      return total + (pricePerSheet * actualSheetsNeeded);
+      return total + pricePerSheet * actualSheetsNeeded;
     }, 0);
 
     // 2. Plates Cost (per plate, typically $25-50 per plate)
     const PLATE_COST_PER_PLATE = 35; // Standard plate cost
-    const platesCost = (formData.operational.plates || 0) * PLATE_COST_PER_PLATE;
+    const platesCost =
+      (formData.operational.plates || 0) * PLATE_COST_PER_PLATE;
 
     // 3. Finishing Costs (cost per unit × actual units needed)
-    const actualUnitsNeeded = formData.operational.units || formData.products[0]?.quantity || 0;
+    const actualUnitsNeeded =
+      formData.operational.units || formData.products[0]?.quantity || 0;
     const finishingCost = formData.operational.finishing.reduce((total, f) => {
       // Check if this finishing is used by any product using memoized check
-      const isUsedByAnyProduct = productsFinishingCheck.some(product => 
+      const isUsedByAnyProduct = productsFinishingCheck.some((product) =>
         product.finishing.includes(f.name)
       );
       if (isUsedByAnyProduct) {
-        return total + ((f.cost || 0) * actualUnitsNeeded);
+        return total + (f.cost || 0) * actualUnitsNeeded;
       }
       return total;
     }, 0);
 
-    // 4. Calculate total costs with fallback for missing operational data
-    let basePrice = paperCost + platesCost + finishingCost;
-    
-    // Fallback: If no operational data, use basic product calculation
-    if (basePrice === 0 && formData.products[0]) {
-      const product = formData.products[0];
-      const quantity = product.quantity || 0;
-      
-      // Basic pricing based on product type and quantity
-      let basePricePerUnit = 0;
-      switch (product.productName) {
-        case 'Business Card':
-          basePricePerUnit = 0.08; // $0.08 per card
-          break;
-        case 'Flyer A5':
-          basePricePerUnit = 0.15; // $0.15 per flyer
-          break;
-        case 'Poster A2':
-          basePricePerUnit = 2.50; // $2.50 per poster
-          break;
-        case 'Magazine':
-          basePricePerUnit = 1.00; // $1.00 per magazine
-          break;
-        case 'Art Book':
-          basePricePerUnit = 1.00; // $1.00 per book
-          break;
-        case 'Sticker Pack':
-          basePricePerUnit = 0.50; // $0.50 per sticker pack
-          break;
-        default:
-          basePricePerUnit = 0.10; // Default $0.10 per unit
-      }
-      
-      basePrice = quantity * basePricePerUnit;
-    }
-    
-    // Add additional costs to base price
-    const additionalCostsTotal = formData.additionalCosts?.reduce((total, cost) => total + (cost.cost || 0), 0) || 0;
-    const totalBasePrice = basePrice + additionalCostsTotal;
-    
-    const marginAmount = totalBasePrice * MARGIN_PERCENTAGE;
-    const subtotal = totalBasePrice + marginAmount;
+    // 4. Calculate total costs
+    const basePrice = paperCost + platesCost + finishingCost;
+    const marginAmount = basePrice * MARGIN_PERCENTAGE;
+    const subtotal = basePrice + marginAmount;
     const vatAmount = subtotal * VAT_PERCENTAGE;
     const totalPrice = subtotal + vatAmount;
 
@@ -295,19 +267,19 @@ function CreateQuoteContent() {
       vatAmount,
       totalPrice,
       productsFinishingCheck,
-      actualUnitsNeeded
+      actualUnitsNeeded,
     });
 
     setFormData((prev) => ({
       ...prev,
-      calculation: { 
-        basePrice: totalBasePrice, // Include additional costs
-        marginAmount, 
+      calculation: {
+        basePrice,
+        marginAmount,
         marginPercentage: MARGIN_PERCENTAGE * 100, // Convert to percentage
-        subtotal, 
+        subtotal,
         finalSubtotal: subtotal, // Same as subtotal for now
-        vatAmount, 
-        totalPrice 
+        vatAmount,
+        totalPrice,
       },
     }));
   }, [
@@ -315,31 +287,12 @@ function CreateQuoteContent() {
     formData.operational.plates,
     formData.operational.units,
     formData.operational.finishing,
-    formData.additionalCosts,
     productsFinishingCheck,
-    formData.products
+    formData.products,
   ]);
 
   const nextStep = () => setCurrentStep((s) => Math.min(5, s + 1));
   const prevStep = () => setCurrentStep((s) => Math.max(1, s - 1));
-
-  // Scroll to top whenever step changes
-  useEffect(() => {
-    // Scroll to top immediately and smoothly
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // Also ensure the main container is at the top
-    const mainContainer = document.querySelector('.min-h-screen');
-    if (mainContainer) {
-      mainContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    
-    // Remove focus from any auto-focused elements to prevent scroll
-    const activeElement = document.activeElement as HTMLElement;
-    if (activeElement && activeElement.blur) {
-      activeElement.blur();
-    }
-  }, [currentStep]);
 
   // Add validation functions for Next button
   const canProceedFromStep1 = () => {
@@ -350,107 +303,58 @@ function CreateQuoteContent() {
     if (quoteMode === "new") {
       // For new quote mode, validate all essential fields including new ones
       const client = formData.client;
-      
+
       // Basic required fields
       const essentialFields = [
         client.firstName, // First name is required
-        client.email,     // Email is required
-        client.phone      // Phone is required
+        client.email, // Email is required
+        client.phone, // Phone is required
       ];
-      
+
       // Add company-specific required fields only if company type
       if (client.clientType === "Company") {
         essentialFields.push(client.companyName);
       }
-      
+
       // Check if basic fields are filled
-      const basicFieldsValid = essentialFields.every(field => field && field.trim() !== "");
-      
+      const basicFieldsValid = essentialFields.every(
+        (field) => field && field.trim() !== ""
+      );
+
       // Check TRN requirement (either TRN filled or "No TRN" selected)
-      const trnValid = client.hasNoTrn || (client.trn && client.trn.trim() !== "");
-      
+      const trnValid =
+        client.hasNoTrn || (client.trn && client.trn.trim() !== "");
+
       // Check Area requirement
       const areaValid = client.area && client.area.trim() !== "";
-      
+
       // Check State and Country (should have defaults)
       const stateValid = client.state && client.state.trim() !== "";
       const countryValid = client.country && client.country.trim() !== "";
-      
-      return basicFieldsValid && trnValid && areaValid && stateValid && countryValid;
+
+      return (
+        basicFieldsValid && trnValid && areaValid && stateValid && countryValid
+      );
     } else if (quoteMode === "existing") {
       // For existing quote mode, we need to select an actual existing quote
       return selectedQuoteId !== null; // Must have selected a specific quote to edit
     }
-    
+
     return false;
-  };
-
-  const canProceedFromStep3 = () => {
-    // For existing quotes, we need to check if a quote is selected first
-    if (quoteMode === "existing" && !selectedQuoteId) {
-      console.log('🔍 Step 3 Validation: No quote selected for existing mode');
-      return false;
-    }
-
-    // Validate that at least one product has been configured with a paper
-    if (!formData.products || formData.products.length === 0) {
-      console.log('🔍 Step 3 Validation: No products found');
-      return false;
-    }
-
-    // Debug: Log all products and their papers
-    console.log('🔍 Step 3 Validation Debug:', {
-      quoteMode,
-      selectedQuoteId,
-      productsCount: formData.products.length,
-      products: formData.products.map((product, index) => ({
-        index,
-        productName: product.productName,
-        papersCount: product.papers?.length || 0,
-        papers: product.papers?.map((paper, pIndex) => ({
-          pIndex,
-          name: paper.name,
-          gsm: paper.gsm,
-          isValid: paper.name && paper.name !== "Select Paper" && paper.name.trim() !== ""
-        })) || []
-      }))
-    });
-
-    // Check if any product has a valid paper selected (not "Select Paper")
-    const hasValidPaper = formData.products.some(product => 
-      product.papers && product.papers.length > 0 && 
-      product.papers.some(paper => 
-        paper.name && 
-        paper.name !== "Select Paper" && 
-        paper.name.trim() !== ""
-      )
-    );
-
-    console.log('🔍 Step 3 Validation Result:', hasValidPaper);
-    return hasValidPaper;
   };
 
   const isNextButtonDisabled = () => {
     if (currentStep === 1) {
-      const disabled = !canProceedFromStep1();
-      console.log('🔍 Next Button - Step 1:', disabled);
-      return disabled;
+      return !canProceedFromStep1();
     } else if (currentStep === 2) {
-      const disabled = !canProceedFromStep2();
-      console.log('🔍 Next Button - Step 2:', disabled);
-      return disabled;
-    } else if (currentStep === 3) {
-      const disabled = !canProceedFromStep3();
-      console.log('🔍 Next Button - Step 3:', disabled);
-      return disabled;
+      return !canProceedFromStep2();
     }
-    console.log('🔍 Next Button - Other step:', false);
     return false;
   };
 
   const handleStartNew = () => {
-    console.log('Starting new quote - resetting all data');
-    
+    console.log("Starting new quote - resetting all data");
+
     // Create a completely clean client object
     const cleanClient = {
       clientType: "Company" as const,
@@ -473,29 +377,29 @@ function CreateQuoteContent() {
       country: "UAE",
       additionalInfo: "",
     };
-    
-    console.log('Clean client object created:', cleanClient);
-    
+
+    console.log("Clean client object created:", cleanClient);
+
     // Reset form data completely
     setFormData((prev) => {
-      const newFormData = { 
-        ...prev, 
+      const newFormData = {
+        ...prev,
         client: cleanClient,
         // Start with completely empty products array for new quotes
-        products: []
+        products: [],
       };
-      
-      console.log('New form data set:', newFormData);
+
+      console.log("New form data set:", newFormData);
       return newFormData;
     });
-    
+
     // Reset all customer-related state
     setQuoteMode("new");
     setSelectedQuoteId(null);
     setSelectedCustomer(null);
     // Don't auto-navigate - just set the mode for selection
-    
-    console.log('New quote mode selected - ready for next step');
+
+    console.log("New quote mode selected - ready for next step");
   };
 
   const handleSelectQuote = (q: PreviousQuote) => {
@@ -509,7 +413,7 @@ function CreateQuoteContent() {
 
   const handleSelectCustomer = (customer: {
     id?: string; // Add optional ID field for existing customers
-    clientType: 'Individual' | 'Company';
+    clientType: "Individual" | "Company";
     companyName: string;
     contactPerson: string;
     email: string;
@@ -527,25 +431,25 @@ function CreateQuoteContent() {
     setFormData((prev) => ({
       ...prev,
       client: {
-        clientType: customer.clientType as 'Individual' | 'Company',
-        companyName: customer.companyName || '',
+        clientType: customer.clientType as "Individual" | "Company",
+        companyName: customer.companyName || "",
         contactPerson: customer.contactPerson,
         email: customer.email,
         phone: customer.phone,
         countryCode: customer.countryCode,
-        role: customer.role || '',
-        address: customer.address || '',
-        city: customer.city || '',
-        state: customer.state || '',
-        postalCode: customer.postalCode || '',
-        country: customer.country || '',
-        additionalInfo: customer.additionalInfo || '',
-      }
+        role: customer.role || "",
+        address: customer.address || "",
+        city: customer.city || "",
+        state: customer.state || "",
+        postalCode: customer.postalCode || "",
+        country: customer.country || "",
+        additionalInfo: customer.additionalInfo || "",
+      },
     }));
   };
 
   const handleEditCustomer = (customer: {
-    clientType: 'Individual' | 'Company';
+    clientType: "Individual" | "Company";
     companyName: string;
     contactPerson: string;
     email: string;
@@ -581,60 +485,69 @@ function CreateQuoteContent() {
   }) => {
     setSelectedCustomer({
       id: customer.id,
-      clientType: (customer.clientType || 'Individual') as 'Individual' | 'Company',
+      clientType: (customer.clientType || "Individual") as
+        | "Individual"
+        | "Company",
       companyName: customer.companyName || null,
       contactPerson: customer.contactPerson,
       email: customer.email,
-      phone: customer.phone || '',
-      countryCode: customer.countryCode || '',
+      phone: customer.phone || "",
+      countryCode: customer.countryCode || "",
       role: customer.role || null,
-      address: customer.address || '',
-      city: customer.city || '',
-      state: customer.state || '',
-      postalCode: customer.postalCode || '',
-      country: customer.country || '',
-      additionalInfo: customer.additionalInfo || '',
+      address: customer.address || "",
+      city: customer.city || "",
+      state: customer.state || "",
+      postalCode: customer.postalCode || "",
+      country: customer.country || "",
+      additionalInfo: customer.additionalInfo || "",
     });
     // Ensure phone has a value - if empty, use a default
-    const phoneValue = customer.phone && customer.phone.trim() !== '' ? customer.phone : '0000000000';
-    
-    console.log('=== AUTO-FILLING CLIENT DATA ===');
-    console.log('Customer data received:', customer);
-    console.log('Phone value:', phoneValue);
-    console.log('Email value:', customer.email);
-    
+    const phoneValue =
+      customer.phone && customer.phone.trim() !== ""
+        ? customer.phone
+        : "0000000000";
+
+    console.log("=== AUTO-FILLING CLIENT DATA ===");
+    console.log("Customer data received:", customer);
+    console.log("Phone value:", phoneValue);
+    console.log("Email value:", customer.email);
+
     setFormData((prev) => ({
       ...prev,
       client: {
-        clientType: (customer.clientType || 'Individual') as 'Individual' | 'Company',
-        companyName: customer.companyName || '',
+        clientType: (customer.clientType || "Individual") as
+          | "Individual"
+          | "Company",
+        companyName: customer.companyName || "",
         contactPerson: customer.contactPerson,
         email: customer.email,
         phone: phoneValue,
-        countryCode: customer.countryCode || '+971',
-        role: customer.role || '',
-        address: customer.address || '',
-        city: customer.city || '',
-        state: customer.state || '',
-        postalCode: customer.postalCode || '',
-        country: customer.country || '',
-        additionalInfo: customer.additionalInfo || '',
-      }
+        countryCode: customer.countryCode || "+971",
+        role: customer.role || "",
+        address: customer.address || "",
+        city: customer.city || "",
+        state: customer.state || "",
+        postalCode: customer.postalCode || "",
+        country: customer.country || "",
+        additionalInfo: customer.additionalInfo || "",
+      },
     }));
-    
-    console.log('Form data updated with client info');
+
+    console.log("Form data updated with client info");
 
     // Auto-fill Step 3 data if customer has previous quotes
     try {
       // Use the existing quotes endpoint and filter by client ID
-      const quotesResponse = await fetch('/api/quotes');
+      const quotesResponse = await fetch("/api/quotes");
       if (!quotesResponse.ok) {
-        throw new Error('Failed to fetch quotes for autofill');
+        throw new Error("Failed to fetch quotes for autofill");
       }
-      
+
       const allQuotes = await quotesResponse.json();
-      const clientQuotes = allQuotes.filter((quote: any) => quote.clientId === customer.id);
-      
+      const clientQuotes = allQuotes.filter(
+        (quote: any) => quote.clientId === customer.id
+      );
+
       if (clientQuotes.length > 0) {
         // Group quotes by quoteId to get quote groups (a quote can have multiple products)
         const quoteGroups = clientQuotes.reduce((groups: any, quote: any) => {
@@ -644,92 +557,121 @@ function CreateQuoteContent() {
           groups[quote.quoteId].push(quote);
           return groups;
         }, {});
-        
+
         // Get the most recent quote group (by date)
         const latestQuoteId = Object.keys(quoteGroups).sort((a, b) => {
           const dateA = new Date(quoteGroups[a][0].date);
           const dateB = new Date(quoteGroups[b][0].date);
           return dateB.getTime() - dateA.getTime();
         })[0];
-        
+
         const latestQuotes = quoteGroups[latestQuoteId];
-        
-        console.log('Latest quotes for autofill:', latestQuotes);
-        
+
+        console.log("Latest quotes for autofill:", latestQuotes);
+
         // Convert database quotes to products - consolidate all papers into one product
         // Since all quotes in latestQuotes have the same quoteId, they represent one product with multiple papers
         const firstQuote = latestQuotes[0];
-        
+
         // Parse colors if they exist
         let colors: { front?: string; back?: string } | undefined;
         if (firstQuote.colors) {
           try {
             colors = JSON.parse(firstQuote.colors);
           } catch (e) {
-            console.warn('Failed to parse colors JSON:', firstQuote.colors);
+            console.warn("Failed to parse colors JSON:", firstQuote.colors);
           }
         }
-        
+
         // Collect all papers from all quotes in this group
         let allPapers: any[] = [];
         latestQuotes.forEach((quote: any) => {
-          if (quote.papers && Array.isArray(quote.papers) && quote.papers.length > 0) {
+          if (
+            quote.papers &&
+            Array.isArray(quote.papers) &&
+            quote.papers.length > 0
+          ) {
             quote.papers.forEach((p: any) => {
               // Try to find the best matching paper name from the database
-              let paperName = p.name || 'Standard Paper';
-              let paperGsm = p.gsm || '150';
-              
+              let paperName = p.name || "Standard Paper";
+              let paperGsm = p.gsm || "150";
+
               // Ensure we never have empty strings
-              if (!paperName || paperName.trim() === '') {
-                paperName = 'Standard Paper';
+              if (!paperName || paperName.trim() === "") {
+                paperName = "Standard Paper";
               }
               // Convert paperGsm to string and ensure it's not empty
-              if (!paperGsm || String(paperGsm).trim() === '') {
-                paperGsm = '150';
+              if (!paperGsm || String(paperGsm).trim() === "") {
+                paperGsm = "150";
               }
-              
-              console.log(`Processing paper: ${paperName} with GSM: ${paperGsm}`);
-              
+
+              console.log(
+                `Processing paper: ${paperName} with GSM: ${paperGsm}`
+              );
+
               // Store the clean paper name without any suffixes for better matching
-              const cleanPaperName = paperName.replace(/\s*\(Custom\)$/, '').trim();
-              
+              const cleanPaperName = paperName
+                .replace(/\s*\(Custom\)$/, "")
+                .trim();
+
               // Check if this paper is already added (avoid duplicates)
-              const existingPaper = allPapers.find(ap => ap.name === cleanPaperName && ap.gsm === paperGsm);
+              const existingPaper = allPapers.find(
+                (ap) => ap.name === cleanPaperName && ap.gsm === paperGsm
+              );
               if (!existingPaper) {
                 allPapers.push({
                   name: cleanPaperName,
-                  gsm: paperGsm
+                  gsm: paperGsm,
                 });
               }
             });
           }
         });
-        
+
         // If no papers found, use default
         if (allPapers.length === 0) {
-          allPapers = [{ name: 'Standard Paper', gsm: '150' }];
+          allPapers = [{ name: "Standard Paper", gsm: "150" }];
         }
-        
-        console.log('Final consolidated papers array:', allPapers);
-        console.log('Paper names being stored:', allPapers.map(p => p.name));
-        
+
+        console.log("Final consolidated papers array:", allPapers);
+        console.log(
+          "Paper names being stored:",
+          allPapers.map((p) => p.name)
+        );
+
         // Collect all finishing from all quotes in this group
-        let allFinishing: string[] = [];
-        console.log('🔍 FINISHING DEBUG - Processing finishing from quotes...');
+        const allFinishing: string[] = [];
+        console.log("🔍 FINISHING DEBUG - Processing finishing from quotes...");
         latestQuotes.forEach((quote: any) => {
-          console.log(`🔍 FINISHING DEBUG - Quote ${quote.quoteId} finishing:`, quote.finishing);
-          if (quote.finishing && Array.isArray(quote.finishing) && quote.finishing.length > 0) {
+          console.log(
+            `🔍 FINISHING DEBUG - Quote ${quote.quoteId} finishing:`,
+            quote.finishing
+          );
+          if (
+            quote.finishing &&
+            Array.isArray(quote.finishing) &&
+            quote.finishing.length > 0
+          ) {
             quote.finishing.forEach((f: any) => {
               // Handle both string format (from API) and object format (from database)
-              const finishingName = typeof f === 'string' ? f : (f.name || f);
-              console.log(`🔍 FINISHING DEBUG - Processing finishing item:`, f, '-> name:', finishingName);
+              const finishingName = typeof f === "string" ? f : f.name || f;
+              console.log(
+                `🔍 FINISHING DEBUG - Processing finishing item:`,
+                f,
+                "-> name:",
+                finishingName
+              );
               if (finishingName && !allFinishing.includes(finishingName)) {
                 // Normalize finishing name to match Step 3 options (capitalize first letter)
-                const normalizedName = finishingName.charAt(0).toUpperCase() + finishingName.slice(1).toLowerCase();
-                console.log(`🔍 FINISHING DEBUG - Normalized name: ${finishingName} -> ${normalizedName}`);
-                
+                const normalizedName =
+                  finishingName.charAt(0).toUpperCase() +
+                  finishingName.slice(1).toLowerCase();
+                console.log(
+                  `🔍 FINISHING DEBUG - Normalized name: ${finishingName} -> ${normalizedName}`
+                );
+
                 // Format finishing name based on sides
-                if (firstQuote.sides === '2') {
+                if (firstQuote.sides === "2") {
                   // For double-sided, add both front and back options
                   allFinishing.push(`${normalizedName}-Front`);
                   allFinishing.push(`${normalizedName}-Back`);
@@ -741,22 +683,29 @@ function CreateQuoteContent() {
             });
           }
         });
-        console.log('🔍 FINISHING DEBUG - Final allFinishing array:', allFinishing);
-        
+        console.log(
+          "🔍 FINISHING DEBUG - Final allFinishing array:",
+          allFinishing
+        );
+
         console.log(`Processing quote group ${latestQuoteId}:`, {
           totalQuotes: latestQuotes.length,
           papers: allPapers,
           finishing: allFinishing,
           sides: firstQuote.sides,
-          rawFinishingFromDB: latestQuotes.map((q: any) => q.finishing)
+          rawFinishingFromDB: latestQuotes.map((q: any) => q.finishing),
         });
-        
+
         // Create one product with all papers and finishing
         const product = {
-          productName: firstQuote.productName || firstQuote.product || 'Business Card',
+          productName:
+            firstQuote.productName || firstQuote.product || "Business Card",
           quantity: firstQuote.quantity,
-          sides: (firstQuote.sides === '1' || firstQuote.sides === '2' ? firstQuote.sides : '1') as '1' | '2',
-          printingSelection: firstQuote.printingSelection || firstQuote.printing || 'Digital',
+          sides: (firstQuote.sides === "1" || firstQuote.sides === "2"
+            ? firstQuote.sides
+            : "1") as "1" | "2",
+          printingSelection:
+            firstQuote.printingSelection || firstQuote.printing || "Digital",
           flatSize: {
             width: firstQuote.flatSizeWidth || 0,
             height: firstQuote.flatSizeHeight || 0,
@@ -770,40 +719,59 @@ function CreateQuoteContent() {
           useSameAsFlat: firstQuote.useSameAsFlat || false,
           papers: allPapers,
           // Ensure finishing array only contains valid strings
-          finishing: allFinishing.filter(f => typeof f === 'string' && f.trim() !== ''),
+          finishing: allFinishing.filter(
+            (f) => typeof f === "string" && f.trim() !== ""
+          ),
           colors,
         };
-        
-        const products = [{
-          ...product,
-          paperName: product.papers && product.papers.length > 0 ? product.papers[0].name : "Standard Paper"
-        }];
-        
-                // Update form data with all products
-        setFormData(prev => {
+
+        const products = [
+          {
+            ...product,
+            paperName:
+              product.papers && product.papers.length > 0
+                ? product.papers[0].name
+                : "Standard Paper",
+          },
+        ];
+
+        // Update form data with all products
+        setFormData((prev) => {
           const newFormData = {
             ...prev,
-            products
+            products,
           };
-          console.log('Updating form data with autofilled products:', newFormData);
-          console.log('🔍 FINISHING DEBUG - Product finishing array:', newFormData.products[0].finishing);
-          console.log('🔍 FINISHING DEBUG - Product sides:', newFormData.products[0].sides);
+          console.log(
+            "Updating form data with autofilled products:",
+            newFormData
+          );
+          console.log(
+            "🔍 FINISHING DEBUG - Product finishing array:",
+            newFormData.products[0].finishing
+          );
+          console.log(
+            "🔍 FINISHING DEBUG - Product sides:",
+            newFormData.products[0].sides
+          );
           return newFormData;
         });
-        
-        console.log(`Auto-filled ${products.length} products from customer's previous quote:`, products);
+
+        console.log(
+          `Auto-filled ${products.length} products from customer's previous quote:`,
+          products
+        );
       }
     } catch (error) {
-      console.error('Error auto-filling quote data:', error);
+      console.error("Error auto-filling quote data:", error);
     }
   };
 
   // Function to map saved color descriptions to dropdown options
   const mapColorToDropdownOption = (colorDesc: string): string => {
     if (!colorDesc) return "";
-    
+
     const desc = colorDesc.toLowerCase();
-    
+
     // Map specific color descriptions to dropdown options
     if (desc.includes("4/4 cmyk") && desc.includes("2 pms")) {
       return "4+2 Colors";
@@ -824,54 +792,54 @@ function CreateQuoteContent() {
     } else if (desc.includes("1 color") || desc.includes("1")) {
       return "1 Color";
     }
-    
+
     // Default fallback
     return "4 Colors (CMYK)";
   };
 
   // Handle quote selection for editing existing quotes
   const handleQuoteSelect = (quote: any) => {
-    console.log('🎯 Quote selected for editing:', quote);
-    console.log('🔍 Quote finishing data:', quote.finishing);
-    console.log('🔍 Quote finishing type:', typeof quote.finishing);
-    console.log('🔍 Quote finishing length:', quote.finishing?.length);
-    
+    console.log("🎯 Quote selected for editing:", quote);
+    console.log("🔍 Quote finishing data:", quote.finishing);
+    console.log("🔍 Quote finishing type:", typeof quote.finishing);
+    console.log("🔍 Quote finishing length:", quote.finishing?.length);
+
     // Set the selected quote ID for editing
     setSelectedQuoteId(quote.id);
-    
+
     // Also set the customer data
     handleCustomerSelect(quote.client);
-    
+
     // Update form data with the quote's complete product information
     if (quote.product) {
       // Determine appropriate sizes based on product type
       let defaultFlatSize = { width: 9, height: 5.5, spine: 0 };
       let defaultCloseSize = { width: 9, height: 5.5, spine: 0 };
-      
+
       // Set appropriate default sizes for different product types
       switch (quote.product.toLowerCase()) {
-        case 'book':
-        case 'catalog':
-        case 'annual report':
-        case 'technical manual':
+        case "book":
+        case "catalog":
+        case "annual report":
+        case "technical manual":
           defaultFlatSize = { width: 8.5, height: 11, spine: 0.5 };
           defaultCloseSize = { width: 8.5, height: 11, spine: 0.5 };
           break;
-        case 'brochure':
-        case 'flyer a5':
+        case "brochure":
+        case "flyer a5":
           defaultFlatSize = { width: 8.27, height: 11.69, spine: 0 };
           defaultCloseSize = { width: 4.13, height: 11.69, spine: 0 };
           break;
-        case 'poster':
+        case "poster":
           defaultFlatSize = { width: 18, height: 24, spine: 0 };
           defaultCloseSize = { width: 18, height: 24, spine: 0 };
           break;
-        case 'business card':
-        case 'business cards':
+        case "business card":
+        case "business cards":
           defaultFlatSize = { width: 3.5, height: 2, spine: 0 };
           defaultCloseSize = { width: 3.5, height: 2, spine: 0 };
           break;
-        case 'letterhead':
+        case "letterhead":
           defaultFlatSize = { width: 8.5, height: 11, spine: 0 };
           defaultCloseSize = { width: 8.5, height: 11, spine: 0 };
           break;
@@ -879,88 +847,108 @@ function CreateQuoteContent() {
           defaultFlatSize = { width: 9, height: 5.5, spine: 0 };
           defaultCloseSize = { width: 9, height: 5.5, spine: 0 };
       }
-      
+
       // Map saved colors to dropdown options
       const mappedFrontColor = mapColorToDropdownOption(quote.colors?.front);
       const mappedBackColor = mapColorToDropdownOption(quote.colors?.back);
-      
-      setFormData(prev => ({
+
+      setFormData((prev) => ({
         ...prev,
-        products: [{
-          productName: quote.product || "Printing Product",
-          paperName: quote.papers && quote.papers.length > 0 ? quote.papers[0].name : "Standard Paper",
-          quantity: quote.quantity || 100,
-          sides: (quote.sides as "1" | "2") || "1",
-          printingSelection: (quote.printing as "Digital" | "Offset") || "Digital",
-          flatSize: defaultFlatSize,
-          closeSize: defaultCloseSize,
-          useSameAsFlat: true,
-          papers: quote.papers && quote.papers.length > 0 
-            ? quote.papers.map((p: any) => ({ name: p.name, gsm: p.gsm }))
-            : [{ name: "Standard Paper", gsm: "150" }],
-          finishing: (() => {
-            console.log('🔄 Processing finishing data...');
-            console.log('  Original quote.finishing:', quote.finishing);
-            
-            if (!quote.finishing || !Array.isArray(quote.finishing) || quote.finishing.length === 0) {
-              console.log('  ❌ No finishing data or invalid format');
-              return [];
-            }
-            
-            // Simply extract the finishing names - no side logic needed
-            const mappedFinishing = quote.finishing.map((f: any) => {
-              console.log(`  Processing finishing item: ${f.name}`);
-              return f.name;
-            });
-            
-            console.log('  ✅ Final mapped finishing:', mappedFinishing);
-            return mappedFinishing;
-          })(),
-          colors: { 
-            front: mappedFrontColor, 
-            back: mappedBackColor 
-          }
-        }]
+        products: [
+          {
+            productName: quote.product || "Printing Product",
+            paperName:
+              quote.papers && quote.papers.length > 0
+                ? quote.papers[0].name
+                : "Standard Paper",
+            quantity: quote.quantity || 100,
+            sides: (quote.sides as "1" | "2") || "1",
+            printingSelection:
+              (quote.printing as "Digital" | "Offset") || "Digital",
+            flatSize: defaultFlatSize,
+            closeSize: defaultCloseSize,
+            useSameAsFlat: true,
+            papers:
+              quote.papers && quote.papers.length > 0
+                ? quote.papers.map((p: any) => ({ name: p.name, gsm: p.gsm }))
+                : [{ name: "Standard Paper", gsm: "150" }],
+            finishing: (() => {
+              console.log("🔄 Processing finishing data...");
+              console.log("  Original quote.finishing:", quote.finishing);
+
+              if (
+                !quote.finishing ||
+                !Array.isArray(quote.finishing) ||
+                quote.finishing.length === 0
+              ) {
+                console.log("  ❌ No finishing data or invalid format");
+                return [];
+              }
+
+              // Simply extract the finishing names - no side logic needed
+              const mappedFinishing = quote.finishing.map((f: any) => {
+                console.log(`  Processing finishing item: ${f.name}`);
+                return f.name;
+              });
+
+              console.log("  ✅ Final mapped finishing:", mappedFinishing);
+              return mappedFinishing;
+            })(),
+            colors: {
+              front: mappedFrontColor,
+              back: mappedBackColor,
+            },
+          },
+        ],
       }));
-      
+
       // Immediately ensure finishing data is loaded
       ensureFinishingDataLoaded(quote);
-      
-      console.log('📋 Form data updated with selected quote:', {
+
+      console.log("📋 Form data updated with selected quote:", {
         product: quote.product,
         quantity: quote.quantity,
         sides: quote.sides,
         printing: quote.printing,
         papers: quote.papers,
         originalFinishing: quote.finishing,
-        colors: { front: mappedFrontColor, back: mappedBackColor }
+        colors: { front: mappedFrontColor, back: mappedBackColor },
       });
-      
+
       // Log the actual formData state after update
       setTimeout(() => {
-        console.log('🔄 FormData state after update:', formData);
-        console.log('🎯 Products array:', formData.products);
+        console.log("🔄 FormData state after update:", formData);
+        console.log("🎯 Products array:", formData.products);
         if (formData.products && formData.products.length > 0) {
-          console.log('🎯 First product finishing:', formData.products[0].finishing);
-          console.log('🎯 First product finishing type:', typeof formData.products[0].finishing);
-          console.log('🎯 First product finishing isArray:', Array.isArray(formData.products[0].finishing));
+          console.log(
+            "🎯 First product finishing:",
+            formData.products[0].finishing
+          );
+          console.log(
+            "🎯 First product finishing type:",
+            typeof formData.products[0].finishing
+          );
+          console.log(
+            "🎯 First product finishing isArray:",
+            Array.isArray(formData.products[0].finishing)
+          );
         }
       }, 100);
-      
+
       // Force a re-render by updating the formData again
       setTimeout(() => {
-        console.log('🔄 Forcing re-render...');
-        setFormData(prevData => ({
+        console.log("🔄 Forcing re-render...");
+        setFormData((prevData) => ({
           ...prevData,
-          products: prevData.products.map((p, idx) => 
+          products: prevData.products.map((p, idx) =>
             idx === 0 ? { ...p, finishing: p.finishing } : p
-          )
+          ),
         }));
       }, 200);
-      
+
       // Additional fix: Ensure finishing data is properly loaded
       setTimeout(() => {
-        console.log('🔧 Additional finishing data fix...');
+        console.log("🔧 Additional finishing data fix...");
         ensureFinishingDataLoaded(quote);
       }, 300);
     }
@@ -968,18 +956,22 @@ function CreateQuoteContent() {
 
   // Helper function to ensure finishing data is properly loaded
   const ensureFinishingDataLoaded = (quote: any) => {
-    console.log('🔧 Ensuring finishing data is loaded...');
-    if (quote.finishing && Array.isArray(quote.finishing) && quote.finishing.length > 0) {
+    console.log("🔧 Ensuring finishing data is loaded...");
+    if (
+      quote.finishing &&
+      Array.isArray(quote.finishing) &&
+      quote.finishing.length > 0
+    ) {
       const finishingNames = quote.finishing.map((f: any) => f.name);
-      console.log('🔧 Setting finishing names:', finishingNames);
-      
-      setFormData(prevData => ({
+      console.log("🔧 Setting finishing names:", finishingNames);
+
+      setFormData((prevData) => ({
         ...prevData,
-        products: prevData.products.map((p, idx) => 
+        products: prevData.products.map((p, idx) =>
           idx === 0 ? { ...p, finishing: finishingNames } : p
-        )
+        ),
       }));
-      
+
       return true;
     }
     return false;
@@ -989,7 +981,7 @@ function CreateQuoteContent() {
   const getCurrentUserId = async () => {
     try {
       // Try to get the first available user from the database
-      const response = await fetch('/api/users');
+      const response = await fetch("/api/users");
       if (response.ok) {
         const users = await response.json();
         if (users.length > 0) {
@@ -998,11 +990,11 @@ function CreateQuoteContent() {
         }
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error("Error fetching users:", error);
     }
-    
+
     // Fallback to a valid user ID if API fails
-    return 'cmekd5dtw0000x5kp7xvqz8w9'; // admin@example.com
+    return "cmekd5dtw0000x5kp7xvqz8w9"; // admin@example.com
   };
 
   // Validate form data before allowing save
@@ -1010,13 +1002,13 @@ function CreateQuoteContent() {
     const errors: string[] = [];
 
     // Debug: Log the current form data
-    console.log('Validating form data:', {
+    console.log("Validating form data:", {
       client: formData.client,
       contactPerson: formData.client.contactPerson,
       firstName: formData.client.firstName,
       lastName: formData.client.lastName,
       email: formData.client.email,
-      phone: formData.client.phone
+      phone: formData.client.phone,
     });
 
     // Check if client information is complete
@@ -1024,25 +1016,47 @@ function CreateQuoteContent() {
       errors.push("Client email and phone are required");
     }
 
-    if (formData.client.clientType === "Company" && !formData.client.companyName) {
+    if (
+      formData.client.clientType === "Company" &&
+      !formData.client.companyName
+    ) {
       errors.push("Company name is required for company clients");
     }
 
     // Check if we have either contactPerson OR both firstName and lastName
-    const hasContactPerson = formData.client.contactPerson && formData.client.contactPerson.trim() !== '';
-    const hasFullName = formData.client.firstName && formData.client.firstName.trim() !== '' && 
-                       formData.client.lastName && formData.client.lastName.trim() !== '';
-    
+    const hasContactPerson =
+      formData.client.contactPerson &&
+      formData.client.contactPerson.trim() !== "";
+    const hasFullName =
+      formData.client.firstName &&
+      formData.client.firstName.trim() !== "" &&
+      formData.client.lastName &&
+      formData.client.lastName.trim() !== "";
+
     if (!hasContactPerson && !hasFullName) {
-      errors.push("Contact person name is required (or first name and last name)");
+      errors.push(
+        "Contact person name is required (or first name and last name)"
+      );
     }
 
     // Address fields are optional but if provided, should be complete
-    const hasPartialAddress = formData.client.address || formData.client.city || formData.client.state || formData.client.postalCode || formData.client.country;
-    const hasCompleteAddress = formData.client.address && formData.client.city && formData.client.state && formData.client.postalCode && formData.client.country;
-    
+    const hasPartialAddress =
+      formData.client.address ||
+      formData.client.city ||
+      formData.client.state ||
+      formData.client.postalCode ||
+      formData.client.country;
+    const hasCompleteAddress =
+      formData.client.address &&
+      formData.client.city &&
+      formData.client.state &&
+      formData.client.postalCode &&
+      formData.client.country;
+
     if (hasPartialAddress && !hasCompleteAddress) {
-      console.warn('Partial address provided - some address fields are missing');
+      console.warn(
+        "Partial address provided - some address fields are missing"
+      );
       // Don't throw error, just warn - address is optional
     }
 
@@ -1058,7 +1072,7 @@ function CreateQuoteContent() {
     });
 
     if (errors.length > 0) {
-      alert(`Please fix the following issues:\n${errors.join('\n')}`);
+      alert(`Please fix the following issues:\n${errors.join("\n")}`);
       return false;
     }
 
@@ -1069,24 +1083,39 @@ function CreateQuoteContent() {
   const validateAndCleanQuoteData = (data: any) => {
     // Create a clean copy of the data to avoid mutating the original
     const cleanedData = { ...data };
-    
+
     // Ensure papers array has valid objects
     if (cleanedData.papers) {
       // Handle nested papers structure (papers.create)
-      if (cleanedData.papers.create && Array.isArray(cleanedData.papers.create)) {
+      if (
+        cleanedData.papers.create &&
+        Array.isArray(cleanedData.papers.create)
+      ) {
         cleanedData.papers = cleanedData.papers.create.map((paper: any) => ({
           name: paper.name || "Standard Paper",
           gsm: paper.gsm ? String(paper.gsm) : "150", // Keep gsm as string as per database schema
           inputWidth: paper.inputWidth ? Number(paper.inputWidth) : null,
           inputHeight: paper.inputHeight ? Number(paper.inputHeight) : null,
-          pricePerPacket: paper.pricePerPacket ? Number(paper.pricePerPacket) : null,
-          pricePerSheet: paper.pricePerSheet ? Number(paper.pricePerSheet) : null,
-          sheetsPerPacket: paper.sheetsPerPacket ? Number(paper.sheetsPerPacket) : null,
-          recommendedSheets: paper.recommendedSheets ? Number(paper.recommendedSheets) : null,
-          enteredSheets: paper.enteredSheets ? Number(paper.enteredSheets) : null,
+          pricePerPacket: paper.pricePerPacket
+            ? Number(paper.pricePerPacket)
+            : null,
+          pricePerSheet: paper.pricePerSheet
+            ? Number(paper.pricePerSheet)
+            : null,
+          sheetsPerPacket: paper.sheetsPerPacket
+            ? Number(paper.sheetsPerPacket)
+            : null,
+          recommendedSheets: paper.recommendedSheets
+            ? Number(paper.recommendedSheets)
+            : null,
+          enteredSheets: paper.enteredSheets
+            ? Number(paper.enteredSheets)
+            : null,
           outputWidth: paper.outputWidth ? Number(paper.outputWidth) : null,
           outputHeight: paper.outputHeight ? Number(paper.outputHeight) : null,
-          selectedColors: paper.selectedColors ? String(paper.selectedColors) : null,
+          selectedColors: paper.selectedColors
+            ? String(paper.selectedColors)
+            : null,
         }));
       } else if (Array.isArray(cleanedData.papers)) {
         // Handle flat papers structure
@@ -1095,14 +1124,26 @@ function CreateQuoteContent() {
           gsm: paper.gsm ? String(paper.gsm) : "150", // Keep gsm as string as per database schema
           inputWidth: paper.inputWidth ? Number(paper.inputWidth) : null,
           inputHeight: paper.inputHeight ? Number(paper.inputHeight) : null,
-          pricePerPacket: paper.pricePerPacket ? Number(paper.pricePerPacket) : null,
-          pricePerSheet: paper.pricePerSheet ? Number(paper.pricePerSheet) : null,
-          sheetsPerPacket: paper.sheetsPerPacket ? Number(paper.sheetsPerPacket) : null,
-          recommendedSheets: paper.recommendedSheets ? Number(paper.recommendedSheets) : null,
-          enteredSheets: paper.enteredSheets ? Number(paper.enteredSheets) : null,
+          pricePerPacket: paper.pricePerPacket
+            ? Number(paper.pricePerPacket)
+            : null,
+          pricePerSheet: paper.pricePerSheet
+            ? Number(paper.pricePerSheet)
+            : null,
+          sheetsPerPacket: paper.sheetsPerPacket
+            ? Number(paper.sheetsPerPacket)
+            : null,
+          recommendedSheets: paper.recommendedSheets
+            ? Number(paper.recommendedSheets)
+            : null,
+          enteredSheets: paper.enteredSheets
+            ? Number(paper.enteredSheets)
+            : null,
           outputWidth: paper.outputWidth ? Number(paper.outputWidth) : null,
           outputHeight: paper.outputHeight ? Number(paper.outputHeight) : null,
-          selectedColors: paper.selectedColors ? String(paper.selectedColors) : null,
+          selectedColors: paper.selectedColors
+            ? String(paper.selectedColors)
+            : null,
         }));
       }
     }
@@ -1110,11 +1151,16 @@ function CreateQuoteContent() {
     // Ensure finishing array has valid objects
     if (cleanedData.finishing) {
       // Handle nested finishing structure (finishing.create)
-      if (cleanedData.finishing.create && Array.isArray(cleanedData.finishing.create)) {
-        cleanedData.finishing = cleanedData.finishing.create.map((finish: any) => ({
-          name: finish.name || "Standard Finishing",
-          cost: finish.cost ? Number(finish.cost) : 0,
-        }));
+      if (
+        cleanedData.finishing.create &&
+        Array.isArray(cleanedData.finishing.create)
+      ) {
+        cleanedData.finishing = cleanedData.finishing.create.map(
+          (finish: any) => ({
+            name: finish.name || "Standard Finishing",
+            cost: finish.cost ? Number(finish.cost) : 0,
+          })
+        );
       } else if (Array.isArray(cleanedData.finishing)) {
         // Handle flat finishing structure
         cleanedData.finishing = cleanedData.finishing.map((finish: any) => ({
@@ -1148,14 +1194,22 @@ function CreateQuoteContent() {
       // Handle nested operational structure (operational.create)
       if (cleanedData.operational.create) {
         cleanedData.operational = {
-          plates: cleanedData.operational.create.plates ? Number(cleanedData.operational.create.plates) : null,
-          units: cleanedData.operational.create.units ? Number(cleanedData.operational.create.units) : null,
+          plates: cleanedData.operational.create.plates
+            ? Number(cleanedData.operational.create.plates)
+            : null,
+          units: cleanedData.operational.create.units
+            ? Number(cleanedData.operational.create.units)
+            : null,
         };
       } else {
         // Handle flat operational structure
         cleanedData.operational = {
-          plates: cleanedData.operational.plates ? Number(cleanedData.operational.plates) : null,
-          units: cleanedData.operational.units ? Number(cleanedData.operational.units) : null,
+          plates: cleanedData.operational.plates
+            ? Number(cleanedData.operational.plates)
+            : null,
+          units: cleanedData.operational.units
+            ? Number(cleanedData.operational.units)
+            : null,
         };
       }
     }
@@ -1164,45 +1218,45 @@ function CreateQuoteContent() {
     if (cleanedData.date) {
       cleanedData.date = new Date(cleanedData.date);
     }
-    
+
     if (cleanedData.status) {
       cleanedData.status = String(cleanedData.status);
     }
-    
+
     if (cleanedData.clientId) {
       cleanedData.clientId = String(cleanedData.clientId);
     }
-    
+
     if (cleanedData.userId) {
       cleanedData.userId = String(cleanedData.userId);
     }
-    
+
     if (cleanedData.salesPersonId) {
       cleanedData.salesPersonId = String(cleanedData.salesPersonId);
     }
-    
+
     if (cleanedData.product) {
       cleanedData.product = String(cleanedData.product);
     }
-    
+
     if (cleanedData.quantity) {
       cleanedData.quantity = Number(cleanedData.quantity) || 0;
     }
-    
+
     if (cleanedData.sides) {
       cleanedData.sides = String(cleanedData.sides);
     }
-    
+
     if (cleanedData.printing) {
       cleanedData.printing = String(cleanedData.printing);
     }
-    
+
     if (cleanedData.quoteId) {
       cleanedData.quoteId = String(cleanedData.quoteId);
     }
 
     // Handle colors field - convert object to string if needed
-    if (cleanedData.colors && typeof cleanedData.colors === 'object') {
+    if (cleanedData.colors && typeof cleanedData.colors === "object") {
       // If colors is an object with front/back properties, convert to JSON string
       cleanedData.colors = JSON.stringify(cleanedData.colors);
     } else if (cleanedData.colors) {
@@ -1216,197 +1270,257 @@ function CreateQuoteContent() {
     setIsSaving(true);
     try {
       // Debug: Log the current form data before processing
-      console.log('=== QUOTE CREATION DEBUG ===');
-      console.log('Current formData.client:', formData.client);
-      console.log('Current selectedCustomer:', selectedCustomer);
-      console.log('Current quoteMode:', quoteMode);
-      console.log('Current selectedQuoteId:', selectedQuoteId);
-      
+      console.log("=== QUOTE CREATION DEBUG ===");
+      console.log("Current formData.client:", formData.client);
+      console.log("Current selectedCustomer:", selectedCustomer);
+      console.log("Current quoteMode:", quoteMode);
+      console.log("Current selectedQuoteId:", selectedQuoteId);
+
       // Force synchronize form data - ensure all fields are properly set
       let needsFormUpdate = false;
       const updatedClient = { ...formData.client };
-      
+
       // Ensure all required fields have at least empty strings instead of undefined
       if (updatedClient.email === undefined) {
-        updatedClient.email = '';
+        updatedClient.email = "";
         needsFormUpdate = true;
       }
       if (updatedClient.phone === undefined) {
-        updatedClient.phone = '';
+        updatedClient.phone = "";
         needsFormUpdate = true;
       }
       if (updatedClient.contactPerson === undefined) {
-        updatedClient.contactPerson = '';
+        updatedClient.contactPerson = "";
         needsFormUpdate = true;
       }
       if (updatedClient.address === undefined) {
-        updatedClient.address = '';
+        updatedClient.address = "";
         needsFormUpdate = true;
       }
       if (updatedClient.city === undefined) {
-        updatedClient.city = '';
+        updatedClient.city = "";
         needsFormUpdate = true;
       }
       if (updatedClient.state === undefined) {
-        updatedClient.state = '';
+        updatedClient.state = "";
         needsFormUpdate = true;
       }
       if (updatedClient.postalCode === undefined) {
-        updatedClient.postalCode = '';
+        updatedClient.postalCode = "";
         needsFormUpdate = true;
       }
       if (updatedClient.country === undefined) {
-        updatedClient.country = '';
+        updatedClient.country = "";
         needsFormUpdate = true;
       }
-      
+
       // Ensure contactPerson is set if firstName and lastName are available
-      if (!updatedClient.contactPerson && (updatedClient.firstName || updatedClient.lastName)) {
-        const contactPerson = `${updatedClient.firstName || ''} ${updatedClient.lastName || ''}`.trim();
+      if (
+        !updatedClient.contactPerson &&
+        (updatedClient.firstName || updatedClient.lastName)
+      ) {
+        const contactPerson = `${updatedClient.firstName || ""} ${
+          updatedClient.lastName || ""
+        }`.trim();
         updatedClient.contactPerson = contactPerson;
         needsFormUpdate = true;
-        console.log('Auto-setting contactPerson:', contactPerson);
+        console.log("Auto-setting contactPerson:", contactPerson);
       }
-      
+
       // Update form data if needed
       if (needsFormUpdate) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          client: updatedClient
+          client: updatedClient,
         }));
-        console.log('Updated form data with synchronized client info:', updatedClient);
+        console.log(
+          "Updated form data with synchronized client info:",
+          updatedClient
+        );
       }
-      
+
       // Use the updated client data for validation
       // If we have a selectedCustomer (existing customer), use that data for validation
       let clientToValidate = needsFormUpdate ? updatedClient : formData.client;
-      
+
       // If using existing customer mode and we have selectedCustomer data, use that for validation
       if (quoteMode === "existing" && selectedCustomer) {
-        console.log('=== SELECTED CUSTOMER DEBUG ===');
-        console.log('selectedCustomer object:', selectedCustomer);
-        console.log('selectedCustomer.email:', selectedCustomer.email);
-        console.log('selectedCustomer.phone:', selectedCustomer.phone);
-        console.log('selectedCustomer.contactPerson:', selectedCustomer.contactPerson);
-        
+        console.log("=== SELECTED CUSTOMER DEBUG ===");
+        console.log("selectedCustomer object:", selectedCustomer);
+        console.log("selectedCustomer.email:", selectedCustomer.email);
+        console.log("selectedCustomer.phone:", selectedCustomer.phone);
+        console.log(
+          "selectedCustomer.contactPerson:",
+          selectedCustomer.contactPerson
+        );
+
         // For existing customers, use the selectedCustomer data directly for validation
         clientToValidate = {
           ...clientToValidate,
           email: selectedCustomer.email,
-          phone: selectedCustomer.phone || '',
+          phone: selectedCustomer.phone || "",
           contactPerson: selectedCustomer.contactPerson,
           clientType: selectedCustomer.clientType,
-          companyName: selectedCustomer.companyName || '',
-          role: selectedCustomer.role || '',
-          address: selectedCustomer.address || '',
-          city: selectedCustomer.city || '',
-          state: selectedCustomer.state || '',
-          postalCode: selectedCustomer.postalCode || '',
-          country: selectedCustomer.country || '',
-          countryCode: selectedCustomer.countryCode || '+971'
+          companyName: selectedCustomer.companyName || "",
+          role: selectedCustomer.role || "",
+          address: selectedCustomer.address || "",
+          city: selectedCustomer.city || "",
+          state: selectedCustomer.state || "",
+          postalCode: selectedCustomer.postalCode || "",
+          country: selectedCustomer.country || "",
+          countryCode: selectedCustomer.countryCode || "+971",
         };
-        console.log('Using selectedCustomer data for validation:', clientToValidate);
+        console.log(
+          "Using selectedCustomer data for validation:",
+          clientToValidate
+        );
       }
-      
+
       // Debug: Log the client data being validated
-      console.log('=== CLIENT VALIDATION DEBUG ===');
-      console.log('Client data being validated:', clientToValidate);
-      console.log('Email:', clientToValidate.email);
-      console.log('Phone:', clientToValidate.phone);
-      console.log('Contact Person:', clientToValidate.contactPerson);
-      console.log('Address:', clientToValidate.address);
-      console.log('City:', clientToValidate.city);
-      console.log('State:', clientToValidate.state);
-      console.log('Postal Code:', clientToValidate.postalCode);
-      console.log('Country:', clientToValidate.country);
-      
+      console.log("=== CLIENT VALIDATION DEBUG ===");
+      console.log("Client data being validated:", clientToValidate);
+      console.log("Email:", clientToValidate.email);
+      console.log("Phone:", clientToValidate.phone);
+      console.log("Contact Person:", clientToValidate.contactPerson);
+      console.log("Address:", clientToValidate.address);
+      console.log("City:", clientToValidate.city);
+      console.log("State:", clientToValidate.state);
+      console.log("Postal Code:", clientToValidate.postalCode);
+      console.log("Country:", clientToValidate.country);
+
       // Validate essential fields only
       // Skip validation for existing customers since we know the data is valid
       if (quoteMode === "existing" && selectedCustomer) {
-        console.log('Skipping validation for existing customer - data is pre-validated');
+        console.log(
+          "Skipping validation for existing customer - data is pre-validated"
+        );
       } else if (!clientToValidate.email || !clientToValidate.phone) {
-        console.error('Missing essential client fields:', {
+        console.error("Missing essential client fields:", {
           email: clientToValidate.email,
-          phone: clientToValidate.phone
+          phone: clientToValidate.phone,
         });
-        throw new Error('Missing required client information: email and phone are required');
+        throw new Error(
+          "Missing required client information: email and phone are required"
+        );
       }
-      
+
       // Check if we have either contactPerson OR both firstName and lastName
-      const hasContactPerson = clientToValidate.contactPerson && clientToValidate.contactPerson.trim() !== '';
-      const hasFullName = clientToValidate.firstName && clientToValidate.firstName.trim() !== '' && 
-                         clientToValidate.lastName && clientToValidate.lastName.trim() !== '';
-      
+      const hasContactPerson =
+        clientToValidate.contactPerson &&
+        clientToValidate.contactPerson.trim() !== "";
+      const hasFullName =
+        clientToValidate.firstName &&
+        clientToValidate.firstName.trim() !== "" &&
+        clientToValidate.lastName &&
+        clientToValidate.lastName.trim() !== "";
+
       if (!hasContactPerson && !hasFullName) {
-        console.error('Missing name information:', {
+        console.error("Missing name information:", {
           contactPerson: clientToValidate.contactPerson,
           firstName: clientToValidate.firstName,
-          lastName: clientToValidate.lastName
+          lastName: clientToValidate.lastName,
         });
-        throw new Error('Contact person name is required (or first name and last name)');
+        throw new Error(
+          "Contact person name is required (or first name and last name)"
+        );
       }
-      
+
       // Ensure contactPerson is set if we have firstName and lastName
       if (!hasContactPerson && hasFullName) {
-        clientToValidate.contactPerson = `${clientToValidate.firstName} ${clientToValidate.lastName}`.trim();
-        console.log('Auto-generated contactPerson from firstName and lastName:', clientToValidate.contactPerson);
+        clientToValidate.contactPerson =
+          `${clientToValidate.firstName} ${clientToValidate.lastName}`.trim();
+        console.log(
+          "Auto-generated contactPerson from firstName and lastName:",
+          clientToValidate.contactPerson
+        );
       }
-      
+
       // Company validation only if company type
-      if (clientToValidate.clientType === "Company" && !clientToValidate.companyName) {
-        throw new Error('Company name is required for company clients');
+      if (
+        clientToValidate.clientType === "Company" &&
+        !clientToValidate.companyName
+      ) {
+        throw new Error("Company name is required for company clients");
       }
-      
+
       // Address fields are optional but if provided, should be complete
-      const hasPartialAddress = clientToValidate.address || clientToValidate.city || clientToValidate.state || clientToValidate.postalCode || clientToValidate.country;
-      const hasCompleteAddress = clientToValidate.address && clientToValidate.city && clientToValidate.state && clientToValidate.postalCode && clientToValidate.country;
-      
+      const hasPartialAddress =
+        clientToValidate.address ||
+        clientToValidate.city ||
+        clientToValidate.state ||
+        clientToValidate.postalCode ||
+        clientToValidate.country;
+      const hasCompleteAddress =
+        clientToValidate.address &&
+        clientToValidate.city &&
+        clientToValidate.state &&
+        clientToValidate.postalCode &&
+        clientToValidate.country;
+
       if (hasPartialAddress && !hasCompleteAddress) {
-        console.warn('Partial address provided - some address fields are missing');
+        console.warn(
+          "Partial address provided - some address fields are missing"
+        );
         // Don't throw error, just warn - address is optional
       }
-      
+
       // First, save the client if it's a new client
       let clientId = selectedCustomer?.id;
-      
+
       // If no selectedCustomer ID, we need to create a new client from form data
       if (!clientId) {
         // Create new client - Fix the data mapping
         const clientData = {
           clientType: clientToValidate.clientType,
-          companyName: clientToValidate.clientType === "Company" ? clientToValidate.companyName : null,
-          contactPerson: clientToValidate.contactPerson || `${clientToValidate.firstName || ''} ${clientToValidate.lastName || ''}`.trim(),
+          companyName:
+            clientToValidate.clientType === "Company"
+              ? clientToValidate.companyName
+              : null,
+          contactPerson:
+            clientToValidate.contactPerson ||
+            `${clientToValidate.firstName || ""} ${
+              clientToValidate.lastName || ""
+            }`.trim(),
           email: clientToValidate.email,
           phone: clientToValidate.phone,
           countryCode: clientToValidate.countryCode,
-          role: clientToValidate.clientType === "Company" ? clientToValidate.role : null,
-          address: clientToValidate.address || '',
-          city: clientToValidate.city || '',
-          state: clientToValidate.state || '',
-          postalCode: clientToValidate.postalCode || '',
-          country: clientToValidate.country || '',
-          additionalInfo: clientToValidate.additionalInfo || '',
+          role:
+            clientToValidate.clientType === "Company"
+              ? clientToValidate.role
+              : null,
+          address: clientToValidate.address || "",
+          city: clientToValidate.city || "",
+          state: clientToValidate.state || "",
+          postalCode: clientToValidate.postalCode || "",
+          country: clientToValidate.country || "",
+          additionalInfo: clientToValidate.additionalInfo || "",
         };
 
-        console.log('Creating new client with data:', clientData);
+        console.log("Creating new client with data:", clientData);
 
-        const clientResponse = await fetch('/api/clients', {
-          method: 'POST',
+        const clientResponse = await fetch("/api/clients", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(clientData),
         });
 
         if (!clientResponse.ok) {
           const errorText = await clientResponse.text();
-          console.error('Client creation failed:', clientResponse.status, errorText);
-          throw new Error(`Failed to create client: ${clientResponse.status} - ${errorText}`);
+          console.error(
+            "Client creation failed:",
+            clientResponse.status,
+            errorText
+          );
+          throw new Error(
+            `Failed to create client: ${clientResponse.status} - ${errorText}`
+          );
         }
 
         const newClient = await clientResponse.json();
         clientId = newClient.id;
-        
+
         // Update the selectedCustomer state with the newly created client
         const newCustomerData = {
           id: newClient.id,
@@ -1423,15 +1537,18 @@ function CreateQuoteContent() {
           postalCode: newClient.postalCode,
           country: newClient.country,
           additionalInfo: newClient.additionalInfo,
-          firstName: formData.client.firstName || '',
-          lastName: formData.client.lastName || '',
+          firstName: formData.client.firstName || "",
+          lastName: formData.client.lastName || "",
         };
-        
+
         setSelectedCustomer(newCustomerData);
-        console.log('Updated selectedCustomer with new client:', newCustomerData);
-        
+        console.log(
+          "Updated selectedCustomer with new client:",
+          newCustomerData
+        );
+
         // Also update the form data with the new customer information to ensure Step 5 displays correctly
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           client: {
             ...prev.client,
@@ -1446,31 +1563,35 @@ function CreateQuoteContent() {
             country: newCustomerData.country,
             additionalInfo: newCustomerData.additionalInfo,
             // Also ensure firstName and lastName are set if they exist
-            firstName: newCustomerData.firstName || prev.client.firstName || '',
-            lastName: newCustomerData.lastName || prev.client.lastName || '',
-          }
+            firstName: newCustomerData.firstName || prev.client.firstName || "",
+            lastName: newCustomerData.lastName || prev.client.lastName || "",
+          },
         }));
-        
-        console.log('Updated form data with new customer information for Step 5 display');
-        
+
+        console.log(
+          "Updated form data with new customer information for Step 5 display"
+        );
+
         // Log the final state for debugging
-        console.log('=== FINAL STATE AFTER CLIENT CREATION ===');
-        console.log('New client ID:', clientId);
-        console.log('Updated selectedCustomer:', newCustomerData);
-        console.log('Updated formData.client:', formData.client);
-        
-        console.log('Client created successfully:', newClient);
+        console.log("=== FINAL STATE AFTER CLIENT CREATION ===");
+        console.log("New client ID:", clientId);
+        console.log("Updated selectedCustomer:", newCustomerData);
+        console.log("Updated formData.client:", formData.client);
+
+        console.log("Client created successfully:", newClient);
       }
 
       // Get current user ID
       const currentUserId = await getCurrentUserId();
 
       // Debug: Log the customer information being used
-      console.log('Creating quote with customer info:', {
+      console.log("Creating quote with customer info:", {
         clientId,
         selectedCustomer,
         formDataClient: formData.client,
-        newCustomerData: clientId ? 'Using existing customer' : 'Created new customer'
+        newCustomerData: clientId
+          ? "Using existing customer"
+          : "Created new customer",
       });
 
       // Prepare quote data for API - Fix the data structure to match DatabaseService expectations
@@ -1486,14 +1607,17 @@ function CreateQuoteContent() {
         printing: formData.products[0]?.printingSelection || "Digital",
       };
 
-              // Debug: Log the quote data being sent
-        console.log('=== QUOTE DATA DEBUG ===');
-        console.log('Quote data being sent:', quoteData);
-        console.log('salesPersonId:', formData.salesPersonId);
-        console.log('Customer ID being used:', clientId);
-        console.log('Selected customer state:', selectedCustomer);
-        console.log('formData.operational.papers:', formData.operational.papers);
-        console.log('formData.operational.finishing:', formData.operational.finishing);
+      // Debug: Log the quote data being sent
+      console.log("=== QUOTE DATA DEBUG ===");
+      console.log("Quote data being sent:", quoteData);
+      console.log("salesPersonId:", formData.salesPersonId);
+      console.log("Customer ID being used:", clientId);
+      console.log("Selected customer state:", selectedCustomer);
+      console.log("formData.operational.papers:", formData.operational.papers);
+      console.log(
+        "formData.operational.finishing:",
+        formData.operational.finishing
+      );
 
       let quoteResponse;
       let savedQuote;
@@ -1501,120 +1625,203 @@ function CreateQuoteContent() {
       // Check if we're actually editing an existing quote (has selectedQuoteId)
       if (selectedQuoteId && isUpdate) {
         // Update existing quote - we have a specific quote ID to edit
-        console.log('Updating existing quote:', selectedQuoteId);
-        console.log('=== QUOTE DATA DEBUG (UPDATE) ===');
-        console.log('Quote data being sent:', quoteData);
-        console.log('salesPersonId:', formData.salesPersonId);
-        
-        // Use Step 5 calculation results directly - no recalculation needed
-        const totalPrice = formData.calculation.totalPrice || 0;
-        const totalBasePrice = formData.calculation.basePrice || 0;
-        const vatAmount = formData.calculation.vatAmount || 0;
+        console.log("Updating existing quote:", selectedQuoteId);
+        console.log("=== QUOTE DATA DEBUG (UPDATE) ===");
+        console.log("Quote data being sent:", quoteData);
+        console.log("salesPersonId:", formData.salesPersonId);
 
-        console.log('=== USING STEP 5 CALCULATION RESULTS ===');
-        console.log('Step 5 totalPrice:', totalPrice);
-        console.log('Step 5 basePrice:', totalBasePrice);
-        console.log('Step 5 vatAmount:', vatAmount);
+        // Force calculation before sending - ensure amounts are up to date for update
+        const paperCost = formData.operational.papers.reduce((total, p) => {
+          const pricePerPacket = p.pricePerPacket || 0;
+          const sheetsPerPacket = p.sheetsPerPacket || 1;
+          const enteredSheets = p.enteredSheets || 0;
+          const actualUnitsNeeded = Math.ceil(enteredSheets / sheetsPerPacket);
+          return total + pricePerPacket * actualUnitsNeeded;
+        }, 0);
+
+        const platesCost = (formData.operational.plates || 0) * 35; // $35 per plate (consistent with main calculation)
+        const finishingCost = formData.operational.finishing.reduce(
+          (total, f) => {
+            const isUsedByAnyProduct = formData.products.some(
+              (product) =>
+                product.finishing && product.finishing.includes(f.name)
+            );
+            const actualUnitsNeeded = Math.ceil(
+              (formData.operational.units || 0) / 1000
+            );
+            if (isUsedByAnyProduct) {
+              return total + (f.cost || 0) * actualUnitsNeeded;
+            }
+            return total;
+          },
+          0
+        );
+
+        // Calculate final amounts
+        const basePrice = paperCost + platesCost + finishingCost;
+        const marginAmount = basePrice * 0.3; // 30% margin
+        const subtotal = basePrice + marginAmount;
+        const vatAmount = subtotal * 0.05; // 5% VAT
+        const totalPrice = subtotal + vatAmount;
+
+        console.log("=== UPDATE CALCULATION DEBUG ===");
+        console.log("paperCost:", paperCost);
+        console.log("platesCost:", platesCost);
+        console.log("finishingCost:", finishingCost);
+        console.log("basePrice:", basePrice);
+        console.log("marginAmount:", marginAmount);
+        console.log("subtotal:", subtotal);
+        console.log("vatAmount:", vatAmount);
+        console.log("totalPrice:", totalPrice);
 
         // For updates, we can include additional data like papers, finishing, amounts
         const updateData = {
           ...quoteData,
           salesPersonId: formData.salesPersonId, // Ensure salesPersonId is included in updates
           colors: formData.products[0]?.colors || null, // Include colors field
-          // Include discount information
-          discountPercentage: formData.calculation.discount?.percentage || 0,
-          discountAmount: formData.calculation.discountAmount || 0,
           papers: {
-            create: formData.operational.papers.map((operationalPaper, index) => {
-              // Get the corresponding paper name and gsm from product papers
-              const productPaper = formData.products[0]?.papers[index] || null;
-              return {
-                name: productPaper?.name || "Standard Paper",
-                gsm: productPaper?.gsm ? parseInt(productPaper.gsm) : 150,
-                inputWidth: operationalPaper.inputWidth || 0,
-                inputHeight: operationalPaper.inputHeight || 0,
-                pricePerPacket: operationalPaper.pricePerPacket || 0,
-                pricePerSheet: operationalPaper.pricePerSheet || 0,
-                sheetsPerPacket: operationalPaper.sheetsPerPacket || 1,
-                recommendedSheets: operationalPaper.recommendedSheets || 1,
-                enteredSheets: operationalPaper.enteredSheets || 1,
-                outputWidth: operationalPaper.outputWidth || 0,
-                outputHeight: operationalPaper.outputHeight || 0,
-                selectedColors: operationalPaper.selectedColors || "",
-              };
-            }) || []
+            create:
+              formData.operational.papers.map((operationalPaper, index) => {
+                // Get the corresponding paper name and gsm from product papers
+                const productPaper =
+                  formData.products[0]?.papers[index] || null;
+                return {
+                  name: productPaper?.name || "Standard Paper",
+                  gsm: productPaper?.gsm ? parseInt(productPaper.gsm) : 150,
+                  inputWidth: operationalPaper.inputWidth || 0,
+                  inputHeight: operationalPaper.inputHeight || 0,
+                  pricePerPacket: operationalPaper.pricePerPacket || 0,
+                  pricePerSheet: operationalPaper.pricePerSheet || 0,
+                  sheetsPerPacket: operationalPaper.sheetsPerPacket || 1,
+                  recommendedSheets: operationalPaper.recommendedSheets || 1,
+                  enteredSheets: operationalPaper.enteredSheets || 1,
+                  outputWidth: operationalPaper.outputWidth || 0,
+                  outputHeight: operationalPaper.outputHeight || 0,
+                  selectedColors: operationalPaper.selectedColors || "",
+                };
+              }) || [],
           },
           finishing: {
-            create: formData.operational.finishing.map(finish => ({
-              name: finish.name || "Standard Finishing",
-              cost: finish.cost || 0,
-            })) || []
+            create:
+              formData.operational.finishing.map((finish) => ({
+                name: finish.name || "Standard Finishing",
+                cost: finish.cost || 0,
+              })) || [],
           },
           amounts: {
             create: {
-              base: totalBasePrice, // Use Step 5 base price
-              vat: vatAmount, // Use Step 5 VAT amount
-              total: totalPrice // Use Step 5 total price - EXACTLY the same as Step 5 final price
-            }
+              base: basePrice, // Use calculated values instead of formData.calculation
+              vat: vatAmount,
+              total: totalPrice,
+            },
           },
           operational: {
             create: {
               plates: formData.operational.plates || 0,
-              units: formData.operational.units || 0
-            }
-          }
+              units: formData.operational.units || 0,
+            },
+          },
         };
-        
+
         // Validate and clean the update data before sending
         const cleanedUpdateData = validateAndCleanQuoteData(updateData);
-        
-        console.log('Quote data being sent for update:', cleanedUpdateData);
-        
+
+        console.log("Quote data being sent for update:", cleanedUpdateData);
+
         quoteResponse = await fetch(`/api/quotes/${selectedQuoteId}`, {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(cleanedUpdateData),
         });
 
         if (!quoteResponse.ok) {
           const errorText = await quoteResponse.text();
-          console.error('Quote update failed:', quoteResponse.status, errorText);
-          throw new Error(`Failed to update quote: ${quoteResponse.status} - ${errorText}`);
+          console.error(
+            "Quote update failed:",
+            quoteResponse.status,
+            errorText
+          );
+          throw new Error(
+            `Failed to update quote: ${quoteResponse.status} - ${errorText}`
+          );
         }
 
         savedQuote = await quoteResponse.json();
-        console.log('Quote updated successfully:', savedQuote);
-        
+        console.log("Quote updated successfully:", savedQuote);
+
         // Show success message for update
-        alert('Quote updated successfully!');
+        alert("Quote updated successfully!");
         return;
       } else {
         // Create new quote - even if using existing customer, this is a new quote
-        console.log('Creating new quote with complete details');
-        console.log('=== COMPLETE QUOTE DATA DEBUG ===');
-        console.log('formData.salesPersonId:', formData.salesPersonId);
-        console.log('formData.operational.papers:', formData.operational.papers);
-        console.log('formData.operational.finishing:', formData.operational.finishing);
-        
+        console.log("Creating new quote with complete details");
+        console.log("=== COMPLETE QUOTE DATA DEBUG ===");
+        console.log("formData.salesPersonId:", formData.salesPersonId);
+        console.log(
+          "formData.operational.papers:",
+          formData.operational.papers
+        );
+        console.log(
+          "formData.operational.finishing:",
+          formData.operational.finishing
+        );
+
         // Generate a unique quote ID in proper format: QT-YYYY-MMDD-XXX
         const now = new Date();
         const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const randomNum = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+        const month = String(now.getMonth() + 1).padStart(2, "0");
+        const day = String(now.getDate()).padStart(2, "0");
+        const randomNum = String(Math.floor(Math.random() * 1000)).padStart(
+          3,
+          "0"
+        );
         const quoteId = `QT-${year}-${month}${day}-${randomNum}`;
-        
-        // Use Step 5 calculation results directly - no recalculation needed
-        const totalPrice = formData.calculation.totalPrice || 0;
-        const totalBasePrice = formData.calculation.basePrice || 0;
-        const vatAmount = formData.calculation.vatAmount || 0;
-        
-        console.log('=== USING STEP 5 CALCULATION RESULTS ===');
-        console.log('Step 5 totalPrice:', totalPrice);
-        console.log('Step 5 basePrice:', totalBasePrice);
-        console.log('Step 5 vatAmount:', vatAmount);
+
+        // Force calculation before sending - ensure amounts are up to date
+        const paperCost = formData.operational.papers.reduce((total, p) => {
+          const pricePerPacket = p.pricePerPacket || 0;
+          const sheetsPerPacket = p.sheetsPerPacket || 1;
+          const enteredSheets = p.enteredSheets || 0;
+          const actualUnitsNeeded = Math.ceil(enteredSheets / sheetsPerPacket);
+          return total + pricePerPacket * actualUnitsNeeded;
+        }, 0);
+
+        const platesCost = (formData.operational.plates || 0) * 35; // $35 per plate (consistent with main calculation)
+        const finishingCost = formData.operational.finishing.reduce(
+          (total, f) => {
+            const isUsedByAnyProduct = formData.products.some(
+              (product) =>
+                product.finishing && product.finishing.includes(f.name)
+            );
+            const actualUnitsNeeded = Math.ceil(
+              (formData.operational.units || 0) / 1000
+            );
+            if (isUsedByAnyProduct) {
+              return total + (f.cost || 0) * actualUnitsNeeded;
+            }
+            return total;
+          },
+          0
+        );
+
+        // Calculate final amounts
+        const basePrice = paperCost + platesCost + finishingCost;
+        const marginAmount = basePrice * 0.3; // 30% margin
+        const subtotal = basePrice + marginAmount;
+        const vatAmount = subtotal * 0.05; // 5% VAT
+        const totalPrice = subtotal + vatAmount;
+
+        console.log("=== MANUAL CALCULATION DEBUG ===");
+        console.log("paperCost:", paperCost);
+        console.log("platesCost:", platesCost);
+        console.log("finishingCost:", finishingCost);
+        console.log("basePrice:", basePrice);
+        console.log("marginAmount:", marginAmount);
+        console.log("subtotal:", subtotal);
+        console.log("vatAmount:", vatAmount);
+        console.log("totalPrice:", totalPrice);
 
         // Prepare complete quote data with all details
         const completeQuoteData = {
@@ -1622,82 +1829,88 @@ function CreateQuoteContent() {
           quoteId: quoteId,
           salesPersonId: formData.salesPersonId, // Explicitly include salesPersonId
           colors: formData.products[0]?.colors || null, // Include colors field
-          // Include discount information
-          discountPercentage: formData.calculation.discount?.percentage || 0,
-          discountAmount: formData.calculation.discountAmount || 0,
           papers: {
-            create: formData.operational.papers.map((operationalPaper, index) => {
-              // Get the corresponding paper name and gsm from product papers
-              const productPaper = formData.products[0]?.papers[index] || null;
-              return {
-                name: productPaper?.name || "Standard Paper",
-                gsm: productPaper?.gsm ? parseInt(productPaper.gsm) : 150,
-                inputWidth: operationalPaper.inputWidth || 0,
-                inputHeight: operationalPaper.inputHeight || 0,
-                pricePerPacket: operationalPaper.pricePerPacket || 0,
-                pricePerSheet: operationalPaper.pricePerSheet || 0,
-                sheetsPerPacket: operationalPaper.sheetsPerPacket || 1,
-                recommendedSheets: operationalPaper.recommendedSheets || 1,
-                enteredSheets: operationalPaper.enteredSheets || 1,
-                outputWidth: operationalPaper.outputWidth || 0,
-                outputHeight: operationalPaper.outputHeight || 0,
-                selectedColors: operationalPaper.selectedColors || "",
-              };
-            }) || []
+            create:
+              formData.operational.papers.map((operationalPaper, index) => {
+                // Get the corresponding paper name and gsm from product papers
+                const productPaper =
+                  formData.products[0]?.papers[index] || null;
+                return {
+                  name: productPaper?.name || "Standard Paper",
+                  gsm: productPaper?.gsm ? parseInt(productPaper.gsm) : 150,
+                  inputWidth: operationalPaper.inputWidth || 0,
+                  inputHeight: operationalPaper.inputHeight || 0,
+                  pricePerPacket: operationalPaper.pricePerPacket || 0,
+                  pricePerSheet: operationalPaper.pricePerSheet || 0,
+                  sheetsPerPacket: operationalPaper.sheetsPerPacket || 1,
+                  recommendedSheets: operationalPaper.recommendedSheets || 1,
+                  enteredSheets: operationalPaper.enteredSheets || 1,
+                  outputWidth: operationalPaper.outputWidth || 0,
+                  outputHeight: operationalPaper.outputHeight || 0,
+                  selectedColors: operationalPaper.selectedColors || "",
+                };
+              }) || [],
           },
           finishing: {
-            create: formData.operational.finishing.map(finish => ({
-              name: finish.name || "Standard Finishing",
-              cost: finish.cost || 0,
-            })) || []
+            create:
+              formData.operational.finishing.map((finish) => ({
+                name: finish.name || "Standard Finishing",
+                cost: finish.cost || 0,
+              })) || [],
           },
           amounts: {
             create: {
-              base: totalBasePrice, // Use Step 5 base price
-              vat: vatAmount, // Use Step 5 VAT amount
-              total: totalPrice // Use Step 5 total price - EXACTLY the same as Step 5 final price
-            }
+              base: basePrice, // Use calculated values instead of formData.calculation
+              vat: vatAmount,
+              total: totalPrice,
+            },
           },
           operational: {
             create: {
               plates: formData.operational.plates || 0,
-              units: formData.operational.units || 0
-            }
-          }
+              units: formData.operational.units || 0,
+            },
+          },
         };
-        
+
         // Validate and clean the data before sending
         const cleanedQuoteData = validateAndCleanQuoteData(completeQuoteData);
-        
-        console.log('=== FINAL QUOTE DATA DEBUG ===');
-        console.log('Original quoteData:', quoteData);
-        console.log('Complete quote data before cleaning:', completeQuoteData);
-        console.log('=== AMOUNTS DEBUG - USING STEP 5 VALUES ===');
-        console.log('formData.calculation:', formData.calculation);
-        console.log('Step 5 totalPrice being saved:', totalPrice);
-        console.log('Step 5 basePrice being saved:', totalBasePrice);
-        console.log('Step 5 vatAmount being saved:', vatAmount);
-        console.log('completeQuoteData.amounts:', completeQuoteData.amounts);
-        console.log('Cleaned amounts:', cleanedQuoteData.amounts);
-        console.log('Cleaned quote data being sent:', cleanedQuoteData);
-        console.log('salesPersonId in cleaned data:', cleanedQuoteData.salesPersonId);
-        
-        quoteResponse = await fetch('/api/quotes', {
-          method: 'POST',
+
+        console.log("=== FINAL QUOTE DATA DEBUG ===");
+        console.log("Original quoteData:", quoteData);
+        console.log("Complete quote data before cleaning:", completeQuoteData);
+        console.log("=== AMOUNTS DEBUG ===");
+        console.log("formData.calculation:", formData.calculation);
+        console.log("completeQuoteData.amounts:", completeQuoteData.amounts);
+        console.log("Cleaned amounts:", cleanedQuoteData.amounts);
+        console.log("Cleaned quote data being sent:", cleanedQuoteData);
+        console.log(
+          "salesPersonId in cleaned data:",
+          cleanedQuoteData.salesPersonId
+        );
+
+        quoteResponse = await fetch("/api/quotes", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(cleanedQuoteData),
         });
 
         if (!quoteResponse.ok) {
           const errorText = await quoteResponse.text();
-          console.error('Quote creation failed:', quoteResponse.status, errorText);
-          throw new Error(`Failed to create quote: ${quoteResponse.status} - ${errorText}`);
+          console.error(
+            "Quote creation failed:",
+            quoteResponse.status,
+            errorText
+          );
+          throw new Error(
+            `Failed to create quote: ${quoteResponse.status} - ${errorText}`
+          );
         }
 
         savedQuote = await quoteResponse.json();
-        console.log('Quote created successfully with all details:', savedQuote);
+        console.log("Quote created successfully with all details:", savedQuote);
       }
 
       // Show success modal only for new quotes
@@ -1705,10 +1918,11 @@ function CreateQuoteContent() {
         setSaveModalOpen(true);
       }
     } catch (error) {
-      console.error('Error saving quote:', error);
+      console.error("Error saving quote:", error);
       // Use a more user-friendly error message
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      const action = selectedQuoteId && isUpdate ? 'updating' : 'creating';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      const action = selectedQuoteId && isUpdate ? "updating" : "creating";
       alert(`Error ${action} quote: ${errorMessage}`);
     } finally {
       setIsSaving(false);
@@ -1731,7 +1945,10 @@ function CreateQuoteContent() {
   };
 
   // Handle approval status changes from Step5
-  const handleApprovalStatusChange = (needsApproval: boolean, reason?: string) => {
+  const handleApprovalStatusChange = (
+    needsApproval: boolean,
+    reason?: string
+  ) => {
     setRequiresApproval(needsApproval);
     setApprovalReason(reason);
   };
@@ -1743,84 +1960,136 @@ function CreateQuoteContent() {
           <div className="space-y-8">
             {/* Step 1 Header */}
             <div className="text-center space-y-2 sm:space-y-3">
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Create A Quote</h3>
-              <p className="text-base sm:text-lg text-slate-600">Choose how you&apos;d like to create your printing quote</p>
+              <h3
+                id="create-quote-heading"
+                className="text-xl sm:text-2xl font-bold text-slate-900"
+              >
+                Create a Quote
+              </h3>
+              <p className="text-base sm:text-lg text-slate-600">
+                Choose how you'd like to create your printing quote
+              </p>
             </div>
 
-            {/* Quote Mode Selection Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
-              {/* Create New Quote Card */}
-              <Card 
-                className={`border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group ${
-                  quoteMode === "new" ? "ring-4 ring-blue-500 ring-opacity-50 bg-blue-50" : ""
-                }`}
+            {/* Choice cards */}
+            <div
+              role="radiogroup"
+              aria-label="Quote creation mode"
+              className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto"
+            >
+              {/* New Quote */}
+              <Card
+                role="radio"
+                aria-checked={quoteMode === "new"}
+                tabIndex={0}
                 onClick={handleStartNew}
+                onKeyDown={(e) =>
+                  (e.key === "Enter" || e.key === " ") && handleStartNew()
+                }
+                className={[
+                  "group cursor-pointer border border-slate-200/70 bg-white shadow-sm hover:shadow-md",
+                  "rounded-2xl transition-all duration-300 hover:-translate-y-0.5 focus:outline-none",
+                  quoteMode === "new"
+                    ? "ring-4 ring-[#27AAE1]/40 border-[#27AAE1]/40 bg-[#27AAE1]/5"
+                    : "focus:ring-2 focus:ring-slate-200",
+                ].join(" ")}
               >
-                <CardContent className="p-4 sm:p-6 lg:p-8 text-center space-y-4 sm:space-y-6">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
-                    <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                <CardContent className="p-5 sm:p-7 lg:p-8 flex flex-col justify-between">
+                  {/* icon + selected badge */}
+                  <div className="flex items-start justify-between">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-[#27AAE1] to-[#1e8bc3] flex items-center justify-center text-white shadow-inner">
+                      <FilePlusIcon className="w-7 h-7 sm:w-8 sm:h-8" />
+                    </div>
+                    {quoteMode === "new" && (
+                      <span className="inline-flex items-center rounded-full bg-[#27AAE1]/10 text-[#27AAE1] px-2.5 py-1 text-xs font-medium ring-1 ring-[#27AAE1]/20">
+                        Selected
+                      </span>
+                    )}
                   </div>
-                  <div className="space-y-2 sm:space-y-3">
-                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Create New Quote</h3>
-                    <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                      Start a fresh quotation from scratch. Perfect for new projects, custom requirements, or when you need complete control over the quote details.
+
+                  <div className="mt-5 space-y-2">
+                    <h4 className="text-lg sm:text-xl font-semibold text-slate-900">
+                      Create New Quote
+                    </h4>
+                    <p className="text-sm sm:text-base leading-relaxed text-slate-600">
+                      Start a fresh quotation from scratch. Perfect for new
+                      projects, custom requirements, or when you need complete
+                      control over all details.
                     </p>
                   </div>
-                  <div className="pt-2 sm:pt-4">
-                    <Button 
-                      className="w-full bg-[#27aae1] hover:bg-[#1e8bc3] text-white py-2 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
+
+                  <div className="mt-6">
+                    <Button
+                      className="w-full h-10 sm:h-11 bg-[#27AAE1] hover:bg-[#1e8bc3] text-white rounded-xl shadow-md hover:shadow-lg transition-all"
                       onClick={handleStartNew}
                     >
-                      <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                      <Plus className="w-4 h-4 mr-2" />
                       Start New Quote
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Existing Quote Card */}
-              <Card 
-                className={`border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group ${
-                  quoteMode === "existing" ? "ring-4 ring-blue-500 ring-opacity-50 bg-blue-50" : ""
-                }`}
+              {/* Existing Quote */}
+              <Card
+                role="radio"
+                aria-checked={quoteMode === "existing"}
+                tabIndex={0}
                 onClick={() => {
-                  // Clear default product data when entering existing quote mode
-                  setFormData((prev) => ({ 
-                    ...prev, 
-                    products: [] // Clear products array - will be populated from selected quote
-                  }));
+                  setFormData((prev) => ({ ...prev, products: [] }));
                   setQuoteMode("existing");
-                  setSelectedQuoteId(null); // Will be set when a specific quote is selected
+                  setSelectedQuoteId(null);
                   setSelectedCustomer(null);
-                  // Don't auto-navigate - just set the mode for selection
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    setFormData((prev) => ({ ...prev, products: [] }));
+                    setQuoteMode("existing");
+                    setSelectedQuoteId(null);
+                    setSelectedCustomer(null);
+                  }
+                }}
+                className={[
+                  "group cursor-pointer border border-slate-200/70 bg-white shadow-sm hover:shadow-md",
+                  "rounded-2xl transition-all duration-300 hover:-translate-y-0.5 focus:outline-none",
+                  quoteMode === "existing"
+                    ? "ring-4 ring-[#EA078B]/40 border-[#EA078B]/40 bg-[#EA078B]/5"
+                    : "focus:ring-2 focus:ring-slate-200",
+                ].join(" ")}
               >
-                <CardContent className="p-4 sm:p-6 lg:p-8 text-center space-y-4 sm:space-y-6">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
-                    <Copy className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                <CardContent className="p-5 sm:p-7 lg:p-8 flex flex-col justify-between gap-3">
+                  <div className="flex items-start justify-between">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-[#27AAE1] to-[#1e8bc3] flex items-center justify-center text-white shadow-inner">
+                      <Copy className="w-7 h-7 sm:w-8 sm:h-8" />
+                    </div>
+                    {quoteMode === "existing" && (
+                      <span className="inline-flex items-center rounded-full bg-[#EA078B]/10 text-[#EA078B] px-2.5 py-1 text-xs font-medium ring-1 ring-[#EA078B]/20">
+                        Selected
+                      </span>
+                    )}
                   </div>
-                  <div className="space-y-2 sm:space-y-3">
-                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Based on Previous Quote</h3>
-                    <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                      Use an existing quote as a template. Save time by modifying previous specifications, pricing, and customer details for similar projects.
+
+                  <div className="mt-5 space-y-2">
+                    <h4 className="text-lg sm:text-xl font-semibold text-slate-900">
+                      Based on Previous Quote
+                    </h4>
+                    <p className="text-sm sm:text-base leading-relaxed text-slate-600">
+                      Use an existing quote as a template. Save time by reusing
+                      specs, pricing, and customer data for similar projects.
                     </p>
                   </div>
-                  <div className="pt-2 sm:pt-4">
-                    <Button 
-                      className="w-full bg-[#27aae1] hover:bg-[#1e8bc3] text-white py-2 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
+
+                  <div className="mt-6">
+                    <Button
+                      className="w-full h-10 sm:h-11 bg-[#27AAE1] hover:bg-[#1e8bc3] text-white rounded-xl shadow-md hover:shadow-lg transition-all"
                       onClick={() => {
-                        // Clear default product data when entering existing quote mode
-                        setFormData((prev) => ({ 
-                          ...prev, 
-                          products: [] // Clear products array - will be populated from selected quote
-                        }));
+                        setFormData((prev) => ({ ...prev, products: [] }));
                         setQuoteMode("existing");
-                        setSelectedQuoteId(null); // Will be set when a specific quote is selected
+                        setSelectedQuoteId(null);
                         setSelectedCustomer(null);
-                        // Don't auto-navigate - just set the mode for selection
                       }}
                     >
-                      <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                      <FileText className="w-4 h-4 mr-2" />
                       Use Existing Quote
                     </Button>
                   </div>
@@ -1828,13 +2097,11 @@ function CreateQuoteContent() {
               </Card>
             </div>
 
-            {/* Additional Info */}
-            <div className="text-center text-slate-500 max-w-2xl mx-auto">
-              <p className="text-xs sm:text-sm">
-                Both options will guide you through the same comprehensive quote creation process, 
-                ensuring accuracy and consistency in your printing estimates.
-              </p>
-            </div>
+            {/* Helper text */}
+            <p className="text-center text-xs sm:text-sm text-slate-500 max-w-2xl mx-auto">
+              Both options guide you through the same step-by-step flow to
+              ensure accurate and consistent estimates.
+            </p>
           </div>
         );
       case 2:
@@ -1842,18 +2109,20 @@ function CreateQuoteContent() {
           <div className="space-y-6">
             {quoteMode === "new" && (
               <div className="text-center space-y-2 sm:space-y-3">
-                <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Customer Details</h3>
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
+                  Customer Details
+                </h3>
                 <p className="text-base sm:text-base text-slate-600">
                   Fill in the customer information for your new quote
                 </p>
               </div>
             )}
-            
+
             {quoteMode === "existing" ? (
               // Use Step2CustomerChoose component for existing quote mode
-              <Step2CustomerChoose 
-                formData={formData} 
-                setFormData={setFormData} 
+              <Step2CustomerChoose
+                formData={formData}
+                setFormData={setFormData}
                 onCustomerSelect={handleCustomerSelect}
                 onQuoteSelect={handleQuoteSelect} // Pass the new handler
               />
@@ -1864,7 +2133,10 @@ function CreateQuoteContent() {
                   <span className="w-2 h-2 bg-[#27aae1] rounded-full mr-3"></span>
                   New Customer Details
                 </h4>
-                <Step2CustomerDetail formData={formData} setFormData={setFormData} />
+                <Step2CustomerDetail
+                  formData={formData}
+                  setFormData={setFormData}
+                />
               </div>
             )}
           </div>
@@ -1897,13 +2169,16 @@ function CreateQuoteContent() {
               try {
                 // Update the form data first
                 setFormData(updatedFormData);
-                
+
                 // Then call the actual save function
                 await handleSaveQuote(false);
-                
-                console.log('Quote submitted successfully from Step5Quotation');
+
+                console.log("Quote submitted successfully from Step5Quotation");
               } catch (error) {
-                console.error('Error submitting quote from Step5Quotation:', error);
+                console.error(
+                  "Error submitting quote from Step5Quotation:",
+                  error
+                );
                 throw error; // Re-throw to let Step5Quotation handle the error
               }
             }}
@@ -1916,16 +2191,13 @@ function CreateQuoteContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen  p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Main Content Card */}
-        <Card className="border-0 shadow-lg">
+        <Card className=" shadow-lg bg-white border-slate-200 border">
           <CardContent className="p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-10">
-            <StepIndicator
-              activeStep={currentStep}
-              quoteMode={quoteMode}
-            />
-            
+            <StepIndicator activeStep={currentStep} quoteMode={quoteMode} />
+
             <div className="mt-4 sm:mt-8">{renderStepContent()}</div>
 
             {/* Validation Status Indicators */}
@@ -1938,7 +2210,8 @@ function CreateQuoteContent() {
                         <span className="text-white text-xs font-bold">!</span>
                       </div>
                       <p className="text-yellow-700 font-medium text-sm sm:text-base">
-                        Please select either "Create New Quote" or "Based on Previous Quote" to continue
+                        Please select either &quot;Create New Quote&quot; or
+                        &quot;Based on Previous Quote&quot; to continue
                       </p>
                     </div>
                   </div>
@@ -1949,41 +2222,9 @@ function CreateQuoteContent() {
                         <span className="text-white text-xs font-bold">✓</span>
                       </div>
                       <p className="text-green-700 font-medium text-sm sm:text-base">
-                        {quoteMode === "new" ? "New quote mode selected. You can proceed to the next step." : "Existing quote mode selected. You can proceed to the next step."}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {currentStep === 3 && (
-              <div className="mt-4 sm:mt-6">
-                {!canProceedFromStep3() ? (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">!</span>
-                      </div>
-                      <p className="text-yellow-700 font-medium text-sm sm:text-base">
-                        {quoteMode === "existing" && !selectedQuoteId 
-                          ? "Please select a specific quote to edit first."
-                          : "Please select at least one paper for your products to continue. Use the \"Browse Available Papers\" button to add papers from the database."
-                        }
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">✓</span>
-                      </div>
-                      <p className="text-green-700 font-medium text-sm sm:text-base">
-                        {quoteMode === "existing" 
-                          ? "Quote loaded and paper selection complete. You can now proceed to the operational step."
-                          : "Paper selection complete. You can now proceed to the operational step."
-                        }
+                        {quoteMode === "new"
+                          ? "New quote mode selected. You can proceed to the next step."
+                          : "Existing quote mode selected. You can proceed to the next step."}
                       </p>
                     </div>
                   </div>
@@ -1992,37 +2233,30 @@ function CreateQuoteContent() {
             )}
 
             <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-              <div className="w-full sm:w-auto">
-                {currentStep > 1 && (
-                  <Button
-                    variant="outline"
-                    onClick={prevStep}
-                    className="border-slate-300 hover:border-slate-400 hover:bg-slate-50 px-6 sm:px-8 py-3 rounded-xl transition-all duration-300 w-full sm:w-auto"
-                  >
-                    Previous
-                  </Button>
-                )}
-              </div>
+              <Button
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="border-slate-300 hover:border-slate-400 hover:bg-slate-50 px-6 sm:px-8 py-3 rounded-xl transition-all duration-300 w-full sm:w-auto"
+              >
+                Previous
+              </Button>
               {currentStep < 5 && (
                 <div className="relative w-full sm:w-auto">
                   <Button
                     onClick={nextStep}
                     disabled={isNextButtonDisabled()}
                     className={`px-6 sm:px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto ${
-                      isNextButtonDisabled() 
-                        ? "bg-gray-400 cursor-not-allowed" 
+                      isNextButtonDisabled()
+                        ? "bg-gray-400 cursor-not-allowed"
                         : "bg-[#27aae1] hover:bg-[#1e8bc3] text-white"
                     }`}
                     title={
-                      isNextButtonDisabled() 
-                        ? currentStep === 1 
+                      isNextButtonDisabled()
+                        ? currentStep === 1
                           ? "Please select a quote mode to continue"
                           : currentStep === 2 && quoteMode === "existing"
                           ? "Please select a specific quote to edit"
-                          : currentStep === 3 && quoteMode === "existing" && !selectedQuoteId
-                          ? "Please select a specific quote to edit first"
-                          : currentStep === 3
-                          ? "Please select at least one paper for your products"
                           : "Please complete the required information to continue"
                         : "Click to proceed to the next step"
                     }
@@ -2031,22 +2265,17 @@ function CreateQuoteContent() {
                   </Button>
                   {isNextButtonDisabled() && (
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-10">
-                      {currentStep === 1 
+                      {currentStep === 1
                         ? "Select a quote mode first"
                         : currentStep === 2 && quoteMode === "existing"
                         ? "Select a specific quote to edit first"
-                        : currentStep === 3 && quoteMode === "existing" && !selectedQuoteId
-                        ? "Select a specific quote to edit first"
-                        : currentStep === 3
-                        ? "Select at least one paper first"
-                        : "Complete required fields first"
-                      }
+                        : "Complete required fields first"}
                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                     </div>
                   )}
                 </div>
               )}
-              
+
               {currentStep === 5 && (
                 <Button
                   onClick={() => handleSaveQuote(false)}
@@ -2077,23 +2306,25 @@ function CreateQuoteContent() {
                 Quote Submitted Successfully!
               </h3>
               <p className="text-slate-600 mb-6 text-sm sm:text-base">
-                {requiresApproval 
+                {requiresApproval
                   ? "Your quote has been submitted for management approval and will appear in the Quote Management page once approved."
-                  : "Your quote has been submitted and will appear in the Quote Management page."
-                }
+                  : "Your quote has been submitted and will appear in the Quote Management page."}
               </p>
-              
+
               {requiresApproval && approvalReason && (
                 <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
                   <div className="flex items-center space-x-2 mb-2">
                     <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">!</span>
                     </div>
-                    <span className="font-semibold text-orange-800">Approval Required</span>
+                    <span className="font-semibold text-orange-800">
+                      Approval Required
+                    </span>
                   </div>
                   <p className="text-orange-700 text-sm">{approvalReason}</p>
                   <p className="text-orange-600 text-xs mt-2">
-                    Management will be notified automatically. You'll receive an update once approved.
+                    Management will be notified automatically. You&apos;ll
+                    receive an update once approved.
                   </p>
                 </div>
               )}
@@ -2124,7 +2355,7 @@ function CreateQuoteContent() {
                     Download Operations Copy
                   </Button>
                 )}
-                
+
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -2147,14 +2378,18 @@ function CreateQuoteContent() {
 // Main component with Suspense boundary
 export default function CreateQuotePage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#27aae1] mx-auto"></div>
-          <p className="mt-4 text-lg text-slate-600">Loading quote creation...</p>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#27aae1] mx-auto"></div>
+            <p className="mt-4 text-lg text-slate-600">
+              Loading quote creation...
+            </p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <CreateQuoteContent />
     </Suspense>
   );

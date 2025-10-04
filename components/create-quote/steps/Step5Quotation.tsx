@@ -25,6 +25,7 @@ import type { QuoteFormData, QuoteDiscount, DiscountApproval, QuoteApproval, Quo
 import type { OtherQty } from "@/lib/quote-pdf";
 import { formatAED, requiresApproval, getApprovalReason, getApprovalStatusColor, canApproveQuotes, canSendToCustomer } from "@/lib/currency";
 import { downloadCustomerPdf, downloadOpsPdf } from "@/lib/quote-pdf";
+import { excelDigitalCalculation, excelOffsetCalculation } from "@/lib/excel-calculation";
 
 // AED Currency formatter
 const currency = (n: number) => formatAED(n);
@@ -337,7 +338,80 @@ const Step5Quotation: React.FC<Step5Props> = ({
     }
   };
 
-  // Calculate comprehensive costs for each product
+  // Calculate individual product costs using individual costs from Step 4
+  const calculateIndividualProductCosts = () => {
+    if (formData.products.length === 0) return [];
+    
+    // Use individual product costs from Step 4 if available
+    if (formData.individualProductCosts && formData.individualProductCosts.length > 0) {
+      // Get additional costs (shared across all products)
+      const additionalCosts = formData.additionalCosts?.reduce((total, cost) => total + (cost.cost || 0), 0) || 0;
+      const additionalCostPerProduct = additionalCosts / formData.products.length;
+      
+      // Calculate individual product costs using Step 4 data
+      const productCosts = formData.individualProductCosts.map((step4Cost: any, index: number) => {
+        const product = formData.products[index];
+        const productQuantity = product?.quantity || 0;
+        
+        // Base cost = Step 4 pricing summary + finishing cost + additional cost share
+        const productBaseCost = step4Cost.pricingSummary + step4Cost.finishingCost + additionalCostPerProduct;
+        
+        // Apply 30% margin to this product
+        const marginAmount = productBaseCost * 0.30;
+        const subtotal = productBaseCost + marginAmount;
+        
+        // Apply 5% VAT to this product
+        const vatAmount = subtotal * 0.05;
+        const totalCost = subtotal + vatAmount;
+        
+        return {
+          productIndex: index,
+          productName: product?.productName || step4Cost.productName,
+          quantity: productQuantity,
+          baseCost: productBaseCost,
+          marginAmount,
+          vatAmount,
+          totalCost
+        };
+      });
+      
+      return productCosts;
+    }
+    
+    // Fallback to old logic if individual costs not available
+    const pricingSummary = formData.calculation?.basePrice || 0;
+    const finishingCosts = formData.operational.finishing?.reduce((total, finish) => total + (finish.cost || 0), 0) || 0;
+    const additionalCosts = formData.additionalCosts?.reduce((total, cost) => total + (cost.cost || 0), 0) || 0;
+    const totalStep4Cost = pricingSummary + finishingCosts + additionalCosts;
+    const totalQuantity = formData.products.reduce((total, product) => total + (product.quantity || 0), 0);
+    
+    if (totalQuantity === 0) return [];
+    
+    const costPerUnit = totalStep4Cost / totalQuantity;
+    
+    const productCosts = formData.products.map((product, index) => {
+      const productQuantity = product.quantity || 0;
+      const productBaseCost = productQuantity * costPerUnit;
+      const marginAmount = productBaseCost * 0.30;
+      const subtotal = productBaseCost + marginAmount;
+      const vatAmount = subtotal * 0.05;
+      const totalCost = subtotal + vatAmount;
+
+    return {
+        productIndex: index,
+        productName: product.productName,
+        quantity: productQuantity,
+        baseCost: productBaseCost,
+      marginAmount,
+      vatAmount,
+        totalCost
+    };
+    });
+    
+    return productCosts;
+  };
+
+  // Get individual product costs from the calculated distribution
   const calculateProductCosts = (productIndex: number) => {
     const product = formData.products[productIndex];
     if (!product || !product.quantity) return { 
@@ -351,196 +425,75 @@ const Step5Quotation: React.FC<Step5Props> = ({
       total: 0 
     };
 
-    // 1. Paper Costs - Calculate from operational papers data
-    const paperCost = formData.operational.papers.reduce((total, p) => {
-      if (p.pricePerPacket && p.enteredSheets && p.sheetsPerPacket) {
-        const pricePerSheet = p.pricePerPacket / p.sheetsPerPacket;
-        const actualSheetsNeeded = p.enteredSheets;
-        return total + (pricePerSheet * actualSheetsNeeded);
-      }
-      return total;
-    }, 0);
-
-    // 2. Plates Cost (per plate, typically $25-50 per plate)
-    const PLATE_COST_PER_PLATE = 35; // Standard plate cost
-    const platesCost = (formData.operational.plates || 0) * PLATE_COST_PER_PLATE;
-
-    // 3. Finishing Costs (calculate using same logic as Step 4)
-    const actualUnitsNeeded = formData.operational.units || product.quantity || 0;
-    const finishingCost = (() => {
-      let totalFinishingCost = 0;
-      
-      if (product.finishing && product.finishing.length > 0) {
-        product.finishing.forEach(finishingName => {
-          // Use the same calculation logic as Step 4
-          const baseFinishingName = finishingName.split('-')[0];
-          let finishingCost = 0;
-          
-          // Use impressions field if available, otherwise fall back to product quantity
-          const totalQuantity = formData.operational.impressions || product.quantity || 0;
-          
-          switch (baseFinishingName) {
-            case 'Lamination':
-              const actualSheetsNeeded = formData.operational.papers[productIndex]?.enteredSheets ?? 0;
-              finishingCost = 75 + (actualSheetsNeeded * 0.75);
-              break;
-            case 'Velvet Lamination':
-              const velvetSheetsNeeded = formData.operational.papers[productIndex]?.enteredSheets ?? 0;
-              finishingCost = 100 + (velvetSheetsNeeded * 1.0);
-              break;
-            case 'Embossing':
-              const embossingImpressions = Math.max(1000, totalQuantity);
-              const embossingImpressionCost = Math.ceil(embossingImpressions / 1000) * 50;
-              finishingCost = Math.max(75, embossingImpressionCost);
-              break;
-            case 'Foiling':
-              const foilingImpressions = Math.max(1000, totalQuantity);
-              const foilingImpressionCost = Math.ceil(foilingImpressions / 1000) * 75;
-              finishingCost = Math.max(75, foilingImpressionCost);
-              break;
-            case 'Die Cutting':
-              const dieCuttingImpressions = Math.max(1000, totalQuantity);
-              const dieCuttingImpressionCost = Math.ceil(dieCuttingImpressions / 1000) * 50;
-              let minCharge = 75;
-              if (product.flatSize && product.flatSize.width && product.flatSize.height) {
-                const area = product.flatSize.width * product.flatSize.height;
-                if (area <= 210 * 148) minCharge = 75;
-                else if (area <= 297 * 210) minCharge = 100;
-                else if (area <= 420 * 297) minCharge = 150;
-                else minCharge = 200;
-              }
-              finishingCost = Math.max(minCharge, dieCuttingImpressionCost);
-              break;
-            case 'UV Spot':
-              const uvSpotImpressions = Math.max(1000, totalQuantity);
-              const uvSpotImpressionCost = Math.ceil(uvSpotImpressions / 1000) * 350;
-              finishingCost = Math.max(350, uvSpotImpressionCost);
-              break;
-            case 'Folding':
-              const foldingImpressions = Math.max(1000, totalQuantity);
-              const foldingImpressionCost = Math.ceil(foldingImpressions / 1000) * 25;
-              finishingCost = Math.max(25, foldingImpressionCost);
-              break;
-            case 'Padding':
-              finishingCost = 25;
-              break;
-            case 'Varnishing':
-              finishingCost = 30;
-              break;
-            default:
-              finishingCost = 0;
-              break;
-          }
-          
-          totalFinishingCost += finishingCost;
-        });
-      }
-      
-      return totalFinishingCost;
-    })();
-
-    // 4. Calculate subtotal, margin, and VAT
-    const subtotal = paperCost + platesCost + finishingCost;
-    const marginPercentage = 30; // 30% margin (hidden from user)
-    const marginAmount = subtotal * (marginPercentage / 100);
-    const total = subtotal + marginAmount;
-    const vat = total * 0.05; // 5% VAT on total including margin
-    const finalTotal = total + vat;
+    // Get individual product costs
+    const individualCosts = calculateIndividualProductCosts();
+    const productCost = individualCosts.find(cost => cost.productIndex === productIndex);
+    
+    if (!productCost) {
+      return {
+        paperCost: 0,
+        platesCost: 0,
+        finishingCost: 0,
+        subtotal: 0,
+        margin: 30,
+        marginAmount: 0,
+        vat: 0,
+        total: 0
+      };
+    }
 
     return {
-      paperCost,
-      platesCost,
-      finishingCost,
-      subtotal,
-      margin: marginPercentage,
-      marginAmount,
-      vat,
-      total: finalTotal
+      paperCost: 0, // Not tracked individually
+      platesCost: 0, // Not tracked individually
+      finishingCost: 0, // Not tracked individually
+      subtotal: productCost.baseCost,
+      margin: 30,
+      marginAmount: productCost.marginAmount,
+      vat: productCost.vatAmount,
+      total: productCost.totalCost
     };
   };
 
   // Calculate grand total based on included products and supplementary quantities
   const calculateGrandTotal = () => {
-    let total = 0;
-    
-    // Add main products
-    includedProducts.forEach((index) => {
-      const costs = calculateProductCosts(index);
-      total += costs.total;
-    });
-    
-    // Add supplementary quantities
-    otherQuantities.forEach((otherQty) => {
-      const prices = calculateOtherQtyPrice(otherQty);
-      total += prices.total;
-    });
-    
-    // Apply discount if enabled
-    if (discount.isApplied && discount.percentage > 0) {
-      const discountAmount = total * (discount.percentage / 100);
-      total -= discountAmount;
-    }
-    
-    return total;
+    // Use the same calculation logic as calculateSummaryTotals
+    const summaryTotals = calculateSummaryTotals();
+    return summaryTotals.finalTotal;
   };
 
   // Calculate grand total without discount for percentage calculation
   const calculateGrandTotalWithoutDiscount = () => {
-    let total = 0;
-    
-    // Add main products
-    includedProducts.forEach((index) => {
-      const costs = calculateProductCosts(index);
-      total += costs.total;
-    });
-    
-    // Add supplementary quantities
-    otherQuantities.forEach((otherQty) => {
-      const prices = calculateOtherQtyPrice(otherQty);
-      total += prices.total;
-    });
-    
-    return total;
+    // Use the same calculation logic as calculateSummaryTotals but without discount
+    const summaryTotals = calculateSummaryTotals();
+    return summaryTotals.grandTotal; // This is the total before discount
   };
 
-  // Calculate summary totals for all included products and supplementary quantities
+  // Calculate summary totals from individual product costs
   const calculateSummaryTotals = () => {
-    let totalPaperCost = 0;
-    let totalPlatesCost = 0;
-    let totalFinishingCost = 0;
+    // Get individual product costs
+    const individualCosts = calculateIndividualProductCosts();
+    
+    // Sum up costs from included products only
     let totalSubtotal = 0;
-    let totalMargin = 0;
     let totalMarginAmount = 0;
     let totalVAT = 0;
     let grandTotal = 0;
-
-    // Add main products
-    includedProducts.forEach((index) => {
-      const costs = calculateProductCosts(index);
-      totalPaperCost += costs.paperCost;
-      totalPlatesCost += costs.platesCost;
-      totalFinishingCost += costs.finishingCost;
-      totalSubtotal += costs.subtotal;
-      totalMarginAmount += costs.marginAmount;
-      totalVAT += costs.vat;
-      grandTotal += costs.total;
+    
+    // Calculate totals for each included product
+    Array.from(includedProducts).forEach((productIndex) => {
+      const productCost = individualCosts.find(cost => cost.productIndex === productIndex);
+      if (productCost) {
+        totalSubtotal += productCost.baseCost;
+        totalMarginAmount += productCost.marginAmount;
+        totalVAT += productCost.vatAmount;
+        grandTotal += productCost.totalCost;
+      }
     });
-
-    // Add supplementary quantities
+    
+    // Add supplementary quantities if any
     otherQuantities.forEach((otherQty) => {
       const prices = calculateOtherQtyPrice(otherQty);
-      // For supplementary quantities, we add the total price (which includes VAT)
-      // We need to break it down for proper calculation
-      const basePrice = prices.base;
-      const vat = prices.vat;
-      const total = prices.total;
-      
-      grandTotal += total;
-      totalVAT += vat;
-      // For supplementary quantities, the base price already includes margin
-      totalSubtotal += basePrice;
-      // Note: We don't add paper/plates/finishing costs for supplementary quantities
-      // as they are calculated proportionally from the main product
+      grandTotal += prices.total;
     });
 
     // Apply discount if enabled
@@ -552,13 +505,14 @@ const Step5Quotation: React.FC<Step5Props> = ({
     }
 
     return {
-      totalPaperCost,
-      totalPlatesCost,
-      totalFinishingCost,
-      totalSubtotal,
-      totalMargin: 30, // 30% margin (hidden from user)
-      totalMarginAmount,
-      totalVAT,
+      totalPaperCost: 0, // Not tracked individually
+      totalPlatesCost: 0, // Not tracked individually
+      totalFinishingCost: 0, // Not tracked individually
+      totalAdditionalCost: formData.additionalCosts?.reduce((total, cost) => total + (cost.cost || 0), 0) || 0,
+      totalSubtotal: totalSubtotal,
+      totalMargin: 30,
+      totalMarginAmount: totalMarginAmount,
+      totalVAT: totalVAT,
       grandTotal,
       discountAmount,
       finalTotal
@@ -584,7 +538,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
         totalPrice: finalTotal
       }
     }));
-  }, [includedProducts, otherQuantities, formData.operational.papers, formData.operational.plates, formData.operational.units, formData.operational.finishing, setFormData]);
+  }, [includedProducts, otherQuantities, formData.operational.papers, formData.operational.plates, formData.operational.units, formData.operational.finishing, formData.additionalCosts, setFormData]);
 
   // Handle product inclusion/exclusion
   const toggleProductInclusion = (productIndex: number) => {
@@ -647,20 +601,43 @@ const Step5Quotation: React.FC<Step5Props> = ({
     const baseProduct = formData.products.find(p => p.productName === otherQty.productName);
     if (!baseProduct || !baseProduct.quantity || !otherQty.quantity) return { base: 0, vat: 0, total: 0 };
 
-    // Calculate price based on the ratio of quantities and include all costs
-    const baseCosts = calculateProductCosts(formData.products.indexOf(baseProduct));
-    const quantityRatio = otherQty.quantity / baseProduct.quantity;
+    // Use Step 4 calculation directly for supplementary quantities
+    const step4BasePrice = formData.calculation?.basePrice || 0;
+    const additionalCosts = formData.additionalCosts?.reduce((total, cost) => total + (cost.cost || 0), 0) || 0;
+    const totalStep4Costs = step4BasePrice + additionalCosts;
     
-    const basePrice = baseCosts.subtotal * quantityRatio;
-    const vat = basePrice * 0.05;
-    const total = basePrice + vat;
+    // Apply margin and VAT to get total price
+    const marginAmount = totalStep4Costs * 0.30;
+    const subtotal = totalStep4Costs + marginAmount;
+    const vatAmount = subtotal * 0.05;
+    const totalCosts = { totalPrice: subtotal + vatAmount };
     
-    return { base: basePrice, vat, total };
+    // Calculate total quantity across all included products
+    const totalQuantity = Array.from(includedProducts).reduce((total, index) => {
+      return total + (formData.products[index]?.quantity || 0);
+    }, 0);
+
+    // Calculate the base product's share
+    const baseProductRatio = totalQuantity > 0 ? (baseProduct.quantity || 0) / totalQuantity : 0;
+    const otherQtyRatio = totalQuantity > 0 ? (otherQty.quantity || 0) / totalQuantity : 0;
+    
+    // Scale the total price proportionally
+    const totalPrice = totalCosts.totalPrice * otherQtyRatio;
+    
+    // For display purposes, calculate base and VAT components
+    const basePrice = totalPrice / 1.05; // Remove VAT to get base price
+    const vat = totalPrice - basePrice;
+    
+    return { base: basePrice, vat, total: totalPrice };
   };
 
 
 
   const summaryTotals = calculateSummaryTotals();
+  
+  // Check if final price is >= 5000 AED to disable download buttons
+  const isDownloadDisabled = summaryTotals.finalTotal >= 5000;
+
 
   return (
     <div className="space-y-6 sm:space-y-8 px-2 sm:px-0">
@@ -994,28 +971,28 @@ const Step5Quotation: React.FC<Step5Props> = ({
             </div>
           )}
 
-          {/* Discount Summary */}
+          {/* Enhanced Mobile-Friendly Discount Summary */}
           {discount.isApplied && discount.percentage > 0 && (
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 border border-green-200">
-              <h5 className="text-lg font-semibold text-green-800 mb-4 flex items-center">
-                <Calculator className="w-5 h-5 mr-2" />
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 sm:p-6 border border-green-200">
+              <h5 className="text-base sm:text-lg font-semibold text-green-800 mb-3 sm:mb-4 flex items-center">
+                <Calculator className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 Discount Summary
               </h5>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                <div className="bg-white rounded-lg p-4 border border-green-200">
-                  <div className="text-sm text-green-600 mb-1">Original Total</div>
-                  <div className="text-xl font-bold text-slate-800">{currency(summaryTotals.grandTotal)}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+                <div className="bg-white rounded-lg p-3 sm:p-4 border border-green-200">
+                  <div className="text-xs sm:text-sm text-green-600 mb-1">Original Total</div>
+                  <div className="text-lg sm:text-xl font-bold text-slate-800 break-all">{currency(summaryTotals.grandTotal)}</div>
                 </div>
                 
-                <div className="bg-white rounded-lg p-4 border border-green-200">
-                  <div className="text-sm text-green-600 mb-1">Discount ({discount.percentage}%)</div>
-                  <div className="text-xl font-bold text-red-600">-{currency(summaryTotals.discountAmount)}</div>
+                <div className="bg-white rounded-lg p-3 sm:p-4 border border-green-200">
+                  <div className="text-xs sm:text-sm text-green-600 mb-1">Discount ({discount.percentage}%)</div>
+                  <div className="text-lg sm:text-xl font-bold text-red-600 break-all">-{currency(summaryTotals.discountAmount)}</div>
                 </div>
                 
-                <div className="bg-white rounded-lg p-4 border border-green-200">
-                  <div className="text-sm text-green-600 mb-1">Final Total</div>
-                  <div className="text-xl font-bold text-green-600">{currency(summaryTotals.finalTotal)}</div>
+                <div className="bg-white rounded-lg p-3 sm:p-4 border border-green-200 sm:col-span-2 lg:col-span-1">
+                  <div className="text-xs sm:text-sm text-green-600 mb-1">Final Total</div>
+                  <div className="text-lg sm:text-xl font-bold text-green-600 break-all">{currency(summaryTotals.finalTotal)}</div>
                 </div>
               </div>
             </div>
@@ -1133,48 +1110,48 @@ const Step5Quotation: React.FC<Step5Props> = ({
           </Table>
         </div>
 
-        {/* Mobile Cards - Visible only on mobile */}
-        <div className="lg:hidden space-y-4">
+        {/* Enhanced Mobile Cards - Visible only on mobile */}
+        <div className="lg:hidden space-y-3 sm:space-y-4">
           {/* Main Products */}
           {formData.products.map((product, index) => {
             const costs = calculateProductCosts(index);
             const isIncluded = includedProducts.has(index);
             
             return (
-              <div key={`product-${index}`} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+              <div key={`product-${index}`} className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 shadow-sm">
                 {/* Header with checkbox and product name */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
-                  <div className="flex items-center space-x-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
                     <Checkbox
                       checked={isIncluded}
                       onCheckedChange={() => toggleProductInclusion(index)}
                     />
                     <h4 className="font-medium text-slate-800 text-sm sm:text-base">{product.productName}</h4>
                   </div>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-[#f89d1d]/20 text-[#f89d1d]">
+                  <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-[#f89d1d]/20 text-[#f89d1d]">
                     Qty: {product.quantity || 0}
                   </span>
                 </div>
                 
-                {/* Simplified cost breakdown */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Total Price:</span>
-                    <span className="font-medium">{isIncluded ? currency(costs.total - costs.vat) : "—"}</span>
+                {/* Enhanced cost breakdown for mobile */}
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-slate-600 text-xs sm:text-sm">Base Price:</span>
+                    <span className="font-medium text-xs sm:text-sm break-all">{isIncluded ? currency(costs.total - costs.vat) : "—"}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">VAT (5%):</span>
-                    <span className="font-medium">{isIncluded ? (
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-slate-600 text-xs sm:text-sm">VAT (5%):</span>
+                    <span className="font-medium text-xs sm:text-sm break-all">{isIncluded ? (
                       <span className="text-green-600">{currency(costs.vat)}</span>
                     ) : "—"}</span>
                   </div>
                 </div>
                 
-                {/* Total Price */}
+                {/* Enhanced Total Price */}
                 <div className="mt-3 pt-3 border-t border-slate-200">
                   <div className="flex justify-between items-center">
                     <span className="text-slate-700 font-semibold text-sm sm:text-base">Total Price:</span>
-                    <span className="text-base sm:text-lg font-bold text-[#ea078b]">
+                    <span className="text-base sm:text-lg font-bold text-[#ea078b] break-all">
                       {isIncluded ? currency(costs.total) : "—"}
                     </span>
                   </div>
@@ -1183,47 +1160,47 @@ const Step5Quotation: React.FC<Step5Props> = ({
             );
           })}
           
-          {/* Supplementary Quantities */}
+          {/* Enhanced Supplementary Quantities */}
           {otherQuantities.map((otherQty, index) => {
             const prices = calculateOtherQtyPrice(otherQty);
             
             return (
-              <div key={`other-${index}`} className="bg-blue-50/30 rounded-xl border border-blue-200 p-4 shadow-sm">
+              <div key={`other-${index}`} className="bg-blue-50/30 rounded-xl border border-blue-200 p-3 sm:p-4 shadow-sm">
                 {/* Header with indicator and product name */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-4 h-4 rounded border-2 border-blue-300 bg-blue-100 flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded border-2 border-blue-300 bg-blue-100 flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500"></div>
                     </div>
                     <div>
                       <h4 className="font-medium text-blue-700 text-sm sm:text-base">{otherQty.productName}</h4>
                       <span className="text-xs text-blue-600">(Supplementary)</span>
                     </div>
                   </div>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-700">
+                  <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-700">
                     Qty: {otherQty.quantity || 0}
                   </span>
                 </div>
                 
-                {/* Simplified cost breakdown */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Total Price:</span>
-                    <span className="font-medium">{currency(prices.base)}</span>
+                {/* Enhanced cost breakdown for mobile */}
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-slate-600 text-xs sm:text-sm">Base Price:</span>
+                    <span className="font-medium text-xs sm:text-sm break-all">{currency(prices.base)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">VAT (5%):</span>
-                    <span className="font-medium">
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-slate-600 text-xs sm:text-sm">VAT (5%):</span>
+                    <span className="font-medium text-xs sm:text-sm break-all">
                       <span className="text-green-600">{currency(prices.vat)}</span>
                     </span>
                   </div>
                 </div>
                 
-                {/* Total Price */}
+                {/* Enhanced Total Price */}
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <div className="flex justify-between items-center">
                     <span className="text-slate-700 font-semibold text-sm sm:text-base">Total Price:</span>
-                    <span className="text-base sm:text-lg font-bold text-[#ea078b]">
+                    <span className="text-base sm:text-lg font-bold text-[#ea078b] break-all">
                       {currency(prices.total)}
                     </span>
                   </div>
@@ -1233,51 +1210,150 @@ const Step5Quotation: React.FC<Step5Props> = ({
           })}
         </div>
 
-        {/* Simplified Price Summary */}
-        <div className="mt-8 space-y-4">
-          <div className="bg-[#27aae1]/10 rounded-2xl p-4 sm:p-6 lg:p-8 border border-[#27aae1]/30 shadow-lg">
-            <h5 className="text-lg sm:text-xl font-bold text-slate-800 mb-6 flex items-center justify-center text-center">
-              <Calculator className="w-6 h-6 mr-3 text-[#27aae1]" />
+        {/* Debug Information Panel - COMMENTED OUT FOR PRODUCTION (Available for future debugging) */}
+        {/*
+        <div className="mt-4 bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+          <h6 className="font-bold text-blue-800 mb-3 text-lg">🔍 Step 5 - Detailed Product Analysis</h6>
+          
+              {/* Step 4 Source Data */}
+              {/*
+              <div className="mb-4 p-3 bg-white rounded-lg border border-blue-200">
+                <div className="font-bold text-blue-700 mb-2 block">📊 Step 4 Individual Product Costs:</div>
+                {formData.individualProductCosts && formData.individualProductCosts.length > 0 ? (
+                  <div className="space-y-2">
+                    {formData.individualProductCosts.map((cost: any, index: number) => (
+                      <div key={index} className="p-2 bg-gray-50 rounded border text-xs">
+                        <div className="font-medium">Product {index + 1}: {cost.productName}</div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-1">
+                          <div><strong>Pricing Summary:</strong> AED {cost.pricingSummary?.toFixed(2) || '0.00'}</div>
+                          <div><strong>Finishing Cost:</strong> AED {cost.finishingCost?.toFixed(2) || '0.00'}</div>
+                          <div><strong>Additional Cost:</strong> AED {cost.additionalCost?.toFixed(2) || '0.00'}</div>
+                          <div><strong>Total Cost:</strong> AED {cost.totalCost?.toFixed(2) || '0.00'}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-red-600 text-xs">❌ Individual product costs not available from Step 4</div>
+                )}
+              </div>
+
+          {/* Individual Product Details */}
+          {/*
+          <div className="mb-4">
+            <div className="font-bold text-blue-700 mb-2 block">📋 Individual Product Details from Step 4:</div>
+            <div className="space-y-3">
+              {formData.products.map((product, index) => (
+                <div key={index} className="p-3 bg-white rounded-lg border border-blue-200">
+                  <div className="font-medium text-blue-800 mb-2">Product {index + 1}: {product.productName}</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                    <div><strong>Quantity:</strong> {product.quantity || 0}</div>
+                    <div><strong>Size:</strong> {product.flatSize?.width || 'N/A'}×{product.flatSize?.height || 'N/A'} cm</div>
+                    <div><strong>Printing:</strong> {product.printingSelection || 'N/A'}</div>
+                    <div><strong>Colors:</strong> {typeof product.colors === 'object' ? JSON.stringify(product.colors) : String(product.colors || 'N/A')}</div>
+                    <div><strong>Papers:</strong> {product.papers?.length || 0} items</div>
+                    <div><strong>Finishing:</strong> {product.finishing?.length || 0} items</div>
+                    <div><strong>Side:</strong> {product.sides || 'N/A'}</div>
+                    <div><strong>Bleed:</strong> {product.bleed || 'N/A'} cm</div>
+                  </div>
+                  {product.papers && product.papers.length > 0 && (
+                    <div className="mt-2 text-xs">
+                      <strong>Paper Details:</strong>
+                      {product.papers.map((paper, pIndex) => (
+                        <div key={pIndex} className="ml-2">
+                          {paper.name} ({paper.gsm} GSM) - Price: AED {(paper as any).pricePerSheet || (paper as any).pricePerPacket || '0.00'}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {product.finishing && product.finishing.length > 0 && (
+                    <div className="mt-2 text-xs">
+                      <strong>Finishing Details:</strong>
+                      {product.finishing.map((finish, fIndex) => (
+                        <div key={fIndex} className="ml-2">
+                          {finish} - Cost: AED {formData.operational.finishing?.find(f => f.name === finish)?.cost || '0.00'}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Step 5 Calculation Results */}
+          {/*
+          <div className="p-3 bg-white rounded-lg border border-blue-200">
+            <div className="font-bold text-blue-700 mb-2 block">🧮 Step 5 Calculation Results:</div>
+            <div className="space-y-2 text-xs">
+              {calculateIndividualProductCosts().map((cost, index) => (
+                <div key={index} className="p-2 bg-gray-50 rounded border">
+                  <div className="font-medium">{cost.productName} (Qty: {cost.quantity}):</div>
+                  <div className="ml-2">Step 4 Individual Cost: AED {cost.baseCost.toFixed(2)}</div>
+                  <div className="ml-2">Margin (30%): AED {cost.marginAmount.toFixed(2)}</div>
+                  <div className="ml-2">VAT (5%): AED {cost.vatAmount.toFixed(2)}</div>
+                  <div className="ml-2 font-bold text-blue-600">Final Total: AED {cost.totalCost.toFixed(2)}</div>
+                </div>
+              ))}
+              <div className="font-bold text-green-600 text-sm">Grand Total: AED {summaryTotals.grandTotal?.toFixed(2) || '0.00'}</div>
+            </div>
+          </div>
+        </div>
+        */}
+
+        {/* Enhanced Mobile-Friendly Price Summary */}
+        <div className="mt-6 sm:mt-8 space-y-4">
+          <div className="bg-[#27aae1]/10 rounded-2xl p-3 sm:p-6 lg:p-8 border border-[#27aae1]/30 shadow-lg">
+            <h5 className="text-lg sm:text-xl font-bold text-slate-800 mb-4 sm:mb-6 flex items-center justify-center text-center">
+              <Calculator className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3 text-[#27aae1]" />
               Price Summary
             </h5>
             
-            {/* Simplified Price Breakdown */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-              <div className="space-y-4">
+            {/* Mobile-Optimized Price Breakdown */}
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Total Price */}
-                <div className="flex justify-between items-center py-3 border-b border-slate-200">
-                  <span className="text-lg font-semibold text-slate-700">Total Price</span>
-                  <span className="text-lg font-bold text-slate-800">{currency(summaryTotals.grandTotal - summaryTotals.totalVAT)}</span>
+                <div className="flex justify-between items-center py-2 sm:py-3 border-b border-slate-200">
+                  <span className="text-base sm:text-lg font-semibold text-slate-700">Total Price</span>
+                  <span className="text-base sm:text-lg font-bold text-slate-800 break-all">{currency(summaryTotals.grandTotal - summaryTotals.totalVAT)}</span>
                 </div>
+
+                {/* Additional Costs - Show when present */}
+                {summaryTotals.totalAdditionalCost > 0 && (
+                  <div className="flex justify-between items-center py-2 sm:py-3 border-b border-slate-200">
+                    <span className="text-base sm:text-lg font-semibold text-slate-700">Additional Costs</span>
+                    <span className="text-base sm:text-lg font-bold text-blue-600 break-all">{currency(summaryTotals.totalAdditionalCost)}</span>
+                  </div>
+                )}
 
                 {/* Discount - Show when applied */}
                 {discount.isApplied && discount.percentage > 0 && (
-                  <div className="flex justify-between items-center py-3 border-b border-slate-200">
-                    <span className="text-lg font-semibold text-slate-700">Discount ({discount.percentage}%)</span>
-                    <span className="text-lg font-bold text-red-600">-{currency(summaryTotals.discountAmount)}</span>
+                  <div className="flex justify-between items-center py-2 sm:py-3 border-b border-slate-200">
+                    <span className="text-base sm:text-lg font-semibold text-slate-700">Discount ({discount.percentage}%)</span>
+                    <span className="text-base sm:text-lg font-bold text-red-600 break-all">-{currency(summaryTotals.discountAmount)}</span>
                   </div>
                 )}
 
                 {/* VAT */}
-                <div className="flex justify-between items-center py-3 border-b border-slate-200">
-                  <span className="text-lg font-semibold text-slate-700">VAT (5%)</span>
-                  <span className="text-lg font-bold text-green-600">{currency(summaryTotals.totalVAT)}</span>
+                <div className="flex justify-between items-center py-2 sm:py-3 border-b border-slate-200">
+                  <span className="text-base sm:text-lg font-semibold text-slate-700">VAT (5%)</span>
+                  <span className="text-base sm:text-lg font-bold text-green-600 break-all">{currency(summaryTotals.totalVAT)}</span>
                 </div>
 
-                {/* Final Total */}
-                <div className="flex justify-between items-center py-4 border-t-2 border-slate-300 bg-slate-50 rounded-lg px-4">
-                  <span className="text-xl font-bold text-slate-800">Final Price</span>
-                  <span className="text-2xl font-bold text-[#ea078b]">{currency(summaryTotals.finalTotal)}</span>
+                {/* Final Total - Enhanced Mobile Styling */}
+                <div className="flex justify-between items-center py-3 sm:py-4 border-t-2 border-slate-300 bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg px-3 sm:px-4">
+                  <span className="text-lg sm:text-xl font-bold text-slate-800">Final Price</span>
+                  <span className="text-xl sm:text-2xl font-bold text-[#ea078b] break-all">{currency(summaryTotals.finalTotal)}</span>
                 </div>
               </div>
             </div>
 
-            {/* Additional Info */}
-            <div className="mt-4 text-center">
-              <div className="text-xs text-slate-500">
+            {/* Mobile-Optimized Additional Info */}
+            <div className="mt-3 sm:mt-4 text-center space-y-1">
+              <div className="text-xs sm:text-sm text-slate-500 px-2">
                 * All prices are in AED (UAE Dirham) and include applicable taxes
               </div>
-              <div className="text-xs text-slate-500 mt-1">
+              <div className="text-xs sm:text-sm text-slate-500 px-2">
                 ** Quote valid for 30 days from date of issue
               </div>
             </div>
@@ -1469,22 +1545,55 @@ const Step5Quotation: React.FC<Step5Props> = ({
           </h4>
         </div>
 
+        {/* Download restriction notice for high-value quotes */}
+        {isDownloadDisabled && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center">
+              <AlertTriangle className="w-5 h-5 text-yellow-600 mr-3" />
+              <div>
+                <h4 className="text-yellow-800 font-semibold">Download Restricted</h4>
+                <p className="text-yellow-700 text-sm">
+                  Download options are disabled for quotes with final price ≥ 5000 AED
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {/* Customer Copy Download */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 sm:p-6 border border-green-200 hover:shadow-md transition-all duration-200">
+          <div className={`rounded-xl p-4 sm:p-6 border transition-all duration-200 ${
+            isDownloadDisabled 
+              ? 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-300' 
+              : 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 hover:shadow-md'
+          }`}>
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex items-center">
-                <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                <span className="text-base sm:text-lg font-semibold text-green-800">Customer Copy</span>
+                <div className={`w-3 h-3 rounded-full mr-3 ${
+                  isDownloadDisabled ? 'bg-gray-400' : 'bg-green-500'
+                }`}></div>
+                <span className={`text-base sm:text-lg font-semibold ${
+                  isDownloadDisabled ? 'text-gray-600' : 'text-green-800'
+                }`}>Customer Copy</span>
               </div>
-              <Download className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+              <Download className={`w-5 h-5 sm:w-6 sm:h-6 ${
+                isDownloadDisabled ? 'text-gray-400' : 'text-green-600'
+              }`} />
             </div>
-            <p className="text-green-700 mb-3 sm:mb-4 text-xs sm:text-sm">
+            <p className={`mb-3 sm:mb-4 text-xs sm:text-sm ${
+              isDownloadDisabled ? 'text-gray-500' : 'text-green-700'
+            }`}>
               Professional quote document suitable for customer presentation
             </p>
             <Button
-              className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-2 sm:py-3 text-sm sm:text-base shadow-lg hover:shadow-xl transition-all duration-300"
+              className={`w-full rounded-xl py-2 sm:py-3 text-sm sm:text-base shadow-lg transition-all duration-300 ${
+                isDownloadDisabled 
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                  : 'bg-green-600 hover:bg-green-700 text-white hover:shadow-xl'
+              }`}
+              disabled={isDownloadDisabled}
               onClick={async () => {
+                if (isDownloadDisabled) return;
                 try {
                   await downloadCustomerPdf(formData, otherQuantities);
                 } catch (error) {
@@ -1494,25 +1603,43 @@ const Step5Quotation: React.FC<Step5Props> = ({
               }}
             >
               <Download className="w-4 h-4 mr-2" />
-              Download Customer Copy
+              {isDownloadDisabled ? 'Download Disabled (≥5000 AED)' : 'Download Customer Copy'}
             </Button>
           </div>
 
           {/* Operations Copy Download */}
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-4 sm:p-6 border border-orange-200 hover:shadow-md transition-all duration-200">
+          <div className={`rounded-xl p-4 sm:p-6 border transition-all duration-200 ${
+            isDownloadDisabled 
+              ? 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-300' 
+              : 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200 hover:shadow-md'
+          }`}>
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex items-center">
-                <div className="w-3 h-3 bg-orange-500 rounded-full mr-3"></div>
-                <span className="text-base sm:text-lg font-semibold text-orange-800">Operations Copy</span>
+                <div className={`w-3 h-3 rounded-full mr-3 ${
+                  isDownloadDisabled ? 'bg-gray-400' : 'bg-orange-500'
+                }`}></div>
+                <span className={`text-base sm:text-lg font-semibold ${
+                  isDownloadDisabled ? 'text-gray-600' : 'text-orange-800'
+                }`}>Operations Copy</span>
               </div>
-              <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
+              <Settings className={`w-5 h-5 sm:w-6 sm:h-6 ${
+                isDownloadDisabled ? 'text-gray-400' : 'text-orange-600'
+              }`} />
             </div>
-            <p className="text-orange-700 mb-3 sm:mb-4 text-xs sm:text-sm">
+            <p className={`mb-3 sm:mb-4 text-xs sm:text-sm ${
+              isDownloadDisabled ? 'text-gray-500' : 'text-orange-700'
+            }`}>
               Detailed technical specifications for production team
             </p>
             <Button
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-xl py-2 sm:py-3 text-sm sm:text-base shadow-lg hover:shadow-xl transition-all duration-300"
+              className={`w-full rounded-xl py-2 sm:py-3 text-sm sm:text-base shadow-lg transition-all duration-300 ${
+                isDownloadDisabled 
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                  : 'bg-orange-600 hover:bg-orange-700 text-white hover:shadow-xl'
+              }`}
+              disabled={isDownloadDisabled}
               onClick={async () => {
+                if (isDownloadDisabled) return;
                 try {
                   await downloadOpsPdf(formData, otherQuantities);
                 } catch (error) {
@@ -1522,7 +1649,7 @@ const Step5Quotation: React.FC<Step5Props> = ({
               }}
             >
               <Download className="w-4 h-4 mr-2" />
-              Download Operations Copy
+              {isDownloadDisabled ? 'Download Disabled (≥5000 AED)' : 'Download Operations Copy'}
             </Button>
           </div>
         </div>
