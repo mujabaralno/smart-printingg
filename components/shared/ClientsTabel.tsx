@@ -110,20 +110,20 @@ export function ClientTable({
   }, [data, rowsPerPage, page]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <div className="overflow-hidden  bg-white">
       <div className="overflow-x-auto">
         <Table>
-          <TableHeader className="bg-slate-50">
+          <TableHeader className="bg-[#F8F8FF]">
             <TableRow className="border-slate-200">
               <TableHead className="text-slate-700 font-semibold p-4 w-28">Client ID</TableHead>
               <TableHead className="text-slate-700 font-semibold p-4 w-24">Type</TableHead>
               <TableHead className="text-slate-700 font-semibold p-4 w-40">Company / Name</TableHead>
               <TableHead className="text-slate-700 font-semibold p-4 w-36">Contact / Role</TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-40">Email</TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-36">Email</TableHead>
               <TableHead className="text-slate-700 font-semibold p-4 w-32">Phone</TableHead>
               <TableHead className="text-slate-700 font-semibold p-4 w-24">Quotes</TableHead>
               <TableHead className="text-slate-700 font-semibold p-4 w-24">Status</TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-24 text-right">Actions</TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-24 text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
 

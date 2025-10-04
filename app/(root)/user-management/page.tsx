@@ -332,100 +332,98 @@ export default function UserManagementPage() {
             </p>
           </div>
         </div>
-        <div>
-          {/* Search + Add */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-4">
-              <div className="flex-1">
-                <Input
-                  placeholder="Search users by name, email, or ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
-                />
-              </div>
-              <Button
-                onClick={() => setOpen(true)}
-                className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12"
-              >
-                <Plus className="h-5 w-5 mr-2" /> Add New User
-              </Button>
-            </div>
 
-            {/* Filters */}
-            <div className="grid grid-cols-2 md:flex md:flex-row md:items-center gap-4 mb-4 bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
-                  Role
-                </label>
-                <Select
-                  value={roleFilter}
-                  onValueChange={(v: "all" | "admin" | "user" | "estimator") =>
-                    setRoleFilter(v)
-                  }
-                >
-                  <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12">
-                    <SelectValue placeholder="All Roles" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="estimator">Estimator</SelectItem>
-                  </SelectContent>
-                </Select>
+        <div className="w-full bg-white border  border-slate-200 shadow-sm p-4 rounded-2xl space-y-5">
+          <div className="p-0 space-y-6">
+            <div className="grid grid-cols-2 w-full gap-5">
+              {/* Filters */}
+              <div className="client-management-filters   grid grid-cols-2 md:flex md:flex-row md:items-center md:gap-5  gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Role
+                  </label>
+                  <Select
+                    value={roleFilter}
+                    onValueChange={(
+                      v: "all" | "admin" | "user" | "estimator"
+                    ) => setRoleFilter(v)}
+                  >
+                    <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12">
+                      <SelectValue placeholder="All Roles" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="user">User</SelectItem>
+                      <SelectItem value="estimator">Estimator</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Status
+                  </label>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v: "all" | "Active" | "Inactive") =>
+                      setStatusFilter(v)
+                    }
+                  >
+                    <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
-                  Status
-                </label>
-                <Select
-                  value={statusFilter}
-                  onValueChange={(v: "all" | "Active" | "Inactive") =>
-                    setStatusFilter(v)
-                  }
+              {/* Search + Add */}
+              <div className="flex flex-col items-end gap-4 justify-end sm:flex-row">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Search users by name, email, or ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
+                  />
+                </div>
+                <Button
+                  onClick={() => setOpen(true)}
+                  className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12"
                 >
-                  <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12">
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Plus className="h-5 w-5 mr-2" /> Add New User
+                </Button>
               </div>
             </div>
-        </div>
-
-        <Card className="w-full">
-          <CardContent className="p-0">
-            
 
             {/* ===== TABLE (ClientTable styling) ===== */}
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="overflow-hidden bg-white">
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader className="bg-slate-50">
+                  <TableHeader className="bg-[#F8F8FF]">
                     <TableRow className="border-slate-200">
-                      <TableHead className="w-40 text-slate-600 text-md font-semibold">
+                      <TableHead className="w-40 text-slate-600 p-4 text-md font-semibold">
                         ID
                       </TableHead>
-                      <TableHead className="w-64 text-slate-600 text-md font-semibold">
+                      <TableHead className="w-64 text-slate-600 text-md p-4 font-semibold">
                         User
                       </TableHead>
-                      <TableHead className="w-64 text-slate-600 text-md font-semibold">
+                      <TableHead className="w-64 text-slate-600 text-md p-4 font-semibold">
                         Joined
                       </TableHead>
-                      <TableHead className="w-32 text-slate-600 text-md font-semibold">
+                      <TableHead className="w-32 text-slate-600 text-md p-4 font-semibold">
                         Role
                       </TableHead>
-                      <TableHead className="w-32 text-slate-600 text-md font-semibold">
+                      <TableHead className="w-32 text-slate-600 text-md p-4 font-semibold">
                         Status
                       </TableHead>
-                      <TableHead className="w-10 text-slate-600 text-md font-semibold">
+                      <TableHead className="w-10 text-slate-600 text-md p-4 font-semibold">
                         Edit
                       </TableHead>
-                      <TableHead className="w-32 text-center  text-slate-600 text-md font-semibold">
+                      <TableHead className="w-32 text-center  text-slate-600 p-4 text-md font-semibold">
                         Status Toggle
                       </TableHead>
                     </TableRow>
@@ -603,8 +601,8 @@ export default function UserManagementPage() {
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* ===== Modal (logic kept) ===== */}
         <Dialog open={open} onOpenChange={setOpen}>

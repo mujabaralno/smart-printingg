@@ -62,6 +62,7 @@ export function MetricsGrid({
   isLoading?: boolean;
   /** how many skeletons to show while loading */
   skeletonCount?: number;
+  color?: string
 }) {
   if (isLoading) {
     return (
@@ -112,7 +113,7 @@ export function MetricsGrid({
                 </div>
 
                 <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-slate-50 ring-1 ring-slate-200">
-                  <Icon className="h-6 w-6 text-slate-700" />
+                  <Icon className={`h-6 w-6  ${m.color}`} />
                 </div>
               </div>
 

@@ -701,148 +701,6 @@ export default function ClientManagementPage() {
           </div>
         </div>
 
-        {/* Search and Add Client */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
-              <Input
-                placeholder="Search by company name, contact person, email, or ID..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
-              />
-            </div>
-          </div>
-          <Button
-            onClick={() => setOpen(true)}
-            className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Add New Client
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="client-management-filters bg-white rounded-2xl p-4 border border-slate-200 shadow-sm grid grid-cols-2 md:flex md:flex-row md:items-center md:gap-5 md:justify-between gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">
-              Client Type
-            </label>
-            {loading ? (
-              <Skeleton className="h-8 w-28" />
-            ) : (
-              <Select
-                value={clientTypeFilter}
-                onValueChange={setClientTypeFilter}
-              >
-                <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-10">
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="Individual">Individual</SelectItem>
-                  <SelectItem value="Company">Company</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Status</label>
-            {loading ? (
-              <Skeleton className="h-8 w-28" />
-            ) : (
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-10">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Area</label>
-            {loading ? (
-              <Skeleton className="h-8 w-28" />
-            ) : (
-              <Select value={areaFilter} onValueChange={setAreaFilter}>
-                <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-10">
-                  <SelectValue placeholder="All Areas" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  <SelectItem value="all">All Areas</SelectItem>
-                  {UAE_AREAS.map((area) => (
-                    <SelectItem
-                      key={`${area.state}-${area.name}`}
-                      value={area.name}
-                    >
-                      {area.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Role</label>
-            {loading ? (
-              <Skeleton className="h-8 w-28" />
-            ) : (
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-10">
-                  <SelectValue placeholder="All Roles" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="Customer">Customer</SelectItem>
-                  <SelectItem value="Supplier">Supplier</SelectItem>
-                  <SelectItem value="Partner">Partner</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-        </div>
-
-        {/* Results Summary */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-sm text-slate-600">
-          {loading ? (
-            <Skeleton className="h-4 w-28" />
-          ) : (
-            <span>
-              Showing {current.length} of {filtered.length} clients
-            </span>
-          )}
-          {(filtered?.length ?? 0) > PAGE_SIZE &&
-            (loading ? (
-              <Skeleton className="h-6 w-28" />
-            ) : (
-              <Button
-                variant="ghost"
-                onClick={() => setShowAll(!showAll)}
-                className="text-[#27aae1] hover:text-[#1e8bc3] hover:bg-[#27aae1]/10 rounded-xl px-4 py-2 transition-all duration-200"
-              >
-                {showAll ? (
-                  <>
-                    <ChevronUp className="h-4 w-4 mr-2" />
-                    Show Less
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4 mr-2" />
-                    Show All ({filtered?.length ?? 0})
-                  </>
-                )}
-              </Button>
-            ))}
-        </div>
-
         {/* Client Summary */}
         <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -901,16 +759,164 @@ export default function ClientManagementPage() {
           </div>
         </div>
 
+        {/* Results Summary */}
+        {/* <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-sm text-slate-600">
+          {loading ? (
+            <Skeleton className="h-4 w-28" />
+          ) : (
+            <span>
+              Showing {current.length} of {filtered.length} clients
+            </span>
+          )}
+          {(filtered?.length ?? 0) > PAGE_SIZE &&
+            (loading ? (
+              <Skeleton className="h-6 w-28" />
+            ) : (
+              <Button
+                variant="ghost"
+                onClick={() => setShowAll(!showAll)}
+                className="text-[#27aae1] hover:text-[#1e8bc3] hover:bg-[#27aae1]/10 rounded-xl px-4 py-2 transition-all duration-200"
+              >
+                {showAll ? (
+                  <>
+                    <ChevronUp className="h-4 w-4 mr-2" />
+                    Show Less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                    Show All ({filtered?.length ?? 0})
+                  </>
+                )}
+              </Button>
+            ))}
+        </div> */}
+
         {/* Clients Table - Mobile Responsive */}
-        <Card className="shadow-xl border-0 bg-white">
-          <CardContent className="p-0">
+        <div className="w-full p-4 space-y-6 bg-white shadow-sm border border-slate-200 rounded-2xl">
+          <div className="grid grid-cols-2 w-full gap-5">
+            {/* Filters */}
+            <div className="client-management-filters   grid grid-cols-2 md:flex md:flex-row md:items-center md:gap-5  gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Client Type
+                </label>
+                {loading ? (
+                  <Skeleton className="h-8 w-28" />
+                ) : (
+                  <Select
+                    value={clientTypeFilter}
+                    onValueChange={setClientTypeFilter}
+                  >
+                    <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-10">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="Individual">Individual</SelectItem>
+                      <SelectItem value="Company">Company</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Status
+                </label>
+                {loading ? (
+                  <Skeleton className="h-8 w-28" />
+                ) : (
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-10">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Area
+                </label>
+                {loading ? (
+                  <Skeleton className="h-8 w-28" />
+                ) : (
+                  <Select value={areaFilter} onValueChange={setAreaFilter}>
+                    <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-10">
+                      <SelectValue placeholder="All Areas" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Areas</SelectItem>
+                      {UAE_AREAS.map((area) => (
+                        <SelectItem
+                          key={`${area.state}-${area.name}`}
+                          value={area.name}
+                        >
+                          {area.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Role
+                </label>
+                {loading ? (
+                  <Skeleton className="h-8 w-28" />
+                ) : (
+                  <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-10">
+                      <SelectValue placeholder="All Roles" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="Customer">Customer</SelectItem>
+                      <SelectItem value="Supplier">Supplier</SelectItem>
+                      <SelectItem value="Partner">Partner</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+            {/* Search and Add Client */}
+            <div className="flex flex-col items-end gap-4 justify-end sm:flex-row">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                  <Input
+                    placeholder="Search by company name, contact person, email, or ID..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-10 border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
+                  />
+                </div>
+              </div>
+              <Button
+                onClick={() => setOpen(true)}
+                className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add New Client
+              </Button>
+            </div>
+          </div>
+          <div className="p-0">
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto">
               <ClientTable
                 data={tableData}
                 quotes={quotes} // untuk hitung jumlah quote per client
                 isLoading={loading}
-                defaultPageSize={20}
+                defaultPageSize={10}
                 onView={(row) =>
                   onView(filtered.find((r: any) => r.id === row.id) ?? row)
                 }
@@ -1070,8 +1076,8 @@ export default function ClientManagementPage() {
                 ))
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* ===== Modal Add/Edit Client ===== */}

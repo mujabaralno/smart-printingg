@@ -12,7 +12,7 @@ import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Pencil, PackageIcon, Calendar } from "lucide-react";
+import { Plus, Pencil, PackageIcon, Calendar, Edit3Icon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -304,6 +304,7 @@ function SupplierManagementContent() {
         const { suppliers: fs, materials: fm } = createFallbackData();
         setSuppliers(fs);
         setMaterials(fm);
+        console.log(e);
       } finally {
         setLoading(false);
       }
@@ -430,7 +431,7 @@ function SupplierManagementContent() {
     <div className="min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        
+
         <div className="flex gap-5">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-[#27aae1] rounded-full shadow-lg">
             <PackageIcon className="w-8 h-8 text-white" />
@@ -443,97 +444,6 @@ function SupplierManagementContent() {
               Manage your suppliers and materials. Track costs, monitor
               inventory, and optimize your supply chain.
             </p>
-          </div>
-        </div>
-
-        {/* Search + Add */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Search suppliers or materials..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-12 text-base"
-            />
-          </div>
-          <Button
-            onClick={onAdd}
-            className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Add New Material
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:flex md:flex-row md:items-center bg-white p-4 shadow-sm border border-slate-200 rounded-2xl gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">
-              Updated From
-            </label>
-            {loading ? (
-             <Skeleton className="h-8 w-80"/> 
-            ): (
-            <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-2">
-              <Calendar className="h-4 w-4 text-slate-500" />
-              <input
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="h-9 w-[9.5rem] text-sm outline-none"
-              />
-              <span className="text-slate-400">–</span>
-              <input
-                type="date"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                className="h-9 w-[9.5rem] text-sm outline-none"
-              />
-            </div>
-            )}
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Status</label>
-            {loading ? (
-              <Skeleton className="h-8 w-28" />
-            ): (
-              <Select
-                value={statusFilter}
-                onValueChange={(v: "all" | "Active" | "Inactive") =>
-                  setStatusFilter(v)
-                }
-              >
-                <SelectTrigger className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Unit</label>
-            {loading ? (
-              <Skeleton className="h-8 w-28" />
-            ): (
-            <Select
-              value={unitFilter}
-              onValueChange={(v: "all" | string) => setUnitFilter(v)}
-            >
-              <SelectTrigger className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10">
-                <SelectValue placeholder="All Units" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                <SelectItem value="all">All Units</SelectItem>
-                <SelectItem value="per_sheet">Per Sheet</SelectItem>
-                <SelectItem value="per_packet">Per Packet</SelectItem>
-                <SelectItem value="per_kg">Per KG</SelectItem>
-              </SelectContent>
-            </Select>
-            )}
           </div>
         </div>
 
@@ -557,7 +467,102 @@ function SupplierManagementContent() {
         )}
 
         {/* ====== DESKTOP TABLE — Styled to match ClientTable ====== */}
-        <div className="hidden lg:block overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="hidden lg:block overflow-hidden p-4 rounded-2xl border border-slate-200 shadow-sm space-y-6 bg-white">
+          <div className="grid grid-cols-2 gap-5">
+            {/* Filters */}
+            <div className="grid grid-cols-1 md:flex md:flex-row md:items-center bg-white p-4  gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Updated From
+                </label>
+                {loading ? (
+                  <Skeleton className="h-8 w-80" />
+                ) : (
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-2">
+                    <Calendar className="h-4 w-4 text-slate-500" />
+                    <input
+                      type="date"
+                      value={from}
+                      onChange={(e) => setFrom(e.target.value)}
+                      className="h-9 w-[9.5rem] text-sm outline-none"
+                    />
+                    <span className="text-slate-400">–</span>
+                    <input
+                      type="date"
+                      value={to}
+                      onChange={(e) => setTo(e.target.value)}
+                      className="h-9 w-[9.5rem] text-sm outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Status
+                </label>
+                {loading ? (
+                  <Skeleton className="h-8 w-28" />
+                ) : (
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v: "all" | "Active" | "Inactive") =>
+                      setStatusFilter(v)
+                    }
+                  >
+                    <SelectTrigger className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Unit
+                </label>
+                {loading ? (
+                  <Skeleton className="h-8 w-28" />
+                ) : (
+                  <Select
+                    value={unitFilter}
+                    onValueChange={(v: "all" | string) => setUnitFilter(v)}
+                  >
+                    <SelectTrigger className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10">
+                      <SelectValue placeholder="All Units" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Units</SelectItem>
+                      <SelectItem value="per_sheet">Per Sheet</SelectItem>
+                      <SelectItem value="per_packet">Per Packet</SelectItem>
+                      <SelectItem value="per_kg">Per KG</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+            {/* Search + Add */}
+            <div className="flex flex-col sm:flex-row gap-4 p-4 justify-end items-end">
+              <div className="flex-1">
+                <Input
+                  placeholder="Search suppliers or materials..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-12 text-base"
+                />
+              </div>
+              <Button
+                onClick={onAdd}
+                className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add New Material
+              </Button>
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <Table
               className="w-full table-fixed"
@@ -567,7 +572,7 @@ function SupplierManagementContent() {
                 overflow: "hidden",
               }}
             >
-              <TableHeader className="bg-slate-50">
+              <TableHeader className="bg-[#F8F8FF]">
                 <TableRow className="border-slate-200">
                   <TableHead className="text-slate-700 font-semibold p-4 w-24">
                     Material ID
@@ -578,22 +583,22 @@ function SupplierManagementContent() {
                   <TableHead className="text-slate-700 font-semibold p-4 w-20">
                     GSM
                   </TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-36">
+                  <TableHead className="text-slate-700 font-semibold p-4 w-44">
                     Supplier
                   </TableHead>
                   <TableHead className="text-slate-700 font-semibold p-4 w-24">
                     Cost
                   </TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-20">
+                  <TableHead className="text-slate-700 font-semibold p-4 w-28">
                     Unit
                   </TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-28">
+                  <TableHead className="text-slate-700 font-semibold p-4 w-32 ">
                     Last Updated
                   </TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-24">
+                  <TableHead className="text-slate-700 font-semibold p-4 w-24 ">
                     Status
                   </TableHead>
-                  <TableHead className="text-slate-700 font-semibold p-4 w-24 text-right">
+                  <TableHead className="text-slate-700 font-semibold p-4 w-24 text-center">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -680,15 +685,14 @@ function SupplierManagementContent() {
                           {r.status}
                         </span>
                       </TableCell>
-                      <TableCell className="p-4 w-24 text-right">
+                      <TableCell className="p-4 w-24 ">
                         <Button
-                          variant="ghost"
-                          size="icon"
                           title="Edit Material"
                           onClick={() => onEdit(r)}
-                          className="h-8 w-8"
+                          className="border-blue-500 border text-blue-600 hover:bg-blue-50 hover:border-blue-600 rounded-xl px-2 py-1 "
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Edit3Icon className="h-4 w-4 mr-2" />
+                          <span className="">Edit</span>
                         </Button>
                       </TableCell>
                     </TableRow>

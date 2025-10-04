@@ -43,7 +43,7 @@ export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperPro
           isNavbarExpanded={isSideNavExpanded}
         />
         <main className={cn(
-          "flex-1 p-4 sm:p-6 overflow-auto bg-gray-50 transition-all duration-300 relative pt-32 lg:pt-4",
+          "flex-1 p-4 sm:p-6 overflow-auto bg-[#F8F8FF] transition-all duration-300 relative pt-32 lg:pt-4",
           // Mobile: dim main content when sidenav is open
           isNavbarOpen && "lg:opacity-50 lg:pointer-events-none"
         )}>

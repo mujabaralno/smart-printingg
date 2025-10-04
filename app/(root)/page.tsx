@@ -411,6 +411,7 @@ export default function DashboardPage() {
       highlight: "All-time total",
       caption: "All quotes count (100%)",
       filterValue: "All",
+      color: "text-[#3B82F6]"
     },
     {
       title: "Approved",
@@ -421,6 +422,7 @@ export default function DashboardPage() {
       highlight: "Share of total",
       caption: "Approved vs overall",
       filterValue: "Approved",
+      color: "text-[#16A34A]"
     },
     {
       title: "Pending",
@@ -431,6 +433,7 @@ export default function DashboardPage() {
       highlight: "Share of total",
       caption: "Pending vs overall",
       filterValue: "Pending",
+      color: "text-[#CA8A04]"
     },
     {
       title: "Rejected",
@@ -441,6 +444,7 @@ export default function DashboardPage() {
       highlight: "Share of total",
       caption: "Rejected vs overall",
       filterValue: "Rejected",
+      color: "text-[#DC2626]"
     },
   ];
 
@@ -1300,22 +1304,27 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Quotations Section */}
-        <div className="space-y-6 sm:space-y-8">
+        <div className="space-y-6 sm:space-y-5 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 ">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">
+            <h2 className="text-xl sm:text-2xl lg:text-2xl font-bold text-slate-900">
               Recent Quotations
             </h2>
+            <Link href="/quote-management">
+              <Button className="h-8 px-5 bg-[#27aae1] hover:bg-[#1e8bc3] text-white rounded-lg font-medium shadow-sm">
+                View All
+              </Button>
+            </Link>
           </div>
 
           {/* Quotations Table - Mobile Responsive */}
-          <Card className="border-0 shadow-lg">
-            <CardContent className="p-0">
+          <div className="border-0 s">
+            <div className="p-0">
               <div className="hidden lg:block">
                 <QuotesTable
                   data={filteredQuotes} // data hasil filter kamu
                   onView={(row) => handleViewQuote(row)}
                   onEdit={(row) => handleUpdateQuote(row)}
-                  defaultPageSize={10}
+                  showPagination={false}
                   isLoading={isLoading}
                 />
               </div>
@@ -1331,8 +1340,8 @@ export default function DashboardPage() {
                   isLoading={isLoading}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -401,6 +401,7 @@ export type MetricCard = {
   title: string;
   value: string | number;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  color?: string
   trend: Trend;             // "up" | "down" | "flat"
   deltaLabel: string;       // contoh: "+12.5%" / "-20%" / "±0%"
   highlight: string;        // subjudul tebal (contoh: "Trending up this month")

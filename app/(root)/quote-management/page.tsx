@@ -941,129 +941,17 @@ export default function QuoteManagementPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex gap-5">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-[#27aae1] rounded-full shadow-lg">
-              <FileTextIcon className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                Quote Management
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Manage and track all your printing quotations. View, edit, and monitor quote statuses.
-              </p>
-            </div>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#27aae1] rounded-full shadow-lg">
+            <FileTextIcon className="w-8 h-8 text-white" />
           </div>
-
-        {/* Search and Create Quote */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Search by quote number, client name, or person name..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 text-base"
-            />
-          </div>
-          <Button
-            onClick={() => setIsCreateQuoteModalOpen(true)}
-            className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Create a New Quote
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="w-full flex flex-row justify-between bg-white rounded-2xl p-4 shadow-sm border-slate-200 border gap-4">
-          {/* Keyword Filter */}
-
-          {/* Date Range */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">
-              From Date - To Date
-            </label>
-            <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-2">
-              <Calendar className="h-4 w-4 text-slate-500" />
-              <input
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="h-9 w-[9.5rem] text-sm outline-none"
-              />
-              <span className="text-slate-400">–</span>
-              <input
-                type="date"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                className="h-9 w-[9.5rem] text-sm outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Status Filter */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Status</label>
-            <Select
-              value={status}
-              onValueChange={(v: StatusFilter) => setStatus(v)}
-            >
-              <SelectTrigger className=" w-[9rem] rounded-lg border-slate-300">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Contact Person */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">
-              Contact Person
-            </label>
-            <Select
-              value={contactPerson}
-              onValueChange={(v: string) => setContactPerson(v)}
-            >
-              <SelectTrigger className="h-10 w-[9rem] rounded-lg border-slate-300">
-                <SelectValue placeholder="Contact" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                <SelectItem value="all">Contact Person</SelectItem>
-                {filterContactPersons.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Amount Range */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">
-              Amount Range
-            </label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                placeholder="Min"
-                value={minAmount}
-                onChange={(e) => setMinAmount(e.target.value)}
-                className=""
-              />
-              <span className="text-slate-400">–</span>
-              <Input
-                type="number"
-                placeholder="Max"
-                value={maxAmount}
-                onChange={(e) => setMaxAmount(e.target.value)}
-                className=""
-              />
-            </div>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              Quote Management
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Manage and track all your printing quotations. View, edit, and
+              monitor quote statuses.
+            </p>
           </div>
         </div>
 
@@ -1133,15 +1021,127 @@ export default function QuoteManagementPage() {
             </div>
           )}
         </div>
+        {/* Search and Create Quote */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="Search by quote number, client name, or person name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 text-base"
+            />
+          </div>
+          <Button
+            onClick={() => setIsCreateQuoteModalOpen(true)}
+            className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Create a New Quote
+          </Button>
+        </div>
 
         {/* Quotes Table - Mobile Responsive */}
-        <Card className="shadow-xl border-0 bg-white">
-          <CardContent className="p-0">
+        <div className="space-y-6 sm:space-y-5 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 ">
+          <div className="w-full flex flex-row justify-between  p-4 gap-4">
+            {/* Keyword Filter */}
+
+            {/* Date Range */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                From Date - To Date
+              </label>
+              <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-2">
+                <Calendar className="h-4 w-4 text-slate-500" />
+                <input
+                  type="date"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className="h-9 w-[9.5rem] text-sm outline-none"
+                />
+                <span className="text-slate-400">–</span>
+                <input
+                  type="date"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  className="h-9 w-[9.5rem] text-sm outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                Status
+              </label>
+              <Select
+                value={status}
+                onValueChange={(v: StatusFilter) => setStatus(v)}
+              >
+                <SelectTrigger className=" w-[9rem] rounded-lg border-slate-300">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Contact Person */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                Contact Person
+              </label>
+              <Select
+                value={contactPerson}
+                onValueChange={(v: string) => setContactPerson(v)}
+              >
+                <SelectTrigger className="h-10 w-[9rem] rounded-lg border-slate-300">
+                  <SelectValue placeholder="Contact" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="all">Contact Person</SelectItem>
+                  {filterContactPersons.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Amount Range */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                Amount Range
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  placeholder="Min"
+                  value={minAmount}
+                  onChange={(e) => setMinAmount(e.target.value)}
+                  className=""
+                />
+                <span className="text-slate-400">–</span>
+                <Input
+                  type="number"
+                  placeholder="Max"
+                  value={maxAmount}
+                  onChange={(e) => setMaxAmount(e.target.value)}
+                  className=""
+                />
+              </div>
+            </div>
+          </div>
+          <div className="p-0">
             {/* Desktop Table */}
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="overflow-hidden ">
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader className="bg-slate-50">
+                  <TableHeader className="bg-[#F8F8FF] ">
                     <TableRow className="border-slate-200">
                       <TableHead className="w-40 text-slate-600 text-md font-semibold">
                         Quote ID
@@ -1538,8 +1538,8 @@ export default function QuoteManagementPage() {
                 ))
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* ===== Modal View ===== */}

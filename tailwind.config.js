@@ -43,6 +43,20 @@ module.exports = {
           black: '#000000',
         }
       },
+      keyframes: {
+        shimmer: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
+        blink: {
+          "0%,100%": { opacity: "0.75" },
+          "50%": { opacity: "1" },
+        },
+      },
+      animation: {
+        shimmer: "shimmer 2s linear infinite",
+        blink: "blink 1.4s ease-in-out infinite",
+      },
     },
   },
   plugins: [],

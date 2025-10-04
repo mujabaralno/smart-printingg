@@ -42,6 +42,9 @@
   --sp-shadow: 0 10px 30px rgba(2,6,23,0.08);
   --sp-blur: 12px;
 
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
   /* Signature Gradient - Using brand colors */
   --sp-gradient: linear-gradient(135deg, var(--sp-azure) 0%, var(--sp-magenta) 55%, var(--sp-orange) 100%);
 }
@@ -515,6 +518,19 @@ html, body {
 /* Ensure tables never scroll horizontally */
 .overflow-x-auto {
   overflow-x: hidden !important;
+}
+
+@layer utilities {
+  @keyframes shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  @keyframes blink {
+    0%,100% { opacity: .75; }
+    50%     { opacity: 1; }
+  }
+  .animate-shimmer { animation: shimmer 2s linear infinite; }
+  .animate-blink { animation: blink 1.4s ease-in-out infinite; }
 }
 
 /* Force mobile cards instead of horizontal scrolling */

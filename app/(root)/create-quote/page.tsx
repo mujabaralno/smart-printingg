@@ -2059,7 +2059,7 @@ function CreateQuoteContent() {
               >
                 <CardContent className="p-5 sm:p-7 lg:p-8 flex flex-col justify-between gap-3">
                   <div className="flex items-start justify-between">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-[#EA078B] to-[#d4067a] flex items-center justify-center text-white shadow-inner">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-[#27AAE1] to-[#1e8bc3] flex items-center justify-center text-white shadow-inner">
                       <Copy className="w-7 h-7 sm:w-8 sm:h-8" />
                     </div>
                     {quoteMode === "existing" && (
@@ -2081,7 +2081,7 @@ function CreateQuoteContent() {
 
                   <div className="mt-6">
                     <Button
-                      className="w-full h-10 sm:h-11 bg-[#EA078B] hover:bg-[#d4067a] text-white rounded-xl shadow-md hover:shadow-lg transition-all"
+                      className="w-full h-10 sm:h-11 bg-[#27AAE1] hover:bg-[#1e8bc3] text-white rounded-xl shadow-md hover:shadow-lg transition-all"
                       onClick={() => {
                         setFormData((prev) => ({ ...prev, products: [] }));
                         setQuoteMode("existing");

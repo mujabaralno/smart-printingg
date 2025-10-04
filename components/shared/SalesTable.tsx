@@ -120,18 +120,18 @@ export function SalesTable({
   }, [data, rowsPerPage, page]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <div className="overflow-hidden  bg-white">
       <div className="overflow-x-auto">
         <Table>
-          <TableHeader className="bg-slate-50">
+          <TableHeader className="bg-[#F8F8FF]">
             <TableRow className="border-slate-200">
-              <TableHead className="text-slate-700 font-semibold  w-28">ID</TableHead>
-              <TableHead className="text-slate-700 font-semibold w-[320px]">Sales Person</TableHead>
-              <TableHead className="text-slate-700 font-semibold w-48">Email</TableHead>
-              <TableHead className="text-slate-700 font-semibold w-40">Phone</TableHead>
-              <TableHead className="text-slate-700 font-semibold w-44">Department & Role</TableHead>
-              <TableHead className="text-slate-700 font-semibold w-28">Status</TableHead>
-              <TableHead className="text-slate-700 font-semibold w-24 text-right">Actions</TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4  w-28">ID</TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-[320px]">Sales Person</TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-48">Email</TableHead>
+              <TableHead className="text-slate-700 font-semibold  p-4 w-40">Phone</TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-44">Department & Role</TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-28">Status</TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-24 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
 

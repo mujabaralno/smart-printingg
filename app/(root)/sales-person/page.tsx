@@ -32,7 +32,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toastSuccess, toastError } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SalesTable, type SalesRow  } from "@/components/shared/SalesTable";
+import { SalesTable, type SalesRow } from "@/components/shared/SalesTable";
 
 // Sales Person type definition
 interface SalesPerson {
@@ -513,124 +513,137 @@ export default function SalesPersonManagementPage() {
           </div>
         </div>
 
-        {/* Search, Status Filter, and Add Sales Person */}
-        <div className="grid grid-cols-1 md:flex md:flex-row md:items-center bg-white p-4 shadow-sm border border-slate-200 rounded-2xl gap-4">
-          {/* Search Bar - Full Width on Mobile */}
-          <div className="w-full space-y-2">
-            <label className="text-sm font-medium text-slate-700">Search</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
-              <Input
-                placeholder="Search by name, email, ID, phone, or department..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-9 text-base"
-              />
-            </div>
-          </div>
-
-          {/* Status Filter and Add Button - Same Line on Mobile */}
-          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-end">
-            <div className="flex-1 space-y-2">
-              <label className="text-sm font-medium text-slate-700">
-                Status
-              </label>
-              {loading ? (
-                <Skeleton className="h-8 w-20" />
-              ) : (
-                <Select
-                  value={statusFilter}
-                  onValueChange={(value: "all" | "Active" | "Inactive") =>
-                    setStatusFilter(value)
-                  }
-                >
-                  <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 w-full">
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            <Button
-              onClick={() => setShowAddModal(true)}
-              className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Add New Sales Person
-            </Button>
-          </div>
-        </div>
-
-        {/* Results Summary */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-sm text-slate-600">
-          {loading ? (
-            <Skeleton className="h-6 w-28" />
-          ): (
-          <span>
-            Showing {filteredSalesPersons.length} of {salesPersons.length} sales
-            persons
-          </span>
-
-          )}
-        </div>
-
         {/* Sales Person Summary */}
         <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="w-3 h-3 bg-[#27aae1] rounded-full mx-auto mb-2"></div>
               <div className="text-sm text-slate-600">Total Sales Persons</div>
-              <div className="text-lg font-bold text-slate-900">
-                {salesPersons.length}
-              </div>
+              {loading ? (
+                <div className="flex justify-center">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                </div>
+              ) : (
+                <div className="text-lg font-bold text-slate-900">
+                  {salesPersons.length}
+                </div>
+              )}
             </div>
             <div className="text-center">
               <div className="w-3 h-3 bg-green-500 rounded-full mx-auto mb-2"></div>
               <div className="text-sm text-slate-600">Active</div>
               <div className="text-lg font-bold text-slate-900">
-                {salesPersons.filter((sp) => sp.status === "Active").length}
+                {loading ? (
+                  <div className="flex justify-center">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                  </div>
+                ) : (
+                  <div className="text-lg font-bold text-slate-900">
+                    {salesPersons.filter((sp) => sp.status === "Active").length}
+                  </div>
+                )}
               </div>
             </div>
             <div className="text-center">
               <div className="w-3 h-3 bg-[#ea078b] rounded-full mx-auto mb-2"></div>
               <div className="text-sm text-slate-600">Managers</div>
               <div className="text-lg font-bold text-slate-900">
-                {
-                  salesPersons.filter((sp) =>
-                    sp.designation.includes("Manager")
-                  ).length
-                }
+                {loading ? (
+                  <div className="flex justify-center">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                  </div>
+                ) : (
+                  <div className="text-lg font-bold text-slate-900">
+                    {salesPersons.filter((sp) => sp.status === "Active").length}
+                  </div>
+                )}
               </div>
             </div>
             <div className="text-center">
               <div className="w-3 h-3 bg-orange-500 rounded-full mx-auto mb-2"></div>
               <div className="text-sm text-slate-600">Representatives</div>
               <div className="text-lg font-bold text-slate-900">
-                {
-                  salesPersons.filter((sp) =>
-                    sp.designation.includes("Representative")
-                  ).length
-                }
+                {loading ? (
+                  <div className="flex justify-center">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                  </div>
+                ) : (
+                  <div className="text-lg font-bold text-slate-900">
+                    {
+                      salesPersons.filter((sp) =>
+                        sp.designation.includes("Representative")
+                      ).length
+                    }
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
 
         {/* Sales Persons Table - Mobile Responsive */}
-        <Card className="shadow-xl border-0 bg-white">
-          <CardContent className="p-0">
+        <div className="shadow-sm rounded-2xl p-4 space-y-6 bg-white border border-slate-200">
+          {/* Search, Status Filter, and Add Sales Person */}
+          <div className="grid grid-cols-1 md:flex md:flex-row md:items-center  gap-4">
+            {/* Search Bar - Full Width on Mobile */}
+            <div className="w-full space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                Search
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                <Input
+                  placeholder="Search by name, email, ID, phone, or department..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-10 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-9 text-base"
+                />
+              </div>
+            </div>
+
+            {/* Status Filter and Add Button - Same Line on Mobile */}
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-end">
+              <div className="flex-1 space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Status
+                </label>
+                {loading ? (
+                  <Skeleton className="h-8 w-20" />
+                ) : (
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(value: "all" | "Active" | "Inactive") =>
+                      setStatusFilter(value)
+                    }
+                  >
+                    <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 w-full">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <Button
+                onClick={() => setShowAddModal(true)}
+                className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add New Sales Person
+              </Button>
+            </div>
+          </div>
+          <div className="p-0">
             {/* Desktop Table */}
-            
             <SalesTable
-  data={filteredSalesPersons as SalesRow[]}
-  isLoading={loading}
-  onView={(row) => handleEditPerson(row as any)}  // atau bikin modal View sendiri
-  onEdit={(row) => handleEditPerson(row as any)}
-/>
+              data={filteredSalesPersons as SalesRow[]}
+              isLoading={loading}
+              onView={(row) => handleEditPerson(row as any)} // atau bikin modal View sendiri
+              onEdit={(row) => handleEditPerson(row as any)}
+            />
 
             {/* Mobile Cards */}
             <div className="lg:hidden tablet-landscape:lg:hidden space-y-4 p-4">
@@ -751,8 +764,8 @@ export default function SalesPersonManagementPage() {
                 ))
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Add Sales Person Modal */}
