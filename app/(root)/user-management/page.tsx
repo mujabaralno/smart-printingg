@@ -19,25 +19,21 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Edit3, Crown, User, Calculator, UsersIcon } from "lucide-react";
-import RoleBadge from "@/components/shared/RoleBadge";
-import StatusChip from "@/components/shared/StatusChip";
-import { Card, CardContent } from "@/components/ui/card";
+import { Plus, Crown, User, Calculator, UsersIcon, Funnel } from "lucide-react";
 import { getDisplayId } from "@/lib/auth";
+import UsersTable, { UserRow } from "@/components/shared/UsersTable";
+import UsersMobileCards from "@/components/shared/UsersMobileCards";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleDateString("id-ID", {
@@ -45,47 +41,6 @@ const fmt = (iso: string) =>
     month: "long",
     year: "numeric",
   });
-
-// ===== Skeleton matching ClientTable style =====
-function SkeletonBlock({ className = "" }: { className?: string }) {
-  return <div className={`bg-slate-200 animate-pulse rounded ${className}`} />;
-}
-function TableSkeletonRow() {
-  return (
-    <TableRow>
-      <TableCell className="py-4">
-        <SkeletonBlock className="h-6 w-24" />
-      </TableCell>
-      <TableCell>
-        <SkeletonBlock className="h-6 w-40" />
-      </TableCell>
-      <TableCell>
-        <SkeletonBlock className="h-4 w-28" />
-      </TableCell>
-      <TableCell>
-        <SkeletonBlock className="h-6 w-24" />
-      </TableCell>
-      <TableCell>
-        <SkeletonBlock className="h-6 w-24" />
-      </TableCell>
-      <TableCell className="text-center">
-        <SkeletonBlock className="h-8 w-20 mx-auto" />
-      </TableCell>
-      <TableCell className="text-center">
-        <SkeletonBlock className="h-6 w-14 mx-auto" />
-      </TableCell>
-    </TableRow>
-  );
-}
-function TableSkeleton({ rows = 10 }: { rows?: number }) {
-  return (
-    <TableBody>
-      {Array.from({ length: rows }).map((_, i) => (
-        <TableSkeletonRow key={i} />
-      ))}
-    </TableBody>
-  );
-}
 
 export default function UserManagementPage() {
   // ===== Original state & logic (kept) =====
@@ -192,6 +147,17 @@ export default function UserManagementPage() {
     () => filtered.slice(startIndex, endIndex),
     [filtered, startIndex, endIndex]
   );
+
+  const tableData: UserRow[] = pageData.map((u) => ({
+    id: u.id,
+    displayId: u.displayId,
+    name: u.name,
+    email: u.email,
+    joined: fmt(u.joined), // kamu sudah punya helper fmt
+    role: u.role,
+    status: u.status,
+    profilePicture: u.profilePicture ?? null,
+  }));
 
   // ===== Helpers / Actions (kept) =====
   const resetForm = () => {
@@ -320,7 +286,7 @@ export default function UserManagementPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex gap-5">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#27aae1] rounded-full shadow-lg">
+          <div className="md:inline-flex hidden items-center justify-center w-16 h-16 bg-[#27aae1] rounded-full shadow-lg">
             <UsersIcon className="w-8 h-8 text-white" />
           </div>
           <div>
@@ -333,11 +299,93 @@ export default function UserManagementPage() {
           </div>
         </div>
 
-        <div className="w-full bg-white border  border-slate-200 shadow-sm p-4 rounded-2xl space-y-5">
+        {/* mobile search */}
+
+        <div className="md:hidden w-full">
+          <div className="flex-1">
+            <Input
+              placeholder="Search users by name, email, or ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
+            />
+          </div>
+        </div>
+
+        {/* filter mobile */}
+        <div className="w-full md:hidden flex justify-between items-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-10  rounded-lg ">
+                <Funnel className="h-4 w-4 mr-2" /> Filter
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              className="md:w-[28rem] w-[20rem] p-4"
+            >
+              {/* Filters */}
+              <div className="client-management-filters flex items-center justify-between">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Role
+                  </label>
+                  <Select
+                    value={roleFilter}
+                    onValueChange={(
+                      v: "all" | "admin" | "user" | "estimator"
+                    ) => setRoleFilter(v)}
+                  >
+                    <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12">
+                      <SelectValue placeholder="All Roles" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="user">User</SelectItem>
+                      <SelectItem value="estimator">Estimator</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Status
+                  </label>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v: "all" | "Active" | "Inactive") =>
+                      setStatusFilter(v)
+                    }
+                  >
+                    <SelectTrigger className="border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <div className="flex justify-end w-36">
+            <Button
+              onClick={() => setOpen(true)}
+              className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-10 w-full sm:w-auto"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add New User
+            </Button>
+          </div>
+        </div>
+
+        <div className="w-full bg-white border  border-slate-200 shadow-sm p-1 md:p-4 rounded-2xl space-y-5">
           <div className="p-0 space-y-6">
             <div className="grid grid-cols-2 w-full gap-5">
               {/* Filters */}
-              <div className="client-management-filters   grid grid-cols-2 md:flex md:flex-row md:items-center md:gap-5  gap-4">
+              <div className="client-management-filters   hidden md:flex md:flex-row md:items-center md:gap-5  gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">
                     Role
@@ -381,7 +429,7 @@ export default function UserManagementPage() {
                 </div>
               </div>
               {/* Search + Add */}
-              <div className="flex flex-col items-end gap-4 justify-end sm:flex-row">
+              <div className="md:flex hidden flex-col items-end gap-4 justify-end sm:flex-row">
                 <div className="flex-1">
                   <Input
                     placeholder="Search users by name, email, or ID..."
@@ -399,207 +447,28 @@ export default function UserManagementPage() {
               </div>
             </div>
 
-            {/* ===== TABLE (ClientTable styling) ===== */}
-            <div className="overflow-hidden bg-white">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-[#F8F8FF]">
-                    <TableRow className="border-slate-200">
-                      <TableHead className="w-40 text-slate-600 p-4 text-md font-semibold">
-                        ID
-                      </TableHead>
-                      <TableHead className="w-64 text-slate-600 text-md p-4 font-semibold">
-                        User
-                      </TableHead>
-                      <TableHead className="w-64 text-slate-600 text-md p-4 font-semibold">
-                        Joined
-                      </TableHead>
-                      <TableHead className="w-32 text-slate-600 text-md p-4 font-semibold">
-                        Role
-                      </TableHead>
-                      <TableHead className="w-32 text-slate-600 text-md p-4 font-semibold">
-                        Status
-                      </TableHead>
-                      <TableHead className="w-10 text-slate-600 text-md p-4 font-semibold">
-                        Edit
-                      </TableHead>
-                      <TableHead className="w-32 text-center  text-slate-600 p-4 text-md font-semibold">
-                        Status Toggle
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
+            {/* desktop table */}
+            <div className="hidden md:block">
+              <UsersTable
+                data={tableData}
+                onEdit={(row) => editUser(users.find((x) => x.id === row.id)!)}
+                onToggleStatus={(row) => toggleStatus(row.id)}
+                isLoading={loading}
+                defaultPageSize={20}
+                showPagination={true}
+              />
+            </div>
 
-                  {loading ? (
-                    <TableSkeleton rows={rowsPerPage} />
-                  ) : pageData.length === 0 ? (
-                    <TableBody>
-                      <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className="py-14 text-center text-slate-500"
-                        >
-                          No users found.
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  ) : (
-                    <TableBody>
-                      {pageData.map((u) => (
-                        <TableRow
-                          key={u.id}
-                          className="hover:bg-slate-50 transition-colors duration-200 border-slate-100"
-                        >
-                          {/* ID */}
-                          <TableCell className="">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                              {u.displayId || u.id}
-                            </span>
-                          </TableCell>
-                          {/* User */}
-                          <TableCell className="">
-                            <div className="flex items-start gap-3">
-                              <div className="mt-1 h-8 w-8 rounded-full bg-gradient-to-br from-[#27aae1] to-[#ea078b] flex items-center justify-center overflow-hidden">
-                                {u.profilePicture ? (
-                                  <img
-                                    src={u.profilePicture}
-                                    alt={`${u.name}'s profile`}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      (
-                                        e.target as HTMLImageElement
-                                      ).style.display = "none";
-                                    }}
-                                  />
-                                ) : (
-                                  <span className="text-white text-xs font-medium">
-                                    {u.name.charAt(0).toUpperCase()}
-                                  </span>
-                                )}
-                              </div>
-                              <div>
-                                <div className="font-medium text-slate-900">
-                                  {u.name}
-                                </div>
-                                <div className="text-xs text-slate-500">
-                                  {u.email}
-                                </div>
-                              </div>
-                            </div>
-                          </TableCell>
-                          {/* Joined */}
-                          <TableCell className="text-sm text-slate-700 p-4">
-                            {fmt(u.joined)}
-                          </TableCell>
-                          {/* Role */}
-                          <TableCell className="">
-                            <div className="flex items-center gap-2">
-                              <RoleBadge role={u.role} />
-                            </div>
-                          </TableCell>
-                          {/* Status */}
-                          <TableCell className="">
-                            <StatusChip value={u.status} />
-                          </TableCell>
-                          {/* Edit */}
-                          <TableCell className="">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => editUser(u)}
-                              className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:border-blue-600 rounded-xl px-4 py-2"
-                            >
-                              <Edit3 className="h-4 w-4 mr-2" /> Edit
-                            </Button>
-                          </TableCell>
-                          {/* Toggle */}
-                          <TableCell className="">
-                            <div className="flex flex-col items-center space-y-2">
-                              <Switch
-                                checked={u.status === "Active"}
-                                onCheckedChange={() => toggleStatus(u.id)}
-                                className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-600 data-[state=checked]:to-purple-600"
-                              />
-                              <span className="text-xs text-slate-500 font-medium">
-                                {u.status === "Active" ? "Active" : "Inactive"}
-                              </span>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  )}
-                </Table>
-              </div>
-
-              {/* ===== Footer pagination (ClientTable style) ===== */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200">
-                <div className="text-xs sm:text-sm text-slate-600">
-                  {loading
-                    ? `Loading ${rowsPerPage} rows…`
-                    : filtered.length > 0
-                    ? `${startIndex + 1}–${endIndex} of ${filtered.length} rows`
-                    : "0 of 0 rows"}
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500">
-                      Rows per page
-                    </span>
-                    <select
-                      value={rowsPerPage}
-                      disabled={loading}
-                      onChange={(e) => {
-                        setRowsPerPage(Number(e.target.value));
-                        setPage(1);
-                      }}
-                      className="h-8 rounded-md border border-slate-300 bg-white px-2 text-sm disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#27aae1]/40"
-                    >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                    </select>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(1)}
-                      disabled={loading || page === 1}
-                    >
-                      «
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={loading || page === 1}
-                    >
-                      ‹
-                    </Button>
-                    <span className="text-xs sm:text-sm text-slate-600 px-2">
-                      Page <b>{page}</b> / {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={loading || page === totalPages}
-                    >
-                      ›
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(totalPages)}
-                      disabled={loading || page === totalPages}
-                    >
-                      »
-                    </Button>
-                  </div>
-                </div>
-              </div>
+            {/* Mobile */}
+            <div className="md:hidden">
+              <UsersMobileCards
+                data={tableData}
+                onEdit={(row) => editUser(users.find((x) => x.id === row.id)!)}
+                onToggleStatus={(row) => toggleStatus(row.id)}
+                isLoading={loading}
+                defaultPageSize={10}
+                showPagination={true}
+              />
             </div>
           </div>
         </div>

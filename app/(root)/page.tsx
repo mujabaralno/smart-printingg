@@ -48,6 +48,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import QuotesMobileCards from "@/components/shared/MobileCardQuote";
 
 export default function DashboardPage() {
   const [allQuotes, setAllQuotes] = useState<any[]>([]);
@@ -411,7 +412,7 @@ export default function DashboardPage() {
       highlight: "All-time total",
       caption: "All quotes count (100%)",
       filterValue: "All",
-      color: "text-[#3B82F6]"
+      color: "text-[#3B82F6]",
     },
     {
       title: "Approved",
@@ -422,7 +423,7 @@ export default function DashboardPage() {
       highlight: "Share of total",
       caption: "Approved vs overall",
       filterValue: "Approved",
-      color: "text-[#16A34A]"
+      color: "text-[#16A34A]",
     },
     {
       title: "Pending",
@@ -433,7 +434,7 @@ export default function DashboardPage() {
       highlight: "Share of total",
       caption: "Pending vs overall",
       filterValue: "Pending",
-      color: "text-[#CA8A04]"
+      color: "text-[#CA8A04]",
     },
     {
       title: "Rejected",
@@ -444,7 +445,7 @@ export default function DashboardPage() {
       highlight: "Share of total",
       caption: "Rejected vs overall",
       filterValue: "Rejected",
-      color: "text-[#DC2626]"
+      color: "text-[#DC2626]",
     },
   ];
 
@@ -1168,7 +1169,7 @@ export default function DashboardPage() {
         {/* Filters and Create Quote Button */}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
           {/* left: inline controls */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col md:flex-row md:flex-wrap md:items-center gap-2">
             {/* Date range (From–To dalam satu blok) */}
             <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-2 h-10">
               <Calendar className="h-4 w-4 text-slate-500" />
@@ -1176,47 +1177,49 @@ export default function DashboardPage() {
                 type="date"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
-                className="h-9 w-[9.5rem] text-sm outline-none"
+                className="h-9 w-[4.5rem] md:w-[9.5rem] text-sm outline-none"
               />
               <span className="text-slate-400">–</span>
               <input
                 type="date"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
-                className="h-9 w-[9.5rem] text-sm outline-none"
+                className="h-9 md:w-[9.5rem] w-[4.5rem] text-sm outline-none"
               />
             </div>
 
-            {/* Status */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-10 w-[9rem] rounded-lg border-slate-300">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-3">
+              {/* Status */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="h-10 w-[9rem] rounded-lg border-slate-300">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Contact */}
-            <Select
-              value={contactPerson}
-              onValueChange={(v: string) => setContactPerson(v)}
-            >
-              <SelectTrigger className="h-10 w-[9rem] rounded-lg border-slate-300">
-                <SelectValue placeholder="Contact" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                <SelectItem value="all">Contact Person</SelectItem>
-                {filterContactPersons.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {/* Contact */}
+              <Select
+                value={contactPerson}
+                onValueChange={(v: string) => setContactPerson(v)}
+              >
+                <SelectTrigger className="h-10 w-[9rem] rounded-lg border-slate-300">
+                  <SelectValue placeholder="Contact" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="all">Contact Person</SelectItem>
+                  {filterContactPersons.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Extra filters in popover */}
             <Popover>
@@ -1225,7 +1228,10 @@ export default function DashboardPage() {
                   <Funnel className="h-4 w-4 mr-2" /> Filter
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-[28rem] p-4">
+              <PopoverContent
+                align="start"
+                className="md:w-[28rem] w-[20rem] p-4"
+              >
                 <div className="grid grid-cols-1 gap-4">
                   {/* Keyword */}
                   <div className="space-y-1">
@@ -1319,9 +1325,9 @@ export default function DashboardPage() {
           {/* Quotations Table - Mobile Responsive */}
           <div className="border-0 s">
             <div className="p-0">
-              <div className="hidden lg:block">
+              <div className="hidden md:block overflow-x-auto">
                 <QuotesTable
-                  data={filteredQuotes} // data hasil filter kamu
+                  data={filteredQuotes} 
                   onView={(row) => handleViewQuote(row)}
                   onEdit={(row) => handleUpdateQuote(row)}
                   showPagination={false}
@@ -1331,8 +1337,8 @@ export default function DashboardPage() {
 
               {/* Mobile list boleh tetap card-mu, atau kalau mau seragam:
         render QuotesTable juga (akan responsif secara horizontal). */}
-              <div className="lg:hidden">
-                <QuotesTable
+              <div className="lg:hidden space-y-3 xs:space-y-4 p-3 xs:p-4">
+                <QuotesMobileCards
                   data={filteredQuotes}
                   onView={handleViewQuote}
                   onEdit={handleUpdateQuote}

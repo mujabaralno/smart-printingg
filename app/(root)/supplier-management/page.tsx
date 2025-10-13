@@ -12,7 +12,14 @@ import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Pencil, PackageIcon, Calendar, Edit3Icon } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  PackageIcon,
+  Calendar,
+  Edit3Icon,
+  Funnel,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -37,6 +44,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // =====================================
 // Types (keep original logic intact)
@@ -433,7 +445,7 @@ function SupplierManagementContent() {
         {/* Header */}
 
         <div className="flex gap-5">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#27aae1] rounded-full shadow-lg">
+          <div className="md:inline-flex hidden items-center justify-center w-16 h-16 bg-[#27aae1] rounded-full shadow-lg">
             <PackageIcon className="w-8 h-8 text-white" />
           </div>
           <div>
@@ -465,6 +477,114 @@ function SupplierManagementContent() {
             </div>
           </div>
         )}
+
+        <div className="flex w-full md:hidden">
+          <div className="flex-1">
+            <Input
+              placeholder="Search by quote number, client name, or person name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 text-base"
+            />
+          </div>
+        </div>
+
+        {/* filter mobile */}
+        <div className="w-full md:hidden flex justify-between items-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-10  rounded-lg ">
+                <Funnel className="h-4 w-4 mr-2" /> Filter
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              className="md:w-[28rem] w-[20rem] p-4"
+            >
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Updated From
+                </label>
+                {loading ? (
+                  <Skeleton className="h-8 w-80" />
+                ) : (
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-2">
+                    <Calendar className="h-4 w-4 text-slate-500" />
+                    <input
+                      type="date"
+                      value={from}
+                      onChange={(e) => setFrom(e.target.value)}
+                      className="h-9 w-[9.5rem] text-sm outline-none"
+                    />
+                    <span className="text-slate-400">–</span>
+                    <input
+                      type="date"
+                      value={to}
+                      onChange={(e) => setTo(e.target.value)}
+                      className="h-9 w-[9.5rem] text-sm outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Status
+                </label>
+                {loading ? (
+                  <Skeleton className="h-8 w-28" />
+                ) : (
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v: "all" | "Active" | "Inactive") =>
+                      setStatusFilter(v)
+                    }
+                  >
+                    <SelectTrigger className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Unit
+                </label>
+                {loading ? (
+                  <Skeleton className="h-8 w-28" />
+                ) : (
+                  <Select
+                    value={unitFilter}
+                    onValueChange={(v: "all" | string) => setUnitFilter(v)}
+                  >
+                    <SelectTrigger className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-10">
+                      <SelectValue placeholder="All Units" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Units</SelectItem>
+                      <SelectItem value="per_sheet">Per Sheet</SelectItem>
+                      <SelectItem value="per_packet">Per Packet</SelectItem>
+                      <SelectItem value="per_kg">Per KG</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+          <div className="flex justify-end w-40">
+            <Button
+              onClick={onAdd}
+              className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-10 w-full sm:w-auto"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add New Material
+            </Button>
+          </div>
+        </div>
 
         {/* ====== DESKTOP TABLE — Styled to match ClientTable ====== */}
         <div className="hidden lg:block overflow-hidden p-4 rounded-2xl border border-slate-200 shadow-sm space-y-6 bg-white">
@@ -772,7 +892,7 @@ function SupplierManagementContent() {
         </div>
 
         {/* ===== MOBILE CARDS (kept) ===== */}
-        <div className="lg:hidden space-y-4 p-4">
+        <div className="lg:hidden overflow-hidden p-4 rounded-2xl border border-slate-200 shadow-sm space-y-6 bg-white">
           {loading ? (
             <div className="text-center py-16 text-slate-500">
               <div className="flex items-center justify-center space-x-2">

@@ -3,7 +3,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -23,32 +22,16 @@ import {
 } from "@/components/ui/select";
 import {
   Plus,
-  Eye,
-  Pencil,
   Calendar,
-  DollarSign,
-  ChevronDown,
-  ChevronUp,
   Download,
   ChevronDown as ChevronDownIcon,
-  User,
-  MoreVertical,
-  File,
   FileTextIcon,
+  Funnel,
 } from "lucide-react";
-import { getQuotes } from "@/lib/dummy-data";
-import Link from "next/link";
 import CreateQuoteModal from "@/components/create-quote/CreateQuoteModal";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { quotes as QUOTES, users as USERS } from "@/constants";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 import {
   Dialog,
   DialogContent,
@@ -63,15 +46,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  downloadCustomerPdf,
-  downloadOpsPdf,
-  downloadTestPdf,
-  downloadSimplePdf,
-} from "@/lib/quote-pdf";
+import { downloadCustomerPdf, downloadOpsPdf } from "@/lib/quote-pdf";
 import { TableSkeleton } from "@/components/shared/TableSkeleton";
 import StatusPill from "@/components/shared/StatusPill";
 import { Skeleton } from "@/components/ui/skeleton";
+import { QuotesTable } from "@/components/shared/QuotesTable";
+import QuotesMobileCards from "@/components/shared/MobileCardQuote";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 type Status = "Approved" | "Pending" | "Rejected";
 type StatusFilter = "all" | Status;
@@ -83,6 +68,7 @@ type Row = (typeof QUOTES)[number] & {
   productName?: string;
   product?: string; // This field is used in the table display
   quantity?: number;
+  totalAmount: number;
   // New Step 3 fields
   printingSelection?: string;
   printing?: string; // Keep for backward compatibility
@@ -904,18 +890,16 @@ export default function QuoteManagementPage() {
         setDownloadSuccess(null);
       }, 3000);
     } catch (error) {
-      console.error("❌ Error downloading PDF:", error);
-      console.error("Error details:", {
-        message: error.message,
-        stack: error.stack,
-        type: typeof error,
-      });
-
-      // Show more specific error message
-      const errorMessage = error.message || "Unknown error occurred";
-      alert(
-        `Failed to download PDF: ${errorMessage}\n\nPlease check the browser console for more details.`
-      );
+      if (error instanceof Error) {
+        console.error("❌ Error downloading PDF:", error.message);
+        console.error("Error details:", {
+          message: error.message,
+          stack: error.stack,
+          type: typeof error,
+        });
+      } else {
+        console.error("❌ Unknown error:", error);
+      }
     } finally {
       setDownloadingPDF(null);
     }
@@ -941,7 +925,7 @@ export default function QuoteManagementPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex gap-5">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#27aae1] rounded-full shadow-lg">
+          <div className="md:inline-flex hidden items-center justify-center md:w-16 md:h-16  bg-[#27aae1] rounded-full shadow-lg">
             <FileTextIcon className="w-8 h-8 text-white" />
           </div>
           <div>
@@ -1033,18 +1017,126 @@ export default function QuoteManagementPage() {
           </div>
           <Button
             onClick={() => setIsCreateQuoteModalOpen(true)}
-            className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+            className="bg-[#27aae1] hover:bg-[#1e8bc3] md:flex hidden text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
           >
             <Plus className="h-5 w-5 mr-2" />
             Create a New Quote
           </Button>
         </div>
+        {/* filter mobile */}
+        <div className="w-full md:hidden flex justify-between items-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-10  rounded-lg ">
+                <Funnel className="h-4 w-4 mr-2" /> Filter
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              className="md:w-[28rem] w-[20rem] p-4"
+            >
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  From Date - To Date
+                </label>
+                <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-2">
+                  <Calendar className="h-4 w-4 text-slate-500" />
+                  <input
+                    type="date"
+                    value={from}
+                    onChange={(e) => setFrom(e.target.value)}
+                    className="h-9 w-full md:w-[9.5rem] text-sm outline-none"
+                  />
+                  <span className="text-slate-400">–</span>
+                  <input
+                    type="date"
+                    value={to}
+                    onChange={(e) => setTo(e.target.value)}
+                    className="h-9 w-full  md:w-[9.5rem] text-sm outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Status
+                  </label>
+                  <Select
+                    value={status}
+                    onValueChange={(v: StatusFilter) => setStatus(v)}
+                  >
+                    <SelectTrigger className=" w-[9rem] rounded-lg border-slate-300">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Approved">Approved</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Contact Person
+                  </label>
+                  <Select
+                    value={contactPerson}
+                    onValueChange={(v: string) => setContactPerson(v)}
+                  >
+                    <SelectTrigger className="h-10 w-[9rem] rounded-lg border-slate-300">
+                      <SelectValue placeholder="Contact" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">Contact Person</SelectItem>
+                      {filterContactPersons.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-        {/* Quotes Table - Mobile Responsive */}
-        <div className="space-y-6 sm:space-y-5 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 ">
-          <div className="w-full flex flex-row justify-between  p-4 gap-4">
-            {/* Keyword Filter */}
+                {/* Amount Range */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Amount Range
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min"
+                      value={minAmount}
+                      onChange={(e) => setMinAmount(e.target.value)}
+                      className=""
+                    />
+                    <span className="text-slate-400">–</span>
+                    <Input
+                      type="number"
+                      placeholder="Max"
+                      value={maxAmount}
+                      onChange={(e) => setMaxAmount(e.target.value)}
+                      className=""
+                    />
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <div className="flex justify-end w-36">
+            <Button
+              onClick={() => setIsCreateQuoteModalOpen(true)}
+              className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-10 w-full sm:w-auto"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add New Client
+            </Button>
+          </div>
+        </div>
 
+        {/* Quotes Table - Mobile Card */}
+        <div className="space-y-6 sm:space-y-5 bg-white p-1 md:p-4 rounded-2xl shadow-sm border border-slate-200 ">
+          {/* filter desktop */}
+          <div className="w-full md:flex hidden md:flex-row justify-between  p-4 gap-4">
             {/* Date Range */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">
@@ -1136,410 +1228,48 @@ export default function QuoteManagementPage() {
               </div>
             </div>
           </div>
+
           <div className="p-0">
             {/* Desktop Table */}
             <div className="overflow-hidden ">
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-[#F8F8FF] ">
-                    <TableRow className="border-slate-200">
-                      <TableHead className="w-40 text-slate-600 text-md font-semibold">
-                        Quote ID
-                      </TableHead>
-                      <TableHead className="w-72 text-slate-600 text-md font-semibold">
-                        Client Name
-                      </TableHead>
-                      <TableHead className="w-56 text-slate-600 text-md font-semibold">
-                        Product
-                      </TableHead>
-                      <TableHead className="w-32 text-slate-600 text-md font-semibold">
-                        Date
-                      </TableHead>
-                      <TableHead className="w-32 text-slate-600 text-md font-semibold">
-                        Amount
-                      </TableHead>
-                      <TableHead className="w-32 text-slate-600 text-md font-semibold">
-                        Status
-                      </TableHead>
-                      <TableHead className="w-10 text-right text-slate-600 text-md font-semibold">
-                        {" "}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  {loading ? (
-                    <TableSkeleton />
-                  ) : current.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={8}
-                        className="text-center py-16 text-slate-500"
-                      >
-                        {filtered.length === 0
-                          ? "No quotes found matching your filters."
-                          : "No quotes to display."}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    current.map((row) => (
-                      <TableRow key={row.id} className="hover:bg-slate-50">
-                        <TableCell>
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                            {row.quoteId}
-                          </span>
-                        </TableCell>
-                        <TableCell className="font-medium text-slate-900 truncate">
-                          <div className="space-y-2">
-                            <div className="font-medium text-slate-900">
-                              {row.clientName}
-                            </div>
-                            <div className="text-sm text-slate-500">
-                              {row.contactPerson}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-slate-700 truncate">
-                          {row.product || "N/A"}
-                        </TableCell>
-                        <TableCell className="text-slate-700">
-                          {fmtDate(row.date)}
-                        </TableCell>
-                        <TableCell className="text-slate-900 font-semibold">
-                          AED {row.amount ? row.amount.toFixed(2) : "0.00"}
-                        </TableCell>
-                        <TableCell>
-                          <StatusPill status={row.status} />
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-blue-600 hover:bg-blue-50 rounded-lg p-2"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="w-40 bg-white"
-                              onCloseAutoFocus={(e) => e.preventDefault()}
-                            >
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => onEdit(row.id)}>
-                                <Pencil className="h-4 w-4 mr-2" /> Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => onView(row)}>
-                                <Eye className="h-4 w-4 mr-2" /> View
-                              </DropdownMenuItem>
-                              {row.status === "Approved" && (
-                                <>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleDownloadPDF(row, "customer")
-                                    }
-                                    disabled={
-                                      downloadingPDF === `${row.id}-customer`
-                                    }
-                                    className="text-green-700 hover:text-green-800 hover:bg-green-50"
-                                  >
-                                    {downloadingPDF === `${row.id}-customer` ? (
-                                      <>
-                                        <div className="h-3 w-3 mr-2 border-2 border-green-700 border-t-transparent rounded-full animate-spin" />
-                                        Downloading...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Download className="h-3 w-3 mr-2" />
-                                        Customer PDF
-                                      </>
-                                    )}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleDownloadPDF(row, "operations")
-                                    }
-                                    disabled={
-                                      downloadingPDF === `${row.id}-operations`
-                                    }
-                                    className="text-orange-700 hover:text-orange-800 hover:bg-orange-50"
-                                  >
-                                    {downloadingPDF ===
-                                    `${row.id}-operations` ? (
-                                      <>
-                                        <div className="h-3 w-3 mr-2 border-2 border-orange-700 border-t-transparent rounded-full animate-spin" />
-                                        Downloading...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Download className="h-3 w-3 mr-2" />
-                                        Operations PDF
-                                      </>
-                                    )}
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </Table>
-              </div>
-
-              {/* pagination */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200">
-                <div className="text-xs sm:text-sm text-slate-600">
-                  {loading
-                    ? `Loading ${rowsPerPage} rows…`
-                    : (filtered?.length ?? 0) > 0
-                    ? `${startIndex + 1}–${endIndex} of ${
-                        filtered!.length
-                      } rows`
-                    : "0 of 0 rows"}
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500">
-                      Rows per page
-                    </span>
-                    <select
-                      value={rowsPerPage}
-                      disabled={loading}
-                      onChange={(e) => {
-                        setRowsPerPage(Number(e.target.value));
-                        setPage(1);
-                      }}
-                      className="h-8 rounded-md border border-slate-300 bg-white px-2 text-sm disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#27aae1]/40"
-                    >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(1)}
-                      disabled={loading || page === 1}
-                    >
-                      «
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={loading || page === 1}
-                    >
-                      ‹
-                    </Button>
-                    <span className="text-xs sm:text-sm text-slate-600 px-2">
-                      Page <b>{page}</b> / {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={loading || page === totalPages}
-                    >
-                      ›
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(totalPages)}
-                      disabled={loading || page === totalPages}
-                    >
-                      »
-                    </Button>
-                  </div>
-                </div>
+                <QuotesTable
+                  data={filtered}
+                  onView={(row) => onView(row)}
+                  onEdit={(row) => onEdit(row.id)}
+                  showPagination={true}
+                  isLoading={loading}
+                  downloadingKey={downloadingPDF}
+                  onDownloadCustomer={(row: any) =>
+                    handleDownloadPDF(row, "customer")
+                  }
+                  onDownloadOperations={(row: any) =>
+                    handleDownloadPDF(row, "operations")
+                  }
+                />
               </div>
             </div>
 
             {/* Mobile Cards */}
-            <div className="lg:hidden space-y-4 p-4">
-              {loading ? (
-                <div className="text-center py-16 text-slate-500">
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span>Loading quotes...</span>
-                  </div>
-                </div>
-              ) : current.length === 0 ? (
-                <div className="text-center py-16 text-slate-500">
-                  {filtered.length === 0
-                    ? "No quotes found matching your filters."
-                    : "No quotes to display."}
-                </div>
-              ) : (
-                current.map((row, index) => (
-                  <Card key={row.id} className="p-4 border-slate-200">
-                    <div className="space-y-3">
-                      {/* Header with Quote ID and Status */}
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-sm font-medium text-slate-900 bg-slate-100 px-2 py-1 rounded">
-                          {row.quoteId}
-                        </span>
-                        <StatusBadge value={row.status} />
-                      </div>
-
-                      {/* Client Info */}
-                      <div className="space-y-1">
-                        <div className="font-medium text-slate-900">
-                          {row.clientName || "N/A"}
-                        </div>
-                        <div className="text-sm text-slate-500">
-                          {row.contactPerson || "N/A"}
-                        </div>
-                      </div>
-
-                      {/* Product and Quantity */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-sm text-slate-500">
-                            Product:
-                          </span>
-                          <div className="text-sm text-slate-700">
-                            {row.productName || row.product || "N/A"}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-sm text-slate-500">
-                            Quantity:
-                          </span>
-                          <div className="text-sm text-slate-700">
-                            {row.quantity || 0}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Date and Amount */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-sm text-slate-500">Date:</span>
-                          <div className="text-sm text-slate-700">
-                            {fmtDate(row.date)}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-sm text-slate-500">
-                            Amount:
-                          </span>
-                          <div className="font-semibold text-slate-900">
-                            {row.amount && row.amount > 0 ? (
-                              `AED ${row.amount.toFixed(2)}`
-                            ) : (
-                              <div className="flex items-center space-x-2">
-                                <span className="text-red-500">AED 0.00</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleCalculateAmount(row.id)}
-                                  className="text-xs px-2 py-1 h-6"
-                                >
-                                  Calculate
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onView(row)}
-                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onEdit(row.id)}
-                            className="text-green-600 border-green-200 hover:bg-green-50"
-                          >
-                            <Pencil className="w-4 h-4 mr-1" />
-                            Edit
-                          </Button>
-                        </div>
-                        {row.status === "Approved" && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-purple-600 border-purple-200 hover:bg-purple-50"
-                              >
-                                <Download className="w-4 h-4 mr-1" />
-                                PDF
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleDownloadPDF(row, "customer")
-                                }
-                                disabled={
-                                  downloadingPDF === `${row.id}-customer`
-                                }
-                                className="text-green-700 hover:text-green-800 hover:bg-green-50"
-                              >
-                                {downloadingPDF === `${row.id}-customer` ? (
-                                  <>
-                                    <div className="h-3 w-3 mr-2 border-2 border-green-700 border-t-transparent rounded-full animate-spin" />
-                                    Downloading...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Download className="h-3 w-3 mr-2" />
-                                    Customer PDF
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleDownloadPDF(row, "operations")
-                                }
-                                disabled={
-                                  downloadingPDF === `${row.id}-operations`
-                                }
-                                className="text-orange-700 hover:text-orange-800 hover:bg-orange-50"
-                              >
-                                {downloadingPDF === `${row.id}-operations` ? (
-                                  <>
-                                    <div className="h-3 w-3 mr-2 border-2 border-orange-700 border-t-transparent rounded-full animate-spin" />
-                                    Downloading...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Download className="h-3 w-3 mr-2" />
-                                    Operations PDF
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                ))
-              )}
+            <div className="lg:hidden space-y-4">
+              <QuotesMobileCards
+                data={filtered}
+                onView={(row) => onView(row)}
+                onEdit={(row) => onEdit(row.id)}
+                showPagination={true}
+                isLoading={loading}
+                downloadingKey={downloadingPDF}
+                onDownloadCustomer={(row: any) =>
+                  handleDownloadPDF(row, "customer")
+                }
+                onDownloadOperations={(row: any) =>
+                  handleDownloadPDF(row, "operations")
+                }
+              />
             </div>
           </div>
         </div>
+        {/* Quotes Table - Mobile */}
       </div>
 
       {/* ===== Modal View ===== */}
@@ -1629,7 +1359,7 @@ export default function QuoteManagementPage() {
                     <div className="col-span-1 px-4 py-3 text-slate-500 bg-slate-50">
                       Total Amount:
                     </div>
-                    <div className="col-span-2 px-4 py-3 border-slate-200 font-semibold text-slate-900 text-green-600">
+                    <div className="col-span-2 px-4 py-3 border-slate-200 font-semibold text-slate-900 ">
                       {viewRow?.amount ? currency.format(viewRow.amount) : "—"}
                     </div>
                   </div>

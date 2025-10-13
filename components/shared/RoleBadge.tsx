@@ -1,7 +1,7 @@
 "use client";
 import { Crown } from "lucide-react";
 
-export default function RoleBadge({ role }: { role: "admin" | "user" | "estimator" }) {
+export default function RoleBadge({ role }: { role: "admin" | "user" | "estimator" | string }) {
   if (role === "admin") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 text-xs px-2 py-1">

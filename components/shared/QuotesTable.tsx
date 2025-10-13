@@ -26,6 +26,7 @@ import {
   MoreHorizontal,
   Pencil,
   Eye,
+  DownloadIcon,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -33,9 +34,13 @@ type QuoteRow = {
   id: string;
   quoteId: string;
   customerName: string;
+  clientName: string;
+  date: string;
+  amount: number;
+  userId: string;
+  totalAmount: number;
   product?: string;
   createdDate: string;
-  totalAmount: number;
   status: "Approved" | "Pending" | "Rejected" | string;
 };
 
@@ -124,13 +129,20 @@ export function QuotesTable({
   isLoading = false, // ⬅️ NEW
   defaultPageSize = 10,
   showPagination = true,
+  downloadingKey = null,
+  onDownloadCustomer,
+  onDownloadOperations,
 }: {
   data: QuoteRow[];
   onView: (row: QuoteRow) => void;
   onEdit: (row: QuoteRow) => void;
-  isLoading?: boolean; // ⬅️ NEW
+  isLoading?: boolean;
   defaultPageSize?: number;
   showPagination?: boolean;
+
+  downloadingKey?: string | null;
+  onDownloadCustomer?: (row: QuoteRow) => void;
+  onDownloadOperations?: (row: QuoteRow) => void;
 }) {
   const [rowsPerPage, setRowsPerPage] = React.useState(defaultPageSize);
   const [page, setPage] = React.useState(1);
@@ -197,9 +209,7 @@ export function QuotesTable({
                       width={150}
                       height={150}
                     />
-                    <p className="text-xl font-semibold ">
-                      No Quote Found.
-                    </p>
+                    <p className="text-xl font-semibold ">No Quote Found.</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -214,16 +224,18 @@ export function QuotesTable({
                     </span>
                   </TableCell>
                   <TableCell className="font-medium text-slate-900 truncate">
-                    {row.customerName}
+                    {row.customerName || row.clientName}
                   </TableCell>
                   <TableCell className="text-slate-700 truncate">
                     {row.product || "N/A"}
                   </TableCell>
                   <TableCell className="text-slate-700">
-                    {row.createdDate}
+                    {row.createdDate || row.date}
                   </TableCell>
                   <TableCell className="text-slate-900 font-semibold">
-                    AED {fmtMoney(row.totalAmount)}
+                    <TableCell className="text-slate-900 font-semibold">
+                      AED {fmtMoney(row.totalAmount ?? row.amount ?? 0)}
+                    </TableCell>
                   </TableCell>
                   <TableCell>
                     <StatusPill status={row.status} />
@@ -237,10 +249,11 @@ export function QuotesTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
                         align="end"
-                        className="w-40 bg-white"
+                        className="w-48 bg-white"
                         onCloseAutoFocus={(e) => e.preventDefault()}
                       >
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
                         <DropdownMenuItem
                           onSelect={(e) => {
                             e.preventDefault();
@@ -249,6 +262,7 @@ export function QuotesTable({
                         >
                           <Pencil className="h-4 w-4 mr-2" /> Edit
                         </DropdownMenuItem>
+
                         <DropdownMenuItem
                           onSelect={(e) => {
                             e.preventDefault();
@@ -257,6 +271,54 @@ export function QuotesTable({
                         >
                           <Eye className="h-4 w-4 mr-2" /> View
                         </DropdownMenuItem>
+
+                        {row.status === "Approved" && (
+                          <>
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                onDownloadCustomer?.(row);
+                              }}
+                              disabled={downloadingKey === `${row.id}-customer`}
+                              className="text-green-700 hover:text-green-800 hover:bg-green-50"
+                            >
+                              {downloadingKey === `${row.id}-customer` ? (
+                                <>
+                                  <div className="h-3 w-3 mr-2 border-2 border-green-700 border-t-transparent rounded-full animate-spin" />
+                                  Downloading...
+                                </>
+                              ) : (
+                                <>
+                                  <DownloadIcon className="h-4 w-4 mr-2" />
+                                  Customer PDF
+                                </>
+                              )}
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                onDownloadOperations?.(row);
+                              }}
+                              disabled={
+                                downloadingKey === `${row.id}-operations`
+                              }
+                              className="text-orange-700 hover:text-orange-800 hover:bg-orange-50"
+                            >
+                              {downloadingKey === `${row.id}-operations` ? (
+                                <>
+                                  <div className="h-3 w-3 mr-2 border-2 border-orange-700 border-t-transparent rounded-full animate-spin" />
+                                  Downloading...
+                                </>
+                              ) : (
+                                <>
+                                  <DownloadIcon className="h-4 w-4 mr-2" />
+                                  Operations PDF
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

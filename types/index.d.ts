@@ -1,5 +1,7 @@
 // types/quote.ts
 
+import { quotes } from "@/constants";
+
 // === Step 1: List ringkas previous quote untuk tabel ===
 export type PreviousQuote = {
   id: string;          // contoh: "QT-2025-0718"
@@ -407,4 +409,36 @@ export type MetricCard = {
   highlight: string;        // subjudul tebal (contoh: "Trending up this month")
   caption: string;          // deskripsi kecil (contoh: "Visitors for the last 6 months")
   filterValue: string;      // untuk klik filter
+};
+
+export type Row = (typeof quotes)[number] & {
+  quoteId?: string;
+  productName?: string;
+  product?: string; // This field is used in the table display
+  quantity?: number;
+  // New Step 3 fields
+  printingSelection?: string;
+  status: string;
+  printing?: string; // Keep for backward compatibility
+  sides?: string;
+  flatSize?: {
+    width: number | null;
+    height: number | null;
+    spine: number | null;
+  };
+  closeSize?: {
+    width: number | null;
+    height: number | null;
+    spine: number | null;
+  };
+  useSameAsFlat?: boolean;
+  colors?: {
+    front?: string;
+    back?: string;
+  } | null;
+  // Papers and finishing for database operations
+  papers?: Array<{ name: string; gsm: string }>;
+  finishing?: string[];
+  // Client relationship tracking
+  originalClientId?: string | null;
 };

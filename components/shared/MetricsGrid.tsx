@@ -75,7 +75,7 @@ export function MetricsGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
       {cards.map((m, i) => {
         const Icon = m.icon;
         const isActive = statusFilter === m.filterValue;
@@ -96,7 +96,7 @@ export function MetricsGrid({
                   <p className="text-[11px] sm:text-xs font-medium text-slate-600">
                     {m.title}
                   </p>
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex flex-col md:flex-row items-baseline gap-2">
                     <p className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
                       {m.value}
                     </p>
@@ -124,7 +124,7 @@ export function MetricsGrid({
                   <TrendingUp className="h-4 w-4 text-[#27AAE1]" />
                   {m.highlight}
                 </p>
-                <p className="text-xs text-slate-500">{m.caption}</p>
+                <p className="text-xs md:flex hidden text-slate-500">{m.caption}</p>
               </div>
             </CardContent>
           </Card>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -12,14 +13,6 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -28,11 +21,11 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Edit3, Search, UserCheckIcon } from "lucide-react";
 import StatusChip from "@/components/shared/StatusChip";
-import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toastSuccess, toastError } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SalesTable, type SalesRow } from "@/components/shared/SalesTable";
+import { Card, CardContent } from "@/components/ui/card";
 
 // Sales Person type definition
 interface SalesPerson {
@@ -290,25 +283,6 @@ export default function SalesPersonManagementPage() {
     }
   };
 
-  // Delete sales person
-  const handleDeleteSalesPerson = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this sales person?")) return;
-
-    try {
-      const response = await fetch(`/api/sales-persons/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setSalesPersons((prev) => prev.filter((p) => p.id !== id));
-      } else {
-        console.error("Failed to delete sales person");
-      }
-    } catch (error) {
-      console.error("Error deleting sales person:", error);
-    }
-  };
-
   const handleEditPerson = (person: SalesPerson) => {
     console.log(
       "🔄 Opening edit modal for sales person:",
@@ -499,7 +473,7 @@ export default function SalesPersonManagementPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex gap-5">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#27aae1] rounded-full shadow-lg">
+          <div className="md:inline-flex hidden items-center justify-center w-16 h-16 bg-[#27aae1] rounded-full shadow-lg">
             <UserCheckIcon className="w-8 h-8 text-white" />
           </div>
           <div>
@@ -581,22 +555,68 @@ export default function SalesPersonManagementPage() {
           </div>
         </div>
 
+        {/* mobile search */}
+        <div className="md:hidden w-full">
+          <div className="flex-1">
+            <Input
+              placeholder="Search users by name, email, or ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
+            />
+          </div>
+        </div>
+
+        {/* mobile filter */}
+
+        <div className="w-full md:hidden flex justify-between items-center">
+          <div className="">
+            {loading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : (
+              <Select
+                value={statusFilter}
+                onValueChange={(value: "all" | "Active" | "Inactive") =>
+                  setStatusFilter(value)
+                }
+              >
+                <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 w-full">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <div className="flex justify-end w-48">
+            <Button
+              onClick={() => setShowAddModal(true)}
+              className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-10 w-full sm:w-auto"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add New Sales Person
+            </Button>
+          </div>
+        </div>
+
         {/* Sales Persons Table - Mobile Responsive */}
         <div className="shadow-sm rounded-2xl p-4 space-y-6 bg-white border border-slate-200">
           {/* Search, Status Filter, and Add Sales Person */}
-          <div className="grid grid-cols-1 md:flex md:flex-row md:items-center  gap-4">
+          <div className="hidden md:flex md:flex-row md:items-center  gap-4">
             {/* Search Bar - Full Width on Mobile */}
             <div className="w-full space-y-2">
               <label className="text-sm font-medium text-slate-700">
                 Search
               </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+              <div className="flex-1">
                 <Input
-                  placeholder="Search by name, email, ID, phone, or department..."
+                  placeholder="Search users by name, email, or ID..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-9 text-base"
+                  className="w-full border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
                 />
               </div>
             </div>
@@ -636,14 +656,16 @@ export default function SalesPersonManagementPage() {
               </Button>
             </div>
           </div>
-          <div className="p-0">
+          <div className="p-0 ">
             {/* Desktop Table */}
-            <SalesTable
-              data={filteredSalesPersons as SalesRow[]}
-              isLoading={loading}
-              onView={(row) => handleEditPerson(row as any)} // atau bikin modal View sendiri
-              onEdit={(row) => handleEditPerson(row as any)}
-            />
+            <div className="hidden md:flex">
+              <SalesTable
+                data={filteredSalesPersons as SalesRow[]}
+                isLoading={loading}
+                onView={(row) => handleEditPerson(row as any)} // atau bikin modal View sendiri
+                onEdit={(row) => handleEditPerson(row as any)}
+              />
+            </div>
 
             {/* Mobile Cards */}
             <div className="lg:hidden tablet-landscape:lg:hidden space-y-4 p-4">
@@ -666,10 +688,10 @@ export default function SalesPersonManagementPage() {
                     key={person.id}
                     className="p-4 border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow"
                   >
-                    <div className="space-y-4">
+                    <CardContent className="space-y-4">
                       {/* Header with Sales Person ID and Status */}
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-sm font-medium text-slate-900 bg-orange-100 text-orange-800 px-3 py-1.5 rounded-lg">
+                        <span className="font-mono text-sm font-medium text-slate-900 bg-orange-100 px-3 py-1.5 rounded-lg">
                           {person.salesPersonId}
                         </span>
                         <StatusChip value={person.status} />
@@ -759,7 +781,7 @@ export default function SalesPersonManagementPage() {
                           Edit Sales Person
                         </Button>
                       </div>
-                    </div>
+                    </CardContent>
                   </Card>
                 ))
               )}
