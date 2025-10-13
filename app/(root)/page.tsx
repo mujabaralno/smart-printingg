@@ -1166,8 +1166,134 @@ export default function DashboardPage() {
           skeletonCount={4}
         />
 
+        {/* mobile search */}
+        <div className="md:hidden w-full">
+          <div className="flex-1">
+            <Input
+              placeholder="Search users by name, email, or ID..."
+              value={keywordFilter}
+              onChange={(e) => setKeywordFilter(e.target.value)}
+              className="w-full border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
+            />
+          </div>
+        </div>
+
+        {/* mobile filter */}
+        <div className="w-full md:hidden flex justify-between items-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-10  rounded-lg ">
+                <Funnel className="h-4 w-4 mr-2" /> Filter
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              className="md:w-[28rem] w-[20rem] p-4"
+            >
+              <div className="flex flex-col md:flex-row md:flex-wrap md:items-center gap-2">
+                {/* Date range (From–To dalam satu blok) */}
+                <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-2 h-10">
+                  <Calendar className="h-4 w-4 text-slate-500" />
+                  <input
+                    type="date"
+                    value={from}
+                    onChange={(e) => setFrom(e.target.value)}
+                    className="h-9 w-[4.5rem] md:w-[9.5rem] text-sm outline-none"
+                  />
+                  <span className="text-slate-400">–</span>
+                  <input
+                    type="date"
+                    value={to}
+                    onChange={(e) => setTo(e.target.value)}
+                    className="h-9 md:w-[9.5rem] w-[4.5rem] text-sm outline-none"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {/* Status */}
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="h-10 w-[9rem] rounded-lg border-slate-300">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All</SelectItem>
+                      <SelectItem value="Approved">Approved</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Contact */}
+                  <Select
+                    value={contactPerson}
+                    onValueChange={(v: string) => setContactPerson(v)}
+                  >
+                    <SelectTrigger className="h-10 w-[9rem] rounded-lg border-slate-300">
+                      <SelectValue placeholder="Contact" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">Contact Person</SelectItem>
+                      {filterContactPersons.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Keyword */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500">
+                      Keyword
+                    </label>
+                    <Input
+                      placeholder="Search by client, quote ID, product…"
+                      value={keywordFilter}
+                      onChange={(e) => setKeywordFilter(e.target.value)}
+                      className="h-10"
+                    />
+                  </div>
+
+                  {/* Amount range */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500">
+                      Amount range
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Min"
+                        value={minAmount}
+                        onChange={(e) => setMinAmount(e.target.value)}
+                        className="h-10"
+                      />
+                      <span className="text-slate-400">–</span>
+                      <Input
+                        type="number"
+                        placeholder="Max"
+                        value={maxAmount}
+                        onChange={(e) => setMaxAmount(e.target.value)}
+                        className="h-10"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Link 
+          href="/create-quote"
+          className="flex justify-end w-40">
+            <Button className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-10 w-full sm:w-auto">
+              <Plus className="h-5 w-5 mr-2" />
+              Create New Quote
+            </Button>
+          </Link>
+        </div>
+
         {/* Filters and Create Quote Button */}
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="md:flex hidden gap-3 lg:flex-row lg:items-end lg:justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
           {/* left: inline controls */}
           <div className="flex flex-col md:flex-row md:flex-wrap md:items-center gap-2">
             {/* Date range (From–To dalam satu blok) */}
@@ -1310,8 +1436,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Quotations Section */}
-        <div className="space-y-6 sm:space-y-5 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 ">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="space-y-6 sm:space-y-5 bg-white p-1 md:p-4 rounded-2xl shadow-sm border border-slate-200 ">
+          <div className="md:flex hidden md:flex-row items-start sm:items-center justify-between gap-4">
             <h2 className="text-xl sm:text-2xl lg:text-2xl font-bold text-slate-900">
               Recent Quotations
             </h2>
@@ -1327,7 +1453,7 @@ export default function DashboardPage() {
             <div className="p-0">
               <div className="hidden md:block overflow-x-auto">
                 <QuotesTable
-                  data={filteredQuotes} 
+                  data={filteredQuotes}
                   onView={(row) => handleViewQuote(row)}
                   onEdit={(row) => handleUpdateQuote(row)}
                   showPagination={false}
