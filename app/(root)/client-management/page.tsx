@@ -53,6 +53,7 @@ import { ClientRow } from "@/constants";
 import { ClientTable } from "@/components/shared/ClientsTabel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QuoteRow } from "@/components/shared/MobileCardQuote";
+import { ViewClientSheet } from "@/components/shared/ViewClientSheet";
 
 // Function to convert client ID to readable format (e.g., "CL001")
 const getClientDisplayId = (id: string): string => {
@@ -240,6 +241,9 @@ export default function ClientManagementPage() {
   const [quotes, setQuotes] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
 
+  const [isViewOpen, setIsViewOpen] = React.useState(false);
+  const [viewClient, setViewClient] = React.useState<any | null>(null);
+
   // Load clients from database on page load
   React.useEffect(() => {
     const loadClients = async () => {
@@ -301,10 +305,10 @@ export default function ClientManagementPage() {
   // ===== filter & paging =====
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<
-    "all" | "Active" | "Inactive"
+    "all" | "Active" | "Inactive" | string
   >("all");
   const [clientTypeFilter, setClientTypeFilter] = React.useState<
-    "all" | "Individual" | "Company"
+    "all" | "Individual" | "Company" | string
   >("all");
   const [areaFilter, setAreaFilter] = React.useState("all");
   const [roleFilter, setRoleFilter] = React.useState("all");
@@ -522,12 +526,10 @@ export default function ClientManagementPage() {
 
   // open View
   const onView = (r: any) => {
-    console.log("Viewing client:", r);
-    // For now, just open the edit modal in view mode
-    // You can create a separate view modal later if needed
-    setMode("edit");
-    setDraft(r);
-    setOpen(true);
+    // hitung quotes count (opsional)
+    const qCount = quotes.filter((q) => q.clientId === r.id).length;
+    setViewClient({ ...r, _quotesCount: qCount });
+    setIsViewOpen(true);
   };
 
   // submit modal
@@ -1228,6 +1230,17 @@ export default function ClientManagementPage() {
         </div>
       </div>
 
+      <ViewClientSheet
+        open={isViewOpen}
+        onOpenChange={setIsViewOpen}
+        client={viewClient}
+        quotesCount={viewClient?._quotesCount ?? 0}
+        onEdit={(c) => {
+          setIsViewOpen(false);
+          onEdit(c); // pakai handler edit yang sudah ada
+        }}
+      />
+
       {/* ===== Modal Add/Edit Client ===== */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[600px] rounded-2xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl border-0 dialog-content">
@@ -1520,7 +1533,7 @@ export default function ClientManagementPage() {
                       else if (value === "+62") country = "Indonesia";
 
                       if (country) {
-                        setDraft((prev) => ({ ...prev, country }));
+                        setDraft((prev: any) => ({ ...prev, country }));
                       }
                     }}
                   >

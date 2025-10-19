@@ -219,7 +219,7 @@ export function QuotesTable({
               {pageData.map((row) => (
                 <TableRow key={row.id} className="hover:bg-slate-50">
                   <TableCell>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                    <span className="font-mono text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
                       {row.quoteId}
                     </span>
                   </TableCell>

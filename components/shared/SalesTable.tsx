@@ -14,11 +14,11 @@ import { MoreHorizontal, Pencil, Eye } from "lucide-react";
 
 export type SalesRow = {
   id: string;
-  salesPersonId?: string;    // e.g. SL-001 (optional, akan di-format)
+  salesPersonId?: string;   
   name: string;
   email?: string;
   phone?: string;
-  designation?: string;      // role / jabatan
+  designation?: string;      
   department?: string;
   status: "Active" | "Inactive";
   profilePicture?: string;

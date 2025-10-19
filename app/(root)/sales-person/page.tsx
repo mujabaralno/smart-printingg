@@ -19,13 +19,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Edit3, Search, UserCheckIcon } from "lucide-react";
+import { Plus, Edit3, UserCheckIcon } from "lucide-react";
 import StatusChip from "@/components/shared/StatusChip";
 import { Label } from "@/components/ui/label";
 import { toastSuccess, toastError } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SalesTable, type SalesRow } from "@/components/shared/SalesTable";
 import { Card, CardContent } from "@/components/ui/card";
+import { ViewSalesPersonSheet } from "@/components/shared/ViewSalesPersonSheet";
 
 // Sales Person type definition
 interface SalesPerson {
@@ -61,7 +62,9 @@ export default function SalesPersonManagementPage() {
   const [editingPerson, setEditingPerson] = React.useState<SalesPerson | null>(
     null
   );
+  const [viewPerson, setViewPerson] = React.useState<SalesPerson | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isViewSheetOpen, setIsViewSheetOpen] = React.useState(false);
 
   // Load sales persons from database on page load
   React.useEffect(() => {
@@ -292,6 +295,10 @@ export default function SalesPersonManagementPage() {
     setEditingPerson(person);
     setIsEditModalOpen(true);
     console.log("✅ Edit modal state set to open");
+  };
+  const handleViewPerson = (person: SalesPerson) => {
+    setViewPerson(person);
+    setIsViewSheetOpen(true);
   };
 
   return (
@@ -605,47 +612,42 @@ export default function SalesPersonManagementPage() {
         {/* Sales Persons Table - Mobile Responsive */}
         <div className="shadow-sm rounded-2xl p-4 space-y-6 bg-white border border-slate-200">
           {/* Search, Status Filter, and Add Sales Person */}
-          <div className="hidden md:flex md:flex-row md:items-center  gap-4">
-            {/* Search Bar - Full Width on Mobile */}
-            <div className="w-full space-y-2">
+          <div className="hidden md:flex md:flex-row md:items-center justify-between  gap-4">
+            <div className="space-y-2 ">
               <label className="text-sm font-medium text-slate-700">
-                Search
+                Status
               </label>
-              <div className="flex-1">
-                <Input
-                  placeholder="Search users by name, email, or ID..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full border-slate-300 focus:border-[#ea078b] focus:ring-[#ea078b] rounded-xl h-12 text-base"
-                />
-              </div>
+              {loading ? (
+                <Skeleton className="h-8 w-20" />
+              ) : (
+                <Select
+                  value={statusFilter}
+                  onValueChange={(value: "all" | "Active" | "Inactive") =>
+                    setStatusFilter(value)
+                  }
+                >
+                  <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 w-full">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {/* Status Filter and Add Button - Same Line on Mobile */}
-            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-end">
-              <div className="flex-1 space-y-2">
-                <label className="text-sm font-medium text-slate-700">
-                  Status
-                </label>
-                {loading ? (
-                  <Skeleton className="h-8 w-20" />
-                ) : (
-                  <Select
-                    value={statusFilter}
-                    onValueChange={(value: "all" | "Active" | "Inactive") =>
-                      setStatusFilter(value)
-                    }
-                  >
-                    <SelectTrigger className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-xl h-12 w-full">
-                      <SelectValue placeholder="All Status" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
+            <div className="flex flex-col w-full sm:flex-row gap-4 justify-end items-end">
+              {/* Search Bar - Full Width on Mobile */}
+              <div className="w-full max-w-lg">
+                <Input
+                  placeholder="Search suppliers or materials..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full border-slate-300 focus:border-[#f89d1d] focus:ring-[#f89d1d] rounded-xl h-12 text-base"
+                />
               </div>
               <Button
                 onClick={() => setShowAddModal(true)}
@@ -662,7 +664,7 @@ export default function SalesPersonManagementPage() {
               <SalesTable
                 data={filteredSalesPersons as SalesRow[]}
                 isLoading={loading}
-                onView={(row) => handleEditPerson(row as any)} // atau bikin modal View sendiri
+                onView={(row) => handleViewPerson(row as any)} // atau bikin modal View sendiri
                 onEdit={(row) => handleEditPerson(row as any)}
               />
             </div>
@@ -806,6 +808,14 @@ export default function SalesPersonManagementPage() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* view sheet person */}
+      <ViewSalesPersonSheet
+        open={isViewSheetOpen}
+        onOpenChange={setIsViewSheetOpen}
+        person={viewPerson}
+        onEdit={(p) => handleEditPerson(p)}
+      />
 
       {/* Edit Sales Person Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

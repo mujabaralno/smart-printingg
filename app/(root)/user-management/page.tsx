@@ -67,7 +67,7 @@ export default function UserManagementPage() {
   >("all");
 
   // ===== New: ClientTable-style pagination state =====
-  const DEFAULT_PAGE_SIZE = 20;
+  const DEFAULT_PAGE_SIZE = 10;
   const [rowsPerPage, setRowsPerPage] = React.useState(DEFAULT_PAGE_SIZE);
   const [page, setPage] = React.useState(1);
 
@@ -454,7 +454,7 @@ export default function UserManagementPage() {
                 onEdit={(row) => editUser(users.find((x) => x.id === row.id)!)}
                 onToggleStatus={(row) => toggleStatus(row.id)}
                 isLoading={loading}
-                defaultPageSize={20}
+                defaultPageSize={10}
                 showPagination={true}
               />
             </div>

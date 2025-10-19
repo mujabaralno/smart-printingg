@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // types/quote.ts
 
 import { quotes } from "@/constants";
@@ -441,4 +442,66 @@ export type Row = (typeof quotes)[number] & {
   finishing?: string[];
   // Client relationship tracking
   originalClientId?: string | null;
+};
+
+export interface VisualizationSettings {
+  type: VisualizationType;
+  showGripper: boolean;
+  showCutLines: boolean;
+  showBleed: boolean;
+  showGaps: boolean;
+  gripperWidth: number;
+  bleedWidth: number;
+  gapWidth: number;
+}
+
+export type ProductShape = "rectangular" | "circular" | "complex-3d";
+export type VisualizationType = "cut" | "print" | "gripper";
+
+export interface DigitalCostingResult {
+  option: string;
+  cutPerParent: number;
+  upsPerSheet: number;
+  upsPerParent: number;
+  parents: number;
+  paper: number;
+  clicks: number;
+  total: number;
+}
+
+export interface OffsetCostingResult {
+  option: string;
+  cutPerParent: number;
+  upsPerSheet: number;
+  upsPerParent: number;
+  parents: number;
+  paper: number;
+  clicks: number;
+  total: number;
+}
+
+export interface DigitalPricing {
+  perClick: number;
+  parentSheetCost: number;
+  wasteParents: number;
+}
+
+export interface OffsetPricing {
+  perClick: number;
+  parentSheetCost: number;
+  wasteParents: number;
+}
+
+export interface QuoteFormData {
+  products: any[];
+  operational: any;
+  additionalCosts: any[];
+  outputDimensions: any[];
+}
+
+export type CandidateRow = {
+  parentW: number;
+  parentH: number;
+  cutPcs: number;
+  label?: string;
 };

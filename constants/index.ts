@@ -1,3 +1,4 @@
+import { CandidateRow } from "@/types";
 import { Building2Icon, FileTextIcon, LayoutDashboardIcon, LucideIcon, PackageIcon, SquarePenIcon, UsersIcon, UserCheckIcon, DatabaseIcon } from "lucide-react";
 
 export type SidebarItem = {
@@ -301,3 +302,40 @@ export const materials: MaterialRow[] = [
 
 export const unitLabel = (u: CostUnit) =>
   u === "per_sheet" ? "/ sheet" : u === "per_packet" ? "/ packet" : "/ kg";
+
+// Complete Cut Size candidates from Excel
+export const CUT_SIZE_CANDIDATES: CandidateRow[] = [
+  { parentW: 20, parentH: 14, cutPcs: 25, label: "20×14 / Cp25" },
+  { parentW: 20, parentH: 17.5, cutPcs: 20, label: "20×17.5 / Cp20" },
+  { parentW: 23, parentH: 52, cutPcs: 5, label: "23×52 / Cp5" },
+  { parentW: 50, parentH: 35, cutPcs: 4, label: "50×35 / Cp4" },
+  { parentW: 28, parentH: 22, cutPcs: 10, label: "28×22 / Cp10" },
+  { parentW: 33, parentH: 23, cutPcs: 9, label: "33×23 / Cp9" },
+  { parentW: 35, parentH: 25, cutPcs: 8, label: "35×25 / Cp8" },
+  { parentW: 38, parentH: 23, cutPcs: 7, label: "38×23 / Cp7" },
+  { parentW: 35, parentH: 33, cutPcs: 6, label: "35×33 / Cp6" },
+  { parentW: 52, parentH: 17.5, cutPcs: 6, label: "52×17.5 / Cp6" },
+  { parentW: 65, parentH: 35, cutPcs: 3, label: "65×35 / Cp3" },
+  { parentW: 70, parentH: 33, cutPcs: 3, label: "70×33 / Cp3" },
+  { parentW: 70, parentH: 50, cutPcs: 2, label: "70×50 / Cp2" },
+  { parentW: 45, parentH: 25, cutPcs: 6, label: "45×25 / Cp6" },
+  { parentW: 50, parentH: 23, cutPcs: 6, label: "50×23 / Cp6" },
+  { parentW: 40, parentH: 30, cutPcs: 5, label: "40×30 / Cp5" },
+  { parentW: 23, parentH: 14, cutPcs: 21, label: "23×14 / Cp21" },
+  { parentW: 25, parentH: 14, cutPcs: 20, label: "25×14 / Cp20" },
+  { parentW: 23, parentH: 16.5, cutPcs: 18, label: "23×16.5 / Cp18" },
+  { parentW: 28, parentH: 14, cutPcs: 17, label: "28×14 / Cp17" },
+  { parentW: 25, parentH: 17.5, cutPcs: 16, label: "25×17.5 / Cp16" },
+  { parentW: 23, parentH: 20, cutPcs: 15, label: "23×20 / Cp15" },
+  { parentW: 25, parentH: 20, cutPcs: 14, label: "25×20 / Cp14" },
+  { parentW: 35, parentH: 14, cutPcs: 14, label: "35×14 / Cp14" },
+  { parentW: 25, parentH: 23, cutPcs: 12, label: "25×23 / Cp12" },
+  { parentW: 30, parentH: 17.5, cutPcs: 12, label: "30×17.5 / Cp12" },
+  { parentW: 30, parentH: 20, cutPcs: 11, label: "30×20 / Cp11" },
+  { parentW: 35, parentH: 20, cutPcs: 10, label: "35×20 / Cp10" },
+  { parentW: 40, parentH: 20, cutPcs: 7, label: "40×20 / Cp7" },
+  { parentW: 21.5, parentH: 30.5, cutPcs: 4, label: "21.5×30.5 / Cp4" },
+  { parentW: 22.5, parentH: 16, cutPcs: 16, label: "22.5×16 / Cp16" },
+  { parentW: 22.5, parentH: 21, cutPcs: 12, label: "22.5×21 / Cp12" },
+  { parentW: 45, parentH: 32, cutPcs: 4, label: "45×32 / Cp4" },
+];

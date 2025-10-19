@@ -20,6 +20,15 @@ export type QuoteRow = {
   quoteId: string;
   customerName: string;
   contactPerson?: string;
+  companyName?: string;
+  lastName?: string;
+  firstName?: string;
+  email: string;
+  clientType?: "all" | "Individual" | "Company" | string;
+  role: string;
+  state: string;
+  city: string;
+  phone: string;
   product?: string;
   productName?: string;
   quantity?: number;

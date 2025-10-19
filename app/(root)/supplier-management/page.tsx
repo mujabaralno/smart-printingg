@@ -49,6 +49,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { StatusPill } from "@/components/shared/ClientsTabel";
 
 // =====================================
 // Types (keep original logic intact)
@@ -68,7 +69,7 @@ interface MaterialRow {
   cost: number;
   unit: string;
   lastUpdated: string;
-  status: string;
+  status: "Active" | "Inactive";
 }
 
 interface SupplierRow {
@@ -83,7 +84,7 @@ interface SupplierRow {
   state?: string;
   postalCode?: string;
   country?: string;
-  status: string;
+  status: "Active" | "Inactive";
   materials: MaterialRow[];
 }
 
@@ -503,7 +504,7 @@ function SupplierManagementContent() {
             >
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
-                  Updated From
+                  From Date - To Date
                 </label>
                 {loading ? (
                   <Skeleton className="h-8 w-80" />
@@ -593,7 +594,7 @@ function SupplierManagementContent() {
             <div className="grid grid-cols-1 md:flex md:flex-row md:items-center bg-white p-4  gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
-                  Updated From
+                  From - To Date
                 </label>
                 {loading ? (
                   <Skeleton className="h-8 w-80" />
@@ -756,7 +757,7 @@ function SupplierManagementContent() {
                       }`}
                     >
                       <TableCell className="p-4 w-24">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        <span className="font-mono text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
                           {r.materialId}
                         </span>
                       </TableCell>
@@ -767,7 +768,7 @@ function SupplierManagementContent() {
                       </TableCell>
                       <TableCell className="p-4 w-20">
                         {r.gsm ? (
-                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-[#27aae1]/20 text-[#27aae1] border border-[#27aae1]/30 whitespace-nowrap">
+                          <span className="px-2 py-1 border-dashed rounded-full text-xs font-medium bg-[#27aae1]/20 text-[#27aae1] border border-[#27aae1]/30 whitespace-nowrap">
                             {r.gsm} gsm
                           </span>
                         ) : (
@@ -795,21 +796,14 @@ function SupplierManagementContent() {
                         </div>
                       </TableCell>
                       <TableCell className="p-4 w-24">
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                            r.status === "Active"
-                              ? "bg-green-100 text-green-700 border border-green-200"
-                              : "bg-rose-100 text-rose-700 border border-rose-200"
-                          }`}
-                        >
-                          {r.status}
-                        </span>
+                        <StatusPill status={r.status}/>
                       </TableCell>
                       <TableCell className="p-4 w-24 ">
                         <Button
                           title="Edit Material"
+
                           onClick={() => onEdit(r)}
-                          className="border-blue-500 border text-blue-600 hover:bg-blue-50 hover:border-blue-600 rounded-xl px-2 py-1 "
+                          className=" text-blue-600 hover:bg-blue-50 hover:border-blue-600 rounded-xl px-1 py-1 "
                         >
                           <Edit3Icon className="h-4 w-4 mr-2" />
                           <span className="">Edit</span>

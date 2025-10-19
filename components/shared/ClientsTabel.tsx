@@ -2,11 +2,20 @@
 
 import * as React from "react";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,13 +37,13 @@ export type ClientRow = {
 
 type QuoteLite = { id: string; clientId: string };
 
-function StatusPill({ status }: { status: ClientRow["status"] }) {
+export function StatusPill({ status }: { status: ClientRow["status"] }) {
   return (
     <Badge
       className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
         status === "Active"
-          ? "bg-green-100 text-green-700 border border-dashed  border-green-200"
-          : "bg-rose-100 text-rose-700 border border-dashed border-rose-200"
+          ? "bg-emerald-50 text-emerald-700 border border-emerald-200 border-dashed"
+          : "bg-amber-50 text-amber-700 border border-amber-200 border-dashed"
       }`}
     >
       {status}
@@ -45,15 +54,33 @@ function StatusPill({ status }: { status: ClientRow["status"] }) {
 function TableSkeletonRow() {
   return (
     <TableRow>
-      <TableCell className="py-4"><Skeleton className="h-6 w-20 rounded" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-36" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-44" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-      <TableCell><Skeleton className="h-6 w-10 rounded" /></TableCell>
-      <TableCell><Skeleton className="h-6 w-16 rounded" /></TableCell>
-      <TableCell className="text-right"><Skeleton className="ml-auto h-8 w-8 rounded-md" /></TableCell>
+      <TableCell className="py-4">
+        <Skeleton className="h-6 w-20 rounded" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-16" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-40" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-36" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-44" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-28" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-6 w-10 rounded" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-6 w-16 rounded" />
+      </TableCell>
+      <TableCell className="text-right">
+        <Skeleton className="ml-auto h-8 w-8 rounded-md" />
+      </TableCell>
     </TableRow>
   );
 }
@@ -61,7 +88,9 @@ function TableSkeletonRow() {
 function TableSkeleton({ rows = 10 }: { rows?: number }) {
   return (
     <TableBody>
-      {Array.from({ length: rows }).map((_, i) => <TableSkeletonRow key={i} />)}
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableSkeletonRow key={i} />
+      ))}
     </TableBody>
   );
 }
@@ -73,8 +102,11 @@ function getDisplayId(id: string) {
   if (onlyNum) return `CL${onlyNum.padStart(3, "0")}`;
   // quick hash for cuid-like
   let h = 0;
-  for (let i = 0; i < id.length; i++) { h = (h << 5) - h + id.charCodeAt(i); h |= 0; }
-  const n = Math.abs(h) % 999 + 1;
+  for (let i = 0; i < id.length; i++) {
+    h = (h << 5) - h + id.charCodeAt(i);
+    h |= 0;
+  }
+  const n = (Math.abs(h) % 999) + 1;
   return `CL${String(n).padStart(3, "0")}`;
 }
 
@@ -115,15 +147,33 @@ export function ClientTable({
         <Table>
           <TableHeader className="bg-[#F8F8FF]">
             <TableRow className="border-slate-200">
-              <TableHead className="text-slate-700 font-semibold p-4 w-28">Client ID</TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-24">Type</TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-40">Company / Name</TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-36">Contact / Role</TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-36">Email</TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-32">Phone</TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-24">Quotes</TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-24">Status</TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-24 text-center">Actions</TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-28">
+                Client ID
+              </TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-24">
+                Type
+              </TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-40">
+                Company / Name
+              </TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-36">
+                Contact / Role
+              </TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-36">
+                Email
+              </TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-32">
+                Phone
+              </TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-24">
+                Quotes
+              </TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-24">
+                Status
+              </TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-24 text-center">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
 
@@ -132,7 +182,10 @@ export function ClientTable({
           ) : pageData.length === 0 ? (
             <TableBody>
               <TableRow>
-                <TableCell colSpan={9} className="py-14 text-center text-slate-500">
+                <TableCell
+                  colSpan={9}
+                  className="py-14 text-center text-slate-500"
+                >
                   No clients found.
                 </TableCell>
               </TableRow>
@@ -140,51 +193,74 @@ export function ClientTable({
           ) : (
             <TableBody>
               {pageData.map((c) => {
-                const count = quotes.filter(q => q.clientId === c.id).length;
+                const count = quotes.filter((q) => q.clientId === c.id).length;
                 const displayName =
                   c.clientType === "Company"
                     ? c.companyName
                     : [c.firstName, c.lastName].filter(Boolean).join(" ");
-                const contact = c.clientType === "Company" ? (c.contactPerson || c.role) : c.role;
+                const contact =
+                  c.clientType === "Company"
+                    ? c.contactPerson || c.role
+                    : c.role;
 
                 return (
-                  <TableRow key={c.id} className="hover:bg-slate-50 transition-colors">
+                  <TableRow
+                    key={c.id}
+                    className="hover:bg-slate-50 transition-colors"
+                  >
                     <TableCell className="p-4">
                       <span className="font-mono text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
                         {getDisplayId(c.id)}
                       </span>
                     </TableCell>
                     <TableCell className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        c.clientType === "Company"
-                          ? "bg-[#27aae1]/20 text-[#27aae1] border border-[#27aae1]/30"
-                          : "bg-[#ea078b]/20 text-[#ea078b] border border-[#ea078b]/30"
-                      }`}>
+                      <span
+                        className={`px-2 py-1 border-dashed rounded-full text-xs font-medium ${
+                          c.clientType === "Company"
+                            ? "bg-[#27aae1]/20 text-[#27aae1] border border-[#27aae1]/30"
+                            : "bg-[#ea078b]/20 text-[#ea078b] border border-[#ea078b]/30"
+                        }`}
+                      >
                         {c.clientType}
                       </span>
                     </TableCell>
                     <TableCell className="p-4">
-                      <div className="font-medium text-slate-900">{displayName || "—"}</div>
+                      <div className="font-medium text-slate-900">
+                        {displayName || "—"}
+                      </div>
                     </TableCell>
                     <TableCell className="p-4">
-                      <div className="text-sm text-slate-900">{contact || "—"}</div>
+                      <div className="text-sm text-slate-900">
+                        {contact || "—"}
+                      </div>
                     </TableCell>
                     <TableCell className="p-4">
-                      <div className="text-sm text-slate-900">{c.email || "—"}</div>
+                      <div className="text-sm text-slate-900">
+                        {c.email || "—"}
+                      </div>
                     </TableCell>
                     <TableCell className="p-4">
-                      <div className="text-sm text-slate-900">{c.phone || "—"}</div>
+                      <div className="text-sm text-slate-900">
+                        {c.phone || "—"}
+                      </div>
                     </TableCell>
                     <TableCell className="p-4">
                       {count > 0 ? (
                         <Link
                           href={`/quote-management?clientId=${c.id}`}
-                          className="text-[#27aae1] font-semibold hover:text-[#1e8bc3]"
+                          className="group cursor-pointer w-ful"
                         >
-                          {count}
+                          <div className="text-md font-bold text-[#27aae1] group-hover:text-[#1e8bc3] transition-colors duration-200 flex items-center justify-center">
+                            {count}
+                          </div>
+                          <div className="text-xs text-[#27aae1] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            Click to view
+                          </div>
                         </Link>
                       ) : (
-                        <span className="text-slate-400 font-semibold">{count}</span>
+                        <span className="text-slate-400 font-semibold">
+                          {count}
+                        </span>
                       )}
                     </TableCell>
                     <TableCell className="p-4">
@@ -193,7 +269,11 @@ export function ClientTable({
                     <TableCell className="p-4 text-right">
                       <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -203,10 +283,20 @@ export function ClientTable({
                           onCloseAutoFocus={(e) => e.preventDefault()}
                         >
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onView(c); }}>
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              onView(c);
+                            }}
+                          >
                             <Eye className="h-4 w-4 mr-2" /> View
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onEdit(c); }}>
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              onEdit(c);
+                            }}
+                          >
                             <Pencil className="h-4 w-4 mr-2" /> Edit
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -226,8 +316,8 @@ export function ClientTable({
           {isLoading
             ? `Loading ${rowsPerPage} rows…`
             : data.length > 0
-              ? `${startIndex + 1}–${endIndex} of ${data.length} rows`
-              : "0 of 0 rows"}
+            ? `${startIndex + 1}–${endIndex} of ${data.length} rows`
+            : "0 of 0 rows"}
         </div>
 
         <div className="flex items-center gap-3">
@@ -236,7 +326,10 @@ export function ClientTable({
             <select
               value={rowsPerPage}
               disabled={isLoading}
-              onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(1); }}
+              onChange={(e) => {
+                setRowsPerPage(Number(e.target.value));
+                setPage(1);
+              }}
               className="h-8 rounded-md border border-slate-300 bg-white px-2 text-sm disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#27aae1]/40"
             >
               <option value={10}>10</option>
@@ -246,13 +339,41 @@ export function ClientTable({
           </div>
 
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={isLoading || page === 1}>«</Button>
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={isLoading || page === 1}>‹</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(1)}
+              disabled={isLoading || page === 1}
+            >
+              «
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={isLoading || page === 1}
+            >
+              ‹
+            </Button>
             <span className="text-xs sm:text-sm text-slate-600 px-2">
               Page <b>{page}</b> / {totalPages}
             </span>
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={isLoading || page === totalPages}>›</Button>
-            <Button variant="outline" size="sm" onClick={() => setPage(totalPages)} disabled={isLoading || page === totalPages}>»</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={isLoading || page === totalPages}
+            >
+              ›
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(totalPages)}
+              disabled={isLoading || page === totalPages}
+            >
+              »
+            </Button>
           </div>
         </div>
       </div>

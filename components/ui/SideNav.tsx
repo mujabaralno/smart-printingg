@@ -197,7 +197,7 @@ export default function SideNav({
                 key={link.label}
                 href={link.route}
                 className={cn(
-                  "flex items-center px-2 py-2 rounded-xl transition-all duration-300 group w-full",
+                  "flex items-center px-[0.375rem] py-2 rounded-xl transition-all duration-300 group w-full",
                   isActive
                     ? "bg-[#27AAE1] text-white shadow-lg"
                     : "text-slate-600 hover:bg-[#ea078b]/5 hover:text-[#ea078b]"
