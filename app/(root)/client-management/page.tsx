@@ -1237,7 +1237,6 @@ export default function ClientManagementPage() {
         quotesCount={viewClient?._quotesCount ?? 0}
         onEdit={(c) => {
           setIsViewOpen(false);
-          onEdit(c); // pakai handler edit yang sudah ada
         }}
       />
 

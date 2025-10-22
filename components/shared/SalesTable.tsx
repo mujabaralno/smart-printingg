@@ -129,7 +129,7 @@ export function SalesTable({
               <TableHead className="text-slate-700 font-semibold p-4 w-[320px]">Sales Person</TableHead>
               <TableHead className="text-slate-700 font-semibold p-4 w-48">Email</TableHead>
               <TableHead className="text-slate-700 font-semibold  p-4 w-40">Phone</TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-44">Department & Role</TableHead>
+              <TableHead className="text-slate-700 font-semibold p-4 w-52">Department & Role</TableHead>
               <TableHead className="text-slate-700 font-semibold p-4 w-28">Status</TableHead>
               <TableHead className="text-slate-700 font-semibold p-4 w-24 text-right">Actions</TableHead>
             </TableRow>

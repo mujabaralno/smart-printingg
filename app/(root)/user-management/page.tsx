@@ -460,7 +460,7 @@ export default function UserManagementPage() {
             </div>
 
             {/* Mobile */}
-            <div className="md:hidden">
+            <div className="lg:hidden">
               <UsersMobileCards
                 data={tableData}
                 onEdit={(row) => editUser(users.find((x) => x.id === row.id)!)}

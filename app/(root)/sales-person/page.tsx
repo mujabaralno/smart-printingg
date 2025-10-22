@@ -612,7 +612,7 @@ export default function SalesPersonManagementPage() {
         {/* Sales Persons Table - Mobile Responsive */}
         <div className="shadow-sm rounded-2xl p-4 space-y-6 bg-white border border-slate-200">
           {/* Search, Status Filter, and Add Sales Person */}
-          <div className="hidden md:flex md:flex-row md:items-center justify-between  gap-4">
+          <div className="hidden md:flex md:flex-row md:items-end justify-between  gap-4">
             <div className="space-y-2 ">
               <label className="text-sm font-medium text-slate-700">
                 Status
@@ -639,9 +639,9 @@ export default function SalesPersonManagementPage() {
             </div>
 
             {/* Status Filter and Add Button - Same Line on Mobile */}
-            <div className="flex flex-col w-full sm:flex-row gap-4 justify-end items-end">
+            <div className="flex flex-col w-full sm:flex-row  gap-4 justify-end items-end">
               {/* Search Bar - Full Width on Mobile */}
-              <div className="w-full max-w-lg">
+              <div className="w-full max-w-lg flex items-end">
                 <Input
                   placeholder="Search suppliers or materials..."
                   value={search}
@@ -651,7 +651,7 @@ export default function SalesPersonManagementPage() {
               </div>
               <Button
                 onClick={() => setShowAddModal(true)}
-                className="bg-[#27aae1] hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
+                className="bg-[#27aae1]  hover:bg-[#1e8bc3] text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 h-12 w-full sm:w-auto"
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Add New Sales Person

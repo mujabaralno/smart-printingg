@@ -215,13 +215,9 @@ export function ViewClientSheet({
 
         {/* Footer sticky */}
         <div className="sticky bottom-0 z-10 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-t">
-          <SheetFooter className="px-5 py-4 flex gap-2">
-            {client && (
-              <Button variant="outline" className="flex-1" onClick={() => onEdit?.(client)}>
-                Edit
-              </Button>
-            )}
-            <Button className="flex-1 bg-[#ea078b]" onClick={() => onOpenChange(false)}>
+          <SheetFooter className="flex w-full items-center justify-end">
+            
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl" onClick={() => onOpenChange(false)}>
               Close
             </Button>
           </SheetFooter>

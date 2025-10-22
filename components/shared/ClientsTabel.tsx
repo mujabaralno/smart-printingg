@@ -142,36 +142,36 @@ export function ClientTable({
   }, [data, rowsPerPage, page]);
 
   return (
-    <div className="overflow-hidden  bg-white">
+    <div className="overflow-visible bg-white">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader className="bg-[#F8F8FF]">
             <TableRow className="border-slate-200">
-              <TableHead className="text-slate-700 font-semibold p-4 w-28">
+              <TableHead className="text-slate-700 font-semibold  p-3.5 w-28">
                 Client ID
               </TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-24">
+              <TableHead className="text-slate-700 font-semibold  p-3.5 w-24">
                 Type
               </TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-40">
+              <TableHead className="text-slate-700 font-semibold p-3.5  w-28">
                 Company / Name
               </TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-36">
+              <TableHead className="text-slate-700 font-semibold p-3.5  w-32">
                 Contact / Role
               </TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-36">
+              <TableHead className="text-slate-700 font-semibold p-3.5 w-36">
                 Email
               </TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-32">
+              <TableHead className="text-slate-700 font-semibold p-3.5 w-32">
                 Phone
               </TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-24">
+              <TableHead className="text-slate-700 font-semibold p-3.5 w-24">
                 Quotes
               </TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-24">
+              <TableHead className="text-slate-700 font-semibold p-3.5 w-24">
                 Status
               </TableHead>
-              <TableHead className="text-slate-700 font-semibold p-4 w-24 text-center">
+              <TableHead className="text-slate-700 font-semibold p-3.5 w-24 text-center relative">
                 Actions
               </TableHead>
             </TableRow>
@@ -208,12 +208,12 @@ export function ClientTable({
                     key={c.id}
                     className="hover:bg-slate-50 transition-colors"
                   >
-                    <TableCell className="p-4">
+                    <TableCell className="p-3.5">
                       <span className="font-mono text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
                         {getDisplayId(c.id)}
                       </span>
                     </TableCell>
-                    <TableCell className="p-4">
+                    <TableCell className="p-3.5">
                       <span
                         className={`px-2 py-1 border-dashed rounded-full text-xs font-medium ${
                           c.clientType === "Company"
@@ -224,27 +224,27 @@ export function ClientTable({
                         {c.clientType}
                       </span>
                     </TableCell>
-                    <TableCell className="p-4">
+                    <TableCell className="p-3.5">
                       <div className="font-medium text-slate-900">
                         {displayName || "—"}
                       </div>
                     </TableCell>
-                    <TableCell className="p-4">
+                    <TableCell className="p-3.5">
                       <div className="text-sm text-slate-900">
                         {contact || "—"}
                       </div>
                     </TableCell>
-                    <TableCell className="p-4">
+                    <TableCell className="p-3.5">
                       <div className="text-sm text-slate-900">
                         {c.email || "—"}
                       </div>
                     </TableCell>
-                    <TableCell className="p-4">
+                    <TableCell className="p-3.5">
                       <div className="text-sm text-slate-900">
                         {c.phone || "—"}
                       </div>
                     </TableCell>
-                    <TableCell className="p-4">
+                    <TableCell className="p-3.5">
                       {count > 0 ? (
                         <Link
                           href={`/quote-management?clientId=${c.id}`}
@@ -263,10 +263,10 @@ export function ClientTable({
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="p-4">
+                    <TableCell className="p-3.5">
                       <StatusPill status={c.status} />
                     </TableCell>
-                    <TableCell className="p-4 text-right">
+                    <TableCell className="p-3.5 text-right">
                       <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                           <Button
